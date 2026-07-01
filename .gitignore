@@ -1,0 +1,29 @@
+# Ambiente e segredos
+.env
+.env.*
+!.env.example
+
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs e ficheiros temporários
+*.log
+storage/
+uploads/
+
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
+# Sistema operativo
+.DS_Store
+Thumbs.db

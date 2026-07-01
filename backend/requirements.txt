@@ -1,0 +1,11 @@
+fastapi[standard]
+sqlalchemy
+alembic
+psycopg[binary]
+pgvector
+pydantic-settings
+pytest
+httpx
+ruff
+mypy
+pypdf
