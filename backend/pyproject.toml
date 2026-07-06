@@ -5,6 +5,7 @@ extend-exclude = ["alembic/versions"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "B", "UP"]
+ignore = ["B008"]  # FastAPI's Depends()/Query() defaults are the idiomatic pattern
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

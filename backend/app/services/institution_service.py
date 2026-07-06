@@ -1,0 +1,123 @@
+import uuid
+
+from sqlalchemy import func, select
+from sqlalchemy.exc import IntegrityError
+from sqlalchemy.orm import Session
+
+from app.core.exceptions import ConflictError, NotFoundError, ValidationError
+from app.models.institution import Institution
+from app.schemas.institution import InstitutionCreate, InstitutionUpdate
+
+
+def validate_language_configuration(
+    default_language: str,
+    supported_languages: list[str],
+) -> None:
+    """Domain rule enforced here (not only in the schema) so any caller
+    that bypasses the API — seed scripts, other services — can't create
+    an institution whose default language isn't in its supported set."""
+    if default_language not in supported_languages:
+        msg = "default_language must be one of supported_languages"
+        raise ValidationError(msg)
+
+
+def create_institution(db: Session, data: InstitutionCreate) -> Institution:
+    validate_language_configuration(data.default_language, data.supported_languages)
+
+    existing = db.scalar(select(Institution).where(Institution.code == data.code))
+    if existing is not None:
+        msg = f"An institution with code '{data.code}' already exists."
+        raise ConflictError(msg)
+
+    institution = Institution(
+        name=data.name,
+        code=data.code,
+        domain=data.domain,
+        default_language=data.default_language,
+        supported_languages=data.supported_languages,
+        is_active=data.is_active,
+    )
+    db.add(institution)
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        msg = f"An institution with code '{data.code}' already exists."
+        raise ConflictError(msg) from exc
+    db.refresh(institution)
+    return institution
+
+
+def get_institution(db: Session, institution_id: uuid.UUID) -> Institution:
+    institution = db.get(Institution, institution_id)
+    if institution is None:
+        msg = f"Institution '{institution_id}' not found."
+        raise NotFoundError(msg)
+    return institution
+
+
+def list_institutions(
+    db: Session,
+    *,
+    is_active: bool | None = None,
+    limit: int = 20,
+    offset: int = 0,
+) -> tuple[list[Institution], int]:
+    query = select(Institution)
+    count_query = select(func.count()).select_from(Institution)
+
+    if is_active is not None:
+        query = query.where(Institution.is_active == is_active)
+        count_query = count_query.where(Institution.is_active == is_active)
+
+    total = db.scalar(count_query) or 0
+    items = list(
+        db.scalars(
+            query.order_by(Institution.created_at.desc(), Institution.id.desc())
+            .limit(limit)
+            .offset(offset)
+        ).all()
+    )
+    return items, total
+
+
+def update_institution(
+    db: Session,
+    institution_id: uuid.UUID,
+    data: InstitutionUpdate,
+) -> Institution:
+    institution = get_institution(db, institution_id)
+
+    changes = data.model_dump(exclude_unset=True)
+
+    # Partial payloads can't be validated at the schema level, since the
+    # resulting state depends on fields not present in this request.
+    resulting_default = changes.get("default_language", institution.default_language)
+    resulting_supported = changes.get(
+        "supported_languages", institution.supported_languages
+    )
+    validate_language_configuration(resulting_default, resulting_supported)
+
+    new_code = changes.get("code")
+    if new_code is not None and new_code != institution.code:
+        existing = db.scalar(
+            select(Institution).where(
+                Institution.code == new_code,
+                Institution.id != institution_id,
+            )
+        )
+        if existing is not None:
+            msg = f"An institution with code '{new_code}' already exists."
+            raise ConflictError(msg)
+
+    for field, value in changes.items():
+        setattr(institution, field, value)
+
+    try:
+        db.commit()
+    except IntegrityError as exc:
+        db.rollback()
+        msg = f"An institution with code '{new_code}' already exists."
+        raise ConflictError(msg) from exc
+    db.refresh(institution)
+    return institution
