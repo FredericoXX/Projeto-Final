@@ -8,6 +8,20 @@ from app.core.exceptions import ConflictError, NotFoundError, ValidationError
 from app.models.institution import Institution
 from app.schemas.institution import InstitutionCreate, InstitutionUpdate
 
+CODE_UNIQUE_CONSTRAINT = "uq_institutions_code"
+DEFAULT_LANGUAGE_CHECK_CONSTRAINT = "ck_institutions_default_language_supported"
+
+
+def get_constraint_name(error: IntegrityError) -> str | None:
+    """Extract the PostgreSQL constraint name that triggered an IntegrityError.
+
+    psycopg exposes the constraint name on the driver-level diagnostics
+    object, which is only present for actual constraint violations (not
+    every IntegrityError has one).
+    """
+    diag = getattr(error.orig, "diag", None)
+    return getattr(diag, "constraint_name", None) if diag is not None else None
+
 
 def validate_language_configuration(
     default_language: str,
@@ -42,8 +56,14 @@ def create_institution(db: Session, data: InstitutionCreate) -> Institution:
         db.commit()
     except IntegrityError as exc:
         db.rollback()
-        msg = f"An institution with code '{data.code}' already exists."
-        raise ConflictError(msg) from exc
+        constraint_name = get_constraint_name(exc)
+        if constraint_name == CODE_UNIQUE_CONSTRAINT:
+            msg = f"An institution with code '{data.code}' already exists."
+            raise ConflictError(msg) from exc
+        if constraint_name == DEFAULT_LANGUAGE_CHECK_CONSTRAINT:
+            msg = "default_language must be one of supported_languages"
+            raise ValidationError(msg) from exc
+        raise
     db.refresh(institution)
     return institution
 
@@ -93,9 +113,7 @@ def update_institution(
     # Partial payloads can't be validated at the schema level, since the
     # resulting state depends on fields not present in this request.
     resulting_default = changes.get("default_language", institution.default_language)
-    resulting_supported = changes.get(
-        "supported_languages", institution.supported_languages
-    )
+    resulting_supported = changes.get("supported_languages", institution.supported_languages)
     validate_language_configuration(resulting_default, resulting_supported)
 
     new_code = changes.get("code")
@@ -117,7 +135,13 @@ def update_institution(
         db.commit()
     except IntegrityError as exc:
         db.rollback()
-        msg = f"An institution with code '{new_code}' already exists."
-        raise ConflictError(msg) from exc
+        constraint_name = get_constraint_name(exc)
+        if constraint_name == CODE_UNIQUE_CONSTRAINT:
+            msg = f"An institution with code '{new_code}' already exists."
+            raise ConflictError(msg) from exc
+        if constraint_name == DEFAULT_LANGUAGE_CHECK_CONSTRAINT:
+            msg = "default_language must be one of supported_languages"
+            raise ValidationError(msg) from exc
+        raise
     db.refresh(institution)
     return institution

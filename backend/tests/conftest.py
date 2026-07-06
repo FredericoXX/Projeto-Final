@@ -1,4 +1,4 @@
-"""Shared test fixtures: an isolated test database.
+"""Shared test fixtures: an isolated test database, truncated per test.
 
 Tests must never run against the development database — that database
 is shared with whatever the developer is doing manually (Swagger,
@@ -7,6 +7,9 @@ in the middle of that. This fixture creates (if needed) and resets a
 dedicated database, pointed to by settings.resolved_test_database_url,
 and points both the FastAPI `get_db` dependency and any direct
 `SessionLocal()` usage in tests at it for the duration of the run.
+
+All tables are also truncated before every individual test, so tests
+don't need to track and delete the rows they create.
 """
 
 from collections.abc import Iterator
@@ -41,9 +44,7 @@ def test_engine() -> Iterator[Engine]:
     test_url = settings.resolved_test_database_url
     db_name = _database_name(test_url)
 
-    maintenance_engine = create_engine(
-        _maintenance_url(test_url), isolation_level="AUTOCOMMIT"
-    )
+    maintenance_engine = create_engine(_maintenance_url(test_url), isolation_level="AUTOCOMMIT")
     with maintenance_engine.connect() as conn:
         exists = conn.execute(
             text("SELECT 1 FROM pg_database WHERE datname = :name"),
@@ -79,3 +80,14 @@ def _override_get_db(test_session_factory: sessionmaker[Session]) -> Iterator[No
     app.dependency_overrides[get_db] = override_get_db
     yield
     app.dependency_overrides.pop(get_db, None)
+
+
+@pytest.fixture(autouse=True)
+def _clean_tables(test_engine: Engine) -> None:
+    """Truncate every table before each test so tests never depend on
+    manual per-test cleanup or on state left behind by earlier tests."""
+    table_names = ", ".join(f'"{table.name}"' for table in reversed(Base.metadata.sorted_tables))
+    if not table_names:
+        return
+    with test_engine.begin() as conn:
+        conn.execute(text(f"TRUNCATE TABLE {table_names} RESTART IDENTITY CASCADE"))

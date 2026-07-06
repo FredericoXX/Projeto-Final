@@ -1,19 +1,15 @@
 """Tests for institution creation, retrieval, listing and update.
 
-Runs against the dedicated test database (see conftest.py), not the
-development database. Each test uses a unique institution code and
-cleans up the rows it creates, so repeated runs don't accumulate data.
+Runs against the dedicated test database (see conftest.py). The
+autouse `_clean_tables` fixture truncates every table before each
+test, so tests don't need to track or delete the rows they create.
 """
 
 import uuid
-from collections.abc import Iterator
 
-import pytest
 from fastapi.testclient import TestClient
-from sqlalchemy.orm import Session, sessionmaker
 
 from app.main import app
-from app.models.institution import Institution
 
 client = TestClient(app)
 
@@ -33,26 +29,12 @@ def _payload(**overrides: object) -> dict:
     return payload
 
 
-@pytest.fixture
-def created_ids(test_session_factory: sessionmaker[Session]) -> Iterator[list[str]]:
-    ids: list[str] = []
-    yield ids
-    with test_session_factory() as db:
-        for institution_id in ids:
-            institution = db.get(Institution, uuid.UUID(institution_id))
-            if institution is not None:
-                db.delete(institution)
-        db.commit()
-
-
-def test_create_institution(created_ids: list[str]) -> None:
+def test_create_institution() -> None:
     payload = _payload()
     response = client.post("/api/v1/institutions", json=payload)
     assert response.status_code == 201
 
     body = response.json()
-    created_ids.append(body["id"])
-
     assert body["name"] == payload["name"]
     assert body["code"] == payload["code"]
     assert body["default_language"] == "pt"
@@ -62,16 +44,14 @@ def test_create_institution(created_ids: list[str]) -> None:
     assert "updated_at" in body
 
 
-def test_create_institution_duplicate_code_returns_409(
-    created_ids: list[str],
-) -> None:
+def test_create_institution_duplicate_code_returns_409() -> None:
     payload = _payload()
     first = client.post("/api/v1/institutions", json=payload)
     assert first.status_code == 201
-    created_ids.append(first.json()["id"])
 
     second = client.post("/api/v1/institutions", json=payload)
     assert second.status_code == 409
+    assert second.json()["detail"]["code"] == "resource_conflict"
 
 
 def test_create_institution_rejects_unsupported_default_language() -> None:
@@ -80,10 +60,31 @@ def test_create_institution_rejects_unsupported_default_language() -> None:
     assert response.status_code == 422
 
 
-def test_get_institution(created_ids: list[str]) -> None:
+def test_create_institution_rejects_whitespace_only_code() -> None:
+    payload = _payload(code="   ")
+    response = client.post("/api/v1/institutions", json=payload)
+    assert response.status_code == 422
+
+
+def test_create_institution_rejects_whitespace_only_name() -> None:
+    payload = _payload(name="   ")
+    response = client.post("/api/v1/institutions", json=payload)
+    assert response.status_code == 422
+
+
+def test_create_institution_normalizes_duplicate_languages() -> None:
+    payload = _payload(
+        default_language="PT",
+        supported_languages=["pt", "PT", "pt", "en", "EN"],
+    )
+    response = client.post("/api/v1/institutions", json=payload)
+    assert response.status_code == 201
+    assert response.json()["supported_languages"] == ["pt", "en"]
+
+
+def test_get_institution() -> None:
     created = client.post("/api/v1/institutions", json=_payload())
     institution_id = created.json()["id"]
-    created_ids.append(institution_id)
 
     response = client.get(f"/api/v1/institutions/{institution_id}")
     assert response.status_code == 200
@@ -93,12 +94,12 @@ def test_get_institution(created_ids: list[str]) -> None:
 def test_get_institution_not_found_returns_404() -> None:
     response = client.get(f"/api/v1/institutions/{uuid.uuid4()}")
     assert response.status_code == 404
+    assert response.json()["detail"]["code"] == "resource_not_found"
 
 
-def test_list_institutions_contains_created(created_ids: list[str]) -> None:
+def test_list_institutions_contains_created() -> None:
     created = client.post("/api/v1/institutions", json=_payload())
     institution_id = created.json()["id"]
-    created_ids.append(institution_id)
 
     response = client.get("/api/v1/institutions", params={"limit": 100})
     assert response.status_code == 200
@@ -108,10 +109,18 @@ def test_list_institutions_contains_created(created_ids: list[str]) -> None:
     assert any(item["id"] == institution_id for item in body["items"])
 
 
-def test_update_institution_name(created_ids: list[str]) -> None:
+def test_list_institutions_total_matches_created_count() -> None:
+    for _ in range(3):
+        client.post("/api/v1/institutions", json=_payload())
+
+    response = client.get("/api/v1/institutions", params={"limit": 100})
+    assert response.status_code == 200
+    assert response.json()["total"] == 3
+
+
+def test_update_institution_name() -> None:
     created = client.post("/api/v1/institutions", json=_payload())
     institution_id = created.json()["id"]
-    created_ids.append(institution_id)
 
     response = client.patch(
         f"/api/v1/institutions/{institution_id}",
@@ -121,15 +130,37 @@ def test_update_institution_name(created_ids: list[str]) -> None:
     assert response.json()["name"] == "Renamed Institution"
 
 
-def test_update_rejects_default_language_outside_supported(
-    created_ids: list[str],
-) -> None:
+def test_update_rejects_default_language_outside_supported() -> None:
     created = client.post("/api/v1/institutions", json=_payload())
     institution_id = created.json()["id"]
-    created_ids.append(institution_id)
 
     response = client.patch(
         f"/api/v1/institutions/{institution_id}",
         json={"default_language": "fr"},
     )
     assert response.status_code == 422
+
+
+def test_update_rejects_invalid_language_configuration() -> None:
+    created = client.post("/api/v1/institutions", json=_payload())
+    institution_id = created.json()["id"]
+
+    response = client.patch(
+        f"/api/v1/institutions/{institution_id}",
+        json={"supported_languages": ["en"]},
+    )
+    assert response.status_code == 422
+    assert response.json()["detail"]["code"] == "domain_validation_error"
+
+
+def test_update_to_existing_code_returns_409() -> None:
+    first = client.post("/api/v1/institutions", json=_payload())
+    second = client.post("/api/v1/institutions", json=_payload())
+    second_id = second.json()["id"]
+
+    response = client.patch(
+        f"/api/v1/institutions/{second_id}",
+        json={"code": first.json()["code"]},
+    )
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "resource_conflict"
