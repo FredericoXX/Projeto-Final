@@ -1,5 +1,6 @@
 from fastapi.testclient import TestClient
 
+
 def test_health_endpoint_returns_database_status(client: TestClient) -> None:
     response = client.get("/api/v1/health")
 
