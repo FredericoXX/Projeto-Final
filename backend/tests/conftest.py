@@ -74,7 +74,7 @@ def test_engine() -> Iterator[Engine]:
 def test_session_factory(test_engine: Engine) -> sessionmaker[Session]:
     return sessionmaker(bind=test_engine, autoflush=False, autocommit=False)
 
-
+# Override the get_db dependency for testing
 @pytest.fixture(scope="session", autouse=True)
 def _override_get_db(test_session_factory: sessionmaker[Session]) -> Iterator[None]:
     def override_get_db() -> Iterator[Session]:

@@ -1,7 +1,7 @@
 """create institutions table
 
 Revision ID: de4e133df3c9
-Revises: 9cf6ff5ac49c
+Revises: db13417f9dc4
 Create Date: 2026-07-06 01:56:03.381806
 
 """
@@ -14,7 +14,7 @@ from sqlalchemy.dialects import postgresql
 
 # revision identifiers, used by Alembic.
 revision: str = 'de4e133df3c9'
-down_revision: Union[str, Sequence[str], None] = '9cf6ff5ac49c'
+down_revision: Union[str, Sequence[str], None] = 'db13417f9dc4'
 branch_labels: Union[str, Sequence[str], None] = None
 depends_on: Union[str, Sequence[str], None] = None
 
