@@ -4,9 +4,108 @@
 
 Este documento regista a configuração inicial realizada para preparar o ambiente de desenvolvimento do projeto **Agentic RAG Assistant**.
 
-Nesta fase, foi configurada a infraestrutura base do backend, incluindo controlo de versões, ambiente Python isolado, base de dados PostgreSQL com pgvector, API FastAPI, migrações e validações mínimas de qualidade.
+Nesta fase, foi configurada a infraestrutura base do backend, incluindo controlo de versões, ambiente Python isolado, base de dados PostgreSQL com pgvector, API FastAPI, migrações, endpoint de saúde e validações mínimas de qualidade.
 
-O projeto ainda não possui RAG funcional, autenticação completa, processamento de documentos, interface de chat ou agente implementado. Esses componentes serão desenvolvidos nas próximas etapas.
+O projeto ainda não possui RAG funcional, autenticação completa, processamento de documentos, interface de chat ou agente implementado. Esses componentes serão desenvolvidos em etapas posteriores, depois de a camada base do backend estar estável.
+
+---
+
+## Como arrancar o backend
+
+Para colocar o backend funcional em ambiente local, devem ser executados os seguintes passos.
+
+1. Abrir o terminal na raiz do projeto:
+
+```powershell
+cd C:\dev\agentic-rag-assistant
+```
+
+2. Arrancar a base de dados com Docker:
+
+```powershell
+docker compose up -d
+docker compose ps
+```
+
+O serviço `database` deve apresentar o estado `running`.
+
+3. Entrar na pasta do backend:
+
+```powershell
+cd backend
+```
+
+4. Ativar o ambiente virtual Python:
+
+```powershell
+.\.venv\Scripts\Activate.ps1
+```
+
+5. Instalar ou atualizar as dependências, quando necessário:
+
+```powershell
+pip install -r requirements.txt
+```
+
+6. Aplicar as migrações pendentes da base de dados:
+
+```powershell
+alembic upgrade head
+```
+
+7. Confirmar a versão atual das migrações:
+
+```powershell
+alembic current
+```
+
+8. Executar os testes automatizados:
+
+```powershell
+pytest
+```
+
+9. Verificar a qualidade do código:
+
+```powershell
+ruff check .
+ruff format .
+```
+
+10. Arrancar a API FastAPI:
+
+```powershell
+fastapi dev app/main.py
+```
+
+Caso o comando anterior não esteja disponível, pode ser utilizado:
+
+```powershell
+uvicorn app.main:app --reload
+```
+
+O terminal onde a API foi iniciada deve permanecer aberto enquanto a aplicação estiver a ser utilizada.
+
+11. Aceder à documentação automática da API:
+
+```text
+http://127.0.0.1:8000/docs
+```
+
+12. Testar o endpoint de saúde:
+
+```powershell
+curl http://127.0.0.1:8000/api/v1/health
+```
+
+A resposta esperada é:
+
+```json
+{
+  "status": "ok",
+  "database": "ok"
+}
+```
 
 ---
 
@@ -236,19 +335,19 @@ A resposta esperada é:
 }
 ```
 
-A API foi iniciada com:
+A API é iniciada com:
 
 ```powershell
 fastapi dev app/main.py
 ```
 
-A documentação automática ficou disponível em:
+A documentação automática fica disponível em:
 
 ```text
 http://127.0.0.1:8000/docs
 ```
 
-O endpoint foi executado através da documentação Swagger e devolveu código HTTP `200`.
+A documentação Swagger e o endpoint de saúde foram validados localmente, com resposta HTTP `200`.
 
 ---
 
@@ -343,7 +442,7 @@ Os ficheiros gerados automaticamente pelo Alembic em `alembic/versions/` foram e
 
 ## Estado atual
 
-A infraestrutura base está funcional e validada.
+A infraestrutura base do backend encontra-se funcional e validada.
 
 | Item | Estado |
 |---|---|
@@ -356,6 +455,7 @@ A infraestrutura base está funcional e validada.
 | Ambiente virtual Python | Criado |
 | Dependências Python | Instaladas |
 | FastAPI | Funcional |
+| Documentação Swagger | Funcional |
 | Ligação Python → PostgreSQL | Validada |
 | Endpoint `/api/v1/health` | Funcional |
 | Alembic | Configurado |
@@ -368,12 +468,19 @@ A infraestrutura base está funcional e validada.
 
 ## Próxima etapa
 
-A próxima etapa será iniciar o desenvolvimento das funcionalidades base da aplicação, começando por:
+A próxima etapa será desenvolver a camada funcional base da aplicação antes de avançar para RAG.
+
+A ordem correta de implementação é:
 
 1. schemas Pydantic;
-2. criação e gestão de utilizadores;
-3. autenticação com hash de passwords;
-4. modelos para conversas e mensagens;
-5. endpoints mínimos de chat.
+2. serviços de utilizadores;
+3. hash de passwords;
+4. endpoints de criação e gestão de utilizadores;
+5. autenticação com JWT;
+6. modelos de conversas;
+7. modelos de mensagens;
+8. endpoints mínimos de conversas e mensagens;
+9. testes automatizados dos novos endpoints;
+10. integração posterior com documentos, embeddings, RAG e lógica agêntica.
 
-A implementação de RAG, embeddings, indexação de documentos e lógica agêntica será feita depois de a camada base de utilizadores, conversas e mensagens estar estável.
+A implementação de RAG, embeddings, indexação de documentos e lógica agêntica só deve começar depois de a camada de utilizadores, autenticação, conversas e mensagens estar estável.
