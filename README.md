@@ -68,12 +68,6 @@ python -m scripts.seed_demo_institution
 From `backend/` (venv active):
 
 ```powershell
-fastapi dev app/main.py
-```
-
-or, equivalently:
-
-```powershell
 uvicorn app.main:app --reload
 ```
 

@@ -9,10 +9,6 @@ import uuid
 
 from fastapi.testclient import TestClient
 
-from app.main import app
-
-client = TestClient(app)
-
 
 def _unique_code() -> str:
     return f"TST-{uuid.uuid4().hex[:8].upper()}"
@@ -29,7 +25,7 @@ def _payload(**overrides: object) -> dict:
     return payload
 
 
-def test_create_institution() -> None:
+def test_create_institution(client: TestClient) -> None:
     payload = _payload()
     response = client.post("/api/v1/institutions", json=payload)
     assert response.status_code == 201
@@ -44,7 +40,7 @@ def test_create_institution() -> None:
     assert "updated_at" in body
 
 
-def test_create_institution_duplicate_code_returns_409() -> None:
+def test_create_institution_duplicate_code_returns_409(client: TestClient) -> None:
     payload = _payload()
     first = client.post("/api/v1/institutions", json=payload)
     assert first.status_code == 201
@@ -54,25 +50,25 @@ def test_create_institution_duplicate_code_returns_409() -> None:
     assert second.json()["detail"]["code"] == "resource_conflict"
 
 
-def test_create_institution_rejects_unsupported_default_language() -> None:
+def test_create_institution_rejects_unsupported_default_language(client: TestClient) -> None:
     payload = _payload(default_language="fr", supported_languages=["pt", "en"])
     response = client.post("/api/v1/institutions", json=payload)
     assert response.status_code == 422
 
 
-def test_create_institution_rejects_whitespace_only_code() -> None:
+def test_create_institution_rejects_whitespace_only_code(client: TestClient) -> None:
     payload = _payload(code="   ")
     response = client.post("/api/v1/institutions", json=payload)
     assert response.status_code == 422
 
 
-def test_create_institution_rejects_whitespace_only_name() -> None:
+def test_create_institution_rejects_whitespace_only_name(client: TestClient) -> None:
     payload = _payload(name="   ")
     response = client.post("/api/v1/institutions", json=payload)
     assert response.status_code == 422
 
 
-def test_create_institution_normalizes_duplicate_languages() -> None:
+def test_create_institution_normalizes_duplicate_languages(client: TestClient) -> None:
     payload = _payload(
         default_language="PT",
         supported_languages=["pt", "PT", "pt", "en", "EN"],
@@ -82,7 +78,7 @@ def test_create_institution_normalizes_duplicate_languages() -> None:
     assert response.json()["supported_languages"] == ["pt", "en"]
 
 
-def test_get_institution() -> None:
+def test_get_institution(client: TestClient) -> None:
     created = client.post("/api/v1/institutions", json=_payload())
     institution_id = created.json()["id"]
 
@@ -91,13 +87,13 @@ def test_get_institution() -> None:
     assert response.json()["id"] == institution_id
 
 
-def test_get_institution_not_found_returns_404() -> None:
+def test_get_institution_not_found_returns_404(client: TestClient) -> None:
     response = client.get(f"/api/v1/institutions/{uuid.uuid4()}")
     assert response.status_code == 404
     assert response.json()["detail"]["code"] == "resource_not_found"
 
 
-def test_list_institutions_contains_created() -> None:
+def test_list_institutions_contains_created(client: TestClient) -> None:
     created = client.post("/api/v1/institutions", json=_payload())
     institution_id = created.json()["id"]
 
@@ -109,7 +105,7 @@ def test_list_institutions_contains_created() -> None:
     assert any(item["id"] == institution_id for item in body["items"])
 
 
-def test_list_institutions_total_matches_created_count() -> None:
+def test_list_institutions_total_matches_created_count(client: TestClient) -> None:
     for _ in range(3):
         client.post("/api/v1/institutions", json=_payload())
 
@@ -118,7 +114,7 @@ def test_list_institutions_total_matches_created_count() -> None:
     assert response.json()["total"] == 3
 
 
-def test_update_institution_name() -> None:
+def test_update_institution_name(client: TestClient) -> None:
     created = client.post("/api/v1/institutions", json=_payload())
     institution_id = created.json()["id"]
 
@@ -130,7 +126,7 @@ def test_update_institution_name() -> None:
     assert response.json()["name"] == "Renamed Institution"
 
 
-def test_update_rejects_default_language_outside_supported() -> None:
+def test_update_rejects_default_language_outside_supported(client: TestClient) -> None:
     created = client.post("/api/v1/institutions", json=_payload())
     institution_id = created.json()["id"]
 
@@ -141,7 +137,7 @@ def test_update_rejects_default_language_outside_supported() -> None:
     assert response.status_code == 422
 
 
-def test_update_rejects_invalid_language_configuration() -> None:
+def test_update_rejects_invalid_language_configuration(client: TestClient) -> None:
     created = client.post("/api/v1/institutions", json=_payload())
     institution_id = created.json()["id"]
 
@@ -153,7 +149,7 @@ def test_update_rejects_invalid_language_configuration() -> None:
     assert response.json()["detail"]["code"] == "domain_validation_error"
 
 
-def test_update_to_existing_code_returns_409() -> None:
+def test_update_to_existing_code_returns_409(client: TestClient) -> None:
     first = client.post("/api/v1/institutions", json=_payload())
     second = client.post("/api/v1/institutions", json=_payload())
     second_id = second.json()["id"]

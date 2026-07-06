@@ -15,6 +15,7 @@ don't need to track and delete the rows they create.
 from collections.abc import Iterator
 
 import pytest
+from fastapi.testclient import TestClient
 from sqlalchemy import create_engine, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -55,6 +56,12 @@ def test_engine() -> Iterator[Engine]:
     maintenance_engine.dispose()
 
     engine = create_engine(test_url, pool_pre_ping=True)
+
+    # Required before create_all: model columns backed by pgvector's
+    # VECTOR type would otherwise fail to create on a fresh test database.
+    with engine.begin() as conn:
+        conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
+
     Base.metadata.drop_all(engine)
     Base.metadata.create_all(engine)
 
@@ -80,6 +87,12 @@ def _override_get_db(test_session_factory: sessionmaker[Session]) -> Iterator[No
     app.dependency_overrides[get_db] = override_get_db
     yield
     app.dependency_overrides.pop(get_db, None)
+
+
+@pytest.fixture
+def client() -> Iterator[TestClient]:
+    with TestClient(app) as test_client:
+        yield test_client
 
 
 @pytest.fixture(autouse=True)
