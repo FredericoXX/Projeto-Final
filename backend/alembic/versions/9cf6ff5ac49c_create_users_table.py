@@ -52,12 +52,16 @@ def upgrade() -> None:
             server_default=sa.func.now(),
             nullable=False,
         ),
+        # Cada utilizador pertence obrigatoriamente a uma instituição.
+        # Esta relação é a base do isolamento multi-institucional dos dados.
         sa.ForeignKeyConstraint(
             ["institution_id"],
             ["institutions.id"],
             name="fk_users_institution_id_institutions",
         ),
     )
+    # Esta migration depende da criação prévia de "institutions" (down_revision
+    # acima), já que a foreign key exige a tabela referenciada já existente.
     op.create_index("ix_users_email", "users", ["email"], unique=True)
     op.create_index("ix_users_institution_id", "users", ["institution_id"])
 

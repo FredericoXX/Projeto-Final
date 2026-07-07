@@ -58,6 +58,8 @@ def migrations_database_url() -> Iterator[str]:
     maintenance_engine.dispose()
 
 
+# Confirma que a cadeia real de migrations produz o esquema esperado,
+# em vez de apenas validar os modelos SQLAlchemy (o que create_all faria).
 def test_alembic_upgrade_head_creates_expected_schema(
     migrations_database_url: str,
     monkeypatch: pytest.MonkeyPatch,

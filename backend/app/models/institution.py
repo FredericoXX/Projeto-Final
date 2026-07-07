@@ -11,13 +11,18 @@ from app.database.base import Base
 class Institution(Base):
     __tablename__ = "institutions"
     __table_args__ = (
+        # O código é o identificador único usado no isolamento
+        # multi-institucional (ex.: filtrar utilizadores/dados por instituição).
         UniqueConstraint("code", name="uq_institutions_code"),
+        # Garante que o idioma padrão está sempre entre os idiomas suportados.
         CheckConstraint(
             "default_language = ANY (supported_languages)",
             name="ck_institutions_default_language_supported",
         ),
     )
 
+    # UUID gerado em Python (não pela base de dados) para que o valor
+    # esteja disponível antes do commit, por exemplo em relações ou testes.
     id: Mapped[UUID] = mapped_column(
         primary_key=True,
         default=uuid4,
@@ -41,6 +46,8 @@ class Institution(Base):
 
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
+    # Campos de auditoria: created_at fixa-se na inserção; updated_at
+    # é recalculado pela base de dados em cada atualização (onupdate).
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

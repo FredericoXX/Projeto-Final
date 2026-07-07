@@ -51,7 +51,11 @@ def upgrade() -> None:
             server_default=sa.func.now(),
             nullable=False,
         ),
+        # O código identifica a instituição de forma única e é usado como
+        # chave de isolamento multi-institucional em toda a aplicação.
         sa.UniqueConstraint("code", name="uq_institutions_code"),
+        # Garante ao nível da base de dados que o idioma padrão está sempre
+        # incluído na lista de idiomas suportados pela instituição.
         sa.CheckConstraint(
             "default_language = ANY (supported_languages)",
             name="ck_institutions_default_language_supported",

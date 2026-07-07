@@ -31,6 +31,8 @@ async def validation_error_handler(request: Request, exc: ValidationError) -> JS
     return _error_response(422, "domain_validation_error", str(exc))
 
 
+# Ponto único de registo: qualquer novo tipo de DomainError só precisa de
+# um handler aqui para ganhar uma resposta HTTP consistente em toda a API.
 def register_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(NotFoundError, not_found_error_handler)
     app.add_exception_handler(ConflictError, conflict_error_handler)

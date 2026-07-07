@@ -22,6 +22,8 @@ def seed() -> None:
             print(f"Demo institution already exists (id={existing.id}). Nothing to do.")
             return
 
+        # Reutiliza o serviço em vez de inserir diretamente com o ORM,
+        # para que as mesmas regras de validação de domínio se apliquem.
         institution = institution_service.create_institution(
             db,
             InstitutionCreate(

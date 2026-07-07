@@ -20,6 +20,8 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
+    # Extensão ativada antecipadamente (primeira migration) para que futuras
+    # tabelas possam usar colunas do tipo vector na pesquisa semântica de documentos.
     op.execute("CREATE EXTENSION IF NOT EXISTS vector")
 
 

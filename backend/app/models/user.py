@@ -15,6 +15,8 @@ class User(Base):
         default=uuid4,
     )
 
+    # Todo o utilizador pertence a exatamente uma instituição; esta FK
+    # sustenta o isolamento multi-institucional dos dados na aplicação.
     institution_id: Mapped[UUID] = mapped_column(
         ForeignKey(
             "institutions.id",
@@ -42,6 +44,8 @@ class User(Base):
 
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, default=True)
 
+    # Campos de auditoria: updated_at é atualizado automaticamente
+    # pela base de dados sempre que o registo é alterado.
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),
         server_default=func.now(),

@@ -55,6 +55,9 @@ def create_institution(db: Session, data: InstitutionCreate) -> Institution:
     try:
         db.commit()
     except IntegrityError as exc:
+        # O conflito é novamente tratado no commit porque duas requisições
+        # concorrentes podem passar pela verificação prévia de unicidade
+        # (linha 41) antes de qualquer uma delas gravar o registo.
         db.rollback()
         constraint_name = get_constraint_name(exc)
         if constraint_name == CODE_UNIQUE_CONSTRAINT:
@@ -128,12 +131,16 @@ def update_institution(
             msg = f"An institution with code '{new_code}' already exists."
             raise ConflictError(msg)
 
+    # Aplica apenas os campos presentes no payload (PATCH), preservando
+    # os restantes valores já existentes na entidade.
     for field, value in changes.items():
         setattr(institution, field, value)
 
     try:
         db.commit()
     except IntegrityError as exc:
+        # Mesma justificação da criação: a corrida entre a verificação
+        # de unicidade e o commit pode deixar passar um código duplicado.
         db.rollback()
         constraint_name = get_constraint_name(exc)
         if constraint_name == CODE_UNIQUE_CONSTRAINT:

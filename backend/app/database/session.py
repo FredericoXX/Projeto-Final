@@ -17,6 +17,8 @@ SessionLocal = sessionmaker(
 )
 
 
+# Dependency do FastAPI: cria uma sessão nova por pedido e garante o
+# fecho mesmo em caso de exceção, evitando fugas de ligações à base de dados.
 def get_db() -> Generator[Session, None, None]:
     db = SessionLocal()
 

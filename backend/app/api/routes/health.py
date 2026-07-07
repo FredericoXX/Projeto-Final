@@ -9,6 +9,9 @@ router = APIRouter(tags=["System"])
 
 @router.get("/health")
 def health_check() -> dict[str, str]:
+    # Verifica a ligação à base de dados com uma query mínima, sem depender
+    # de nenhuma tabela do domínio, para não falhar por motivos alheios à
+    # disponibilidade da infraestrutura.
     try:
         with engine.connect() as connection:
             connection.execute(text("SELECT 1"))

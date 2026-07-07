@@ -12,6 +12,10 @@ from app.schemas.institution import (
 )
 from app.services import institution_service
 
+# O router mantém-se fino de propósito: valida apenas o formato da
+# requisição (via schemas) e delega toda a regra de negócio ao serviço.
+# Erros de domínio (ConflictError, ValidationError, NotFoundError) não são
+# capturados aqui — são convertidos em respostas HTTP pelos handlers globais.
 router = APIRouter(prefix="/institutions", tags=["Institutions"])
 
 

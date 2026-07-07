@@ -11,6 +11,8 @@ LANGUAGE_MAX_LENGTH = 8
 MAX_SUPPORTED_LANGUAGES = 20
 
 
+# Normaliza códigos de idioma (ex.: "PT_pt" -> "pt-pt") para evitar
+# duplicados semânticos causados por diferenças de maiúsculas/separador.
 def _normalize_language(value: str) -> str:
     normalized = value.strip().lower().replace("_", "-")
     if not (LANGUAGE_MIN_LENGTH <= len(normalized) <= LANGUAGE_MAX_LENGTH):
@@ -23,6 +25,8 @@ def _normalize_language(value: str) -> str:
 
 
 def _normalize_language_list(value: list[str]) -> list[str]:
+    # Remove duplicados após a normalização, preservando a primeira
+    # ocorrência e a ordem original de introdução.
     normalized: list[str] = []
     seen: set[str] = set()
     for language in value:
@@ -97,6 +101,8 @@ class InstitutionBase(BaseModel):
 
 
 class InstitutionCreate(InstitutionBase):
+    # Espelha a check constraint da base de dados, permitindo devolver
+    # o erro de validação ao cliente antes de tentar o INSERT.
     @model_validator(mode="after")
     def check_default_language_is_supported(self) -> "InstitutionCreate":
         if self.default_language not in self.supported_languages:
@@ -106,6 +112,9 @@ class InstitutionCreate(InstitutionBase):
 
 
 class InstitutionUpdate(BaseModel):
+    # Todos os campos são opcionais para suportar atualizações parciais (PATCH);
+    # a consistência entre default_language e supported_languages é validada
+    # depois, ao nível do serviço, com base no estado final da entidade.
     name: str | None = None
     code: str | None = None
     domain: str | None = None

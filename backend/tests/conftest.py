@@ -74,7 +74,9 @@ def test_engine() -> Iterator[Engine]:
 def test_session_factory(test_engine: Engine) -> sessionmaker[Session]:
     return sessionmaker(bind=test_engine, autoflush=False, autocommit=False)
 
-# Override the get_db dependency for testing
+# Substitui a dependency get_db em todos os testes para que os pedidos
+# feitos através do TestClient usem a base de dados de teste isolada,
+# em vez da ligação apontada para a base de dados de desenvolvimento.
 @pytest.fixture(scope="session", autouse=True)
 def _override_get_db(test_session_factory: sessionmaker[Session]) -> Iterator[None]:
     def override_get_db() -> Iterator[Session]:
