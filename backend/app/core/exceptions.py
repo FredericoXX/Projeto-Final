@@ -15,3 +15,11 @@ class ConflictError(DomainError):
 
 class ValidationError(DomainError):
     pass
+
+
+class AuthenticationError(DomainError):
+    pass
+
+
+class AuthorizationError(DomainError):
+    pass

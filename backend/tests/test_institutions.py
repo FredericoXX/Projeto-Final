@@ -24,7 +24,7 @@ def _payload(**overrides: object) -> dict:
     payload.update(overrides)
     return payload
 
-# Test the creation of a new institution
+
 def test_create_institution(client: TestClient) -> None:
     payload = _payload()
     response = client.post("/api/v1/institutions", json=payload)
@@ -39,7 +39,7 @@ def test_create_institution(client: TestClient) -> None:
     assert "created_at" in body
     assert "updated_at" in body
 
-# Test that creating an institution with a duplicate code returns a 409 Conflict    
+
 def test_create_institution_duplicate_code_returns_409(client: TestClient) -> None:
     payload = _payload()
     first = client.post("/api/v1/institutions", json=payload)
@@ -49,7 +49,8 @@ def test_create_institution_duplicate_code_returns_409(client: TestClient) -> No
     assert second.status_code == 409
     assert second.json()["detail"]["code"] == "resource_conflict"
 
-# Test that creating an institution with a default language not in the supported languages returns a 422 Unprocessable Entity
+# Garante que uma instituição não pode usar um idioma padrão
+# fora da lista de idiomas suportados.
 def test_create_institution_rejects_unsupported_default_language(client: TestClient) -> None:
     payload = _payload(default_language="fr", supported_languages=["pt", "en"])
     response = client.post("/api/v1/institutions", json=payload)

@@ -9,3 +9,5 @@ httpx
 ruff
 mypy
 pypdf
+argon2-cffi
+pyjwt

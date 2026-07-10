@@ -9,7 +9,13 @@ every resource as more of them are added.
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
 
-from app.core.exceptions import ConflictError, NotFoundError, ValidationError
+from app.core.exceptions import (
+    AuthenticationError,
+    AuthorizationError,
+    ConflictError,
+    NotFoundError,
+    ValidationError,
+)
 
 
 def _error_response(status_code: int, code: str, message: str) -> JSONResponse:
@@ -31,9 +37,19 @@ async def validation_error_handler(request: Request, exc: ValidationError) -> JS
     return _error_response(422, "domain_validation_error", str(exc))
 
 
+async def authentication_error_handler(request: Request, exc: AuthenticationError) -> JSONResponse:
+    return _error_response(401, "authentication_failed", str(exc))
+
+
+async def authorization_error_handler(request: Request, exc: AuthorizationError) -> JSONResponse:
+    return _error_response(403, "forbidden", str(exc))
+
+
 # Ponto único de registo: qualquer novo tipo de DomainError só precisa de
 # um handler aqui para ganhar uma resposta HTTP consistente em toda a API.
 def register_error_handlers(app: FastAPI) -> None:
     app.add_exception_handler(NotFoundError, not_found_error_handler)
     app.add_exception_handler(ConflictError, conflict_error_handler)
     app.add_exception_handler(ValidationError, validation_error_handler)
+    app.add_exception_handler(AuthenticationError, authentication_error_handler)
+    app.add_exception_handler(AuthorizationError, authorization_error_handler)
