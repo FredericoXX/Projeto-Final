@@ -1,6 +1,12 @@
-# Institutional Agentic RAG Assistant
+# Agentic Institutional Assistant
 
-Backend prototype for a generic, multi-institution higher-education assistant based on controlled Agentic RAG.
+Academic master's-thesis prototype of a generic, multi-institution assistant for
+higher-education institutions. The information-retrieval approach (RAG or
+otherwise) is still to be decided through the literature review — nothing in
+this codebase should be read as a final architectural commitment to RAG,
+embeddings or vector search. PostgreSQL's pgvector extension is enabled as
+infrastructure available for that future experimentation, not because the
+system already uses it for anything.
 
 The Python application lives entirely in [`backend/`](backend/). Docker Compose at the
 repository root runs only PostgreSQL (with pgvector); the FastAPI application itself
@@ -147,11 +153,37 @@ Everything after the first admin uses normal JWT authentication.
    (`/api/v1/users`, `/api/v1/conversations`, and `GET`/`PATCH`
    `/api/v1/institutions/{id}`). An admin can only ever read or update
    their own institution — another `institution_id` is reported as 404,
-   not 403, so the existence of other tenants is never revealed.
+   not 403, so the existence of other tenants is never revealed. An
+   institutional admin also can't (de)activate their own institution
+   through this PATCH endpoint; sending `is_active` there is rejected
+   with 422 (see next section).
+
+### Reactivating an institution
+
+An institutional admin cannot set their own institution's `is_active`
+through `PATCH /api/v1/institutions/{id}` — doing so would let them
+lock themselves (and everyone else at that institution) out with no way
+back in through the regular API. Activating or deactivating an
+institution is only possible through a bootstrap-only endpoint, gated by
+the same `X-Bootstrap-Token`:
+
+```
+PATCH /api/v1/bootstrap/institutions/{institution_id}/status
+X-Bootstrap-Token: <your BOOTSTRAP_TOKEN>
+
+{ "is_active": true }
+```
+
+This endpoint only ever touches `is_active` — it rejects any other field
+in the payload. There is no `platform_admin` role or admin UI behind it;
+it is a deliberately minimal, explicit recovery mechanism for this
+prototype.
 
 ## Project status
 
 See [`docs/database.md`](docs/database.md) for the migration history and
 the current institutional security rules. `institutions`, `users`,
 `auth` and `conversations`/`messages` all have a full API; no RAG,
-embeddings, retrieval or agent behavior is implemented yet.
+embeddings, retrieval or agent behavior is implemented — the retrieval
+approach is an open question for the literature review, not a decision
+already made in this codebase.

@@ -271,13 +271,21 @@ def test_create_message_admin_can_use_system_role(client: TestClient) -> None:
     admin_headers = _create_admin_and_login(client, institution_id)
     conversation = _create_conversation(client, admin_headers)
 
+    me = client.get("/api/v1/auth/me", headers=admin_headers)
+    admin_id = me.json()["id"]
+
     response = client.post(
         f"/api/v1/conversations/{conversation['id']}/messages",
         json={"content": "System note", "role": "system"},
         headers=admin_headers,
     )
     assert response.status_code == 201
-    assert response.json()["role"] == "system"
+
+    body = response.json()
+    assert body["role"] == "system"
+    # role="system" não implica user_id nulo: a mensagem regista sempre o
+    # admin que a criou manualmente, para permitir auditoria.
+    assert body["user_id"] == admin_id
 
 
 def test_create_message_rejects_assistant_role(client: TestClient) -> None:
@@ -338,10 +346,11 @@ def test_create_conversation_fails_when_institution_is_inactive(client: TestClie
     institution_id = _create_institution(client)
     admin_headers = _create_admin_and_login(client, institution_id)
 
+    # is_active só é alterável pelo endpoint de bootstrap agora.
     deactivate = client.patch(
-        f"/api/v1/institutions/{institution_id}",
+        f"/api/v1/bootstrap/institutions/{institution_id}/status",
         json={"is_active": False},
-        headers=admin_headers,
+        headers=BOOTSTRAP_HEADERS,
     )
     assert deactivate.status_code == 200
 
@@ -351,3 +360,207 @@ def test_create_conversation_fails_when_institution_is_inactive(client: TestClie
         headers=admin_headers,
     )
     assert response.status_code == 401
+
+
+# --- Estados da conversa (active / closed / archived) -------------------
+#
+# closed e archived são estados finais neste protótipo: não aceitam novas
+# mensagens nem PATCH (incluindo tentar voltar a "active"). Não existe
+# endpoint de reabertura nesta fase.
+
+
+def test_message_in_active_conversation_works(client: TestClient) -> None:
+    institution_id = _create_institution(client)
+    admin_headers = _create_admin_and_login(client, institution_id)
+    conversation = _create_conversation(client, admin_headers)
+
+    response = client.post(
+        f"/api/v1/conversations/{conversation['id']}/messages",
+        json={"content": "Still active"},
+        headers=admin_headers,
+    )
+    assert response.status_code == 201
+
+
+def test_message_in_closed_conversation_returns_409(client: TestClient) -> None:
+    institution_id = _create_institution(client)
+    admin_headers = _create_admin_and_login(client, institution_id)
+    conversation = _create_conversation(client, admin_headers)
+    client.patch(
+        f"/api/v1/conversations/{conversation['id']}",
+        json={"status": "closed"},
+        headers=admin_headers,
+    )
+
+    response = client.post(
+        f"/api/v1/conversations/{conversation['id']}/messages",
+        json={"content": "Too late"},
+        headers=admin_headers,
+    )
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "resource_conflict"
+
+
+def test_message_in_archived_conversation_returns_409(client: TestClient) -> None:
+    institution_id = _create_institution(client)
+    admin_headers = _create_admin_and_login(client, institution_id)
+    conversation = _create_conversation(client, admin_headers)
+    client.patch(
+        f"/api/v1/conversations/{conversation['id']}",
+        json={"status": "archived"},
+        headers=admin_headers,
+    )
+
+    response = client.post(
+        f"/api/v1/conversations/{conversation['id']}/messages",
+        json={"content": "Too late"},
+        headers=admin_headers,
+    )
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "resource_conflict"
+
+
+def test_patch_closed_conversation_returns_409(client: TestClient) -> None:
+    institution_id = _create_institution(client)
+    admin_headers = _create_admin_and_login(client, institution_id)
+    conversation = _create_conversation(client, admin_headers)
+    client.patch(
+        f"/api/v1/conversations/{conversation['id']}",
+        json={"status": "closed"},
+        headers=admin_headers,
+    )
+
+    response = client.patch(
+        f"/api/v1/conversations/{conversation['id']}",
+        json={"title": "Trying to rename after close"},
+        headers=admin_headers,
+    )
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "resource_conflict"
+
+
+def test_patch_archived_conversation_returns_409(client: TestClient) -> None:
+    institution_id = _create_institution(client)
+    admin_headers = _create_admin_and_login(client, institution_id)
+    conversation = _create_conversation(client, admin_headers)
+    client.patch(
+        f"/api/v1/conversations/{conversation['id']}",
+        json={"status": "archived"},
+        headers=admin_headers,
+    )
+
+    # Mesmo tentar voltar a "active" deve falhar: não há reabertura nesta fase.
+    response = client.patch(
+        f"/api/v1/conversations/{conversation['id']}",
+        json={"status": "active"},
+        headers=admin_headers,
+    )
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "resource_conflict"
+
+
+# --- Idioma institucional ------------------------------------------------
+
+
+def test_conversation_without_language_uses_institution_default(client: TestClient) -> None:
+    institution_id = _create_institution(client)
+    admin_headers = _create_admin_and_login(client, institution_id)
+
+    response = client.post(
+        "/api/v1/conversations", json={"title": "No language given"}, headers=admin_headers
+    )
+    assert response.status_code == 201
+    assert response.json()["language"] == "pt"
+
+
+def test_conversation_with_supported_language_works(client: TestClient) -> None:
+    institution_id = _create_institution(client)
+    admin_headers = _create_admin_and_login(client, institution_id)
+
+    response = client.post(
+        "/api/v1/conversations",
+        json={"title": "English conversation", "language": "en"},
+        headers=admin_headers,
+    )
+    assert response.status_code == 201
+    assert response.json()["language"] == "en"
+
+
+def test_conversation_with_unsupported_language_fails(client: TestClient) -> None:
+    institution_id = _create_institution(client)
+    admin_headers = _create_admin_and_login(client, institution_id)
+
+    response = client.post(
+        "/api/v1/conversations",
+        json={"title": "Unsupported language", "language": "fr"},
+        headers=admin_headers,
+    )
+    assert response.status_code == 422
+
+
+def test_message_without_language_inherits_conversation_language(client: TestClient) -> None:
+    institution_id = _create_institution(client)
+    admin_headers = _create_admin_and_login(client, institution_id)
+    conversation = client.post(
+        "/api/v1/conversations",
+        json={"title": "English conversation", "language": "en"},
+        headers=admin_headers,
+    ).json()
+
+    response = client.post(
+        f"/api/v1/conversations/{conversation['id']}/messages",
+        json={"content": "No language given"},
+        headers=admin_headers,
+    )
+    assert response.status_code == 201
+    assert response.json()["language"] == "en"
+
+
+def test_message_with_unsupported_language_fails(client: TestClient) -> None:
+    institution_id = _create_institution(client)
+    admin_headers = _create_admin_and_login(client, institution_id)
+    conversation = _create_conversation(client, admin_headers)
+
+    response = client.post(
+        f"/api/v1/conversations/{conversation['id']}/messages",
+        json={"content": "Unsupported language", "language": "fr"},
+        headers=admin_headers,
+    )
+    assert response.status_code == 422
+
+
+def test_different_institutions_can_support_different_languages(client: TestClient) -> None:
+    institution_a = _create_institution(client)
+    admin_a_headers = _create_admin_and_login(client, institution_a)
+
+    other_payload = _institution_payload(
+        supported_languages=["es", "fr"], default_language="es"
+    )
+    response = client.post(
+        "/api/v1/institutions", json=other_payload, headers=BOOTSTRAP_HEADERS
+    )
+    assert response.status_code == 201
+    institution_b = response.json()["id"]
+    admin_b_headers = _create_admin_and_login(client, institution_b)
+
+    # "en" é suportado pela instituição A mas não pela B.
+    ok_for_a = client.post(
+        "/api/v1/conversations",
+        json={"title": "English at A", "language": "en"},
+        headers=admin_a_headers,
+    )
+    assert ok_for_a.status_code == 201
+
+    fails_for_b = client.post(
+        "/api/v1/conversations",
+        json={"title": "English at B", "language": "en"},
+        headers=admin_b_headers,
+    )
+    assert fails_for_b.status_code == 422
+
+    ok_for_b = client.post(
+        "/api/v1/conversations",
+        json={"title": "French at B", "language": "fr"},
+        headers=admin_b_headers,
+    )
+    assert ok_for_b.status_code == 201

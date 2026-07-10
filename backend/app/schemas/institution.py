@@ -3,25 +3,12 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
+from app.core.language import normalize_language_code
+
 NAME_MAX_LENGTH = 255
 CODE_MAX_LENGTH = 50
 DOMAIN_MAX_LENGTH = 255
-LANGUAGE_MIN_LENGTH = 2
-LANGUAGE_MAX_LENGTH = 8
 MAX_SUPPORTED_LANGUAGES = 20
-
-
-# Normaliza códigos de idioma (ex.: "PT_pt" -> "pt-pt") para evitar
-# duplicados semânticos causados por diferenças de maiúsculas/separador.
-def _normalize_language(value: str) -> str:
-    normalized = value.strip().lower().replace("_", "-")
-    if not (LANGUAGE_MIN_LENGTH <= len(normalized) <= LANGUAGE_MAX_LENGTH):
-        msg = (
-            f"language must be between {LANGUAGE_MIN_LENGTH} and "
-            f"{LANGUAGE_MAX_LENGTH} characters long"
-        )
-        raise ValueError(msg)
-    return normalized
 
 
 def _normalize_language_list(value: list[str]) -> list[str]:
@@ -30,7 +17,7 @@ def _normalize_language_list(value: list[str]) -> list[str]:
     normalized: list[str] = []
     seen: set[str] = set()
     for language in value:
-        candidate = _normalize_language(language)
+        candidate = normalize_language_code(language)
         if candidate not in seen:
             seen.add(candidate)
             normalized.append(candidate)
@@ -92,7 +79,7 @@ class InstitutionBase(BaseModel):
     @field_validator("default_language")
     @classmethod
     def normalize_default_language(cls, value: str) -> str:
-        return _normalize_language(value)
+        return normalize_language_code(value)
 
     @field_validator("supported_languages")
     @classmethod
@@ -111,7 +98,20 @@ class InstitutionCreate(InstitutionBase):
         return self
 
 
-class InstitutionUpdate(BaseModel):
+class InstitutionAdminUpdate(BaseModel):
+    """Payload for PATCH /institutions/{id}, used by an institutional
+    admin updating their own institution.
+
+    is_active is deliberately not a field here: an institutional admin
+    can lock themselves and everyone else out by deactivating their own
+    institution, with no recovery path through this endpoint. Activation
+    /deactivation is only possible through the bootstrap-only status
+    endpoint (see InstitutionStatusUpdate). extra="forbid" turns an
+    attempt to send is_active into a 422 instead of silently ignoring it.
+    """
+
+    model_config = ConfigDict(extra="forbid")
+
     # Todos os campos são opcionais para suportar atualizações parciais (PATCH);
     # a consistência entre default_language e supported_languages é validada
     # depois, ao nível do serviço, com base no estado final da entidade.
@@ -120,7 +120,6 @@ class InstitutionUpdate(BaseModel):
     domain: str | None = None
     default_language: str | None = None
     supported_languages: list[str] | None = None
-    is_active: bool | None = None
 
     @field_validator("name")
     @classmethod
@@ -169,7 +168,7 @@ class InstitutionUpdate(BaseModel):
     def normalize_default_language(cls, value: str | None) -> str | None:
         if value is None:
             return value
-        return _normalize_language(value)
+        return normalize_language_code(value)
 
     @field_validator("supported_languages")
     @classmethod
@@ -177,6 +176,16 @@ class InstitutionUpdate(BaseModel):
         if value is None:
             return value
         return _normalize_language_list(value)
+
+
+class InstitutionStatusUpdate(BaseModel):
+    """Payload for the bootstrap-only PATCH /bootstrap/institutions/{id}/status
+    endpoint. Deliberately limited to is_active — extra="forbid" means this
+    endpoint can never be used to sneak in other field changes."""
+
+    model_config = ConfigDict(extra="forbid")
+
+    is_active: bool
 
 
 class InstitutionRead(InstitutionBase):
