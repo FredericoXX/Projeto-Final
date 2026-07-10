@@ -3,10 +3,12 @@ import uuid
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import NotFoundError
+from app.core.exceptions import ConflictError, NotFoundError
+from app.core.language import resolve_language
 from app.models.conversation import Conversation
 from app.models.user import User
 from app.schemas.conversation import ConversationCreate, ConversationUpdate
+from app.services.institution_service import get_institution
 
 
 def create_conversation(
@@ -15,11 +17,18 @@ def create_conversation(
     user_id: uuid.UUID,
     data: ConversationCreate,
 ) -> Conversation:
+    institution = get_institution(db, institution_id)
+    language = resolve_language(
+        data.language,
+        supported_languages=institution.supported_languages,
+        fallback=institution.default_language,
+    )
+
     conversation = Conversation(
         institution_id=institution_id,
         user_id=user_id,
         title=data.title,
-        language=data.language,
+        language=language,
         status="active",
     )
     db.add(conversation)
@@ -88,6 +97,13 @@ def update_conversation(
     data: ConversationUpdate,
 ) -> Conversation:
     conversation = get_accessible_conversation(db, current_user, conversation_id)
+
+    # closed e archived são estados finais neste protótipo: uma vez lá,
+    # a conversa deixa de aceitar qualquer alteração (incluindo tentar
+    # voltar a "active" — não existe endpoint de reabertura nesta fase).
+    if conversation.status != "active":
+        msg = f"Conversation '{conversation_id}' is {conversation.status} and cannot be updated."
+        raise ConflictError(msg)
 
     changes = data.model_dump(exclude_unset=True)
     for field, value in changes.items():

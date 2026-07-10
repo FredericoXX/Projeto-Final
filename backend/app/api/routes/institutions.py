@@ -8,10 +8,10 @@ from app.api.dependencies.bootstrap import require_bootstrap_token
 from app.database.session import get_db
 from app.models.user import User
 from app.schemas.institution import (
+    InstitutionAdminUpdate,
     InstitutionCreate,
     InstitutionListResponse,
     InstitutionRead,
-    InstitutionUpdate,
 )
 from app.services import institution_service
 
@@ -74,7 +74,7 @@ def get_institution(
 @router.patch("/{institution_id}", response_model=InstitutionRead)
 def update_institution(
     institution_id: uuid.UUID,
-    payload: InstitutionUpdate,
+    payload: InstitutionAdminUpdate,
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin),
 ) -> InstitutionRead:

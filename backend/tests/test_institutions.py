@@ -248,3 +248,141 @@ def test_update_to_existing_code_returns_409(client: TestClient) -> None:
     )
     assert response.status_code == 409
     assert response.json()["detail"]["code"] == "resource_conflict"
+
+
+# --- Controlo do estado da instituição (is_active) ---------------------
+#
+# Um admin institucional nunca pode ativar/desativar a própria instituição
+# através de PATCH /institutions/{id}: perderia o acesso de imediato e não
+# haveria forma de recuperar pela API. InstitutionAdminUpdate não tem o
+# campo is_active e usa extra="forbid", por isso enviá-lo é um 422 (erro
+# de schema), não um 403 nem um "campo ignorado silenciosamente".
+
+
+def test_admin_cannot_send_is_active_on_institution_update(client: TestClient) -> None:
+    institution = _create_institution(client)
+    headers = _create_admin_and_login(client, institution["id"])
+
+    response = client.patch(
+        f"/api/v1/institutions/{institution['id']}",
+        json={"is_active": False},
+        headers=headers,
+    )
+    assert response.status_code == 422
+
+    # A instituição permanece ativa: o pedido foi rejeitado antes de
+    # qualquer alteração ser aplicada.
+    still_active = client.get(f"/api/v1/institutions/{institution['id']}", headers=headers)
+    assert still_active.json()["is_active"] is True
+
+
+def test_admin_cannot_send_is_active_alongside_other_fields(client: TestClient) -> None:
+    institution = _create_institution(client)
+    headers = _create_admin_and_login(client, institution["id"])
+
+    response = client.patch(
+        f"/api/v1/institutions/{institution['id']}",
+        json={"name": "New Name", "is_active": False},
+        headers=headers,
+    )
+    assert response.status_code == 422
+
+
+# --- Endpoint de bootstrap para o estado da instituição -----------------
+
+
+def test_bootstrap_status_endpoint_without_token_returns_401(client: TestClient) -> None:
+    institution = _create_institution(client)
+
+    response = client.patch(
+        f"/api/v1/bootstrap/institutions/{institution['id']}/status",
+        json={"is_active": False},
+    )
+    assert response.status_code == 401
+
+
+def test_bootstrap_status_endpoint_with_wrong_token_returns_401(client: TestClient) -> None:
+    institution = _create_institution(client)
+
+    response = client.patch(
+        f"/api/v1/bootstrap/institutions/{institution['id']}/status",
+        json={"is_active": False},
+        headers={"X-Bootstrap-Token": "wrong-token"},
+    )
+    assert response.status_code == 401
+
+
+def test_bootstrap_status_endpoint_can_deactivate(client: TestClient) -> None:
+    institution = _create_institution(client)
+
+    response = client.patch(
+        f"/api/v1/bootstrap/institutions/{institution['id']}/status",
+        json={"is_active": False},
+        headers=BOOTSTRAP_HEADERS,
+    )
+    assert response.status_code == 200
+    assert response.json()["is_active"] is False
+
+
+def test_bootstrap_status_endpoint_can_reactivate(client: TestClient) -> None:
+    institution = _create_institution(client)
+    client.patch(
+        f"/api/v1/bootstrap/institutions/{institution['id']}/status",
+        json={"is_active": False},
+        headers=BOOTSTRAP_HEADERS,
+    )
+
+    response = client.patch(
+        f"/api/v1/bootstrap/institutions/{institution['id']}/status",
+        json={"is_active": True},
+        headers=BOOTSTRAP_HEADERS,
+    )
+    assert response.status_code == 200
+    assert response.json()["is_active"] is True
+
+
+def test_bootstrap_status_endpoint_rejects_other_fields(client: TestClient) -> None:
+    institution = _create_institution(client)
+
+    response = client.patch(
+        f"/api/v1/bootstrap/institutions/{institution['id']}/status",
+        json={"is_active": True, "name": "Should not be allowed here"},
+        headers=BOOTSTRAP_HEADERS,
+    )
+    assert response.status_code == 422
+
+
+def test_admin_can_login_again_after_institution_is_reactivated(client: TestClient) -> None:
+    institution = _create_institution(client)
+    payload = {
+        "institution_id": institution["id"],
+        "full_name": "Admin User",
+        "email": f"admin-{uuid.uuid4().hex[:8]}@example.com",
+        "password": "supersecret123",
+    }
+    client.post(
+        "/api/v1/auth/register-initial-admin", json=payload, headers=BOOTSTRAP_HEADERS
+    )
+
+    client.patch(
+        f"/api/v1/bootstrap/institutions/{institution['id']}/status",
+        json={"is_active": False},
+        headers=BOOTSTRAP_HEADERS,
+    )
+    locked_out = client.post(
+        "/api/v1/auth/login",
+        json={"email": payload["email"], "password": payload["password"]},
+    )
+    assert locked_out.status_code == 401
+
+    client.patch(
+        f"/api/v1/bootstrap/institutions/{institution['id']}/status",
+        json={"is_active": True},
+        headers=BOOTSTRAP_HEADERS,
+    )
+    recovered = client.post(
+        "/api/v1/auth/login",
+        json={"email": payload["email"], "password": payload["password"]},
+    )
+    assert recovered.status_code == 200
+    assert recovered.json()["access_token"]

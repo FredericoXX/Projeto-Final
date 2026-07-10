@@ -6,7 +6,7 @@ PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
 class Settings(BaseSettings):
-    app_name: str = "Agentic RAG Assistant"
+    app_name: str = "Agentic Institutional Assistant"
     environment: str = "development"
     database_url: str
     test_database_url: str | None = None

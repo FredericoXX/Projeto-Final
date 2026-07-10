@@ -29,6 +29,15 @@ def register_initial_admin(db: Session, data: RegisterInitialAdminRequest) -> Us
         msg = f"Institution '{data.institution_id}' not found."
         raise NotFoundError(msg)
 
+    # Uma instituição inativa nunca deve ganhar o seu primeiro admin: esse
+    # admin nunca conseguiria iniciar sessão (authenticate_user também
+    # verifica institution.is_active), por isso é melhor rejeitar aqui do
+    # que criar uma conta inutilizável. 409 porque é um conflito de estado,
+    # não um erro de validação do payload em si.
+    if not institution.is_active:
+        msg = f"Institution '{data.institution_id}' is not active."
+        raise ConflictError(msg)
+
     # Só é permitido um admin inicial por instituição; admins adicionais
     # devem ser criados por um admin já autenticado através de POST /users.
     existing_admin = db.scalar(
