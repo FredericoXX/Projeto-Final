@@ -15,6 +15,12 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
 
+    # Bootstrap-only secret that gates POST /institutions and
+    # register-initial-admin until a real platform_admin role exists.
+    # None (the default) disables both endpoints rather than leaving them
+    # open, so an unset token fails closed in any environment.
+    bootstrap_token: str | None = None
+
     model_config = SettingsConfigDict(
         env_file=PROJECT_ROOT / ".env",
         env_file_encoding="utf-8",
@@ -35,4 +41,7 @@ class Settings(BaseSettings):
         return f"{base}/{db_name}_test"
 
 
-settings = Settings()
+# pydantic-settings fills required fields (database_url, jwt_secret_key)
+# from the environment/.env at runtime; mypy only sees BaseSettings'
+# generated __init__ and can't verify that, so it flags them as missing.
+settings = Settings()  # type: ignore[call-arg]

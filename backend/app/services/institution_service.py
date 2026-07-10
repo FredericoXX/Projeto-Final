@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.exceptions import ConflictError, NotFoundError, ValidationError
 from app.models.institution import Institution
+from app.models.user import User
 from app.schemas.institution import InstitutionCreate, InstitutionUpdate
 
 CODE_UNIQUE_CONSTRAINT = "uq_institutions_code"
@@ -79,27 +80,39 @@ def get_institution(db: Session, institution_id: uuid.UUID) -> Institution:
     return institution
 
 
-def list_institutions(
+def get_institution_for_admin(
     db: Session,
+    admin: User,
+    institution_id: uuid.UUID,
+) -> Institution:
+    """An institutional admin may only ever see their own institution. Any
+    other id is reported as 404, exactly like a non-existent institution,
+    so this endpoint never confirms that another tenant exists."""
+    if institution_id != admin.institution_id:
+        msg = f"Institution '{institution_id}' not found."
+        raise NotFoundError(msg)
+    return get_institution(db, institution_id)
+
+
+def list_institutions_for_admin(
+    db: Session,
+    admin: User,
     *,
-    is_active: bool | None = None,
     limit: int = 20,
     offset: int = 0,
 ) -> tuple[list[Institution], int]:
-    query = select(Institution)
-    count_query = select(func.count()).select_from(Institution)
-
-    if is_active is not None:
-        query = query.where(Institution.is_active == is_active)
-        count_query = count_query.where(Institution.is_active == is_active)
+    # Scoped to the admin's own institution only: there is no
+    # platform_admin role yet able to browse across tenants.
+    query = select(Institution).where(Institution.id == admin.institution_id)
+    count_query = (
+        select(func.count())
+        .select_from(Institution)
+        .where(Institution.id == admin.institution_id)
+    )
 
     total = db.scalar(count_query) or 0
     items = list(
-        db.scalars(
-            query.order_by(Institution.created_at.desc(), Institution.id.desc())
-            .limit(limit)
-            .offset(offset)
-        ).all()
+        db.scalars(query.order_by(Institution.created_at.desc()).limit(limit).offset(offset)).all()
     )
     return items, total
 
@@ -152,3 +165,17 @@ def update_institution(
         raise
     db.refresh(institution)
     return institution
+
+
+def update_institution_for_admin(
+    db: Session,
+    admin: User,
+    institution_id: uuid.UUID,
+    data: InstitutionUpdate,
+) -> Institution:
+    """Same 404-not-403 isolation as get_institution_for_admin: an admin
+    can only ever update their own institution."""
+    if institution_id != admin.institution_id:
+        msg = f"Institution '{institution_id}' not found."
+        raise NotFoundError(msg)
+    return update_institution(db, institution_id, data)

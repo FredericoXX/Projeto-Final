@@ -10,8 +10,12 @@ import uuid
 
 from fastapi.testclient import TestClient
 
+from app.core.config import settings
+
 _ADMIN_PASSWORD = "supersecret123"
 _USER_PASSWORD = "anothersecret123"
+
+BOOTSTRAP_HEADERS = {"X-Bootstrap-Token": settings.bootstrap_token or ""}
 
 
 def _institution_payload(**overrides: object) -> dict:
@@ -26,7 +30,9 @@ def _institution_payload(**overrides: object) -> dict:
 
 
 def _create_institution(client: TestClient) -> str:
-    response = client.post("/api/v1/institutions", json=_institution_payload())
+    response = client.post(
+        "/api/v1/institutions", json=_institution_payload(), headers=BOOTSTRAP_HEADERS
+    )
     assert response.status_code == 201
     return response.json()["id"]
 
@@ -39,7 +45,9 @@ def _create_admin_and_login(client: TestClient, institution_id: str) -> dict[str
         "email": f"admin-{uuid.uuid4().hex[:8]}@example.com",
         "password": _ADMIN_PASSWORD,
     }
-    response = client.post("/api/v1/auth/register-initial-admin", json=payload)
+    response = client.post(
+        "/api/v1/auth/register-initial-admin", json=payload, headers=BOOTSTRAP_HEADERS
+    )
     assert response.status_code == 201
 
     login = client.post(
@@ -324,3 +332,22 @@ def test_list_messages_ordered_by_created_at_ascending(client: TestClient) -> No
     body = response.json()
     assert body["total"] == 3
     assert [item["content"] for item in body["items"]] == ["first", "second", "third"]
+
+
+def test_create_conversation_fails_when_institution_is_inactive(client: TestClient) -> None:
+    institution_id = _create_institution(client)
+    admin_headers = _create_admin_and_login(client, institution_id)
+
+    deactivate = client.patch(
+        f"/api/v1/institutions/{institution_id}",
+        json={"is_active": False},
+        headers=admin_headers,
+    )
+    assert deactivate.status_code == 200
+
+    response = client.post(
+        "/api/v1/conversations",
+        json={"title": "Should not be created"},
+        headers=admin_headers,
+    )
+    assert response.status_code == 401

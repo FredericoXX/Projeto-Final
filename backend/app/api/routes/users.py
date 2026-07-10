@@ -58,5 +58,5 @@ def update_user(
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin),
 ) -> UserRead:
-    user = user_service.update_user(db, admin.institution_id, user_id, payload)
+    user = user_service.update_user(db, admin, user_id, payload)
     return UserRead.model_validate(user)

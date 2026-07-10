@@ -7,6 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.exceptions import AuthenticationError, AuthorizationError
 from app.core.security import decode_access_token
 from app.database.session import get_db
+from app.models.institution import Institution
 from app.models.user import User
 
 # auto_error=False: controlamos nós próprios o formato da resposta 401
@@ -32,6 +33,13 @@ def get_current_user(
     # revalidado na base de dados, incluindo o seu estado is_active atual.
     user = db.get(User, user_id)
     if user is None or not user.is_active:
+        raise AuthenticationError("Invalid authentication token.")
+
+    # Um token continua criptograficamente válido mesmo que a instituição
+    # do utilizador tenha sido entretanto desativada; é preciso revalidar
+    # isso aqui para que esse acesso deixe de funcionar de imediato.
+    institution = db.get(Institution, user.institution_id)
+    if institution is None or not institution.is_active:
         raise AuthenticationError("Invalid authentication token.")
 
     return user

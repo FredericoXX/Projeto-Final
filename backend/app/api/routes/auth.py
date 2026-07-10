@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, status
 from sqlalchemy.orm import Session
 
 from app.api.dependencies.auth import get_current_user
+from app.api.dependencies.bootstrap import require_bootstrap_token
 from app.database.session import get_db
 from app.models.user import User
 from app.schemas.auth import LoginRequest, RegisterInitialAdminRequest, TokenResponse
@@ -19,6 +20,10 @@ router = APIRouter(prefix="/auth", tags=["Authentication"])
     "/register-initial-admin",
     response_model=UserRead,
     status_code=status.HTTP_201_CREATED,
+    # Criar o primeiro admin de uma instituição é, tal como criar a própria
+    # instituição, uma operação de bootstrap sensível: ainda não há nenhum
+    # admin autenticado que a possa autorizar.
+    dependencies=[Depends(require_bootstrap_token)],
 )
 def register_initial_admin(
     payload: RegisterInitialAdminRequest,

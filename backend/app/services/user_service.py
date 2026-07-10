@@ -4,7 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import ConflictError, NotFoundError
+from app.core.exceptions import AuthorizationError, ConflictError, NotFoundError
 from app.core.security import hash_password
 from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate
@@ -85,12 +85,29 @@ def list_users(
     return items, total
 
 
+def _count_other_active_admins(db: Session, institution_id: uuid.UUID, user_id: uuid.UUID) -> int:
+    return (
+        db.scalar(
+            select(func.count())
+            .select_from(User)
+            .where(
+                User.institution_id == institution_id,
+                User.role == "admin",
+                User.is_active.is_(True),
+                User.id != user_id,
+            )
+        )
+        or 0
+    )
+
+
 def update_user(
     db: Session,
-    institution_id: uuid.UUID,
+    acting_admin: User,
     user_id: uuid.UUID,
     data: UserUpdate,
 ) -> User:
+    institution_id = acting_admin.institution_id
     user = get_user(db, institution_id, user_id)
 
     changes = data.model_dump(exclude_unset=True)
@@ -100,6 +117,19 @@ def update_user(
         existing = db.scalar(select(User).where(User.email == new_email, User.id != user_id))
         if existing is not None:
             msg = f"A user with email '{new_email}' already exists."
+            raise ConflictError(msg)
+
+    deactivating = changes.get("is_active") is False
+    if deactivating and user.id == acting_admin.id:
+        msg = "An admin cannot deactivate their own account."
+        raise AuthorizationError(msg)
+
+    demoting_from_admin = user.role == "admin" and changes.get("role", "admin") != "admin"
+    if user.role == "admin" and (deactivating or demoting_from_admin):
+        # Só pode desativar/despromover este admin se sobrar pelo menos
+        # mais um admin ativo na instituição depois da alteração.
+        if _count_other_active_admins(db, institution_id, user_id) == 0:
+            msg = "The institution must keep at least one active admin."
             raise ConflictError(msg)
 
     for field, value in changes.items():

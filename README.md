@@ -22,7 +22,9 @@ Copy-Item .env.example .env
 ```
 
 Edit `.env` with your local values. `DATABASE_URL` must match the
-`POSTGRES_*` values below and the `POSTGRES_HOST_PORT` you expose.
+`POSTGRES_*` values below and the `POSTGRES_HOST_PORT` you expose. Also set
+`BOOTSTRAP_TOKEN` to a long random value — see
+[Bootstrapping an institution](#bootstrapping-an-institution) below.
 
 ### 2. Start PostgreSQL (Docker Compose)
 
@@ -93,9 +95,63 @@ From `backend/` (venv active):
 ruff check .
 ```
 
+## Bootstrapping an institution
+
+There is no `platform_admin` role yet, so creating an institution and
+registering its first admin are not open endpoints — they are gated by a
+shared secret, `BOOTSTRAP_TOKEN` (set in `.env`), sent as the
+`X-Bootstrap-Token` header. This is a temporary, explicit stand-in for
+platform-level administration, meant only for local/dev bootstrapping.
+Everything after the first admin uses normal JWT authentication.
+
+1. Create the institution (requires `X-Bootstrap-Token`):
+
+   ```
+   POST /api/v1/institutions
+   X-Bootstrap-Token: <your BOOTSTRAP_TOKEN>
+
+   {
+     "name": "Example University",
+     "code": "EXU",
+     "default_language": "pt",
+     "supported_languages": ["pt", "en"]
+   }
+   ```
+
+2. Register that institution's first admin (also requires
+   `X-Bootstrap-Token`; a second call for the same institution fails with
+   409, since only one admin can be registered through this endpoint —
+   additional admins are created by an authenticated admin via
+   `POST /api/v1/users`):
+
+   ```
+   POST /api/v1/auth/register-initial-admin
+   X-Bootstrap-Token: <your BOOTSTRAP_TOKEN>
+
+   {
+     "institution_id": "<id from step 1>",
+     "full_name": "Admin User",
+     "email": "admin@example.com",
+     "password": "..."
+   }
+   ```
+
+3. Log in to get a bearer token:
+
+   ```
+   POST /api/v1/auth/login
+   { "email": "admin@example.com", "password": "..." }
+   ```
+
+4. Use `Authorization: Bearer <token>` for every other endpoint
+   (`/api/v1/users`, `/api/v1/conversations`, and `GET`/`PATCH`
+   `/api/v1/institutions/{id}`). An admin can only ever read or update
+   their own institution — another `institution_id` is reported as 404,
+   not 403, so the existence of other tenants is never revealed.
+
 ## Project status
 
-See [`docs/database.md`](docs/database.md) for the migration history. The
-next block implemented on this branch is `conversations` and `messages`:
-persistence and API for assistant sessions and their messages, scoped to
-the authenticated user's institution.
+See [`docs/database.md`](docs/database.md) for the migration history and
+the current institutional security rules. `institutions`, `users`,
+`auth` and `conversations`/`messages` all have a full API; no RAG,
+embeddings, retrieval or agent behavior is implemented yet.
