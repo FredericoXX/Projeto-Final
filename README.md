@@ -95,5 +95,7 @@ ruff check .
 
 ## Project status
 
-See [`docs/database.md`](docs/database.md) for the migration history and the
-plan for the upcoming `users` migration (Block 2).
+See [`docs/database.md`](docs/database.md) for the migration history. The
+next block implemented on this branch is `conversations` and `messages`:
+persistence and API for assistant sessions and their messages, scoped to
+the authenticated user's institution.

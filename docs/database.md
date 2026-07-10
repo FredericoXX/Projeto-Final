@@ -30,9 +30,18 @@ The `users` table (as created by `9cf6ff5ac49c`) has:
 `email` uniqueness remains global (not scoped per institution) — that is
 unchanged from the original design and was not revisited in this pass.
 
+The `institutions` and `users` tables already have a full API on top of
+them: institution management endpoints, a user management API scoped to
+the authenticated admin's institution, and JWT + Argon2 based
+authentication (login and initial-admin registration). See
+[`app/api/routes/institutions.py`](../backend/app/api/routes/institutions.py),
+[`app/api/routes/users.py`](../backend/app/api/routes/users.py) and
+[`app/api/routes/auth.py`](../backend/app/api/routes/auth.py).
+
 ## Current status
 
-The base `users` schema is now prepared for the multi-institution model.
-There is no User API and no authentication implemented yet. The next work
-is to build the schemas, services, administrative endpoints, and
-authentication on top of this schema.
+The next block built on top of this schema is `conversations` and
+`messages`: a conversation belongs to one institution and one user, and
+groups the messages exchanged in an assistant session. This phase only
+covers persistence and CRUD-style endpoints — no RAG, embeddings,
+retrieval or LLM generation is implemented yet.

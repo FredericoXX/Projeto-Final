@@ -36,6 +36,30 @@ EXPECTED_USER_COLUMNS = {
     "updated_at",
 }
 
+EXPECTED_CONVERSATION_COLUMNS = {
+    "id",
+    "institution_id",
+    "user_id",
+    "title",
+    "language",
+    "status",
+    "metadata",
+    "created_at",
+    "updated_at",
+}
+
+EXPECTED_MESSAGE_COLUMNS = {
+    "id",
+    "conversation_id",
+    "institution_id",
+    "user_id",
+    "role",
+    "content",
+    "language",
+    "metadata",
+    "created_at",
+}
+
 
 @pytest.fixture
 def migrations_database_url() -> Iterator[str]:
@@ -76,7 +100,7 @@ def test_alembic_upgrade_head_creates_expected_schema(
     try:
         inspector = inspect(engine)
         table_names = set(inspector.get_table_names())
-        assert {"users", "institutions"} <= table_names
+        assert {"users", "institutions", "conversations", "messages"} <= table_names
 
         user_columns = {column["name"] for column in inspector.get_columns("users")}
         assert EXPECTED_USER_COLUMNS <= user_columns
@@ -90,6 +114,51 @@ def test_alembic_upgrade_head_creates_expected_schema(
 
         indexes = inspector.get_indexes("users")
         assert any(index["column_names"] == ["institution_id"] for index in indexes)
+
+        conversation_columns = {
+            column["name"] for column in inspector.get_columns("conversations")
+        }
+        assert EXPECTED_CONVERSATION_COLUMNS <= conversation_columns
+
+        conversation_fks = inspector.get_foreign_keys("conversations")
+        assert any(
+            fk["referred_table"] == "institutions"
+            and fk["constrained_columns"] == ["institution_id"]
+            for fk in conversation_fks
+        )
+        assert any(
+            fk["referred_table"] == "users" and fk["constrained_columns"] == ["user_id"]
+            for fk in conversation_fks
+        )
+
+        conversation_indexes = inspector.get_indexes("conversations")
+        assert any(
+            index["column_names"] == ["institution_id"] for index in conversation_indexes
+        )
+        assert any(index["column_names"] == ["user_id"] for index in conversation_indexes)
+
+        message_columns = {column["name"] for column in inspector.get_columns("messages")}
+        assert EXPECTED_MESSAGE_COLUMNS <= message_columns
+
+        message_fks = inspector.get_foreign_keys("messages")
+        assert any(
+            fk["referred_table"] == "conversations"
+            and fk["constrained_columns"] == ["conversation_id"]
+            for fk in message_fks
+        )
+        assert any(
+            fk["referred_table"] == "institutions"
+            and fk["constrained_columns"] == ["institution_id"]
+            for fk in message_fks
+        )
+        assert any(
+            fk["referred_table"] == "users" and fk["constrained_columns"] == ["user_id"]
+            for fk in message_fks
+        )
+
+        message_indexes = inspector.get_indexes("messages")
+        assert any(index["column_names"] == ["conversation_id"] for index in message_indexes)
+        assert any(index["column_names"] == ["institution_id"] for index in message_indexes)
 
         with engine.connect() as conn:
             vector_extension = conn.execute(
