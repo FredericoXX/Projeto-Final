@@ -27,7 +27,9 @@ from app.main import app
 
 # Import every model module so its table is registered on Base.metadata
 # before create_all runs.
+from app.models import conversation as _conversation  # noqa: F401
 from app.models import institution as _institution  # noqa: F401
+from app.models import message as _message  # noqa: F401
 from app.models import user as _user  # noqa: F401
 
 

@@ -9,6 +9,10 @@ import uuid
 
 from fastapi.testclient import TestClient
 
+from app.core.config import settings
+
+BOOTSTRAP_HEADERS = {"X-Bootstrap-Token": settings.bootstrap_token or ""}
+
 
 def _institution_payload(**overrides: object) -> dict:
     payload: dict = {
@@ -21,8 +25,10 @@ def _institution_payload(**overrides: object) -> dict:
     return payload
 
 
-def _create_institution(client: TestClient) -> str:
-    response = client.post("/api/v1/institutions", json=_institution_payload())
+def _create_institution(client: TestClient, **overrides: object) -> str:
+    response = client.post(
+        "/api/v1/institutions", json=_institution_payload(**overrides), headers=BOOTSTRAP_HEADERS
+    )
     assert response.status_code == 201
     return response.json()["id"]
 
@@ -38,11 +44,21 @@ def _register_admin_payload(institution_id: str, **overrides: object) -> dict:
     return payload
 
 
-def test_register_initial_admin_creates_admin(client: TestClient) -> None:
+def test_register_initial_admin_without_bootstrap_token_returns_401(client: TestClient) -> None:
     institution_id = _create_institution(client)
     payload = _register_admin_payload(institution_id)
 
     response = client.post("/api/v1/auth/register-initial-admin", json=payload)
+    assert response.status_code == 401
+
+
+def test_register_initial_admin_creates_admin(client: TestClient) -> None:
+    institution_id = _create_institution(client)
+    payload = _register_admin_payload(institution_id)
+
+    response = client.post(
+        "/api/v1/auth/register-initial-admin", json=payload, headers=BOOTSTRAP_HEADERS
+    )
     assert response.status_code == 201
 
     body = response.json()
@@ -56,7 +72,9 @@ def test_register_initial_admin_creates_admin(client: TestClient) -> None:
 def test_register_initial_admin_fails_if_institution_not_found(client: TestClient) -> None:
     payload = _register_admin_payload(str(uuid.uuid4()))
 
-    response = client.post("/api/v1/auth/register-initial-admin", json=payload)
+    response = client.post(
+        "/api/v1/auth/register-initial-admin", json=payload, headers=BOOTSTRAP_HEADERS
+    )
     assert response.status_code == 404
 
 
@@ -67,20 +85,57 @@ def test_register_initial_admin_fails_if_institution_already_has_admin(
     first = client.post(
         "/api/v1/auth/register-initial-admin",
         json=_register_admin_payload(institution_id),
+        headers=BOOTSTRAP_HEADERS,
     )
     assert first.status_code == 201
 
     second = client.post(
         "/api/v1/auth/register-initial-admin",
         json=_register_admin_payload(institution_id),
+        headers=BOOTSTRAP_HEADERS,
     )
     assert second.status_code == 409
+
+
+def test_register_initial_admin_concurrent_requests_create_only_one_admin(
+    client: TestClient,
+) -> None:
+    """The row lock (SELECT ... FOR UPDATE) taken on the institution inside
+    register_initial_admin serializes concurrent registrations for the
+    same institution, so only one of two racing requests can succeed."""
+    import threading
+
+    institution_id = _create_institution(client)
+    results: list[int] = []
+    lock = threading.Lock()
+
+    def register(index: int) -> None:
+        response = client.post(
+            "/api/v1/auth/register-initial-admin",
+            json=_register_admin_payload(
+                institution_id, email=f"racer-{index}-{uuid.uuid4().hex[:8]}@example.com"
+            ),
+            headers=BOOTSTRAP_HEADERS,
+        )
+        with lock:
+            results.append(response.status_code)
+
+    threads = [threading.Thread(target=register, args=(i,)) for i in range(5)]
+    for thread in threads:
+        thread.start()
+    for thread in threads:
+        thread.join()
+
+    assert results.count(201) == 1
+    assert results.count(409) == len(results) - 1
 
 
 def test_login_with_valid_credentials_returns_token(client: TestClient) -> None:
     institution_id = _create_institution(client)
     payload = _register_admin_payload(institution_id)
-    client.post("/api/v1/auth/register-initial-admin", json=payload)
+    client.post(
+        "/api/v1/auth/register-initial-admin", json=payload, headers=BOOTSTRAP_HEADERS
+    )
 
     response = client.post(
         "/api/v1/auth/login",
@@ -96,7 +151,9 @@ def test_login_with_valid_credentials_returns_token(client: TestClient) -> None:
 def test_login_with_wrong_password_returns_401(client: TestClient) -> None:
     institution_id = _create_institution(client)
     payload = _register_admin_payload(institution_id)
-    client.post("/api/v1/auth/register-initial-admin", json=payload)
+    client.post(
+        "/api/v1/auth/register-initial-admin", json=payload, headers=BOOTSTRAP_HEADERS
+    )
 
     response = client.post(
         "/api/v1/auth/login",
@@ -125,7 +182,9 @@ def test_login_with_unknown_email_returns_401_without_revealing_detail(
 def test_me_returns_authenticated_user(client: TestClient) -> None:
     institution_id = _create_institution(client)
     payload = _register_admin_payload(institution_id)
-    client.post("/api/v1/auth/register-initial-admin", json=payload)
+    client.post(
+        "/api/v1/auth/register-initial-admin", json=payload, headers=BOOTSTRAP_HEADERS
+    )
 
     login_response = client.post(
         "/api/v1/auth/login",
@@ -149,7 +208,9 @@ def test_me_without_token_returns_401(client: TestClient) -> None:
 def test_inactive_user_cannot_login_or_use_me(client: TestClient) -> None:
     institution_id = _create_institution(client)
     payload = _register_admin_payload(institution_id)
-    register_response = client.post("/api/v1/auth/register-initial-admin", json=payload)
+    register_response = client.post(
+        "/api/v1/auth/register-initial-admin", json=payload, headers=BOOTSTRAP_HEADERS
+    )
     admin_id = register_response.json()["id"]
 
     login_response = client.post(
@@ -159,18 +220,95 @@ def test_inactive_user_cannot_login_or_use_me(client: TestClient) -> None:
     token = login_response.json()["access_token"]
     headers = {"Authorization": f"Bearer {token}"}
 
+    # Um segundo admin é necessário: o próprio admin já não se pode
+    # desativar (ver test_users.py), por isso é outro admin ativo que o
+    # faz. register-initial-admin só cria o primeiro admin de uma
+    # instituição, por isso o segundo é criado via POST /users.
+    second_admin_email = f"second-admin-{uuid.uuid4().hex[:8]}@example.com"
+    client.post(
+        "/api/v1/users",
+        json={
+            "full_name": "Second Admin",
+            "email": second_admin_email,
+            "password": "anothersecret123",
+            "role": "admin",
+        },
+        headers=headers,
+    )
+    second_login = client.post(
+        "/api/v1/auth/login",
+        json={"email": second_admin_email, "password": "anothersecret123"},
+    )
+    second_admin_headers = {
+        "Authorization": f"Bearer {second_login.json()['access_token']}"
+    }
+
     deactivate_response = client.patch(
         f"/api/v1/users/{admin_id}",
         json={"is_active": False},
-        headers=headers,
+        headers=second_admin_headers,
     )
     assert deactivate_response.status_code == 200
 
-    second_login = client.post(
+    second_login_attempt = client.post(
         "/api/v1/auth/login",
         json={"email": payload["email"], "password": payload["password"]},
     )
-    assert second_login.status_code == 401
+    assert second_login_attempt.status_code == 401
 
     me_response = client.get("/api/v1/auth/me", headers=headers)
     assert me_response.status_code == 401
+
+
+def _login_headers(client: TestClient, payload: dict) -> dict[str, str]:
+    login = client.post(
+        "/api/v1/auth/login",
+        json={"email": payload["email"], "password": payload["password"]},
+    )
+    assert login.status_code == 200
+    return {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+
+def test_login_fails_when_institution_is_inactive(client: TestClient) -> None:
+    institution_id = _create_institution(client)
+    payload = _register_admin_payload(institution_id)
+    client.post(
+        "/api/v1/auth/register-initial-admin", json=payload, headers=BOOTSTRAP_HEADERS
+    )
+    headers = _login_headers(client, payload)
+
+    deactivate = client.patch(
+        f"/api/v1/institutions/{institution_id}",
+        json={"is_active": False},
+        headers=headers,
+    )
+    assert deactivate.status_code == 200
+
+    response = client.post(
+        "/api/v1/auth/login",
+        json={"email": payload["email"], "password": payload["password"]},
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"]["code"] == "authentication_failed"
+
+
+def test_me_fails_when_institution_is_inactive(client: TestClient) -> None:
+    institution_id = _create_institution(client)
+    payload = _register_admin_payload(institution_id)
+    client.post(
+        "/api/v1/auth/register-initial-admin", json=payload, headers=BOOTSTRAP_HEADERS
+    )
+    headers = _login_headers(client, payload)
+
+    still_works = client.get("/api/v1/auth/me", headers=headers)
+    assert still_works.status_code == 200
+
+    deactivate = client.patch(
+        f"/api/v1/institutions/{institution_id}",
+        json={"is_active": False},
+        headers=headers,
+    )
+    assert deactivate.status_code == 200
+
+    response = client.get("/api/v1/auth/me", headers=headers)
+    assert response.status_code == 401

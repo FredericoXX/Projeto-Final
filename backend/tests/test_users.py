@@ -10,7 +10,12 @@ import uuid
 
 from fastapi.testclient import TestClient
 
+from app.core.config import settings
+
 _USER_PASSWORD = "anothersecret123"
+_ADMIN_PASSWORD = "supersecret123"
+
+BOOTSTRAP_HEADERS = {"X-Bootstrap-Token": settings.bootstrap_token or ""}
 
 
 def _institution_payload(**overrides: object) -> dict:
@@ -25,29 +30,60 @@ def _institution_payload(**overrides: object) -> dict:
 
 
 def _create_institution(client: TestClient) -> str:
-    response = client.post("/api/v1/institutions", json=_institution_payload())
+    response = client.post(
+        "/api/v1/institutions", json=_institution_payload(), headers=BOOTSTRAP_HEADERS
+    )
     assert response.status_code == 201
     return response.json()["id"]
 
 
-def _create_admin_and_login(client: TestClient, institution_id: str) -> dict[str, str]:
-    """Registers the institution's initial admin and returns auth headers for it."""
-    payload = {
+def _register_admin(client: TestClient, institution_id: str, **overrides: object) -> dict:
+    """Registers an admin for the institution and returns the created user body."""
+    payload: dict = {
         "institution_id": institution_id,
         "full_name": "Admin User",
         "email": f"admin-{uuid.uuid4().hex[:8]}@example.com",
-        "password": "supersecret123",
+        "password": _ADMIN_PASSWORD,
     }
-    response = client.post("/api/v1/auth/register-initial-admin", json=payload)
-    assert response.status_code == 201
-
-    login = client.post(
-        "/api/v1/auth/login",
-        json={"email": payload["email"], "password": payload["password"]},
+    payload.update(overrides)
+    response = client.post(
+        "/api/v1/auth/register-initial-admin", json=payload, headers=BOOTSTRAP_HEADERS
     )
+    assert response.status_code == 201
+    return {**response.json(), "email": payload["email"], "password": payload["password"]}
+
+
+def _login(client: TestClient, email: str, password: str) -> dict[str, str]:
+    login = client.post("/api/v1/auth/login", json={"email": email, "password": password})
     assert login.status_code == 200
     token = login.json()["access_token"]
     return {"Authorization": f"Bearer {token}"}
+
+
+def _create_admin_and_login(client: TestClient, institution_id: str) -> dict[str, str]:
+    """Registers the institution's initial admin and returns auth headers for it."""
+    admin = _register_admin(client, institution_id)
+    return _login(client, admin["email"], admin["password"])
+
+
+def _create_second_admin_and_login(
+    client: TestClient, institution_id: str, admin_headers: dict[str, str]
+) -> tuple[dict, dict[str, str]]:
+    """Creates a second admin (via POST /users, as an already-authenticated
+    admin) and returns its user body and auth headers."""
+    email = f"second-admin-{uuid.uuid4().hex[:8]}@example.com"
+    created = client.post(
+        "/api/v1/users",
+        json={
+            "full_name": "Second Admin",
+            "email": email,
+            "password": _ADMIN_PASSWORD,
+            "role": "admin",
+        },
+        headers=admin_headers,
+    )
+    assert created.status_code == 201
+    return created.json(), _login(client, email, _ADMIN_PASSWORD)
 
 
 def _user_payload(**overrides: object) -> dict:
@@ -199,3 +235,52 @@ def test_update_user_within_own_institution(client: TestClient) -> None:
     body = response.json()
     assert body["full_name"] == "Updated Name"
     assert body["role"] == "staff"
+
+
+def test_admin_cannot_deactivate_own_account(client: TestClient) -> None:
+    """Only an active admin can authenticate at all, so when an institution
+    has a single active admin, any deactivation attempt on that admin is
+    necessarily a self-deactivation attempt: this is the reachable form of
+    both "an admin cannot deactivate itself" and "the last active admin
+    cannot be deactivated"."""
+    institution_id = _create_institution(client)
+    admin = _register_admin(client, institution_id)
+    headers = _login(client, admin["email"], admin["password"])
+
+    response = client.patch(
+        f"/api/v1/users/{admin['id']}",
+        json={"is_active": False},
+        headers=headers,
+    )
+    assert response.status_code == 403
+
+
+def test_last_active_admin_role_cannot_be_changed(client: TestClient) -> None:
+    institution_id = _create_institution(client)
+    admin = _register_admin(client, institution_id)
+    headers = _login(client, admin["email"], admin["password"])
+
+    response = client.patch(
+        f"/api/v1/users/{admin['id']}",
+        json={"role": "staff"},
+        headers=headers,
+    )
+    assert response.status_code == 409
+    assert response.json()["detail"]["code"] == "resource_conflict"
+
+
+def test_admin_can_deactivate_other_admin_when_two_are_active(client: TestClient) -> None:
+    institution_id = _create_institution(client)
+    admin = _register_admin(client, institution_id)
+    headers = _login(client, admin["email"], admin["password"])
+    second_admin, _second_headers = _create_second_admin_and_login(
+        client, institution_id, headers
+    )
+
+    response = client.patch(
+        f"/api/v1/users/{second_admin['id']}",
+        json={"is_active": False},
+        headers=headers,
+    )
+    assert response.status_code == 200
+    assert response.json()["is_active"] is False

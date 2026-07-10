@@ -47,9 +47,18 @@ async def authorization_error_handler(request: Request, exc: AuthorizationError)
 
 # Ponto único de registo: qualquer novo tipo de DomainError só precisa de
 # um handler aqui para ganhar uma resposta HTTP consistente em toda a API.
+#
+# Starlette tipa add_exception_handler para um handler genérico de
+# Exception; passar-lhe um handler tipado para uma subclasse concreta
+# (NotFoundError, etc.) é seguro em runtime, mas o mypy não consegue
+# verificar essa covariância, daí os ignores pontuais abaixo.
 def register_error_handlers(app: FastAPI) -> None:
-    app.add_exception_handler(NotFoundError, not_found_error_handler)
-    app.add_exception_handler(ConflictError, conflict_error_handler)
-    app.add_exception_handler(ValidationError, validation_error_handler)
-    app.add_exception_handler(AuthenticationError, authentication_error_handler)
-    app.add_exception_handler(AuthorizationError, authorization_error_handler)
+    app.add_exception_handler(NotFoundError, not_found_error_handler)  # type: ignore[arg-type]
+    app.add_exception_handler(ConflictError, conflict_error_handler)  # type: ignore[arg-type]
+    app.add_exception_handler(ValidationError, validation_error_handler)  # type: ignore[arg-type]
+    app.add_exception_handler(
+        AuthenticationError, authentication_error_handler  # type: ignore[arg-type]
+    )
+    app.add_exception_handler(
+        AuthorizationError, authorization_error_handler  # type: ignore[arg-type]
+    )

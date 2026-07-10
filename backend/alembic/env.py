@@ -5,7 +5,9 @@ from sqlalchemy import engine_from_config, pool
 from alembic import context
 from app.core.config import settings
 from app.database.base import Base
+from app.models.conversation import Conversation  # noqa: F401
 from app.models.institution import Institution  # noqa: F401
+from app.models.message import Message  # noqa: F401
 from app.models.user import User  # noqa: F401
 
 # this is the Alembic Config object, which provides

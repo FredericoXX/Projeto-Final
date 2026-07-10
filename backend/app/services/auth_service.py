@@ -2,11 +2,11 @@ from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import AuthenticationError, ConflictError
+from app.core.exceptions import AuthenticationError, ConflictError, NotFoundError
 from app.core.security import create_access_token, hash_password, verify_password
+from app.models.institution import Institution
 from app.models.user import User
 from app.schemas.auth import RegisterInitialAdminRequest
-from app.services.institution_service import get_institution
 from app.services.user_service import EMAIL_UNIQUE_INDEX, get_constraint_name
 
 GENERIC_LOGIN_ERROR = "Invalid email or password."
@@ -17,9 +17,17 @@ _DUMMY_PASSWORD_HASH = hash_password("dummy-password-for-timing-safety")
 
 
 def register_initial_admin(db: Session, data: RegisterInitialAdminRequest) -> User:
-    # A instituição tem de já existir: este endpoint nunca cria instituições,
-    # apenas o primeiro admin de uma instituição já criada via /institutions.
-    get_institution(db, data.institution_id)
+    # SELECT ... FOR UPDATE bloqueia a linha da instituição até ao commit
+    # (ou rollback) desta transação. Duas requisições concorrentes para a
+    # mesma instituição ficam assim serializadas: a segunda só lê a linha
+    # depois da primeira terminar, altura em que já vê o admin criado por
+    # ela e falha com ConflictError — nunca as duas criam um admin inicial.
+    institution = db.scalar(
+        select(Institution).where(Institution.id == data.institution_id).with_for_update()
+    )
+    if institution is None:
+        msg = f"Institution '{data.institution_id}' not found."
+        raise NotFoundError(msg)
 
     # Só é permitido um admin inicial por instituição; admins adicionais
     # devem ser criados por um admin já autenticado através de POST /users.
@@ -69,6 +77,12 @@ def authenticate_user(db: Session, email: str, password: str) -> User:
     # Mesma mensagem genérica para password errada e para user inativo:
     # não revelamos ao cliente qual das duas condições falhou.
     if not verify_password(password, user.password_hash) or not user.is_active:
+        raise AuthenticationError(GENERIC_LOGIN_ERROR)
+
+    # Idem para a instituição inativa: o login falha com o mesmo erro
+    # genérico, sem revelar que a instituição (e não a password) é a causa.
+    institution = db.get(Institution, user.institution_id)
+    if institution is None or not institution.is_active:
         raise AuthenticationError(GENERIC_LOGIN_ERROR)
 
     return user
