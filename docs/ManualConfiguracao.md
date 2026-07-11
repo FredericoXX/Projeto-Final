@@ -41,7 +41,7 @@ O Docker Desktop deve estar aberto antes de iniciar a base de dados.
 A estrutura principal utilizada durante a configuração é a seguinte:
 
 ```text
-agentic-rag-assistant/
+institutional-assistant/
 ├── backend/
 │   ├── alembic/                 # Configuração e versões das migrações
 │   ├── app/                     # Código-fonte da aplicação FastAPI
@@ -63,14 +63,14 @@ agentic-rag-assistant/
 Abra o PowerShell e navegue até à pasta onde pretende guardar o projeto. Em seguida, execute:
 
 ```powershell
-git clone https://github.com/FredericoXX/Projeto-Final.git agentic-rag-assistant
-cd agentic-rag-assistant
+git clone https://github.com/FredericoXX/Projeto-Final.git institutional-assistant
+cd institutional-assistant
 ```
 
 Caso o repositório já esteja disponível no computador, basta aceder à respetiva pasta:
 
 ```powershell
-cd C:\dev\agentic-rag-assistant
+cd <caminho-do-projeto>
 ```
 
 Antes de continuar, confirme que se encontra na raiz do projeto:
@@ -103,14 +103,14 @@ A configuração base é a seguinte:
 APP_NAME=Agentic Institutional Assistant
 ENVIRONMENT=development
 
-POSTGRES_DB=agentic_rag
-POSTGRES_USER=rag_user
+POSTGRES_DB=institutional_assistant
+POSTGRES_USER=assistant_user
 POSTGRES_PASSWORD=change_me
 POSTGRES_HOST_PORT=5433
 
-DATABASE_URL=postgresql+psycopg://rag_user:change_me@localhost:5433/agentic_rag
+DATABASE_URL=postgresql+psycopg://assistant_user:change_me@localhost:5433/institutional_assistant
 
-TEST_DATABASE_URL=postgresql+psycopg://rag_user:change_me@localhost:5433/agentic_rag_test
+TEST_DATABASE_URL=postgresql+psycopg://assistant_user:change_me@localhost:5433/institutional_assistant_test
 
 OPENAI_API_KEY=
 
@@ -151,12 +151,12 @@ Em seguida, verifique o estado do contentor:
 docker compose ps
 ```
 
-O serviço `database` deve apresentar o estado `running` ou `healthy`. O contentor criado tem o nome `agentic-rag-assistant-db`.
+O serviço `database` deve apresentar o estado `running` ou `healthy`. O contentor criado tem o nome `institutional-assistant-db`.
 
 Para confirmar a disponibilidade do PostgreSQL, execute:
 
 ```powershell
-docker compose exec database psql -U rag_user -d agentic_rag -c "SELECT 1;"
+docker compose exec database psql -U assistant_user -d institutional_assistant -c "SELECT 1;"
 ```
 
 O resultado esperado é:
@@ -171,7 +171,7 @@ O resultado esperado é:
 Para verificar a extensão pgvector, execute:
 
 ```powershell
-docker compose exec database psql -U rag_user -d agentic_rag -c "\dx"
+docker compose exec database psql -U assistant_user -d institutional_assistant -c "\dx"
 ```
 
 A lista de extensões deve incluir `vector`.
@@ -211,7 +211,7 @@ As dependências principais incluem FastAPI, SQLAlchemy, Alembic, psycopg, pgvec
 Sempre que abrir um novo terminal para trabalhar no backend, é necessário voltar à pasta `backend` e ativar o ambiente virtual antes de executar comandos Python:
 
 ```powershell
-cd C:\dev\agentic-rag-assistant\backend
+cd <caminho-do-projeto>\backend
 .\.venv\Scripts\Activate.ps1
 ```
 
@@ -508,7 +508,7 @@ Altere o valor de `POSTGRES_HOST_PORT` no ficheiro `.env` para uma porta dispon�
 
 ```env
 POSTGRES_HOST_PORT=5434
-DATABASE_URL=postgresql+psycopg://rag_user:change_me@localhost:5434/agentic_rag
+DATABASE_URL=postgresql+psycopg://assistant_user:change_me@localhost:5434/institutional_assistant
 ```
 
 Depois, reinicie o serviço:
@@ -547,11 +547,11 @@ Depois de a configuração inicial estar concluída, o procedimento normal para 
 
 ```powershell
 # Terminal 1 — raiz do projeto
-cd C:\dev\agentic-rag-assistant
+cd <caminho-do-projeto>
 docker compose up -d
 
 # Terminal 2 — backend
-cd C:\dev\agentic-rag-assistant\backend
+cd <caminho-do-projeto>\backend
 .\.venv\Scripts\Activate.ps1
 alembic upgrade head
 fastapi dev app/main.py

@@ -1,12 +1,8 @@
 # Agentic Institutional Assistant
 
-Academic master's-thesis prototype of a generic, multi-institution assistant for
-higher-education institutions. The information-retrieval approach (RAG or
-otherwise) is still to be decided through the literature review — nothing in
-this codebase should be read as a final architectural commitment to RAG,
-embeddings or vector search. PostgreSQL's pgvector extension is enabled as
-infrastructure available for that future experimentation, not because the
-system already uses it for anything.
+Backend prototype for a generic, multi-institution higher-education assistant. The
+information retrieval approach (e.g. RAG) is still to be chosen through a
+literature review and is not yet an architectural decision.
 
 The Python application lives entirely in [`backend/`](backend/). Docker Compose at the
 repository root runs only PostgreSQL (with pgvector); the FastAPI application itself
