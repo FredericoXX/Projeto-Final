@@ -181,6 +181,16 @@ def test_alembic_upgrade_head_creates_expected_schema(
         assert any(index["column_names"] == ["conversation_id"] for index in message_indexes)
         assert any(index["column_names"] == ["institution_id"] for index in message_indexes)
 
+        # Constraints de valores de domínio (migration 5f638cb2d2c3).
+        check_constraint_names = {
+            cc["name"]
+            for table in ("users", "conversations", "messages")
+            for cc in inspector.get_check_constraints(table)
+        }
+        assert "ck_users_role_allowed" in check_constraint_names
+        assert "ck_conversations_status_allowed" in check_constraint_names
+        assert "ck_messages_role_allowed" in check_constraint_names
+
         with engine.connect() as conn:
             vector_extension = conn.execute(
                 text("SELECT 1 FROM pg_extension WHERE extname = 'vector'")
@@ -220,7 +230,10 @@ def test_composite_constraints_migration_upgrade_downgrade_upgrade(
             fk["name"] for fk in inspect(engine).get_foreign_keys(table) if fk["name"] is not None
         }
 
-    command.upgrade(alembic_cfg, "head")
+    # Upgrade até à própria migration em teste (não "head"): garante que o
+    # "downgrade -1" abaixo reverte exatamente esta migration, mesmo que
+    # existam migrations posteriores na cadeia.
+    command.upgrade(alembic_cfg, "3ed4bcad52c8")
     engine = create_engine(migrations_database_url)
     try:
         assert "uq_users_id_institution_id" in unique_constraint_names(engine, "users")
@@ -266,6 +279,62 @@ def test_composite_constraints_migration_upgrade_downgrade_upgrade(
             "fk_conversations_user_id_institution_id_users"
             in foreign_key_names(engine, "conversations")
         )
+
+        with engine.connect() as conn:
+            current_revision = conn.execute(
+                text("SELECT version_num FROM alembic_version")
+            ).scalar()
+    finally:
+        engine.dispose()
+
+    script = ScriptDirectory.from_config(alembic_cfg)
+    assert current_revision == script.get_current_head()
+
+
+# Verifica especificamente a migration 5f638cb2d2c3 (constraints de valores
+# de domínio): upgrade -> downgrade -> upgrade outra vez, para confirmar que
+# tanto o upgrade como o downgrade estão corretos e são repetíveis.
+def test_domain_check_constraints_migration_upgrade_downgrade_upgrade(
+    migrations_database_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "database_url", migrations_database_url)
+    alembic_cfg = Config(str(BACKEND_DIR / "alembic.ini"))
+
+    def check_constraint_names(engine: Engine, table: str) -> set[str]:
+        return {
+            cc["name"]
+            for cc in inspect(engine).get_check_constraints(table)
+            if cc["name"] is not None
+        }
+
+    expected = {
+        "users": "ck_users_role_allowed",
+        "conversations": "ck_conversations_status_allowed",
+        "messages": "ck_messages_role_allowed",
+    }
+
+    command.upgrade(alembic_cfg, "5f638cb2d2c3")
+    engine = create_engine(migrations_database_url)
+    try:
+        for table, constraint in expected.items():
+            assert constraint in check_constraint_names(engine, table)
+    finally:
+        engine.dispose()
+
+    command.downgrade(alembic_cfg, "-1")
+    engine = create_engine(migrations_database_url)
+    try:
+        for table, constraint in expected.items():
+            assert constraint not in check_constraint_names(engine, table)
+    finally:
+        engine.dispose()
+
+    command.upgrade(alembic_cfg, "head")
+    engine = create_engine(migrations_database_url)
+    try:
+        for table, constraint in expected.items():
+            assert constraint in check_constraint_names(engine, table)
 
         with engine.connect() as conn:
             current_revision = conn.execute(

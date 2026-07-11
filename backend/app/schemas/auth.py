@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 
 FULL_NAME_MAX_LENGTH = 255
 PASSWORD_MIN_LENGTH = 8
@@ -18,6 +18,11 @@ def _normalize_full_name(value: str) -> str:
 
 
 class RegisterInitialAdminRequest(BaseModel):
+    # extra="forbid" em todos os payloads de escrita: um campo desconhecido
+    # (ou não atualizável por esta rota) devolve 422 em vez de ser ignorado
+    # silenciosamente, evitando erros ocultos em clientes e integrações.
+    model_config = ConfigDict(extra="forbid")
+
     institution_id: UUID
     full_name: str
     email: EmailStr
@@ -43,6 +48,8 @@ class RegisterInitialAdminRequest(BaseModel):
 
 
 class LoginRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     email: EmailStr
     password: str
 

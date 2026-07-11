@@ -125,7 +125,7 @@ Os valores definidos em `DATABASE_URL` devem corresponder aos valores de `POSTGR
 
 A variável `TEST_DATABASE_URL` identifica uma base de dados dedicada aos testes. Esta separação evita que os testes alterem ou eliminem dados utilizados no ambiente de desenvolvimento.
 
-A variável `OPENAI_API_KEY` permanece vazia nesta fase, pois a integração com serviços de modelos de linguagem ainda não é necessária para executar a infraestrutura base.
+A variável `OPENAI_API_KEY` está reservada para a futura integração com modelos de linguagem e ainda não é lida pela aplicação; pode permanecer vazia nesta fase. O valor real deve existir apenas no `.env` local, nunca no repositório. Outras variáveis de LLM serão adicionadas quando a abordagem de recuperação de informação e o fornecedor forem selecionados.
 
 A variável `JWT_SECRET_KEY` assina os tokens de autenticação emitidos em `POST /api/v1/auth/login`; deve ter pelo menos 32 caracteres e um valor diferente do exemplo em qualquer ambiente partilhado. `JWT_ALGORITHM` e `ACCESS_TOKEN_EXPIRE_MINUTES` controlam o algoritmo de assinatura e a validade do token (em minutos).
 
@@ -153,11 +153,21 @@ docker compose ps
 
 O serviço `database` deve apresentar o estado `running` ou `healthy`. O contentor criado tem o nome `institutional-assistant-db`.
 
-O volume PostgreSQL tem um nome explícito para preservar os dados criados
-antes da alteração do nome do projeto Docker. Num ambiente já existente, não
-substitua o ficheiro `.env` atual pelo novo exemplo: mantenha as credenciais e
-o nome da base em uso. Para adotar os novos identificadores, faça primeiro um
-backup e restaure os dados numa nova base.
+O volume PostgreSQL é gerado pelo Docker Compose a partir do nome do projeto
+(`institutional-assistant`), resultando em `institutional-assistant_postgres_data`.
+Nesta fase inicial do protótipo os dados locais são descartáveis: um ambiente
+criado com identificadores antigos deve ser simplesmente recriado com os
+identificadores atuais, executando na raiz do projeto:
+
+```powershell
+docker compose down -v
+docker compose up -d
+docker compose ps
+```
+
+**Atenção:** `docker compose down -v` elimina o volume e, com ele, todos os
+dados locais da base de dados. Depois de recriar o ambiente, é necessário
+voltar a aplicar as migrações (secção 8).
 
 Para confirmar a disponibilidade do PostgreSQL, execute:
 

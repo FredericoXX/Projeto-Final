@@ -1,7 +1,15 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, ForeignKey, ForeignKeyConstraint, String, Text, func
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    ForeignKeyConstraint,
+    String,
+    Text,
+    func,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -29,6 +37,13 @@ class Message(Base):
             ["user_id", "institution_id"],
             ["users.id", "users.institution_id"],
             name="fk_messages_user_id_institution_id_users",
+        ),
+        # Espelha na base de dados os roles aceites pelos schemas
+        # (app/schemas/message.py): defesa em profundidade contra inserções
+        # feitas fora da API (scripts, serviços futuros, SQL direto).
+        CheckConstraint(
+            "role IN ('user', 'assistant', 'system')",
+            name="ck_messages_role_allowed",
         ),
     )
 

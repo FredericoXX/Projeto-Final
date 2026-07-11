@@ -14,7 +14,10 @@ ALLOWED_ROLES = {"user", "assistant", "system"}
 class MessageCreate(BaseModel):
     # conversation_id, institution_id e user_id não fazem parte deste
     # schema de propósito: vêm sempre do contexto da rota (conversa na
-    # URL, utilizador autenticado), nunca do payload.
+    # URL, utilizador autenticado), nunca do payload. extra="forbid"
+    # torna o envio desses (ou de qualquer campo desconhecido) um 422.
+    model_config = ConfigDict(extra="forbid")
+
     role: str = "user"
     content: str
     language: str | None = None

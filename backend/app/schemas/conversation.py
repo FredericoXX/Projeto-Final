@@ -42,7 +42,10 @@ def _validate_status(value: str) -> str:
 class ConversationCreate(BaseModel):
     # institution_id e user_id não fazem parte deste schema de propósito:
     # são sempre derivados do utilizador autenticado na rota, nunca
-    # aceites a partir do payload.
+    # aceites a partir do payload. extra="forbid" torna o envio desses
+    # (ou de qualquer campo desconhecido) um 422 explícito.
+    model_config = ConfigDict(extra="forbid")
+
     title: str | None = None
     language: str | None = None
 
@@ -59,7 +62,10 @@ class ConversationCreate(BaseModel):
 
 class ConversationUpdate(BaseModel):
     # Todos os campos são opcionais para suportar atualizações parciais
-    # (PATCH). institution_id e user_id nunca são atualizáveis por aqui.
+    # (PATCH). institution_id e user_id nunca são atualizáveis por aqui;
+    # com extra="forbid", enviá-los é um 422, não um campo ignorado.
+    model_config = ConfigDict(extra="forbid")
+
     title: str | None = None
     status: str | None = None
 

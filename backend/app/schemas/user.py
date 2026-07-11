@@ -31,6 +31,10 @@ def _validate_role(value: str) -> str:
 class UserCreate(BaseModel):
     # institution_id não faz parte deste schema de propósito: é sempre
     # derivado do admin autenticado na rota, nunca aceite do payload.
+    # extra="forbid" torna o envio desse (ou de qualquer outro campo
+    # desconhecido) um 422 explícito, em vez de ser ignorado em silêncio.
+    model_config = ConfigDict(extra="forbid")
+
     full_name: str
     email: EmailStr
     password: str
@@ -62,7 +66,10 @@ class UserCreate(BaseModel):
 
 class UserUpdate(BaseModel):
     # Todos os campos são opcionais para suportar atualizações parciais (PATCH).
-    # institution_id e password não são atualizáveis por esta rota.
+    # institution_id e password não são atualizáveis por esta rota; com
+    # extra="forbid", enviá-los (ou qualquer campo desconhecido) é um 422.
+    model_config = ConfigDict(extra="forbid")
+
     full_name: str | None = None
     email: EmailStr | None = None
     role: str | None = None

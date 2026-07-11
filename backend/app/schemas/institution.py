@@ -88,6 +88,11 @@ class InstitutionBase(BaseModel):
 
 
 class InstitutionCreate(InstitutionBase):
+    # extra="forbid" apenas aqui (não em InstitutionBase, de que
+    # InstitutionRead também herda): payloads de escrita com campos
+    # desconhecidos devolvem 422 em vez de serem ignorados.
+    model_config = ConfigDict(extra="forbid")
+
     # Espelha a check constraint da base de dados, permitindo devolver
     # o erro de validação ao cliente antes de tentar o INSERT.
     @model_validator(mode="after")
