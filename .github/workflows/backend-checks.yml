@@ -51,7 +51,9 @@ jobs:
         run: mypy app tests
       - name: Verify migrations
         working-directory: backend
-        run: alembic check
+        run: |
+          alembic upgrade head
+          alembic check
       - name: Test
         working-directory: backend
         run: pytest -q
