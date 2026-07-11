@@ -1,7 +1,15 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, UniqueConstraint, func
+from sqlalchemy import (
+    Boolean,
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    String,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.base import Base
@@ -16,6 +24,13 @@ class User(Base):
         # conversations/messages, garantindo que essas linhas só podem
         # apontar para um utilizador da mesma instituição.
         UniqueConstraint("id", "institution_id", name="uq_users_id_institution_id"),
+        # Espelha na base de dados os roles aceites pelos schemas
+        # (app/schemas/user.py): defesa em profundidade contra inserções
+        # feitas fora da API (scripts, serviços futuros, SQL direto).
+        CheckConstraint(
+            "role IN ('admin', 'staff', 'student', 'user')",
+            name="ck_users_role_allowed",
+        ),
     )
 
     id: Mapped[UUID] = mapped_column(

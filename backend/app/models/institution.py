@@ -11,8 +11,9 @@ from app.database.base import Base
 class Institution(Base):
     __tablename__ = "institutions"
     __table_args__ = (
-        # O código é o identificador único usado no isolamento
-        # multi-institucional (ex.: filtrar utilizadores/dados por instituição).
+        # O código é um identificador institucional único e legível
+        # (ex.: "DEMO-HEI"); o isolamento multi-institucional dos dados
+        # é feito por institution_id, não por este campo.
         UniqueConstraint("code", name="uq_institutions_code"),
         # Garante que o idioma padrão está sempre entre os idiomas suportados.
         CheckConstraint(

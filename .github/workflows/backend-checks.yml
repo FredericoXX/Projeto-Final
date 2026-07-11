@@ -35,6 +35,16 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
+      # Valida apenas a sintaxe/interpolação do docker-compose.yml; a base
+      # de dados de CI continua a ser o service container acima — o Compose
+      # nunca é iniciado no workflow.
+      - name: Validate Docker Compose configuration
+        env:
+          POSTGRES_DB: institutional_assistant
+          POSTGRES_USER: assistant_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_HOST_PORT: "5433"
+        run: docker compose config --quiet
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"

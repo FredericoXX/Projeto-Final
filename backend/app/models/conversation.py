@@ -1,7 +1,15 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import DateTime, ForeignKey, ForeignKeyConstraint, String, UniqueConstraint, func
+from sqlalchemy import (
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    ForeignKeyConstraint,
+    String,
+    UniqueConstraint,
+    func,
+)
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -22,6 +30,13 @@ class Conversation(Base):
             ["user_id", "institution_id"],
             ["users.id", "users.institution_id"],
             name="fk_conversations_user_id_institution_id_users",
+        ),
+        # Espelha na base de dados os estados aceites pelos schemas
+        # (app/schemas/conversation.py): defesa em profundidade contra
+        # inserções feitas fora da API (scripts, serviços futuros, SQL direto).
+        CheckConstraint(
+            "status IN ('active', 'closed', 'archived')",
+            name="ck_conversations_status_allowed",
         ),
     )
 

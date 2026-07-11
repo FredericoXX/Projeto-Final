@@ -89,12 +89,16 @@ pytest -q
 Tests run against a dedicated test database (see `backend/tests/conftest.py`)
 and never touch the development database.
 
-### 8. Lint
+### 8. Validate before committing
 
-From `backend/` (venv active):
+From `backend/` (venv active) — the same checks CI runs:
 
 ```powershell
+pytest -q
 ruff check .
+mypy app tests
+alembic upgrade head
+alembic check
 ```
 
 ## Bootstrapping an institution
@@ -104,7 +108,13 @@ registering its first admin are not open endpoints — they are gated by a
 shared secret, `BOOTSTRAP_TOKEN` (set in `.env`), sent as the
 `X-Bootstrap-Token` header. This is a temporary, explicit stand-in for
 platform-level administration, meant only for local/dev bootstrapping.
-Everything after the first admin uses normal JWT authentication.
+Regular operations after the first admin use normal JWT authentication;
+the exceptions are the bootstrap-only operations themselves — creating
+another institution, registering another institution's first admin, and
+(de)activating an institution via
+`PATCH /api/v1/bootstrap/institutions/{id}/status` (see
+[Reactivating an institution](#reactivating-an-institution)) — which
+keep using `X-Bootstrap-Token`.
 
 1. Create the institution (requires `X-Bootstrap-Token`):
 

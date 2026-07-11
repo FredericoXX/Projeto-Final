@@ -200,7 +200,7 @@ DATABASE_URL
 OPENAI_API_KEY
 ```
 
-Nesta fase, a chave `OPENAI_API_KEY` permanece vazia, porque a integração com modelo de linguagem ainda não foi iniciada.
+Nesta fase, a chave `OPENAI_API_KEY` permanece vazia e não é lida pela aplicação: está reservada para a integração com modelos de linguagem, que será configurada quando a abordagem e o fornecedor forem selecionados.
 
 ---
 
