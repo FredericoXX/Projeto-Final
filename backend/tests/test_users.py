@@ -6,11 +6,19 @@ autouse `_clean_tables` fixture truncates every table before each
 test, so tests don't need to track or delete the rows they create.
 """
 
+import threading
 import uuid
 
 from fastapi.testclient import TestClient
+from sqlalchemy import select
+from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import settings
+from app.core.exceptions import AuthorizationError, ConflictError
+from app.models.institution import Institution
+from app.models.user import User
+from app.schemas.user import UserUpdate
+from app.services import user_service
 
 _USER_PASSWORD = "anothersecret123"
 _ADMIN_PASSWORD = "supersecret123"
@@ -284,3 +292,100 @@ def test_admin_can_deactivate_other_admin_when_two_are_active(client: TestClient
     )
     assert response.status_code == 200
     assert response.json()["is_active"] is False
+
+
+def test_concurrent_admin_deactivation_keeps_at_least_one_active_admin(
+    test_session_factory: sessionmaker[Session],
+) -> None:
+    """Two admins, A and B, both active. Two threads race to deactivate
+    *the other* admin at the same time, each using its own SQLAlchemy
+    session/connection against the real test PostgreSQL database (not a
+    mock). The SELECT ... FOR UPDATE lock taken on the institution row
+    inside user_service.update_user must serialize these two attempts:
+    whichever transaction commits first leaves the other admin as the
+    institution's last active admin, so the second transaction's active
+    admin count (re-read after the lock, i.e. after the first commit) must
+    then correctly refuse it. At most one of the two operations may
+    succeed, and the institution must never end up with zero active
+    admins."""
+    setup_session = test_session_factory()
+    try:
+        institution = Institution(
+            name="Concurrency Test Institution",
+            code=f"CONC-{uuid.uuid4().hex[:8].upper()}",
+            default_language="pt",
+            supported_languages=["pt", "en"],
+        )
+        setup_session.add(institution)
+        setup_session.flush()
+
+        admin_a = User(
+            institution_id=institution.id,
+            full_name="Admin A",
+            email=f"admin-a-{uuid.uuid4().hex[:8]}@example.com",
+            password_hash="not-a-real-hash",
+            role="admin",
+            is_active=True,
+        )
+        admin_b = User(
+            institution_id=institution.id,
+            full_name="Admin B",
+            email=f"admin-b-{uuid.uuid4().hex[:8]}@example.com",
+            password_hash="not-a-real-hash",
+            role="admin",
+            is_active=True,
+        )
+        setup_session.add_all([admin_a, admin_b])
+        setup_session.commit()
+        institution_id, admin_a_id, admin_b_id = institution.id, admin_a.id, admin_b.id
+    finally:
+        setup_session.close()
+
+    outcomes: list[str] = []
+    outcomes_lock = threading.Lock()
+    barrier = threading.Barrier(2)
+
+    def deactivate(acting_admin_id: uuid.UUID, target_id: uuid.UUID) -> None:
+        session = test_session_factory()
+        try:
+            acting_admin = session.get(User, acting_admin_id)
+            assert acting_admin is not None
+            barrier.wait()
+            try:
+                user_service.update_user(
+                    session, acting_admin, target_id, UserUpdate(is_active=False)
+                )
+                outcome = "ok"
+            except ConflictError:
+                outcome = "conflict"
+            except AuthorizationError:
+                outcome = "forbidden"
+            with outcomes_lock:
+                outcomes.append(outcome)
+        finally:
+            session.close()
+
+    # Thread 1: A deactivates B. Thread 2: B deactivates A. Neither is a
+    # self-deactivation attempt.
+    t1 = threading.Thread(target=deactivate, args=(admin_a_id, admin_b_id))
+    t2 = threading.Thread(target=deactivate, args=(admin_b_id, admin_a_id))
+    t1.start()
+    t2.start()
+    t1.join(timeout=10)
+    t2.join(timeout=10)
+
+    assert outcomes.count("ok") == 1
+    assert outcomes.count("conflict") == 1
+
+    verify_session = test_session_factory()
+    try:
+        active_admins = verify_session.scalars(
+            select(User).where(
+                User.institution_id == institution_id,
+                User.role == "admin",
+                User.is_active.is_(True),
+            )
+        ).all()
+        assert len(active_admins) == 1
+    finally:
+        verify_session.close()

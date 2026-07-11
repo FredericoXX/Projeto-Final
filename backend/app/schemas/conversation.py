@@ -3,10 +3,13 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
-TITLE_MAX_LENGTH = 255
-LANGUAGE_MAX_LENGTH = 8
+from app.core.language import normalize_language_code
 
-# Estados previstos para uma conversa nesta fase.
+TITLE_MAX_LENGTH = 255
+
+# Estados previstos para uma conversa nesta fase. "closed" e "archived" são
+# estados finais neste protótipo: não aceitam novas mensagens nem PATCH, e
+# não existe (ainda) um endpoint para reabrir uma conversa.
 ALLOWED_STATUSES = {"active", "closed", "archived"}
 
 
@@ -26,14 +29,7 @@ def _normalize_title(value: str | None) -> str | None:
 def _normalize_language(value: str | None) -> str | None:
     if value is None:
         return value
-    normalized = value.strip().lower()
-    if not normalized:
-        msg = "language must not be empty or whitespace only"
-        raise ValueError(msg)
-    if len(normalized) > LANGUAGE_MAX_LENGTH:
-        msg = f"language must be at most {LANGUAGE_MAX_LENGTH} characters long"
-        raise ValueError(msg)
-    return normalized
+    return normalize_language_code(value)
 
 
 def _validate_status(value: str) -> str:

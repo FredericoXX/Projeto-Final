@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, field_validator
 
-LANGUAGE_MAX_LENGTH = 8
+from app.core.language import normalize_language_code
 
 # Papéis previstos para uma mensagem nesta fase. Quem pode efetivamente
 # usar cada role (ex.: "system" reservado a admins) é decidido no serviço,
@@ -40,14 +40,7 @@ class MessageCreate(BaseModel):
     def normalize_language(cls, value: str | None) -> str | None:
         if value is None:
             return value
-        normalized = value.strip().lower()
-        if not normalized:
-            msg = "language must not be empty or whitespace only"
-            raise ValueError(msg)
-        if len(normalized) > LANGUAGE_MAX_LENGTH:
-            msg = f"language must be at most {LANGUAGE_MAX_LENGTH} characters long"
-            raise ValueError(msg)
-        return normalized
+        return normalize_language_code(value)
 
 
 class MessageRead(BaseModel):

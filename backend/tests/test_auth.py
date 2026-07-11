@@ -269,20 +269,26 @@ def _login_headers(client: TestClient, payload: dict) -> dict[str, str]:
     return {"Authorization": f"Bearer {login.json()['access_token']}"}
 
 
+def _deactivate_institution(client: TestClient, institution_id: str) -> None:
+    # is_active só pode ser alterado pelo endpoint de bootstrap (ver
+    # test_institutions.py) — um admin institucional já não o consegue
+    # fazer através de PATCH /institutions/{id}.
+    response = client.patch(
+        f"/api/v1/bootstrap/institutions/{institution_id}/status",
+        json={"is_active": False},
+        headers=BOOTSTRAP_HEADERS,
+    )
+    assert response.status_code == 200
+
+
 def test_login_fails_when_institution_is_inactive(client: TestClient) -> None:
     institution_id = _create_institution(client)
     payload = _register_admin_payload(institution_id)
     client.post(
         "/api/v1/auth/register-initial-admin", json=payload, headers=BOOTSTRAP_HEADERS
     )
-    headers = _login_headers(client, payload)
 
-    deactivate = client.patch(
-        f"/api/v1/institutions/{institution_id}",
-        json={"is_active": False},
-        headers=headers,
-    )
-    assert deactivate.status_code == 200
+    _deactivate_institution(client, institution_id)
 
     response = client.post(
         "/api/v1/auth/login",
@@ -303,12 +309,118 @@ def test_me_fails_when_institution_is_inactive(client: TestClient) -> None:
     still_works = client.get("/api/v1/auth/me", headers=headers)
     assert still_works.status_code == 200
 
-    deactivate = client.patch(
-        f"/api/v1/institutions/{institution_id}",
-        json={"is_active": False},
-        headers=headers,
-    )
-    assert deactivate.status_code == 200
+    _deactivate_institution(client, institution_id)
 
     response = client.get("/api/v1/auth/me", headers=headers)
     assert response.status_code == 401
+
+
+# --- Admin inicial em instituição inativa -------------------------------
+
+
+def test_register_initial_admin_fails_if_institution_is_inactive(client: TestClient) -> None:
+    institution_id = _create_institution(client)
+    _deactivate_institution(client, institution_id)
+
+    response = client.post(
+        "/api/v1/auth/register-initial-admin",
+        json=_register_admin_payload(institution_id),
+        headers=BOOTSTRAP_HEADERS,
+    )
+    assert response.status_code == 409
+
+
+def test_register_initial_admin_creates_no_user_when_institution_is_inactive(
+    client: TestClient,
+) -> None:
+    institution_id = _create_institution(client)
+    _deactivate_institution(client, institution_id)
+
+    payload = _register_admin_payload(institution_id)
+    response = client.post(
+        "/api/v1/auth/register-initial-admin", json=payload, headers=BOOTSTRAP_HEADERS
+    )
+    assert response.status_code == 409
+
+    # Confirma que nenhuma linha de utilizador foi criada: reativar a
+    # instituição e repetir o registo com o mesmo email deve continuar a
+    # funcionar, o que só é possível se o primeiro pedido não tiver criado
+    # (nem parcialmente) o utilizador.
+    client.patch(
+        f"/api/v1/bootstrap/institutions/{institution_id}/status",
+        json={"is_active": True},
+        headers=BOOTSTRAP_HEADERS,
+    )
+    retry = client.post(
+        "/api/v1/auth/register-initial-admin", json=payload, headers=BOOTSTRAP_HEADERS
+    )
+    assert retry.status_code == 201
+    assert retry.json()["email"] == payload["email"]
+
+
+def test_register_initial_admin_succeeds_when_institution_is_active(
+    client: TestClient,
+) -> None:
+    institution_id = _create_institution(client)
+
+    response = client.post(
+        "/api/v1/auth/register-initial-admin",
+        json=_register_admin_payload(institution_id),
+        headers=BOOTSTRAP_HEADERS,
+    )
+    assert response.status_code == 201
+
+
+# --- HTTP Bearer (Swagger "Authorize") ----------------------------------
+#
+# Login continua a ser JSON simples (email/password); apenas o esquema
+# usado para proteger os restantes endpoints mudou de OAuth2PasswordBearer
+# para HTTPBearer, para que o botão "Authorize" do Swagger peça só um
+# token, em vez de tentar montar o fluxo OAuth2 por formulário.
+
+
+def test_protected_endpoint_without_bearer_token_returns_401(client: TestClient) -> None:
+    response = client.get("/api/v1/auth/me")
+    assert response.status_code == 401
+    assert response.json()["detail"]["code"] == "authentication_failed"
+
+
+def test_protected_endpoint_with_non_bearer_authorization_returns_401(
+    client: TestClient,
+) -> None:
+    response = client.get(
+        "/api/v1/auth/me", headers={"Authorization": "Basic dXNlcjpwYXNz"}
+    )
+    assert response.status_code == 401
+
+
+def test_protected_endpoint_with_invalid_bearer_token_returns_401(client: TestClient) -> None:
+    response = client.get(
+        "/api/v1/auth/me", headers={"Authorization": "Bearer not-a-real-token"}
+    )
+    assert response.status_code == 401
+    assert response.json()["detail"]["code"] == "authentication_failed"
+
+
+def test_protected_endpoint_with_valid_bearer_token_works(client: TestClient) -> None:
+    institution_id = _create_institution(client)
+    payload = _register_admin_payload(institution_id)
+    client.post(
+        "/api/v1/auth/register-initial-admin", json=payload, headers=BOOTSTRAP_HEADERS
+    )
+    headers = _login_headers(client, payload)
+
+    response = client.get("/api/v1/auth/me", headers=headers)
+    assert response.status_code == 200
+    assert response.json()["email"] == payload["email"]
+
+
+def test_openapi_declares_http_bearer_not_oauth2_password(client: TestClient) -> None:
+    response = client.get("/openapi.json")
+    assert response.status_code == 200
+
+    schemes = response.json()["components"]["securitySchemes"]
+    assert len(schemes) == 1
+    (scheme,) = schemes.values()
+    assert scheme["type"] == "http"
+    assert scheme["scheme"] == "bearer"

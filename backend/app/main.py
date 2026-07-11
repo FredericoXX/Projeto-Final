@@ -1,6 +1,7 @@
 from fastapi import FastAPI
 
 from app.api.routes.auth import router as auth_router
+from app.api.routes.bootstrap import router as bootstrap_router
 from app.api.routes.conversations import router as conversations_router
 from app.api.routes.health import router as health_router
 from app.api.routes.institutions import router as institutions_router
@@ -37,5 +38,10 @@ app.include_router(
 
 app.include_router(
     conversations_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    bootstrap_router,
     prefix="/api/v1",
 )

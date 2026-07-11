@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 
 from app.core.exceptions import AuthorizationError, ConflictError, NotFoundError
 from app.core.security import hash_password
+from app.models.institution import Institution
 from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate
 
@@ -120,12 +121,23 @@ def update_user(
             raise ConflictError(msg)
 
     deactivating = changes.get("is_active") is False
-    if deactivating and user.id == acting_admin.id:
-        msg = "An admin cannot deactivate their own account."
-        raise AuthorizationError(msg)
-
     demoting_from_admin = user.role == "admin" and changes.get("role", "admin") != "admin"
+
     if user.role == "admin" and (deactivating or demoting_from_admin):
+        # SELECT ... FOR UPDATE na linha da instituição serializa qualquer
+        # operação concorrente que desative/despromova admins da mesma
+        # instituição: a segunda destas operações só continua depois da
+        # primeira terminar (commit ou rollback), altura em que a contagem
+        # abaixo já reflete a alteração feita pela primeira. Sem este lock,
+        # duas transações concorrentes podiam ambas ler "ainda há outro
+        # admin ativo" antes de qualquer uma delas gravar, e deixar a
+        # instituição sem nenhum admin ativo.
+        db.execute(select(Institution.id).where(Institution.id == institution_id).with_for_update())
+
+        if deactivating and user.id == acting_admin.id:
+            msg = "An admin cannot deactivate their own account."
+            raise AuthorizationError(msg)
+
         # Só pode desativar/despromover este admin se sobrar pelo menos
         # mais um admin ativo na instituição depois da alteração.
         if _count_other_active_admins(db, institution_id, user_id) == 0:

@@ -1,7 +1,7 @@
 import uuid
 
 from fastapi import Depends
-from fastapi.security import OAuth2PasswordBearer
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import AuthenticationError, AuthorizationError
@@ -10,19 +10,24 @@ from app.database.session import get_db
 from app.models.institution import Institution
 from app.models.user import User
 
+# HTTPBearer (não OAuth2PasswordBearer): login continua a ser JSON simples
+# (email + password), não o formulário OAuth2 password-flow que o botão
+# "Authorize" do Swagger monta para OAuth2PasswordBearer. HTTPBearer faz o
+# OpenAPI declarar um esquema HTTP Bearer simples, que o Swagger apresenta
+# como um único campo para colar o token — sem tentar autenticar sozinho.
 # auto_error=False: controlamos nós próprios o formato da resposta 401
 # (via AuthenticationError) em vez do HTTPException por omissão do FastAPI.
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/v1/auth/login", auto_error=False)
+bearer_scheme = HTTPBearer(auto_error=False)
 
 
 def get_current_user(
-    token: str | None = Depends(oauth2_scheme),
+    credentials: HTTPAuthorizationCredentials | None = Depends(bearer_scheme),
     db: Session = Depends(get_db),
 ) -> User:
-    if token is None:
+    if credentials is None:
         raise AuthenticationError("Not authenticated.")
 
-    payload = decode_access_token(token)
+    payload = decode_access_token(credentials.credentials)
     subject = payload.get("sub")
     try:
         user_id = uuid.UUID(str(subject))

@@ -4,7 +4,7 @@
 
 Este manual descreve o procedimento necessário para configurar e executar localmente o ambiente de desenvolvimento do protótipo **Agentic Institutional Assistant**.
 
-O projeto é um protótipo de assistente institucional genérico, orientado a instituições de ensino superior. A aplicação é composta por um backend em Python/FastAPI e por uma base de dados PostgreSQL com a extensão pgvector. Nesta fase, apenas a base de dados é executada em contentor Docker; a API FastAPI é executada localmente através do ambiente virtual Python.
+O projeto é um protótipo académico (trabalho final de mestrado) de assistente institucional genérico, orientado a instituições de ensino superior, e não deve ser tratado como um produto pronto para produção. A abordagem de recuperação de informação (RAG ou outra) ainda será escolhida através da revisão da literatura — nada neste manual deve ser lido como uma decisão já tomada nesse sentido. A aplicação é composta por um backend em Python/FastAPI e por uma base de dados PostgreSQL com a extensão pgvector, disponibilizada como infraestrutura para essa experimentação futura. Nesta fase, apenas a base de dados é executada em contentor Docker; a API FastAPI é executada localmente através do ambiente virtual Python.
 
 Este procedimento permite preparar o ambiente, aplicar as migrações da base de dados, iniciar a API, validar a disponibilidade do serviço e executar os testes automatizados.
 
@@ -113,6 +113,12 @@ DATABASE_URL=postgresql+psycopg://assistant_user:change_me@localhost:5433/instit
 TEST_DATABASE_URL=postgresql+psycopg://assistant_user:change_me@localhost:5433/institutional_assistant_test
 
 OPENAI_API_KEY=
+
+JWT_SECRET_KEY=change_me_dev_secret_with_at_least_32_characters
+JWT_ALGORITHM=HS256
+ACCESS_TOKEN_EXPIRE_MINUTES=60
+
+BOOTSTRAP_TOKEN=change_me_dev_bootstrap_token
 ```
 
 Os valores definidos em `DATABASE_URL` devem corresponder aos valores de `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` e `POSTGRES_HOST_PORT`.
@@ -121,7 +127,11 @@ A variável `TEST_DATABASE_URL` identifica uma base de dados dedicada aos testes
 
 A variável `OPENAI_API_KEY` permanece vazia nesta fase, pois a integração com serviços de modelos de linguagem ainda não é necessária para executar a infraestrutura base.
 
-O ficheiro `.env` contém configurações locais e não deve ser enviado para o repositório remoto.
+A variável `JWT_SECRET_KEY` assina os tokens de autenticação emitidos em `POST /api/v1/auth/login`; deve ter pelo menos 32 caracteres e um valor diferente do exemplo em qualquer ambiente partilhado. `JWT_ALGORITHM` e `ACCESS_TOKEN_EXPIRE_MINUTES` controlam o algoritmo de assinatura e a validade do token (em minutos).
+
+A variável `BOOTSTRAP_TOKEN` é um segredo temporário que substitui, nesta fase do protótipo, um papel de administração de plataforma que ainda não existe. É exigida no cabeçalho `X-Bootstrap-Token` para criar uma instituição, registar o seu primeiro administrador e reativar/desativar uma instituição — ver secção 12 abaixo. Se não estiver definida (ou não corresponder ao cabeçalho enviado), esses três endpoints recusam o pedido com `401`.
+
+O ficheiro `.env` contém configurações locais, incluindo estes segredos, e não deve ser enviado para o repositório remoto.
 
 ---
 
@@ -302,7 +312,93 @@ Esta resposta confirma que a API está ativa, que a ligação entre o backend e 
 
 ---
 
-## 12. Execução dos testes e validação de qualidade
+## 12. Autenticação e bootstrap institucional
+
+Ainda não existe um papel de administração de plataforma (`platform_admin`) nem uma interface administrativa. Criar a primeira instituição, registar o seu primeiro administrador e reativar/desativar uma instituição são por isso operações de "bootstrap": protegidas pelo segredo partilhado `BOOTSTRAP_TOKEN` (definido em `.env`), enviado no cabeçalho `X-Bootstrap-Token`, em vez de um token de sessão. Esta secção descreve o fluxo completo, do zero até obter um token Bearer utilizável nos restantes endpoints.
+
+Todos os exemplos abaixo podem ser executados na documentação Swagger (`http://127.0.0.1:8000/docs`) ou com `curl`/PowerShell.
+
+### 12.1 Criar a instituição
+
+```
+POST /api/v1/institutions
+X-Bootstrap-Token: <valor de BOOTSTRAP_TOKEN>
+```
+
+```json
+{
+  "name": "Universidade de Exemplo",
+  "code": "UEX",
+  "default_language": "pt",
+  "supported_languages": ["pt", "en"]
+}
+```
+
+Sem o cabeçalho `X-Bootstrap-Token`, ou com um valor incorreto, o pedido falha com `401`. Guarde o `id` devolvido na resposta — é necessário no passo seguinte.
+
+### 12.2 Registar o administrador inicial
+
+```
+POST /api/v1/auth/register-initial-admin
+X-Bootstrap-Token: <valor de BOOTSTRAP_TOKEN>
+```
+
+```json
+{
+  "institution_id": "<id do passo anterior>",
+  "full_name": "Administrador de Exemplo",
+  "email": "admin@example.com",
+  "password": "uma-password-com-pelo-menos-8-caracteres"
+}
+```
+
+Este endpoint só cria o **primeiro** administrador de cada instituição; uma segunda chamada para a mesma instituição devolve `409`. Administradores adicionais são criados por um administrador já autenticado através de `POST /api/v1/users`. O pedido também falha (`409`) se a instituição estiver inativa.
+
+### 12.3 Iniciar sessão
+
+```
+POST /api/v1/auth/login
+```
+
+```json
+{
+  "email": "admin@example.com",
+  "password": "uma-password-com-pelo-menos-8-caracteres"
+}
+```
+
+A resposta inclui `access_token`. Este endpoint **não** usa o cabeçalho `X-Bootstrap-Token` — é autenticação normal por email/password.
+
+### 12.4 Usar o token Bearer
+
+Para todos os restantes endpoints protegidos (`/api/v1/auth/me`, `/api/v1/users`, `/api/v1/conversations`, `GET`/`PATCH /api/v1/institutions/{id}`), envie o token obtido no passo anterior:
+
+```
+Authorization: Bearer <access_token>
+```
+
+No Swagger, use o botão **Authorize** e cole apenas o token (sem o prefixo `Bearer`) — a API declara um esquema HTTP Bearer simples, não o fluxo OAuth2 por formulário.
+
+Um administrador institucional só consegue consultar e atualizar a sua própria instituição através de `GET`/`PATCH /api/v1/institutions/{id}`; qualquer outro `id` é devolvido como `404`. Este `PATCH` também não permite alterar `is_active` — enviar esse campo devolve `422`.
+
+### 12.5 Reativar (ou desativar) uma instituição
+
+Como um administrador institucional já não pode alterar o estado (`is_active`) da própria instituição, existe um endpoint de bootstrap dedicado, protegido pelo mesmo `X-Bootstrap-Token`, que serve de mecanismo mínimo de recuperação para este protótipo:
+
+```
+PATCH /api/v1/bootstrap/institutions/{institution_id}/status
+X-Bootstrap-Token: <valor de BOOTSTRAP_TOKEN>
+```
+
+```json
+{ "is_active": true }
+```
+
+Este endpoint só aceita o campo `is_active`; qualquer outro campo no payload é rejeitado. Não existe (nem está planeado nesta fase) um papel `platform_admin` completo ou uma interface administrativa — este é um mecanismo temporário e explícito.
+
+---
+
+## 13. Execução dos testes e validação de qualidade
 
 Os testes automatizados devem ser executados a partir da pasta `backend`, com o ambiente virtual ativo:
 
@@ -333,7 +429,7 @@ pytest -q
 
 ---
 
-## 13. Encerramento do ambiente
+## 14. Encerramento do ambiente
 
 Para interromper a API, pressione `Ctrl + C` no terminal onde o servidor FastAPI está ativo.
 
@@ -363,9 +459,9 @@ docker compose down -v
 
 ---
 
-## 14. Problemas frequentes e procedimentos de correção
+## 15. Problemas frequentes e procedimentos de correção
 
-### 14.1 O endereço `http://127.0.0.1:8000/docs` não abre
+### 15.1 O endereço `http://127.0.0.1:8000/docs` não abre
 
 A causa mais provável é a API FastAPI não estar em execução. Na pasta `backend`, ative o ambiente virtual e execute:
 
@@ -376,7 +472,7 @@ fastapi dev app/main.py
 
 Confirme no terminal que o servidor foi iniciado na porta `8000`.
 
-### 14.2 O comando `fastapi` não é reconhecido
+### 15.2 O comando `fastapi` não é reconhecido
 
 O ambiente virtual pode não estar ativo ou as dependências podem não estar instaladas. Execute:
 
@@ -391,7 +487,7 @@ Depois, tente novamente. Como alternativa, execute:
 uvicorn app.main:app --reload
 ```
 
-### 14.3 O Docker não inicia a base de dados
+### 15.3 O Docker não inicia a base de dados
 
 Confirme que o Docker Desktop está aberto e em execução. Depois, na raiz do projeto, execute:
 
@@ -406,7 +502,7 @@ Para analisar mensagens de erro do serviço de base de dados, utilize:
 docker compose logs database
 ```
 
-### 14.4 A porta da base de dados já está em utilização
+### 15.4 A porta da base de dados já está em utilização
 
 Altere o valor de `POSTGRES_HOST_PORT` no ficheiro `.env` para uma porta disponível, por exemplo `5434`. Em seguida, atualize a porta na variável `DATABASE_URL` para que ambas permaneçam coerentes:
 
@@ -422,7 +518,7 @@ docker compose down
 docker compose up -d
 ```
 
-### 14.5 O Alembic não consegue ligar à base de dados
+### 15.5 O Alembic não consegue ligar à base de dados
 
 Confirme que a base de dados está em execução e que os valores em `.env` correspondem à configuração utilizada pelo Docker Compose. Execute:
 
@@ -433,7 +529,7 @@ alembic current
 
 Verifique especialmente `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `POSTGRES_HOST_PORT` e `DATABASE_URL`.
 
-### 14.6 A política de execução do PowerShell bloqueia a ativação do ambiente virtual
+### 15.6 A política de execução do PowerShell bloqueia a ativação do ambiente virtual
 
 Quando o PowerShell impedir a execução de `Activate.ps1`, abra uma sessão de PowerShell com permissões adequadas e execute:
 
@@ -445,7 +541,7 @@ Em seguida, feche e abra novamente o terminal, navegue até à pasta `backend` e
 
 ---
 
-## 15. Sequência resumida de arranque diário
+## 16. Sequência resumida de arranque diário
 
 Depois de a configuração inicial estar concluída, o procedimento normal para iniciar o ambiente é o seguinte:
 
@@ -469,8 +565,8 @@ http://127.0.0.1:8000/docs
 
 ---
 
-## 16. Estado da infraestrutura nesta fase
+## 17. Estado da infraestrutura nesta fase
 
-A configuração descrita neste manual cobre a infraestrutura base do backend: controlo de versões, variáveis de ambiente, PostgreSQL com pgvector, ambiente virtual Python, FastAPI, SQLAlchemy, Alembic, endpoint de saúde, testes automatizados e validação de qualidade.
+A configuração descrita neste manual cobre a infraestrutura base do backend (controlo de versões, variáveis de ambiente, PostgreSQL com pgvector, ambiente virtual Python, FastAPI, SQLAlchemy, Alembic, endpoint de saúde, testes automatizados e validação de qualidade) e o núcleo funcional do protótipo: gestão de instituições, autenticação JWT (com o fluxo de bootstrap descrito na secção 12), gestão de utilizadores e uma API de conversas/mensagens, todas com isolamento multi-institucional reforçado a nível de aplicação e de base de dados (ver [`docs/database.md`](database.md)).
 
-A implementação de autenticação completa, gestão de utilizadores, conversas, mensagens, processamento de documentos, embeddings, recuperação de informação e lógica agêntica será desenvolvida progressivamente nas etapas seguintes do projeto.
+O processamento de documentos, a recuperação de informação (RAG ou outra abordagem, ainda a decidir através da revisão da literatura), embeddings e lógica agêntica serão desenvolvidos progressivamente nas etapas seguintes do projeto, depois de o núcleo atual estar estável.

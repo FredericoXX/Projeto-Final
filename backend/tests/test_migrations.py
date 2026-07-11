@@ -17,6 +17,7 @@ import pytest
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 from sqlalchemy import create_engine, inspect, text
+from sqlalchemy.engine import Engine
 
 from alembic import command
 from app.core.config import settings
@@ -115,6 +116,12 @@ def test_alembic_upgrade_head_creates_expected_schema(
         indexes = inspector.get_indexes("users")
         assert any(index["column_names"] == ["institution_id"] for index in indexes)
 
+        user_unique_constraints = inspector.get_unique_constraints("users")
+        assert any(
+            set(uc["column_names"]) == {"id", "institution_id"}
+            for uc in user_unique_constraints
+        )
+
         conversation_columns = {
             column["name"] for column in inspector.get_columns("conversations")
         }
@@ -126,9 +133,19 @@ def test_alembic_upgrade_head_creates_expected_schema(
             and fk["constrained_columns"] == ["institution_id"]
             for fk in conversation_fks
         )
+        # user_id's foreign key is composite (migration 3ed4bcad52c8):
+        # (user_id, institution_id) -> users(id, institution_id), so a
+        # conversation can never reference a user from another institution.
         assert any(
-            fk["referred_table"] == "users" and fk["constrained_columns"] == ["user_id"]
+            fk["referred_table"] == "users"
+            and set(fk["constrained_columns"]) == {"user_id", "institution_id"}
             for fk in conversation_fks
+        )
+
+        conversation_unique_constraints = inspector.get_unique_constraints("conversations")
+        assert any(
+            set(uc["column_names"]) == {"id", "institution_id"}
+            for uc in conversation_unique_constraints
         )
 
         conversation_indexes = inspector.get_indexes("conversations")
@@ -140,10 +157,13 @@ def test_alembic_upgrade_head_creates_expected_schema(
         message_columns = {column["name"] for column in inspector.get_columns("messages")}
         assert EXPECTED_MESSAGE_COLUMNS <= message_columns
 
+        # conversation_id's and user_id's foreign keys are composite
+        # (migration 3ed4bcad52c8): a message can never reference a
+        # conversation or a user from another institution.
         message_fks = inspector.get_foreign_keys("messages")
         assert any(
             fk["referred_table"] == "conversations"
-            and fk["constrained_columns"] == ["conversation_id"]
+            and set(fk["constrained_columns"]) == {"conversation_id", "institution_id"}
             for fk in message_fks
         )
         assert any(
@@ -152,7 +172,8 @@ def test_alembic_upgrade_head_creates_expected_schema(
             for fk in message_fks
         )
         assert any(
-            fk["referred_table"] == "users" and fk["constrained_columns"] == ["user_id"]
+            fk["referred_table"] == "users"
+            and set(fk["constrained_columns"]) == {"user_id", "institution_id"}
             for fk in message_fks
         )
 
@@ -166,6 +187,87 @@ def test_alembic_upgrade_head_creates_expected_schema(
             ).scalar()
             assert vector_extension == 1
 
+            current_revision = conn.execute(
+                text("SELECT version_num FROM alembic_version")
+            ).scalar()
+    finally:
+        engine.dispose()
+
+    script = ScriptDirectory.from_config(alembic_cfg)
+    assert current_revision == script.get_current_head()
+
+
+# Verifica especificamente a migration 3ed4bcad52c8 (constraints compostas
+# multi-institucionais): upgrade -> downgrade -> upgrade outra vez, para
+# confirmar que tanto o upgrade como o downgrade estão corretos e são
+# repetíveis, não apenas que "upgrade head" funciona uma vez.
+def test_composite_constraints_migration_upgrade_downgrade_upgrade(
+    migrations_database_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "database_url", migrations_database_url)
+    alembic_cfg = Config(str(BACKEND_DIR / "alembic.ini"))
+
+    def unique_constraint_names(engine: Engine, table: str) -> set[str]:
+        return {
+            uc["name"]
+            for uc in inspect(engine).get_unique_constraints(table)
+            if uc["name"] is not None
+        }
+
+    def foreign_key_names(engine: Engine, table: str) -> set[str]:
+        return {
+            fk["name"] for fk in inspect(engine).get_foreign_keys(table) if fk["name"] is not None
+        }
+
+    command.upgrade(alembic_cfg, "head")
+    engine = create_engine(migrations_database_url)
+    try:
+        assert "uq_users_id_institution_id" in unique_constraint_names(engine, "users")
+        assert "uq_conversations_id_institution_id" in unique_constraint_names(
+            engine, "conversations"
+        )
+        conversation_fks = foreign_key_names(engine, "conversations")
+        assert "fk_conversations_user_id_institution_id_users" in conversation_fks
+        assert "fk_conversations_user_id_users" not in conversation_fks
+
+        message_fks = foreign_key_names(engine, "messages")
+        assert "fk_messages_conversation_id_institution_id_conversations" in message_fks
+        assert "fk_messages_user_id_institution_id_users" in message_fks
+        assert "fk_messages_conversation_id_conversations" not in message_fks
+        assert "fk_messages_user_id_users" not in message_fks
+    finally:
+        engine.dispose()
+
+    command.downgrade(alembic_cfg, "-1")
+    engine = create_engine(migrations_database_url)
+    try:
+        assert "uq_users_id_institution_id" not in unique_constraint_names(engine, "users")
+        assert "uq_conversations_id_institution_id" not in unique_constraint_names(
+            engine, "conversations"
+        )
+        conversation_fks = foreign_key_names(engine, "conversations")
+        assert "fk_conversations_user_id_institution_id_users" not in conversation_fks
+        assert "fk_conversations_user_id_users" in conversation_fks
+
+        message_fks = foreign_key_names(engine, "messages")
+        assert "fk_messages_conversation_id_institution_id_conversations" not in message_fks
+        assert "fk_messages_user_id_institution_id_users" not in message_fks
+        assert "fk_messages_conversation_id_conversations" in message_fks
+        assert "fk_messages_user_id_users" in message_fks
+    finally:
+        engine.dispose()
+
+    command.upgrade(alembic_cfg, "head")
+    engine = create_engine(migrations_database_url)
+    try:
+        assert "uq_users_id_institution_id" in unique_constraint_names(engine, "users")
+        assert (
+            "fk_conversations_user_id_institution_id_users"
+            in foreign_key_names(engine, "conversations")
+        )
+
+        with engine.connect() as conn:
             current_revision = conn.execute(
                 text("SELECT version_num FROM alembic_version")
             ).scalar()

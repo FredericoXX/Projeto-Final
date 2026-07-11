@@ -3,11 +3,13 @@ import uuid
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import AuthorizationError
+from app.core.exceptions import AuthorizationError, ConflictError
+from app.core.language import resolve_language
 from app.models.message import Message
 from app.models.user import User
 from app.schemas.message import MessageCreate
 from app.services.conversation_service import get_accessible_conversation
+from app.services.institution_service import get_institution
 
 # Roles que cada tipo de utilizador pode usar ao criar uma mensagem por
 # esta rota. "assistant" fica de fora de ambos os conjuntos: mensagens do
@@ -28,6 +30,15 @@ def create_message(
     # utilizador, continua a devolver 404.
     conversation = get_accessible_conversation(db, current_user, conversation_id)
 
+    # closed e archived são estados finais neste protótipo: não aceitam
+    # novas mensagens.
+    if conversation.status != "active":
+        msg = (
+            f"Conversation '{conversation_id}' is {conversation.status} "
+            "and does not accept new messages."
+        )
+        raise ConflictError(msg)
+
     allowed_roles = (
         ALLOWED_ROLES_FOR_ADMIN if current_user.role == "admin" else ALLOWED_ROLES_FOR_USER
     )
@@ -35,13 +46,20 @@ def create_message(
         msg = f"role '{data.role}' is not allowed for this user."
         raise AuthorizationError(msg)
 
+    institution = get_institution(db, conversation.institution_id)
+    language = resolve_language(
+        data.language,
+        supported_languages=institution.supported_languages,
+        fallback=conversation.language or institution.default_language,
+    )
+
     message = Message(
         conversation_id=conversation.id,
         institution_id=conversation.institution_id,
         user_id=current_user.id,
         role=data.role,
         content=data.content,
-        language=data.language,
+        language=language,
     )
     db.add(message)
     db.commit()

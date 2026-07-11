@@ -7,7 +7,7 @@ from sqlalchemy.orm import Session
 from app.core.exceptions import ConflictError, NotFoundError, ValidationError
 from app.models.institution import Institution
 from app.models.user import User
-from app.schemas.institution import InstitutionCreate, InstitutionUpdate
+from app.schemas.institution import InstitutionAdminUpdate, InstitutionCreate
 
 CODE_UNIQUE_CONSTRAINT = "uq_institutions_code"
 DEFAULT_LANGUAGE_CHECK_CONSTRAINT = "ck_institutions_default_language_supported"
@@ -120,7 +120,7 @@ def list_institutions_for_admin(
 def update_institution(
     db: Session,
     institution_id: uuid.UUID,
-    data: InstitutionUpdate,
+    data: InstitutionAdminUpdate,
 ) -> Institution:
     institution = get_institution(db, institution_id)
 
@@ -171,7 +171,7 @@ def update_institution_for_admin(
     db: Session,
     admin: User,
     institution_id: uuid.UUID,
-    data: InstitutionUpdate,
+    data: InstitutionAdminUpdate,
 ) -> Institution:
     """Same 404-not-403 isolation as get_institution_for_admin: an admin
     can only ever update their own institution."""
@@ -179,3 +179,16 @@ def update_institution_for_admin(
         msg = f"Institution '{institution_id}' not found."
         raise NotFoundError(msg)
     return update_institution(db, institution_id, data)
+
+
+def set_institution_status(db: Session, institution_id: uuid.UUID, is_active: bool) -> Institution:
+    """Bootstrap-only recovery path: institutional admins can no longer
+    touch is_active through PATCH /institutions/{id} (see
+    InstitutionAdminUpdate), so this is now the only way to (de)activate
+    an institution. Restricted to X-Bootstrap-Token by the route, not by
+    any check here."""
+    institution = get_institution(db, institution_id)
+    institution.is_active = is_active
+    db.commit()
+    db.refresh(institution)
+    return institution

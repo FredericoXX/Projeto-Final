@@ -1,7 +1,7 @@
 from datetime import datetime
 from uuid import UUID, uuid4
 
-from sqlalchemy import Boolean, DateTime, ForeignKey, String, func
+from sqlalchemy import Boolean, DateTime, ForeignKey, String, UniqueConstraint, func
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.base import Base
@@ -9,6 +9,14 @@ from app.database.base import Base
 
 class User(Base):
     __tablename__ = "users"
+    __table_args__ = (
+        # id já é único por si só (é a primary key); esta constraint
+        # "degenerada" existe apenas para que (id, institution_id) possa
+        # ser referenciado por foreign keys compostas a partir de
+        # conversations/messages, garantindo que essas linhas só podem
+        # apontar para um utilizador da mesma instituição.
+        UniqueConstraint("id", "institution_id", name="uq_users_id_institution_id"),
+    )
 
     id: Mapped[UUID] = mapped_column(
         primary_key=True,
