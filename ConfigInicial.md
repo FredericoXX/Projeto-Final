@@ -2,7 +2,7 @@
 
 ## Objetivo
 
-Este documento regista a configuração inicial realizada para preparar o ambiente de desenvolvimento do projeto **Agentic RAG Assistant**.
+Este documento regista a configuração inicial realizada para preparar o ambiente de desenvolvimento do projeto **Agentic Institutional Assistant**.
 
 Nesta fase, foi configurada a infraestrutura base do backend, incluindo controlo de versões, ambiente Python isolado, base de dados PostgreSQL com pgvector, API FastAPI, migrações, endpoint de saúde e validações mínimas de qualidade.
 
@@ -17,7 +17,7 @@ Para colocar o backend funcional em ambiente local, devem ser executados os segu
 1. Abrir o terminal na raiz do projeto:
 
 ```powershell
-cd C:\dev\agentic-rag-assistant
+cd <caminho-do-projeto>
 ```
 
 2. Arrancar a base de dados com Docker:
@@ -114,7 +114,7 @@ A resposta esperada é:
 Foi criada uma estrutura inicial modular para separar responsabilidades no backend:
 
 ```text
-agentic-rag-assistant/
+institutional-assistant/
 ├── backend/
 │   ├── alembic/
 │   │   ├── versions/

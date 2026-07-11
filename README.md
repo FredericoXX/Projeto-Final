@@ -1,6 +1,8 @@
-# Institutional Agentic RAG Assistant
+# Agentic Institutional Assistant
 
-Backend prototype for a generic, multi-institution higher-education assistant based on controlled Agentic RAG.
+Backend prototype for a generic, multi-institution higher-education assistant. The
+information retrieval approach (e.g. RAG) is still to be chosen through a
+literature review and is not yet an architectural decision.
 
 The Python application lives entirely in [`backend/`](backend/). Docker Compose at the
 repository root runs only PostgreSQL (with pgvector); the FastAPI application itself

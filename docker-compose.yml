@@ -1,9 +1,9 @@
-name: agentic-rag-assistant
+name: institutional-assistant
 
 services:
   database:
     image: pgvector/pgvector:pg17
-    container_name: agentic-rag-assistant-db
+    container_name: institutional-assistant-db
     restart: unless-stopped
 
     environment:
