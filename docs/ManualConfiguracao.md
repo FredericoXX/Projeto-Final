@@ -153,6 +153,12 @@ docker compose ps
 
 O serviço `database` deve apresentar o estado `running` ou `healthy`. O contentor criado tem o nome `institutional-assistant-db`.
 
+O volume PostgreSQL tem um nome explícito para preservar os dados criados
+antes da alteração do nome do projeto Docker. Num ambiente já existente, não
+substitua o ficheiro `.env` atual pelo novo exemplo: mantenha as credenciais e
+o nome da base em uso. Para adotar os novos identificadores, faça primeiro um
+backup e restaure os dados numa nova base.
+
 Para confirmar a disponibilidade do PostgreSQL, execute:
 
 ```powershell

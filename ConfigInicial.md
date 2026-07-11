@@ -1,5 +1,10 @@
 # Configuração Inicial do Ambiente
 
+> Nota histórica: este documento regista o primeiro arranque do projeto. Os
+> números de migrations, testes e funcionalidades aqui descritos não
+> representam necessariamente o estado atual. Para instruções operacionais
+> atualizadas, use o `README.md` e `docs/ManualConfiguracao.md`.
+
 ## Objetivo
 
 Este documento regista a configuração inicial realizada para preparar o ambiente de desenvolvimento do projeto **Agentic Institutional Assistant**.

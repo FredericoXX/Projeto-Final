@@ -25,3 +25,6 @@ services:
 
 volumes:
   postgres_data:
+    # Keep using the volume created before the Compose project was renamed.
+    # This prevents local development data from disappearing after an update.
+    name: agentic-rag-assistant_postgres_data
