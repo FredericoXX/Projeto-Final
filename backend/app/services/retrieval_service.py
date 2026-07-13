@@ -1,6 +1,7 @@
 """Orquestração fina da recuperação de evidências institucionais."""
 
-from datetime import date
+from dataclasses import asdict
+from datetime import UTC, datetime
 
 from sqlalchemy.orm import Session
 
@@ -36,7 +37,9 @@ def search_evidence(
     context = RetrievalContext(
         institution_id=current_user.institution_id,
         language=language,
-        reference_date=date.today(),
+        # Data em UTC, coerente com o resto do projeto (ex.: processed_at);
+        # a data local do servidor podia divergir até um dia perto da meia-noite.
+        reference_date=datetime.now(UTC).date(),
     )
     evidence = retriever.search(
         db,
@@ -48,5 +51,5 @@ def search_evidence(
     return RetrievalSearchResponse(
         query=payload.query,
         language=language,
-        items=[RetrievalEvidenceRead(**item.__dict__) for item in evidence],
+        items=[RetrievalEvidenceRead(**asdict(item)) for item in evidence],
     )

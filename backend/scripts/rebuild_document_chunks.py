@@ -7,6 +7,7 @@ Uso:
 """
 
 import argparse
+import logging
 from dataclasses import dataclass
 from uuid import UUID
 
@@ -17,6 +18,8 @@ from app.core.config import settings
 from app.database.session import SessionLocal
 from app.models.document_version import DocumentVersion
 from app.services import document_chunk_service, document_chunking_service
+
+logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
@@ -60,6 +63,10 @@ def rebuild_document_chunks(
         except Exception:
             db.rollback()
             failures += 1
+            # Só o id e o motivo nos logs; nunca o conteúdo do documento.
+            logger.exception(
+                "Falha ao reconstruir os chunks da versão de documento %s", version.id
+            )
         else:
             processed += 1
             chunks_created += len(entities)
@@ -80,6 +87,9 @@ def _parse_args() -> argparse.Namespace:
 
 
 def main() -> None:
+    # Sem isto, os logger.exception das falhas não apareceriam quando o
+    # script corre isolado (python -m ...).
+    logging.basicConfig(level=logging.INFO)
     args = _parse_args()
     with SessionLocal() as db:
         summary = rebuild_document_chunks(

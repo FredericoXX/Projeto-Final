@@ -286,6 +286,16 @@ def test_invalid_search_payloads_return_422(
     assert response.status_code == 422
 
 
+def test_query_that_normalizes_to_empty_returns_422(client: TestClient) -> None:
+    _, headers, _ = _setup(client)
+    # "´´" sobrevive ao trim do schema, mas a normalização (NFKD + remoção
+    # de marcas + colapso de espaços) deixa-a vazia: o service rejeita com
+    # o ValidationError de domínio, em vez de chegar ao retriever.
+    response = _search(client, headers, "´´")
+    assert response.status_code == 422
+    assert response.json()["detail"]["code"] == "domain_validation_error"
+
+
 # --- Credibilidade, validade, idioma e isolamento -----------------------------
 
 
