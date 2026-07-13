@@ -7,6 +7,10 @@ extend-exclude = ["alembic/versions"]
 select = ["E", "F", "I", "B", "UP"]
 ignore = ["B008"]  # FastAPI's Depends()/Query() defaults are the idiomatic pattern
 
+[tool.ruff.lint.isort]
+known-first-party = ["app", "tests"]
+known-third-party = ["alembic"]
+
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 python_files = ["test_*.py"]

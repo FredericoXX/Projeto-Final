@@ -15,10 +15,11 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
 
-    # Bootstrap-only secret that gates POST /institutions and
-    # register-initial-admin until a real platform_admin role exists.
-    # None (the default) disables both endpoints rather than leaving them
-    # open, so an unset token fails closed in any environment.
+    # Bootstrap-only secret that gates institution creation,
+    # register-initial-admin and PATCH
+    # /api/v1/bootstrap/institutions/{id}/status until a real platform_admin
+    # role exists. None (the default) disables these operations rather than
+    # leaving them open, so an unset token fails closed in any environment.
     bootstrap_token: str | None = None
 
     # Root of the local document storage. A relative value is resolved
