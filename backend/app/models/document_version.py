@@ -44,6 +44,16 @@ class DocumentVersion(Base):
             "checksum_sha256",
             name="uq_document_versions_institution_id_checksum",
         ),
+        # Constraint "degenerada" (id já é único): existe apenas para ser
+        # referenciada pela foreign key composta de document_chunks,
+        # garantindo que um chunk pertence à versão, ao documento e à
+        # instituição corretos ao mesmo tempo.
+        UniqueConstraint(
+            "id",
+            "document_id",
+            "institution_id",
+            name="uq_document_versions_id_document_id_institution_id",
+        ),
         # Uma versão pertence obrigatoriamente à mesma instituição do seu
         # documento — o PostgreSQL rejeita qualquer combinação cruzada.
         ForeignKeyConstraint(

@@ -4,9 +4,11 @@ Estados de uma versão:
 
 - pending: versão registada, extração ainda não iniciada;
 - processing: extração em curso;
-- processed: texto extraído com sucesso;
-- failed: extração falhou (o ficheiro original permanece guardado, por
-  isso a versão pode ser reprocessada mais tarde).
+- processed: texto extraído e chunks persistidos com sucesso — uma
+  versão nunca fica processed antes de os seus chunks estarem gravados;
+- failed: a extração ou a segmentação/persistência dos chunks falhou (o
+  ficheiro original permanece guardado, por isso a versão pode ser
+  reprocessada mais tarde). Uma versão failed não mantém chunks.
 
 Nesta fase o processamento corre de forma síncrona dentro do pedido de
 upload/reprocessamento. A função process_version é autocontida (recebe a
@@ -20,16 +22,19 @@ from datetime import UTC, datetime
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
+from app.core.config import settings
 from app.core.exceptions import ConflictError, NotFoundError
 from app.models.document_version import DocumentVersion
+from app.services import document_chunk_service, document_chunking_service
 from app.services.document_extraction_service import ExtractionError, extract_text
 from app.storage.base import DocumentStorage
 
 logger = logging.getLogger(__name__)
 
-# Mensagem genérica para falhas inesperadas: nunca expor traceback,
-# caminhos ou detalhes internos em processing_error.
+# Mensagens genéricas para falhas inesperadas: nunca expor traceback,
+# caminhos, SQL ou detalhes internos em processing_error.
 GENERIC_PROCESSING_ERROR = "Text extraction failed unexpectedly."
+CHUNKING_ERROR_MESSAGE = "Document segmentation failed unexpectedly."
 
 FILE_UNAVAILABLE_MESSAGE = "The stored file for this version is unavailable."
 
@@ -39,11 +44,15 @@ def process_version(
     version: DocumentVersion,
     storage: DocumentStorage,
 ) -> DocumentVersion:
-    """Executa a extração de texto e finaliza como processed ou failed.
+    """Executa a extração, segmenta o texto em chunks e finaliza como
+    processed ou failed.
 
     O estado "processing" é gravado (commit) antes da extração começar,
     para que o estado intermédio seja visível e o reprocessamento
-    concorrente possa ser recusado com 409.
+    concorrente possa ser recusado com 409. O estado "processed" só é
+    gravado depois de o texto extraído e o novo conjunto de chunks
+    estarem na mesma transação — nunca há versão processed sem chunks,
+    chunks parciais nem mistura de conjuntos antigo e novo.
     """
     version.processing_status = "processing"
     version.processing_error = None
@@ -55,23 +64,73 @@ def process_version(
     try:
         result = extract_text(storage.resolve_path(version.storage_path), version.mime_type)
     except ExtractionError as exc:
-        version.processing_status = "failed"
-        version.processing_error = str(exc)
+        return _finalize_failure(db, version, str(exc))
     except Exception:
         # Falha imprevista (ex.: caminho inválido no storage): detalhes só
         # no logging; o cliente vê apenas a mensagem genérica.
         logger.exception(
             "Erro inesperado ao processar a versão de documento %s", version.id
         )
-        version.processing_status = "failed"
-        version.processing_error = GENERIC_PROCESSING_ERROR
-    else:
-        version.processing_status = "processed"
-        version.extracted_text = result.text
-        version.page_count = result.page_count
-        # processed_at regista apenas conclusões com sucesso.
-        version.processed_at = datetime.now(UTC)
+        return _finalize_failure(db, version, GENERIC_PROCESSING_ERROR)
 
+    try:
+        chunks = document_chunking_service.chunk_text(
+            result.text,
+            settings.document_chunk_size_chars,
+            settings.document_chunk_overlap_chars,
+        )
+        # Substituição atómica: remoção dos chunks antigos e inserção dos
+        # novos ficam pendentes na transação até ao commit final abaixo.
+        document_chunk_service.replace_version_chunks(db, version, chunks)
+    except Exception:
+        logger.exception(
+            "Erro ao segmentar ou persistir os chunks da versão de documento %s",
+            version.id,
+        )
+        # O rollback desfaz qualquer chunk pendente (os antigos, se
+        # existirem, permanecem intactos até à limpeza do estado failed).
+        db.rollback()
+        return _finalize_failure(db, version, CHUNKING_ERROR_MESSAGE)
+
+    version.processing_status = "processed"
+    version.extracted_text = result.text
+    version.page_count = result.page_count
+    # processed_at regista apenas conclusões com sucesso.
+    version.processed_at = datetime.now(UTC)
+
+    try:
+        db.commit()
+    except Exception:
+        # O flush acima deteta normalmente erros de constraints, mas uma
+        # falha também pode ocorrer ao confirmar a transação (por exemplo,
+        # constraint diferida ou perda da ligação). Nesse caso, nenhum
+        # conjunto parcial pode sobreviver e a versão não pode ficar presa
+        # em processing.
+        logger.exception(
+            "Erro ao confirmar os chunks da versão de documento %s",
+            version.id,
+        )
+        db.rollback()
+        return _finalize_failure(db, version, CHUNKING_ERROR_MESSAGE)
+
+    db.refresh(version)
+    return version
+
+
+def _finalize_failure(
+    db: Session,
+    version: DocumentVersion,
+    message: str,
+) -> DocumentVersion:
+    """Grava o estado failed com uma mensagem curta e segura.
+
+    Uma versão não processada não mantém chunks: os de um processamento
+    anterior são removidos na mesma transação do estado failed, para que
+    "ter chunks" seja sempre equivalente a "estar processed".
+    """
+    document_chunk_service.delete_version_chunks(db, version.id)
+    version.processing_status = "failed"
+    version.processing_error = message
     db.commit()
     db.refresh(version)
     return version

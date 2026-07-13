@@ -8,12 +8,16 @@ documentos institucionais, versionamento dos ficheiros, upload
 controlado, armazenamento local abstrato, extração de texto e consulta
 administrativa dos metadados e do texto extraído.
 
+A etapa seguinte desta fase acrescentou a segmentação do texto extraído
+em *chunks* internos (tabela `document_chunks`, sem endpoint público) —
+ver a secção "Document chunks" em [`docs/database.md`](database.md).
+
 **Fora do âmbito desta fase** (deliberadamente não implementado):
-document chunks, embeddings, pgvector no domínio documental, retrieval,
-pesquisa semântica ou lexical, RAG, integração com LLM, agentes, OCR,
-importação de páginas web, filas/workers, S3 e interface frontend. A
-abordagem de recuperação de informação continua a ser uma questão em
-aberto para a revisão da literatura.
+embeddings, pgvector no domínio documental, retrieval, pesquisa
+semântica ou lexical, RAG, integração com LLM, agentes, OCR, importação
+de páginas web, filas/workers, S3 e interface frontend. A abordagem de
+recuperação de informação continua a ser uma questão em aberto para a
+revisão da literatura.
 
 ## Modelo de dados
 
@@ -123,8 +127,8 @@ futura execução assíncrona, mas não existem filas nem workers).
 |---|---|
 | `pending` | versão registada, extração ainda não iniciada |
 | `processing` | extração em curso |
-| `processed` | texto extraído com sucesso |
-| `failed` | extração falhou; o ficheiro original fica guardado para reprocessamento |
+| `processed` | texto extraído **e chunks persistidos** com sucesso — uma versão nunca fica `processed` antes de os seus chunks estarem gravados |
+| `failed` | a extração ou a segmentação/persistência dos chunks falhou; o ficheiro original fica guardado para reprocessamento e a versão não mantém chunks |
 
 O upload devolve **201 mesmo que a extração falhe** — a versão foi
 criada; o resultado fica visível em `processing_status` e
@@ -137,7 +141,9 @@ available in this prototype." — não existe OCR nesta fase.
 O reprocessamento
 (`POST .../versions/{version_id}/reprocess`) reexecuta a extração sobre
 o ficheiro original sem criar nova versão; uma versão já em
-`processing` responde 409.
+`processing` responde 409. Os chunks da versão são substituídos por
+inteiro (sem duplicados nem restos parciais); os chunks de outras
+versões do mesmo documento nunca são tocados.
 
 ## Endpoints
 

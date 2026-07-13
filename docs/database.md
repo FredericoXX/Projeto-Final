@@ -11,6 +11,7 @@
 | 5 | `3ed4bcad52c8` | Add composite multi-institution foreign keys and their supporting unique constraints |
 | 6 | `5f638cb2d2c3` | Add domain-value CHECK constraints for `users.role`, `conversations.status` and `messages.role` |
 | 7 | `1482b165c943` | Create the `documents` and `document_versions` tables (document core) |
+| 8 | `68cb34527411` | Create the `document_chunks` table and its supporting unique constraint on `document_versions` |
 
 Since the project is still in local-only development with no shared
 environments, no production data, and disposable databases, the `users`
@@ -102,6 +103,65 @@ without losing its history.
 See [`docs/document-core.md`](document-core.md) for the full phase
 documentation (endpoints, upload rules, processing states, storage
 layout and limitations).
+
+## Document chunks (`document_chunks`)
+
+Migration `68cb34527411` adds `document_chunks`: the deterministic
+segments of the extracted text of each document version. Chunks are an
+**internal structure** — there is no public chunks endpoint, and
+`normalized_content`, `content_sha256` and the offsets are never exposed
+by the API. They exist to prepare the documents for a future
+information-retrieval strategy; RAG is *not* a settled architectural
+decision yet, and no embeddings, TSVECTOR, search indexes or retrieval
+of any kind are implemented in this phase.
+
+Each row has:
+
+- `id` (UUID, app-generated), `institution_id`, `document_id`,
+  `document_version_id` — with a composite three-column FK
+  `(document_version_id, document_id, institution_id)` →
+  `document_versions(id, document_id, institution_id)`, backed by a
+  degenerate `UNIQUE (id, document_id, institution_id)` on
+  `document_versions` (id alone is already unique; it exists only to be
+  referenced). PostgreSQL itself therefore rejects a chunk that points
+  at the wrong version, the wrong document or another institution —
+  the service checks are not the only defense;
+- `chunk_index` (0-based, `UNIQUE (document_version_id, chunk_index)`),
+  `content` (the original slice: `content ==
+  extracted_text[start_char:end_char]`), `normalized_content` (see
+  `app/core/text_normalization.py`: NFKD, no diacritics, casefolded,
+  whitespace collapsed — prepared for future lexical search),
+  `content_sha256`, `start_char`/`end_char` (end-exclusive offsets over
+  the original text), `language` (inherited from the document at
+  segmentation time), `created_at`;
+- CHECKs: `chunk_index >= 0`, `start_char >= 0`,
+  `end_char > start_char`, `btrim(content) <> ''`,
+  `btrim(normalized_content) <> ''`;
+- indexes on `institution_id`, `document_id`, `document_version_id` and
+  `(institution_id, language)`; the pair
+  `(document_version_id, chunk_index)` is already indexed by its UNIQUE
+  constraint, so no duplicate index is created. There are deliberately
+  **no** vector/embedding columns, TSVECTOR columns or GIN indexes —
+  those belong to the retrieval phase, if and when that approach is
+  chosen.
+
+Chunking is integrated into the synchronous processing flow
+(`document_processing_service.process_version`): extraction → chunking
+(`document_chunking_service.chunk_text`, paragraph-preferring,
+character-window fallback with configurable overlap; see
+`DOCUMENT_CHUNK_SIZE_CHARS` / `DOCUMENT_CHUNK_OVERLAP_CHARS`) →
+atomic replacement of the version's chunk set
+(`document_chunk_service.replace_version_chunks`, no commit of its own)
+→ version marked `processed`, all in one transaction. A version is
+never `processed` without its chunks; a failure in chunking or
+persistence rolls back, leaves no partial chunks and marks the version
+`failed` with a short, safe error message. A `failed` version keeps no
+chunks at all (having chunks is equivalent to being `processed`).
+Reprocessing replaces only that version's chunks (protected by the same
+`SELECT ... FOR UPDATE` lock as before); historical versions keep their
+own chunk sets, and uploading a new version never touches the chunks of
+previous versions. Selecting *which* version is searched belongs to the
+future retrieval phase.
 
 ## Institutional security rules
 
@@ -217,6 +277,8 @@ covers persistence, CRUD APIs, authentication, the core domain
 invariants described above (institutional security rules,
 conversation/message state and language rules, multi-institution data
 integrity) and the document core (documents, versioned uploads, local
-file storage and synchronous text extraction — see
-[`docs/document-core.md`](document-core.md)). There are no document
-chunks, indexing or semantic/lexical search yet.
+file storage, synchronous text extraction and deterministic chunking —
+see [`docs/document-core.md`](document-core.md) and the
+`document_chunks` section above). Chunks are persisted but not yet
+searched: there is no indexing, embeddings or semantic/lexical search
+yet.
