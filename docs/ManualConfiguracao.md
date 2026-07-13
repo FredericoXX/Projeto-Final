@@ -122,6 +122,9 @@ BOOTSTRAP_TOKEN=change_me_dev_bootstrap_token
 
 DOCUMENT_STORAGE_PATH=storage/documents
 DOCUMENT_MAX_FILE_SIZE_MB=20
+
+DOCUMENT_CHUNK_SIZE_CHARS=1200
+DOCUMENT_CHUNK_OVERLAP_CHARS=150
 ```
 
 Os valores definidos em `DATABASE_URL` devem corresponder aos valores de `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` e `POSTGRES_HOST_PORT`.
@@ -135,6 +138,8 @@ A variável `JWT_SECRET_KEY` assina os tokens de autenticação emitidos em `POS
 A variável `BOOTSTRAP_TOKEN` é um segredo temporário que substitui, nesta fase do protótipo, um papel de administração de plataforma que ainda não existe. É exigida no cabeçalho `X-Bootstrap-Token` para criar uma instituição, registar o seu primeiro administrador e reativar/desativar uma instituição — ver secção 12 abaixo. Se não estiver definida (ou não corresponder ao cabeçalho enviado), esses três endpoints recusam o pedido com `401`.
 
 As variáveis `DOCUMENT_STORAGE_PATH` e `DOCUMENT_MAX_FILE_SIZE_MB` configuram o núcleo documental: a primeira define a pasta local onde os ficheiros carregados são guardados (um caminho relativo é resolvido a partir da raiz do projeto; a pasta `storage/` está no `.gitignore` e nunca é versionada), e a segunda o tamanho máximo aceite por ficheiro, em megabytes. Os ficheiros nunca são guardados no PostgreSQL — a base de dados guarda apenas metadados e o texto extraído (ver [`docs/document-core.md`](document-core.md)).
+
+As variáveis `DOCUMENT_CHUNK_SIZE_CHARS` e `DOCUMENT_CHUNK_OVERLAP_CHARS` configuram a segmentação do texto extraído em *chunks* (tabela `document_chunks`): a primeira define o tamanho máximo de cada segmento, em caracteres, e a segunda a sobreposição entre segmentos consecutivos quando um corte é forçado por limite de caracteres. A sobreposição tem de ser inferior ao tamanho do segmento; a aplicação recusa arrancar com valores inválidos. Os chunks são uma estrutura interna, criada automaticamente quando uma versão de documento é processada e reconstruída por inteiro no reprocessamento; preparam o sistema para estratégias futuras de recuperação de informação — nesta fase não existe pesquisa, embeddings, RAG nem geração de respostas (ver [`docs/database.md`](database.md)).
 
 O ficheiro `.env` contém configurações locais, incluindo estes segredos, e não deve ser enviado para o repositório remoto.
 
@@ -588,6 +593,6 @@ http://127.0.0.1:8000/docs
 
 ## 17. Estado da infraestrutura nesta fase
 
-A configuração descrita neste manual cobre a infraestrutura base do backend (controlo de versões, variáveis de ambiente, PostgreSQL com pgvector, ambiente virtual Python, FastAPI, SQLAlchemy, Alembic, endpoint de saúde, testes automatizados e validação de qualidade) e o núcleo funcional do protótipo: gestão de instituições, autenticação JWT (com o fluxo de bootstrap descrito na secção 12), gestão de utilizadores e uma API de conversas/mensagens, todas com isolamento multi-institucional reforçado a nível de aplicação e de base de dados (ver [`docs/database.md`](database.md)).
+A configuração descrita neste manual cobre a infraestrutura base do backend (controlo de versões, variáveis de ambiente, PostgreSQL com pgvector, ambiente virtual Python, FastAPI, SQLAlchemy, Alembic, endpoint de saúde, testes automatizados e validação de qualidade) e o núcleo funcional do protótipo: gestão de instituições, autenticação JWT (com o fluxo de bootstrap descrito na secção 12), gestão de utilizadores, uma API de conversas/mensagens e o núcleo documental (documentos com versões, armazenamento local de ficheiros, extração de texto e segmentação em chunks internos), todas com isolamento multi-institucional reforçado a nível de aplicação e de base de dados (ver [`docs/database.md`](database.md) e [`docs/document-core.md`](document-core.md)).
 
-O processamento de documentos, a recuperação de informação (RAG ou outra abordagem, ainda a decidir através da revisão da literatura), embeddings e lógica agêntica serão desenvolvidos progressivamente nas etapas seguintes do projeto, depois de o núcleo atual estar estável.
+A recuperação de informação (RAG ou outra abordagem, ainda a decidir através da revisão da literatura), a pesquisa sobre os chunks, embeddings e lógica agêntica serão desenvolvidos progressivamente nas etapas seguintes do projeto, depois de o núcleo atual estar estável.

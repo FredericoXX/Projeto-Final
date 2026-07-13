@@ -193,8 +193,19 @@ the current institutional security rules. `institutions`, `users`,
 API. The document core (`/api/v1/documents`, admin-only) covers logical
 documents with versioned file uploads (PDF, TXT, Markdown), local file
 storage, duplicate detection and synchronous text extraction — see
-[`docs/document-core.md`](docs/document-core.md). There are still no
-document chunks, indexing, retrieval, semantic or lexical search, RAG,
+[`docs/document-core.md`](docs/document-core.md).
+
+After a successful extraction, the text of each document version is also
+split into internal, deterministic chunks (`document_chunks` table),
+stored with character offsets, a normalized copy for future search and a
+per-chunk SHA-256. Chunk size and overlap are configured via
+`DOCUMENT_CHUNK_SIZE_CHARS` / `DOCUMENT_CHUNK_OVERLAP_CHARS`. A version
+is only marked `processed` after its chunks are persisted, and
+reprocessing atomically replaces that version's chunk set. Chunks are an
+internal structure with no public endpoint: they prepare the system for
+a future information-retrieval strategy, whatever it turns out to be.
+
+There is still no indexing, retrieval, semantic or lexical search, RAG,
 embeddings, LLM integration or agent behavior — the retrieval approach
 is an open question for the literature review, not a decision already
 made in this codebase, and pgvector is not used by the document layer.

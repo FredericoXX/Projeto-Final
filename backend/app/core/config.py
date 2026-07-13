@@ -1,5 +1,6 @@
 from pathlib import Path
 
+from pydantic import model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
@@ -28,11 +29,30 @@ class Settings(BaseSettings):
     document_storage_path: str = "storage/documents"
     document_max_file_size_mb: int = 20
 
+    # Segmentação do texto extraído em chunks (estrutura interna que
+    # prepara futuras estratégias de recuperação de informação). Nomes
+    # neutros de propósito: nenhuma decisão de retrieval foi tomada.
+    document_chunk_size_chars: int = 1200
+    document_chunk_overlap_chars: int = 150
+
     model_config = SettingsConfigDict(
         env_file=PROJECT_ROOT / ".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )
+
+    @model_validator(mode="after")
+    def check_chunking_configuration(self) -> "Settings":
+        if self.document_chunk_size_chars <= 0:
+            msg = "DOCUMENT_CHUNK_SIZE_CHARS must be greater than zero"
+            raise ValueError(msg)
+        if self.document_chunk_overlap_chars < 0:
+            msg = "DOCUMENT_CHUNK_OVERLAP_CHARS must not be negative"
+            raise ValueError(msg)
+        if self.document_chunk_overlap_chars >= self.document_chunk_size_chars:
+            msg = "DOCUMENT_CHUNK_OVERLAP_CHARS must be smaller than DOCUMENT_CHUNK_SIZE_CHARS"
+            raise ValueError(msg)
+        return self
 
     @property
     def resolved_document_storage_path(self) -> Path:

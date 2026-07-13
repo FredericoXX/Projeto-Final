@@ -396,6 +396,118 @@ def test_domain_check_constraints_migration_upgrade_downgrade_upgrade(
     assert current_revision == script.get_current_head()
 
 
+# Verifica especificamente a migration 68cb34527411 (document_chunks):
+# upgrade -> downgrade -> upgrade outra vez, para confirmar que tanto o
+# upgrade como o downgrade estão corretos e são repetíveis, incluindo a
+# constraint de suporte em document_versions.
+def test_document_chunks_migration_upgrade_downgrade_upgrade(
+    migrations_database_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "database_url", migrations_database_url)
+    alembic_cfg = Config(str(BACKEND_DIR / "alembic.ini"))
+
+    def version_unique_constraints(engine: Engine) -> set[str]:
+        return {
+            uc["name"]
+            for uc in inspect(engine).get_unique_constraints("document_versions")
+            if uc["name"] is not None
+        }
+
+    def assert_chunks_schema(engine: Engine) -> None:
+        inspector = inspect(engine)
+        assert "document_chunks" in inspector.get_table_names()
+
+        columns = {column["name"] for column in inspector.get_columns("document_chunks")}
+        assert {
+            "id",
+            "institution_id",
+            "document_id",
+            "document_version_id",
+            "chunk_index",
+            "content",
+            "normalized_content",
+            "content_sha256",
+            "start_char",
+            "end_char",
+            "language",
+            "created_at",
+        } <= columns
+
+        # FK composta de três colunas: o chunk pertence à versão, ao
+        # documento e à instituição corretos ao mesmo tempo.
+        chunk_fks = inspector.get_foreign_keys("document_chunks")
+        assert any(
+            fk["referred_table"] == "document_versions"
+            and set(fk["constrained_columns"])
+            == {"document_version_id", "document_id", "institution_id"}
+            for fk in chunk_fks
+        )
+        assert any(
+            fk["referred_table"] == "institutions"
+            and fk["constrained_columns"] == ["institution_id"]
+            for fk in chunk_fks
+        )
+
+        chunk_uniques = {
+            uc["name"] for uc in inspector.get_unique_constraints("document_chunks")
+        }
+        assert "uq_document_chunks_document_version_id_chunk_index" in chunk_uniques
+
+        chunk_checks = {
+            cc["name"] for cc in inspector.get_check_constraints("document_chunks")
+        }
+        assert "ck_document_chunks_chunk_index_non_negative" in chunk_checks
+        assert "ck_document_chunks_start_char_non_negative" in chunk_checks
+        assert "ck_document_chunks_end_char_after_start_char" in chunk_checks
+        assert "ck_document_chunks_content_not_blank" in chunk_checks
+        assert "ck_document_chunks_normalized_content_not_blank" in chunk_checks
+
+        chunk_indexes = {index["name"] for index in inspector.get_indexes("document_chunks")}
+        assert "ix_document_chunks_institution_id" in chunk_indexes
+        assert "ix_document_chunks_document_id" in chunk_indexes
+        assert "ix_document_chunks_document_version_id" in chunk_indexes
+        assert "ix_document_chunks_institution_id_language" in chunk_indexes
+
+        assert (
+            "uq_document_versions_id_document_id_institution_id"
+            in version_unique_constraints(engine)
+        )
+
+    command.upgrade(alembic_cfg, "68cb34527411")
+    engine = create_engine(migrations_database_url)
+    try:
+        assert_chunks_schema(engine)
+    finally:
+        engine.dispose()
+
+    command.downgrade(alembic_cfg, "-1")
+    engine = create_engine(migrations_database_url)
+    try:
+        assert "document_chunks" not in inspect(engine).get_table_names()
+        assert (
+            "uq_document_versions_id_document_id_institution_id"
+            not in version_unique_constraints(engine)
+        )
+    finally:
+        engine.dispose()
+
+    command.upgrade(alembic_cfg, "head")
+    engine = create_engine(migrations_database_url)
+    try:
+        assert_chunks_schema(engine)
+
+        with engine.connect() as conn:
+            current_revision = conn.execute(
+                text("SELECT version_num FROM alembic_version")
+            ).scalar()
+    finally:
+        engine.dispose()
+
+    script = ScriptDirectory.from_config(alembic_cfg)
+    assert current_revision == script.get_current_head()
+
+
 # Verifica especificamente a migration 1482b165c943 (tabelas documentais):
 # upgrade -> downgrade -> upgrade outra vez, para confirmar que tanto o
 # upgrade como o downgrade estão corretos e são repetíveis.
