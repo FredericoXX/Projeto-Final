@@ -181,6 +181,12 @@ administrativa, execute `python -m scripts.rebuild_document_chunks`. O
 script não reextrai ficheiros, substitui chunks idempotentemente e aceita
 `--institution-id` e `--document-id`.
 
+Sobre esta baseline existe ainda a geração experimental de respostas
+fundamentadas (`POST /api/v1/answering/ask`), documentada em
+[`docs/answering.md`](answering.md): usa as mesmas evidências e filtros,
+não persiste nada e devolve fallback determinístico quando não há
+evidências.
+
 Notas:
 
 - não existe DELETE nesta fase; a desativação é

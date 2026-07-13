@@ -15,7 +15,9 @@ from app.core.exceptions import (
     ConflictError,
     NotFoundError,
     PayloadTooLargeError,
+    ServiceUnavailableError,
     UnsupportedMediaTypeError,
+    UpstreamServiceError,
     ValidationError,
 )
 
@@ -59,6 +61,18 @@ async def unsupported_media_type_error_handler(
     return _error_response(415, "unsupported_media_type", str(exc))
 
 
+async def service_unavailable_error_handler(
+    request: Request, exc: ServiceUnavailableError
+) -> JSONResponse:
+    return _error_response(503, "service_unavailable", str(exc))
+
+
+async def upstream_service_error_handler(
+    request: Request, exc: UpstreamServiceError
+) -> JSONResponse:
+    return _error_response(502, "upstream_error", str(exc))
+
+
 # Ponto único de registo: qualquer novo tipo de DomainError só precisa de
 # um handler aqui para ganhar uma resposta HTTP consistente em toda a API.
 #
@@ -81,4 +95,10 @@ def register_error_handlers(app: FastAPI) -> None:
     )
     app.add_exception_handler(
         UnsupportedMediaTypeError, unsupported_media_type_error_handler  # type: ignore[arg-type]
+    )
+    app.add_exception_handler(
+        ServiceUnavailableError, service_unavailable_error_handler  # type: ignore[arg-type]
+    )
+    app.add_exception_handler(
+        UpstreamServiceError, upstream_service_error_handler  # type: ignore[arg-type]
     )
