@@ -17,9 +17,11 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import settings
+from app.core.exceptions import ConflictError
 from app.models.document_version import DocumentVersion
 from app.models.user import User
-from app.services import document_version_service
+from app.services import document_processing_service, document_version_service
+from app.services.document_extraction_service import ExtractionResult
 from app.storage import get_document_storage
 from tests.pdf_utils import build_pdf
 
@@ -518,6 +520,83 @@ def test_reprocess_while_processing_returns_409(
         headers=headers,
     )
     assert response.status_code == 409
+
+
+def test_concurrent_reprocessing_starts_only_one_extraction(
+    client: TestClient,
+    test_session_factory: sessionmaker[Session],
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Duas sessões reais disputam a mesma linha de document_versions.
+
+    A primeira grava processing e inicia a extração; a segunda espera pelo
+    SELECT ... FOR UPDATE, relê esse estado após o commit e recebe conflito.
+    """
+    _, headers, document = _setup(client)
+    upload = _upload(client, headers, document["id"], b"reprocess concurrently")
+    version_id = uuid.UUID(upload.json()["id"])
+
+    barrier = threading.Barrier(2)
+    extraction_started = threading.Event()
+    conflict_seen = threading.Event()
+    release_extraction = threading.Event()
+    results: list[str] = []
+    errors: list[Exception] = []
+    result_lock = threading.Lock()
+    extraction_calls = 0
+
+    def blocking_extract(*_args: object) -> ExtractionResult:
+        nonlocal extraction_calls
+        with result_lock:
+            extraction_calls += 1
+        extraction_started.set()
+        if not release_extraction.wait(timeout=10):
+            msg = "timed out waiting to release extraction"
+            raise RuntimeError(msg)
+        return ExtractionResult(text="reprocessed once", page_count=None)
+
+    monkeypatch.setattr(document_processing_service, "extract_text", blocking_extract)
+    storage = get_document_storage()
+
+    def reprocess_worker() -> None:
+        session = test_session_factory()
+        try:
+            version = session.get(DocumentVersion, version_id)
+            assert version is not None
+            barrier.wait()
+            processed = document_processing_service.reprocess_version(
+                session, version, storage
+            )
+            with result_lock:
+                results.append(processed.processing_status)
+        except ConflictError as exc:
+            session.rollback()
+            with result_lock:
+                errors.append(exc)
+            conflict_seen.set()
+        except Exception as exc:  # noqa: BLE001 - o teste regista para asserção
+            session.rollback()
+            with result_lock:
+                errors.append(exc)
+        finally:
+            session.close()
+
+    threads = [threading.Thread(target=reprocess_worker) for _ in range(2)]
+    for thread in threads:
+        thread.start()
+
+    assert extraction_started.wait(timeout=10)
+    assert conflict_seen.wait(timeout=10)
+    release_extraction.set()
+
+    for thread in threads:
+        thread.join(timeout=15)
+        assert not thread.is_alive()
+
+    assert extraction_calls == 1
+    assert results == ["processed"]
+    assert len(errors) == 1
+    assert isinstance(errors[0], ConflictError)
 
 
 # --- Concorrência -------------------------------------------------------------------

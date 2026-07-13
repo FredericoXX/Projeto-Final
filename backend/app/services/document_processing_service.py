@@ -17,9 +17,10 @@ assíncrona (fila/worker) possa reutilizá-la sem alterações à lógica.
 import logging
 from datetime import UTC, datetime
 
+from sqlalchemy import select
 from sqlalchemy.orm import Session
 
-from app.core.exceptions import ConflictError
+from app.core.exceptions import ConflictError, NotFoundError
 from app.models.document_version import DocumentVersion
 from app.services.document_extraction_service import ExtractionError, extract_text
 from app.storage.base import DocumentStorage
@@ -86,12 +87,32 @@ def reprocess_version(
     Permitido para versões pending, processed ou failed; uma versão já em
     processing é recusada (409) para não haver duas extrações simultâneas.
     """
-    if version.processing_status == "processing":
-        msg = f"Document version '{version.id}' is already being processed."
+    # Recarrega a versão sob lock, mesmo que a sessão já a tenha no identity
+    # map. O filtro mantém o âmbito do documento/instituição previamente
+    # validado pelo service/rota e impede que esse isolamento seja alargado.
+    locked_version = db.scalar(
+        select(DocumentVersion)
+        .where(
+            DocumentVersion.id == version.id,
+            DocumentVersion.document_id == version.document_id,
+            DocumentVersion.institution_id == version.institution_id,
+        )
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    )
+    if locked_version is None:
+        msg = f"Document version '{version.id}' not found."
+        raise NotFoundError(msg)
+
+    if locked_version.processing_status == "processing":
+        msg = f"Document version '{locked_version.id}' is already being processed."
         raise ConflictError(msg)
 
-    if not storage.exists(version.storage_path):
+    if not storage.exists(locked_version.storage_path):
         # Mensagem genérica de propósito: nunca expor o caminho.
         raise ConflictError(FILE_UNAVAILABLE_MESSAGE)
 
-    return process_version(db, version, storage)
+    # process_version limpa os campos anteriores e faz commit do estado
+    # processing antes da extração. Esse commit liberta o lock; um segundo
+    # pedido acorda, relê processing e é recusado com 409.
+    return process_version(db, locked_version, storage)

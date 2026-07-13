@@ -14,12 +14,12 @@ from collections.abc import Iterator
 from pathlib import Path
 
 import pytest
+from alembic import command
 from alembic.config import Config
 from alembic.script import ScriptDirectory
 from sqlalchemy import create_engine, inspect, text
 from sqlalchemy.engine import Engine
 
-from alembic import command
 from app.core.config import settings
 from tests.conftest import _maintenance_url
 
