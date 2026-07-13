@@ -10,6 +10,7 @@ and the resulting Alembic head — is exactly what the migration chain
 is supposed to produce.
 """
 
+import uuid
 from collections.abc import Iterator
 from pathlib import Path
 
@@ -555,3 +556,145 @@ def test_documents_migration_upgrade_downgrade_upgrade(
 
     script = ScriptDirectory.from_config(alembic_cfg)
     assert current_revision == script.get_current_head()
+
+
+def test_lexical_search_vector_migration_upgrade_downgrade_upgrade(
+    migrations_database_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A coluna stored é automática, atualizável e indexada por GIN."""
+    monkeypatch.setattr(settings, "database_url", migrations_database_url)
+    alembic_cfg = Config(str(BACKEND_DIR / "alembic.ini"))
+    command.upgrade(alembic_cfg, "b7e2d8a9f4c1")
+
+    engine = create_engine(migrations_database_url)
+    institution_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    document_id = uuid.uuid4()
+    version_id = uuid.uuid4()
+    chunk_id = uuid.uuid4()
+    try:
+        inspector = inspect(engine)
+        columns = {column["name"]: column for column in inspector.get_columns("document_chunks")}
+        assert "search_vector" in columns
+        computed = columns["search_vector"]["computed"]
+        assert computed["persisted"] is True
+        assert "to_tsvector" in computed["sqltext"]
+        assert "simple" in computed["sqltext"]
+
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    """INSERT INTO institutions
+                    (id, name, code, default_language, supported_languages, is_active)
+                    VALUES (:id, 'Test', :code, 'pt', ARRAY['pt','en'], true)"""
+                ),
+                {"id": institution_id, "code": f"MIG-{uuid.uuid4().hex[:8]}"},
+            )
+            conn.execute(
+                text(
+                    """INSERT INTO users
+                    (id, institution_id, full_name, email, password_hash, role, is_active)
+                    VALUES (:id, :institution_id, 'Admin', :email, 'hash', 'admin', true)"""
+                ),
+                {
+                    "id": user_id,
+                    "institution_id": institution_id,
+                    "email": f"migration-{uuid.uuid4().hex[:8]}@example.com",
+                },
+            )
+            conn.execute(
+                text(
+                    """INSERT INTO documents
+                    (id, institution_id, created_by_user_id, title, language,
+                     official_source, is_active)
+                    VALUES (:id, :institution_id, :user_id, 'Doc', 'pt', true, true)"""
+                ),
+                {"id": document_id, "institution_id": institution_id, "user_id": user_id},
+            )
+            conn.execute(
+                text(
+                    """INSERT INTO document_versions
+                    (id, document_id, institution_id, uploaded_by_user_id,
+                     version_number, original_filename, mime_type, size_bytes,
+                     checksum_sha256, storage_path, processing_status)
+                    VALUES (:id, :document_id, :institution_id, :user_id,
+                            1, 'doc.txt', 'text/plain', 10, :checksum,
+                            'inst/doc/version/source.txt', 'processed')"""
+                ),
+                {
+                    "id": version_id,
+                    "document_id": document_id,
+                    "institution_id": institution_id,
+                    "user_id": user_id,
+                    "checksum": "a" * 64,
+                },
+            )
+            conn.execute(
+                text(
+                    """INSERT INTO document_chunks
+                    (id, institution_id, document_id, document_version_id,
+                     chunk_index, content, normalized_content, content_sha256,
+                     start_char, end_char, language)
+                    VALUES (:id, :institution_id, :document_id, :version_id,
+                            0, 'Matrícula aberta', 'matricula aberta', :checksum,
+                            0, 17, 'pt')"""
+                ),
+                {
+                    "id": chunk_id,
+                    "institution_id": institution_id,
+                    "document_id": document_id,
+                    "version_id": version_id,
+                    "checksum": "b" * 64,
+                },
+            )
+            vector = conn.execute(
+                text("SELECT search_vector::text FROM document_chunks WHERE id = :id"),
+                {"id": chunk_id},
+            ).scalar_one()
+            assert "matricula" in vector
+
+            conn.execute(
+                text(
+                    "UPDATE document_chunks SET normalized_content = 'enrollment open' "
+                    "WHERE id = :id"
+                ),
+                {"id": chunk_id},
+            )
+            updated = conn.execute(
+                text("SELECT search_vector::text FROM document_chunks WHERE id = :id"),
+                {"id": chunk_id},
+            ).scalar_one()
+            assert "enrollment" in updated
+            assert "matricula" not in updated
+
+            index_definition = conn.execute(
+                text(
+                    "SELECT indexdef FROM pg_indexes "
+                    "WHERE indexname = 'ix_document_chunks_search_vector'"
+                )
+            ).scalar_one()
+            assert "USING gin" in index_definition
+    finally:
+        engine.dispose()
+
+    command.downgrade(alembic_cfg, "-1")
+    engine = create_engine(migrations_database_url)
+    try:
+        assert "search_vector" not in {
+            column["name"] for column in inspect(engine).get_columns("document_chunks")
+        }
+        assert "ix_document_chunks_search_vector" not in {
+            index["name"] for index in inspect(engine).get_indexes("document_chunks")
+        }
+    finally:
+        engine.dispose()
+
+    command.upgrade(alembic_cfg, "head")
+    engine = create_engine(migrations_database_url)
+    try:
+        assert "search_vector" in {
+            column["name"] for column in inspect(engine).get_columns("document_chunks")
+        }
+    finally:
+        engine.dispose()

@@ -205,7 +205,16 @@ reprocessing atomically replaces that version's chunk set. Chunks are an
 internal structure with no public endpoint: they prepare the system for
 a future information-retrieval strategy, whatever it turns out to be.
 
-There is still no indexing, retrieval, semantic or lexical search, RAG,
-embeddings, LLM integration or agent behavior — the retrieval approach
-is an open question for the literature review, not a decision already
-made in this codebase, and pgvector is not used by the document layer.
+Phase 3 adds an experimental lexical baseline at
+`POST /api/v1/retrieval/search`. Authenticated users retrieve ranked
+evidence from the latest processed version of eligible documents in their
+own institution. PostgreSQL maintains a generated `TSVECTOR` and GIN index;
+`PostgresLexicalRetriever` uses parameterized `websearch_to_tsquery` and
+`ts_rank_cd` behind a neutral `Retriever` contract.
+
+This endpoint returns evidence only. There are still no embeddings,
+semantic or hybrid search, answer generation, LLM integration, agents or
+complete RAG workflow. The definitive approach remains an open research
+decision. Existing processed text can be rebuilt idempotently with
+`python -m scripts.rebuild_document_chunks`, optionally filtered by
+`--institution-id` or `--document-id`.

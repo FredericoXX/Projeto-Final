@@ -12,6 +12,7 @@
 | 6 | `5f638cb2d2c3` | Add domain-value CHECK constraints for `users.role`, `conversations.status` and `messages.role` |
 | 7 | `1482b165c943` | Create the `documents` and `document_versions` tables (document core) |
 | 8 | `68cb34527411` | Create the `document_chunks` table and its supporting unique constraint on `document_versions` |
+| 9 | `b7e2d8a9f4c1` | Add generated lexical `search_vector` and its GIN index |
 
 Since the project is still in local-only development with no shared
 environments, no production data, and disposable databases, the `users`
@@ -112,8 +113,8 @@ segments of the extracted text of each document version. Chunks are an
 `normalized_content`, `content_sha256` and the offsets are never exposed
 by the API. They exist to prepare the documents for a future
 information-retrieval strategy; RAG is *not* a settled architectural
-decision yet, and no embeddings, TSVECTOR, search indexes or retrieval
-of any kind are implemented in this phase.
+decision. Phase 3 adds only the experimental lexical baseline described
+below; embeddings and vector retrieval remain absent.
 
 Each row has:
 
@@ -141,9 +142,8 @@ Each row has:
   `(institution_id, language)`; the pair
   `(document_version_id, chunk_index)` is already indexed by its UNIQUE
   constraint, so no duplicate index is created. There are deliberately
-  **no** vector/embedding columns, TSVECTOR columns or GIN indexes —
-  those belong to the retrieval phase, if and when that approach is
-  chosen.
+  **no** vector/embedding columns; the generated lexical vector below is
+  unrelated to pgvector.
 
 Chunking is integrated into the synchronous processing flow
 (`document_processing_service.process_version`): extraction → chunking
@@ -160,8 +160,22 @@ chunks at all (having chunks is equivalent to being `processed`).
 Reprocessing replaces only that version's chunks (protected by the same
 `SELECT ... FOR UPDATE` lock as before); historical versions keep their
 own chunk sets, and uploading a new version never touches the chunks of
-previous versions. Selecting *which* version is searched belongs to the
-future retrieval phase.
+previous versions.
+
+### Experimental lexical search vector
+
+Migration `b7e2d8a9f4c1` adds `search_vector TSVECTOR` as a generated,
+stored column computed with `to_tsvector('simple', normalized_content)`.
+The application never writes it manually. The explicit `simple`
+configuration avoids choosing Portuguese- or English-specific stemming
+before the baseline is evaluated. A GIN index named
+`ix_document_chunks_search_vector` supports the `@@` match operator.
+
+`PostgresLexicalRetriever` uses parameterized
+`websearch_to_tsquery('simple', ...)` and `ts_rank_cd`. It selects only the
+highest-numbered `processed` version per document and filters in SQL by
+the authenticated institution, active status, language, current validity
+and `official_only` (true by default). Historical chunks remain stored.
 
 ## Institutional security rules
 
@@ -269,16 +283,16 @@ scoping already described above.
 
 ## Current status
 
-No RAG, embeddings, retrieval or agent behavior is implemented — the
-retrieval approach is an open question for the literature review, not a
-decision already made in this codebase; pgvector remains
-infrastructure-only and is not used by the document layer. Current work
-covers persistence, CRUD APIs, authentication, the core domain
+An experimental lexical evidence-retrieval baseline is implemented, but
+the definitive approach remains an open question for the literature
+review. There is no complete RAG workflow, embeddings, semantic/hybrid
+search, answer generation, LLM or agent behavior; pgvector remains
+infrastructure-only and is not used by retrieval. Current work covers
+persistence, CRUD APIs, authentication, the core domain
 invariants described above (institutional security rules,
 conversation/message state and language rules, multi-institution data
 integrity) and the document core (documents, versioned uploads, local
 file storage, synchronous text extraction and deterministic chunking —
 see [`docs/document-core.md`](document-core.md) and the
-`document_chunks` section above). Chunks are persisted but not yet
-searched: there is no indexing, embeddings or semantic/lexical search
-yet.
+`document_chunks` section above), plus parameterized PostgreSQL lexical
+search over the latest eligible processed version of each document.
