@@ -3,6 +3,7 @@ from uuid import UUID, uuid4
 
 from sqlalchemy import (
     CheckConstraint,
+    Computed,
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
@@ -13,6 +14,7 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
+from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.base import Base
@@ -23,7 +25,8 @@ class DocumentChunk(Base):
 
     Estrutura interna que prepara os documentos para futuras estratégias
     de recuperação de informação (a decidir após a revisão da literatura);
-    nesta fase não há embeddings, pesquisa nem endpoints públicos de
+    nesta fase existe apenas uma baseline lexical substituível; não há
+    embeddings, pesquisa semântica/híbrida nem endpoints públicos de
     chunks. Cada versão mantém o seu próprio conjunto de chunks, que é
     substituído por inteiro no reprocessamento.
     """
@@ -75,6 +78,11 @@ class DocumentChunk(Base):
             "institution_id",
             "language",
         ),
+        Index(
+            "ix_document_chunks_search_vector",
+            "search_vector",
+            postgresql_using="gin",
+        ),
         # O par (document_version_id, chunk_index) já é indexado pela UNIQUE
         # constraint acima; não é criado um índice adicional duplicado.
     )
@@ -116,6 +124,18 @@ class DocumentChunk(Base):
     # Forma normalizada e determinística do content (ver
     # app.core.text_normalization), preparada para pesquisa futura.
     normalized_content: Mapped[str] = mapped_column(Text, nullable=False)
+
+    # Baseline lexical: o PostgreSQL mantém este vetor automaticamente.
+    # A configuração simple evita assumir stemming específico de português
+    # ou inglês antes da avaliação experimental da estratégia de retrieval.
+    search_vector: Mapped[str | None] = mapped_column(
+        TSVECTOR,
+        Computed(
+            "to_tsvector('simple'::regconfig, normalized_content)",
+            persisted=True,
+        ),
+        nullable=True,
+    )
 
     content_sha256: Mapped[str] = mapped_column(String(64), nullable=False)
 

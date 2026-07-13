@@ -13,8 +13,8 @@ em *chunks* internos (tabela `document_chunks`, sem endpoint público) —
 ver a secção "Document chunks" em [`docs/database.md`](database.md).
 
 **Fora do âmbito desta fase** (deliberadamente não implementado):
-embeddings, pgvector no domínio documental, retrieval, pesquisa
-semântica ou lexical, RAG, integração com LLM, agentes, OCR, importação
+embeddings, pgvector no domínio documental, pesquisa semântica ou híbrida,
+RAG completo, integração com LLM, agentes, OCR, importação
 de páginas web, filas/workers, S3 e interface frontend. A abordagem de
 recuperação de informação continua a ser uma questão em aberto para a
 revisão da literatura.
@@ -161,6 +161,25 @@ GET    /documents/{document_id}/versions/{version_id}/content?offset&limit
 GET    /documents/{document_id}/versions/{version_id}/download
 POST   /documents/{document_id}/versions/{version_id}/reprocess
 ```
+
+## Recuperação lexical experimental
+
+`POST /api/v1/retrieval/search` permite a qualquer utilizador autenticado
+pesquisar evidências da própria instituição. A rota delega num contrato
+neutro `Retriever`; a implementação atual, `PostgresLexicalRetriever`, usa
+o vetor lexical gerado dos chunks, `websearch_to_tsquery('simple', ...)`,
+`@@` e `ts_rank_cd`.
+
+A consulta considera apenas a versão `processed` de maior número por
+documento e exclui documentos inativos, fora da validade, noutro idioma ou
+noutra instituição. `official_only` é verdadeiro por omissão. A resposta
+expõe conteúdo original e metadados da fonte, nunca campos internos, e não
+gera uma resposta final.
+
+Para dados anteriores ao chunking automático ou reconstrução
+administrativa, execute `python -m scripts.rebuild_document_chunks`. O
+script não reextrai ficheiros, substitui chunks idempotentemente e aceita
+`--institution-id` e `--document-id`.
 
 Notas:
 

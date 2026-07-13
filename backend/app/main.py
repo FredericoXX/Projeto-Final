@@ -6,6 +6,7 @@ from app.api.routes.conversations import router as conversations_router
 from app.api.routes.documents import router as documents_router
 from app.api.routes.health import router as health_router
 from app.api.routes.institutions import router as institutions_router
+from app.api.routes.retrieval import router as retrieval_router
 from app.api.routes.users import router as users_router
 from app.core.config import settings
 from app.core.error_handlers import register_error_handlers
@@ -49,5 +50,10 @@ app.include_router(
 
 app.include_router(
     documents_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    retrieval_router,
     prefix="/api/v1",
 )
