@@ -119,6 +119,9 @@ JWT_ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=60
 
 BOOTSTRAP_TOKEN=change_me_dev_bootstrap_token
+
+DOCUMENT_STORAGE_PATH=storage/documents
+DOCUMENT_MAX_FILE_SIZE_MB=20
 ```
 
 Os valores definidos em `DATABASE_URL` devem corresponder aos valores de `POSTGRES_DB`, `POSTGRES_USER`, `POSTGRES_PASSWORD` e `POSTGRES_HOST_PORT`.
@@ -130,6 +133,8 @@ A variável `OPENAI_API_KEY` está reservada para a futura integração com mode
 A variável `JWT_SECRET_KEY` assina os tokens de autenticação emitidos em `POST /api/v1/auth/login`; deve ter pelo menos 32 caracteres e um valor diferente do exemplo em qualquer ambiente partilhado. `JWT_ALGORITHM` e `ACCESS_TOKEN_EXPIRE_MINUTES` controlam o algoritmo de assinatura e a validade do token (em minutos).
 
 A variável `BOOTSTRAP_TOKEN` é um segredo temporário que substitui, nesta fase do protótipo, um papel de administração de plataforma que ainda não existe. É exigida no cabeçalho `X-Bootstrap-Token` para criar uma instituição, registar o seu primeiro administrador e reativar/desativar uma instituição — ver secção 12 abaixo. Se não estiver definida (ou não corresponder ao cabeçalho enviado), esses três endpoints recusam o pedido com `401`.
+
+As variáveis `DOCUMENT_STORAGE_PATH` e `DOCUMENT_MAX_FILE_SIZE_MB` configuram o núcleo documental: a primeira define a pasta local onde os ficheiros carregados são guardados (um caminho relativo é resolvido a partir da raiz do projeto; a pasta `storage/` está no `.gitignore` e nunca é versionada), e a segunda o tamanho máximo aceite por ficheiro, em megabytes. Os ficheiros nunca são guardados no PostgreSQL — a base de dados guarda apenas metadados e o texto extraído (ver [`docs/document-core.md`](document-core.md)).
 
 O ficheiro `.env` contém configurações locais, incluindo estes segredos, e não deve ser enviado para o repositório remoto.
 

@@ -21,11 +21,26 @@ class Settings(BaseSettings):
     # open, so an unset token fails closed in any environment.
     bootstrap_token: str | None = None
 
+    # Root of the local document storage. A relative value is resolved
+    # against the repository root, keeping the default inside the
+    # gitignored storage/ directory.
+    document_storage_path: str = "storage/documents"
+    document_max_file_size_mb: int = 20
+
     model_config = SettingsConfigDict(
         env_file=PROJECT_ROOT / ".env",
         env_file_encoding="utf-8",
         extra="ignore",
     )
+
+    @property
+    def resolved_document_storage_path(self) -> Path:
+        path = Path(self.document_storage_path)
+        return path if path.is_absolute() else PROJECT_ROOT / path
+
+    @property
+    def document_max_file_size_bytes(self) -> int:
+        return self.document_max_file_size_mb * 1024 * 1024
 
     @property
     def resolved_test_database_url(self) -> str:

@@ -23,3 +23,11 @@ class AuthenticationError(DomainError):
 
 class AuthorizationError(DomainError):
     pass
+
+
+class PayloadTooLargeError(DomainError):
+    pass
+
+
+class UnsupportedMediaTypeError(DomainError):
+    pass

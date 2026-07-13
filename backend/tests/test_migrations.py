@@ -101,7 +101,14 @@ def test_alembic_upgrade_head_creates_expected_schema(
     try:
         inspector = inspect(engine)
         table_names = set(inspector.get_table_names())
-        assert {"users", "institutions", "conversations", "messages"} <= table_names
+        assert {
+            "users",
+            "institutions",
+            "conversations",
+            "messages",
+            "documents",
+            "document_versions",
+        } <= table_names
 
         user_columns = {column["name"] for column in inspector.get_columns("users")}
         assert EXPECTED_USER_COLUMNS <= user_columns
@@ -190,6 +197,48 @@ def test_alembic_upgrade_head_creates_expected_schema(
         assert "ck_users_role_allowed" in check_constraint_names
         assert "ck_conversations_status_allowed" in check_constraint_names
         assert "ck_messages_role_allowed" in check_constraint_names
+
+        # Tabelas documentais (migration 1482b165c943): FKs compostas,
+        # uniques, checks e índices principais.
+        document_fks = inspector.get_foreign_keys("documents")
+        assert any(
+            fk["referred_table"] == "users"
+            and set(fk["constrained_columns"]) == {"created_by_user_id", "institution_id"}
+            for fk in document_fks
+        )
+        document_uniques = inspector.get_unique_constraints("documents")
+        assert any(
+            set(uc["column_names"]) == {"id", "institution_id"} for uc in document_uniques
+        )
+        document_checks = {cc["name"] for cc in inspector.get_check_constraints("documents")}
+        assert "ck_documents_validity_range" in document_checks
+        document_indexes = {index["name"] for index in inspector.get_indexes("documents")}
+        assert "ix_documents_institution_id_is_active" in document_indexes
+        assert "ix_documents_institution_id_official_source" in document_indexes
+
+        version_fks = inspector.get_foreign_keys("document_versions")
+        assert any(
+            fk["referred_table"] == "documents"
+            and set(fk["constrained_columns"]) == {"document_id", "institution_id"}
+            for fk in version_fks
+        )
+        assert any(
+            fk["referred_table"] == "users"
+            and set(fk["constrained_columns"]) == {"uploaded_by_user_id", "institution_id"}
+            for fk in version_fks
+        )
+        version_uniques = {
+            uc["name"] for uc in inspector.get_unique_constraints("document_versions")
+        }
+        assert "uq_document_versions_document_id_version_number" in version_uniques
+        assert "uq_document_versions_institution_id_checksum" in version_uniques
+        version_checks = {
+            cc["name"] for cc in inspector.get_check_constraints("document_versions")
+        }
+        assert "ck_document_versions_version_number_positive" in version_checks
+        assert "ck_document_versions_size_bytes_positive" in version_checks
+        assert "ck_document_versions_processing_status_allowed" in version_checks
+        assert "ck_document_versions_page_count_non_negative" in version_checks
 
         with engine.connect() as conn:
             vector_extension = conn.execute(
@@ -335,6 +384,55 @@ def test_domain_check_constraints_migration_upgrade_downgrade_upgrade(
     try:
         for table, constraint in expected.items():
             assert constraint in check_constraint_names(engine, table)
+
+        with engine.connect() as conn:
+            current_revision = conn.execute(
+                text("SELECT version_num FROM alembic_version")
+            ).scalar()
+    finally:
+        engine.dispose()
+
+    script = ScriptDirectory.from_config(alembic_cfg)
+    assert current_revision == script.get_current_head()
+
+
+# Verifica especificamente a migration 1482b165c943 (tabelas documentais):
+# upgrade -> downgrade -> upgrade outra vez, para confirmar que tanto o
+# upgrade como o downgrade estão corretos e são repetíveis.
+def test_documents_migration_upgrade_downgrade_upgrade(
+    migrations_database_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "database_url", migrations_database_url)
+    alembic_cfg = Config(str(BACKEND_DIR / "alembic.ini"))
+
+    def table_names(engine: Engine) -> set[str]:
+        return set(inspect(engine).get_table_names())
+
+    command.upgrade(alembic_cfg, "1482b165c943")
+    engine = create_engine(migrations_database_url)
+    try:
+        names = table_names(engine)
+        assert "documents" in names
+        assert "document_versions" in names
+    finally:
+        engine.dispose()
+
+    command.downgrade(alembic_cfg, "-1")
+    engine = create_engine(migrations_database_url)
+    try:
+        names = table_names(engine)
+        assert "documents" not in names
+        assert "document_versions" not in names
+    finally:
+        engine.dispose()
+
+    command.upgrade(alembic_cfg, "head")
+    engine = create_engine(migrations_database_url)
+    try:
+        names = table_names(engine)
+        assert "documents" in names
+        assert "document_versions" in names
 
         with engine.connect() as conn:
             current_revision = conn.execute(
