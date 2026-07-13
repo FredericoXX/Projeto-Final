@@ -9,6 +9,8 @@
 | 3 | `9cf6ff5ac49c` | Create the `users` table with `institution_id` and the required multi-institution fields |
 | 4 | `9ec09d09f22f` | Create the `conversations` and `messages` tables |
 | 5 | `3ed4bcad52c8` | Add composite multi-institution foreign keys and their supporting unique constraints |
+| 6 | `5f638cb2d2c3` | Add domain-value CHECK constraints for `users.role`, `conversations.status` and `messages.role` |
+| 7 | `1482b165c943` | Create the `documents` and `document_versions` tables (document core) |
 
 Since the project is still in local-only development with no shared
 environments, no production data, and disposable databases, the `users`
@@ -58,6 +60,48 @@ manually (see `message_service.create_message`), which is what makes
 system messages auditable. It is only ever `NULL` for future automatic
 `"assistant"` messages, which aren't created through this API yet — role
 `"system"` does **not** imply a null `user_id`.
+
+## Document core (`documents` and `document_versions`)
+
+Migration `1482b165c943` adds the document layer, split into two tables
+on purpose: `documents` is the logical institutional document
+(regulation, calendar, manual...) and its metadata; `document_versions`
+is each concrete uploaded file/revision, so a document can be updated
+without losing its history.
+
+`documents` (all rows scoped by `institution_id`):
+
+- `id` (UUID, app-generated), `institution_id` (FK to `institutions`),
+  `created_by_user_id` — with a composite FK
+  `(created_by_user_id, institution_id)` → `users(id, institution_id)`,
+  so the creator must belong to the same institution;
+- `title`, `description`, `language` (institution-aware, resolved with
+  the same `resolve_language` rule as conversations), `source_url`,
+  `official_source`, `is_active`, `valid_from`/`valid_until` (with a
+  CHECK enforcing `valid_from <= valid_until`);
+- a degenerate `UNIQUE (id, institution_id)` supporting the composite
+  FKs from `document_versions`.
+
+`document_versions`:
+
+- composite FKs `(document_id, institution_id)` →
+  `documents(id, institution_id)` and
+  `(uploaded_by_user_id, institution_id)` → `users(id, institution_id)`:
+  PostgreSQL itself rejects any cross-institution combination;
+- `UNIQUE (document_id, version_number)` (second defense behind the
+  `SELECT ... FOR UPDATE` lock used to assign version numbers) and
+  `UNIQUE (institution_id, checksum_sha256)` (the same file content may
+  exist in different institutions, never twice in the same one);
+- CHECKs: `version_number > 0`, `size_bytes > 0`,
+  `processing_status IN ('pending','processing','processed','failed')`,
+  `page_count IS NULL OR page_count >= 0`;
+- the binary file lives in local storage (`storage_path` is always
+  relative to the storage root); PostgreSQL stores only metadata and
+  the extracted text (`extracted_text`).
+
+See [`docs/document-core.md`](document-core.md) for the full phase
+documentation (endpoints, upload rules, processing states, storage
+layout and limitations).
 
 ## Institutional security rules
 
@@ -167,7 +211,12 @@ scoping already described above.
 
 No RAG, embeddings, retrieval or agent behavior is implemented — the
 retrieval approach is an open question for the literature review, not a
-decision already made in this codebase. Current work is limited to
-persistence, CRUD APIs, authentication and the core domain invariants
-described above (institutional security rules, conversation/message
-state and language rules, and multi-institution data integrity).
+decision already made in this codebase; pgvector remains
+infrastructure-only and is not used by the document layer. Current work
+covers persistence, CRUD APIs, authentication, the core domain
+invariants described above (institutional security rules,
+conversation/message state and language rules, multi-institution data
+integrity) and the document core (documents, versioned uploads, local
+file storage and synchronous text extraction — see
+[`docs/document-core.md`](document-core.md)). There are no document
+chunks, indexing or semantic/lexical search yet.

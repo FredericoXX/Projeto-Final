@@ -14,6 +14,8 @@ from app.core.exceptions import (
     AuthorizationError,
     ConflictError,
     NotFoundError,
+    PayloadTooLargeError,
+    UnsupportedMediaTypeError,
     ValidationError,
 )
 
@@ -45,6 +47,18 @@ async def authorization_error_handler(request: Request, exc: AuthorizationError)
     return _error_response(403, "forbidden", str(exc))
 
 
+async def payload_too_large_error_handler(
+    request: Request, exc: PayloadTooLargeError
+) -> JSONResponse:
+    return _error_response(413, "payload_too_large", str(exc))
+
+
+async def unsupported_media_type_error_handler(
+    request: Request, exc: UnsupportedMediaTypeError
+) -> JSONResponse:
+    return _error_response(415, "unsupported_media_type", str(exc))
+
+
 # Ponto único de registo: qualquer novo tipo de DomainError só precisa de
 # um handler aqui para ganhar uma resposta HTTP consistente em toda a API.
 #
@@ -61,4 +75,10 @@ def register_error_handlers(app: FastAPI) -> None:
     )
     app.add_exception_handler(
         AuthorizationError, authorization_error_handler  # type: ignore[arg-type]
+    )
+    app.add_exception_handler(
+        PayloadTooLargeError, payload_too_large_error_handler  # type: ignore[arg-type]
+    )
+    app.add_exception_handler(
+        UnsupportedMediaTypeError, unsupported_media_type_error_handler  # type: ignore[arg-type]
     )

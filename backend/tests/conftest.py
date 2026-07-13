@@ -13,6 +13,7 @@ don't need to track and delete the rows they create.
 """
 
 from collections.abc import Iterator
+from pathlib import Path
 
 import pytest
 from fastapi.testclient import TestClient
@@ -28,6 +29,8 @@ from app.main import app
 # Import every model module so its table is registered on Base.metadata
 # before create_all runs.
 from app.models import conversation as _conversation  # noqa: F401
+from app.models import document as _document  # noqa: F401
+from app.models import document_version as _document_version  # noqa: F401
 from app.models import institution as _institution  # noqa: F401
 from app.models import message as _message  # noqa: F401
 from app.models import user as _user  # noqa: F401
@@ -97,6 +100,14 @@ def _override_get_db(test_session_factory: sessionmaker[Session]) -> Iterator[No
 def client() -> Iterator[TestClient]:
     with TestClient(app) as test_client:
         yield test_client
+
+
+# Redireciona o armazenamento de documentos para um diretório temporário
+# por teste: a suite nunca escreve no storage de desenvolvimento, e cada
+# teste começa com um armazenamento vazio.
+@pytest.fixture(autouse=True)
+def _document_storage_tmp(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setattr(settings, "document_storage_path", str(tmp_path / "documents"))
 
 
 @pytest.fixture(autouse=True)

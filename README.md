@@ -189,7 +189,12 @@ prototype.
 
 See [`docs/database.md`](docs/database.md) for the migration history and
 the current institutional security rules. `institutions`, `users`,
-`auth` and `conversations`/`messages` all have a full API; no RAG,
-embeddings, retrieval or agent behavior is implemented — the retrieval
-approach is an open question for the literature review, not a decision
-already made in this codebase.
+`auth`, `conversations`/`messages` and the document core all have a full
+API. The document core (`/api/v1/documents`, admin-only) covers logical
+documents with versioned file uploads (PDF, TXT, Markdown), local file
+storage, duplicate detection and synchronous text extraction — see
+[`docs/document-core.md`](docs/document-core.md). There are still no
+document chunks, indexing, retrieval, semantic or lexical search, RAG,
+embeddings, LLM integration or agent behavior — the retrieval approach
+is an open question for the literature review, not a decision already
+made in this codebase, and pgvector is not used by the document layer.

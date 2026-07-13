@@ -6,6 +6,8 @@ from alembic import context
 from app.core.config import settings
 from app.database.base import Base
 from app.models.conversation import Conversation  # noqa: F401
+from app.models.document import Document  # noqa: F401
+from app.models.document_version import DocumentVersion  # noqa: F401
 from app.models.institution import Institution  # noqa: F401
 from app.models.message import Message  # noqa: F401
 from app.models.user import User  # noqa: F401
