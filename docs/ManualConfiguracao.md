@@ -112,7 +112,15 @@ DATABASE_URL=postgresql+psycopg://assistant_user:change_me@localhost:5433/instit
 
 TEST_DATABASE_URL=postgresql+psycopg://assistant_user:change_me@localhost:5433/institutional_assistant_test
 
+ANSWER_GENERATOR_PROVIDER=openai
+ANSWERING_DEFAULT_TOP_K=5
+ANSWERING_MAX_TOP_K=10
+ANSWERING_MAX_CONTEXT_CHARS=12000
+ANSWERING_MAX_ANSWER_CHARS=4000
+
 OPENAI_API_KEY=
+OPENAI_MODEL=
+OPENAI_TIMEOUT_SECONDS=30
 
 JWT_SECRET_KEY=change_me_dev_secret_with_at_least_32_characters
 JWT_ALGORITHM=HS256
@@ -131,7 +139,9 @@ Os valores definidos em `DATABASE_URL` devem corresponder aos valores de `POSTGR
 
 A variável `TEST_DATABASE_URL` identifica uma base de dados dedicada aos testes. Esta separação evita que os testes alterem ou eliminem dados utilizados no ambiente de desenvolvimento.
 
-A variável `OPENAI_API_KEY` está reservada para a futura integração com modelos de linguagem e ainda não é lida pela aplicação; pode permanecer vazia nesta fase. O valor real deve existir apenas no `.env` local, nunca no repositório. Outras variáveis de LLM serão adicionadas quando a abordagem de recuperação de informação e o fornecedor forem selecionados.
+As variáveis `ANSWER_GENERATOR_PROVIDER`, `ANSWERING_DEFAULT_TOP_K`, `ANSWERING_MAX_TOP_K`, `ANSWERING_MAX_CONTEXT_CHARS` e `ANSWERING_MAX_ANSWER_CHARS` configuram a geração experimental de respostas fundamentadas (`POST /api/v1/answering/ask` — ver [`docs/answering.md`](answering.md)): o provider ativo, o número de evidências recuperadas por omissão e no máximo, o limite do payload JSON de contexto enviado ao gerador e o limite da resposta gerada. O `default_top_k` não pode exceder o `max_top_k`; a aplicação recusa arrancar com valores inválidos.
+
+As variáveis `OPENAI_API_KEY`, `OPENAI_MODEL` e `OPENAI_TIMEOUT_SECONDS` configuram o adapter OpenAI. **A aplicação inicia sem a chave**: a ausência de `OPENAI_API_KEY`/`OPENAI_MODEL` só produz efeito quando o endpoint de answering precisa de gerar (responde `503`); perguntas sem evidências continuam a devolver o fallback sem contactar o fornecedor. A chave real deve existir apenas no `.env` local, nunca no repositório, nos logs ou nas respostas. O adapter usa `max_retries=0` e regista somente metadados operacionais controlados, sem mensagens ou tracebacks do SDK. Os testes correm sem rede e sem credenciais.
 
 A variável `JWT_SECRET_KEY` assina os tokens de autenticação emitidos em `POST /api/v1/auth/login`; deve ter pelo menos 32 caracteres e um valor diferente do exemplo em qualquer ambiente partilhado. `JWT_ALGORITHM` e `ACCESS_TOKEN_EXPIRE_MINUTES` controlam o algoritmo de assinatura e a validade do token (em minutos).
 
@@ -599,4 +609,6 @@ O endpoint autenticado `POST /api/v1/retrieval/search` disponibiliza uma baselin
 
 O comando `python -m scripts.rebuild_document_chunks` reconstrói idempotentemente os chunks de versões processadas sem reextrair ficheiros. Os filtros opcionais `--institution-id` e `--document-id` limitam o âmbito; o comando é destinado a dados anteriores à integração automática ou a reconstruções administrativas.
 
-Esta baseline devolve evidências, não uma resposta final. A escolha definitiva continua dependente da revisão da literatura. Embeddings, pesquisa semântica/híbrida, geração por LLM, agentes e RAG funcional completo permanecem adiados.
+O endpoint autenticado `POST /api/v1/answering/ask` acrescenta geração experimental de respostas fundamentadas sobre essas evidências (ver [`docs/answering.md`](answering.md)): um system prompt estático contém apenas regras, enquanto instituição, pergunta e evidências não confiáveis seguem num payload JSON limitado e estruturalmente separado. O gerador (adapter OpenAI substituível, isolado atrás do contrato `AnswerGenerator`) responde apenas com base nas evidências e uma validação determinística rejeita respostas com citações inválidas usando códigos estáveis, sem registar os valores recebidos. Sem evidências, devolve uma mensagem de fallback fixa por idioma sem contactar o fornecedor; sem `OPENAI_API_KEY`/`OPENAI_MODEL`, devolve `503` apenas quando a geração é necessária. A serialização reduz ambiguidades de fronteira, mas não torna o sistema imune a prompt injection ou alucinações.
+
+A geração é experimental e substituível — a escolha definitiva continua dependente da revisão da literatura, e o sistema não é livre de alucinações. Embeddings, pesquisa semântica/híbrida, reranking, validação por segundo LLM, confidence score, integração automática com conversas, persistência de respostas, feedback, escalonamento humano, agentes e frontend permanecem adiados.

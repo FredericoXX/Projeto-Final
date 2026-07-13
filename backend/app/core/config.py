@@ -35,6 +35,22 @@ class Settings(BaseSettings):
     document_chunk_size_chars: int = 1200
     document_chunk_overlap_chars: int = 150
 
+    # Geração experimental de respostas fundamentadas. Nomes neutros: o
+    # provider é substituível e a abordagem não é uma decisão definitiva.
+    answer_generator_provider: str = "openai"
+    answering_default_top_k: int = 5
+    answering_max_top_k: int = 10
+    answering_max_context_chars: int = 12000
+    answering_max_answer_chars: int = 4000
+
+    # Configuração específica do adapter OpenAI. A ausência da chave não
+    # impede a aplicação de arrancar: só o endpoint de answering falha
+    # (503) quando tenta usar o provider. Nunca escrever a chave em logs
+    # nem devolvê-la em respostas.
+    openai_api_key: str | None = None
+    openai_model: str | None = None
+    openai_timeout_seconds: int = 30
+
     model_config = SettingsConfigDict(
         env_file=PROJECT_ROOT / ".env",
         env_file_encoding="utf-8",
@@ -51,6 +67,28 @@ class Settings(BaseSettings):
             raise ValueError(msg)
         if self.document_chunk_overlap_chars >= self.document_chunk_size_chars:
             msg = "DOCUMENT_CHUNK_OVERLAP_CHARS must be smaller than DOCUMENT_CHUNK_SIZE_CHARS"
+            raise ValueError(msg)
+        return self
+
+    @model_validator(mode="after")
+    def check_answering_configuration(self) -> "Settings":
+        if self.answering_default_top_k <= 0:
+            msg = "ANSWERING_DEFAULT_TOP_K must be greater than zero"
+            raise ValueError(msg)
+        if self.answering_max_top_k <= 0:
+            msg = "ANSWERING_MAX_TOP_K must be greater than zero"
+            raise ValueError(msg)
+        if self.answering_default_top_k > self.answering_max_top_k:
+            msg = "ANSWERING_DEFAULT_TOP_K must not be greater than ANSWERING_MAX_TOP_K"
+            raise ValueError(msg)
+        if self.answering_max_context_chars <= 0:
+            msg = "ANSWERING_MAX_CONTEXT_CHARS must be greater than zero"
+            raise ValueError(msg)
+        if self.answering_max_answer_chars <= 0:
+            msg = "ANSWERING_MAX_ANSWER_CHARS must be greater than zero"
+            raise ValueError(msg)
+        if self.openai_timeout_seconds <= 0:
+            msg = "OPENAI_TIMEOUT_SECONDS must be greater than zero"
             raise ValueError(msg)
         return self
 

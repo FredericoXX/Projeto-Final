@@ -1,5 +1,6 @@
 from fastapi import FastAPI
 
+from app.api.routes.answering import router as answering_router
 from app.api.routes.auth import router as auth_router
 from app.api.routes.bootstrap import router as bootstrap_router
 from app.api.routes.conversations import router as conversations_router
@@ -55,5 +56,10 @@ app.include_router(
 
 app.include_router(
     retrieval_router,
+    prefix="/api/v1",
+)
+
+app.include_router(
+    answering_router,
     prefix="/api/v1",
 )

@@ -212,9 +212,31 @@ own institution. PostgreSQL maintains a generated `TSVECTOR` and GIN index;
 `PostgresLexicalRetriever` uses parameterized `websearch_to_tsquery` and
 `ts_rank_cd` behind a neutral `Retriever` contract.
 
-This endpoint returns evidence only. There are still no embeddings,
-semantic or hybrid search, answer generation, LLM integration, agents or
-complete RAG workflow. The definitive approach remains an open research
-decision. Existing processed text can be rebuilt idempotently with
+The retrieval endpoint returns evidence only. Existing processed text
+can be rebuilt idempotently with
 `python -m scripts.rebuild_document_chunks`, optionally filtered by
 `--institution-id` or `--document-id`.
+
+Phase 3 step 2 adds experimental grounded answering at
+`POST /api/v1/answering/ask` — see [`docs/answering.md`](docs/answering.md).
+Retrieved evidence is turned into a bounded JSON payload (stable E1/E2 ids)
+under a static system prompt. Institutional data remains untrusted and cannot
+change the JSON structure built by the application. A provider adapter
+generates a short answer constrained to that context, and a deterministic
+validator rejects any answer that cites unknown
+evidence ids, is empty or exceeds the configured limit. With zero
+evidence the endpoint returns `insufficient_evidence` with a fixed
+per-language fallback message and never contacts the provider. The
+OpenAI SDK is isolated in `app/answering/providers/openai.py` behind a
+neutral `AnswerGenerator` contract; the app starts without
+`OPENAI_API_KEY` (the endpoint returns 503 only when generation is
+actually needed). Provider error logs contain only controlled metadata, the
+SDK client explicitly disables retries, and tests run without network or
+credentials.
+
+The generation approach is experimental and replaceable, not a final
+architectural decision, and the system is **not** hallucination-free.
+There are still no embeddings, semantic or hybrid search, reranking, a
+second validating LLM, confidence scores, automatic conversation
+integration, response persistence, human escalation, feedback or a
+frontend.

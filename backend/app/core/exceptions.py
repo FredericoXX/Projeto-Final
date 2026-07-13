@@ -31,3 +31,15 @@ class PayloadTooLargeError(DomainError):
 
 class UnsupportedMediaTypeError(DomainError):
     pass
+
+
+class ServiceUnavailableError(DomainError):
+    """Uma capacidade interna não está configurada/disponível (-> 503)."""
+
+
+class UpstreamServiceError(DomainError):
+    """Um serviço externo falhou ou devolveu output inutilizável (-> 502).
+
+    A mensagem tem de ser curta e segura; os detalhes técnicos do
+    fornecedor ficam apenas nos logs.
+    """
