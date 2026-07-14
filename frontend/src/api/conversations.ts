@@ -1,0 +1,66 @@
+import { apiRequest } from './client';
+import type {
+  AnsweringRequest,
+  ConversationAskResponse,
+  ConversationCreateRequest,
+  ConversationListResponse,
+  ConversationRead,
+  MessageListResponse,
+} from '../types/conversations';
+import type { UUID } from '../types/api';
+
+export function listConversations(
+  params: { limit?: number; offset?: number } = {},
+  signal?: AbortSignal,
+): Promise<ConversationListResponse> {
+  const query = new URLSearchParams();
+  query.set('limit', String(params.limit ?? 20));
+  query.set('offset', String(params.offset ?? 0));
+  return apiRequest<ConversationListResponse>(`/conversations?${query.toString()}`, { signal });
+}
+
+export function createConversation(
+  payload: ConversationCreateRequest,
+  signal?: AbortSignal,
+): Promise<ConversationRead> {
+  return apiRequest<ConversationRead>('/conversations', {
+    method: 'POST',
+    body: payload,
+    signal,
+  });
+}
+
+export function getConversation(
+  conversationId: UUID,
+  signal?: AbortSignal,
+): Promise<ConversationRead> {
+  return apiRequest<ConversationRead>(`/conversations/${conversationId}`, { signal });
+}
+
+export function listMessages(
+  conversationId: UUID,
+  params: { limit?: number; offset?: number } = {},
+  signal?: AbortSignal,
+): Promise<MessageListResponse> {
+  const query = new URLSearchParams();
+  query.set('limit', String(params.limit ?? 100));
+  query.set('offset', String(params.offset ?? 0));
+  return apiRequest<MessageListResponse>(
+    `/conversations/${conversationId}/messages?${query.toString()}`,
+    { signal },
+  );
+}
+
+// The only way the UI asks the assistant a question. Manual message creation
+// (POST .../messages) is never used for questions.
+export function askInConversation(
+  conversationId: UUID,
+  payload: AnsweringRequest,
+  signal?: AbortSignal,
+): Promise<ConversationAskResponse> {
+  return apiRequest<ConversationAskResponse>(`/conversations/${conversationId}/ask`, {
+    method: 'POST',
+    body: payload,
+    signal,
+  });
+}

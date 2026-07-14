@@ -8,6 +8,18 @@ The Python application lives entirely in [`backend/`](backend/). Docker Compose 
 repository root runs only PostgreSQL (with pgvector); the FastAPI application itself
 runs locally from `backend/`, not in a container.
 
+A minimal web interface lives in [`frontend/`](frontend/) (React + TypeScript +
+Vite). It demonstrates the full flow — sign in, hold a grounded conversation
+with sources, and manage documents as an admin — without Swagger or manual
+requests. The dev server proxies `/api` to the backend (same-origin, no
+permissive CORS); see [`frontend/README.md`](frontend/README.md). Quick start:
+
+```bash
+cd frontend
+npm ci
+npm run dev   # http://localhost:5173, backend at http://127.0.0.1:8000
+```
+
 ## Prerequisites
 
 - Python 3.12
