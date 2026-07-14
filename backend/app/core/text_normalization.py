@@ -1,8 +1,8 @@
-"""Normalização determinística de texto para pesquisa futura.
+"""Normalização determinística de texto para pesquisa lexical.
 
 Produz o normalized_content guardado em document_chunks: uma forma
 canónica, previsível e independente de fornecedor, pensada para
-comparações e pesquisa lexical futura. O content original nunca é
+comparações e pesquisa lexical. O content original nunca é
 alterado — a normalização é sempre uma cópia derivada.
 
 Regras aplicadas, por ordem:
@@ -10,7 +10,7 @@ Regras aplicadas, por ordem:
 1. normalização Unicode NFKD (formas compostas e de compatibilidade
    passam a uma representação única);
 2. remoção dos diacríticos (marcas combinantes), para que "Matrícula" e
-   "matricula" normalizem para o mesmo valor em pesquisas futuras;
+   "matricula" normalizem para o mesmo valor nas pesquisas;
 3. casefold (minúsculas, mais agressivo do que lower() para Unicode);
 4. colapso de qualquer sequência de espaços, tabs e quebras de linha num
    único espaço;

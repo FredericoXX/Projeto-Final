@@ -1,7 +1,7 @@
 import uuid
 
 from sqlalchemy import func, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, selectinload
 
 from app.core.exceptions import AuthorizationError, ConflictError
 from app.core.language import resolve_language
@@ -13,8 +13,8 @@ from app.services.institution_service import get_institution
 
 # Roles que cada tipo de utilizador pode usar ao criar uma mensagem por
 # esta rota. "assistant" fica de fora de ambos os conjuntos: mensagens do
-# assistente não são criadas manualmente nesta fase, apenas por um futuro
-# agente/LLM.
+# assistente não são criadas manualmente; pertencem exclusivamente ao fluxo
+# interno de answering.
 ALLOWED_ROLES_FOR_USER = {"user"}
 ALLOWED_ROLES_FOR_ADMIN = {"user", "system"}
 
@@ -77,9 +77,21 @@ def list_messages(
 ) -> tuple[list[Message], int]:
     conversation = get_accessible_conversation(db, current_user, conversation_id)
 
-    query = select(Message).where(Message.conversation_id == conversation.id)
+    query = (
+        select(Message)
+        .options(selectinload(Message.sources))
+        .where(
+            Message.conversation_id == conversation.id,
+            Message.institution_id == conversation.institution_id,
+        )
+    )
     count_query = (
-        select(func.count()).select_from(Message).where(Message.conversation_id == conversation.id)
+        select(func.count())
+        .select_from(Message)
+        .where(
+            Message.conversation_id == conversation.id,
+            Message.institution_id == conversation.institution_id,
+        )
     )
 
     total = db.scalar(count_query) or 0

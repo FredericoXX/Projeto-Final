@@ -1,7 +1,8 @@
-from datetime import datetime
+from datetime import date, datetime
+from typing import Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, field_validator
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 
 from app.core.language import normalize_language_code
 
@@ -46,6 +47,25 @@ class MessageCreate(BaseModel):
         return normalize_language_code(value)
 
 
+class MessageSourceRead(BaseModel):
+    id: UUID
+    evidence_id: str
+    citation_index: int
+    chunk_id: UUID
+    document_id: UUID
+    document_version_id: UUID
+    document_title: str
+    chunk_index: int
+    source_url: str | None
+    official_source: bool
+    language: str
+    valid_from: date | None
+    valid_until: date | None
+    created_at: datetime
+
+    model_config = ConfigDict(from_attributes=True)
+
+
 class MessageRead(BaseModel):
     id: UUID
     conversation_id: UUID
@@ -54,8 +74,10 @@ class MessageRead(BaseModel):
     role: str
     content: str
     language: str | None
+    reply_to_message_id: UUID | None = None
     extra_metadata: dict | None
     created_at: datetime
+    sources: list[MessageSourceRead] = Field(default_factory=list)
 
     model_config = ConfigDict(from_attributes=True)
 
@@ -65,3 +87,10 @@ class MessageListResponse(BaseModel):
     total: int
     limit: int
     offset: int
+
+
+class ConversationAskResponse(BaseModel):
+    status: Literal["answered", "insufficient_evidence"]
+    conversation_id: UUID
+    user_message: MessageRead
+    assistant_message: MessageRead

@@ -197,13 +197,16 @@ storage, duplicate detection and synchronous text extraction — see
 
 After a successful extraction, the text of each document version is also
 split into internal, deterministic chunks (`document_chunks` table),
-stored with character offsets, a normalized copy for future search and a
+stored with character offsets, a normalized copy for lexical search and a
 per-chunk SHA-256. Chunk size and overlap are configured via
 `DOCUMENT_CHUNK_SIZE_CHARS` / `DOCUMENT_CHUNK_OVERLAP_CHARS`. A version
 is only marked `processed` after its chunks are persisted, and
 reprocessing atomically replaces that version's chunk set. Chunks are an
 internal structure with no public endpoint: they prepare the system for
-a future information-retrieval strategy, whatever it turns out to be.
+the retrieval experiments. Once a chunk has been cited by a persisted answer,
+that chunk row cannot be updated or deleted. Reprocessing and rebuild refuse
+the cited version, so new content must be uploaded as a new version;
+historical citation metadata stays in its snapshot.
 
 Phase 3 adds an experimental lexical baseline at
 `POST /api/v1/retrieval/search`. Authenticated users retrieve ranked
@@ -212,10 +215,10 @@ own institution. PostgreSQL maintains a generated `TSVECTOR` and GIN index;
 `PostgresLexicalRetriever` uses parameterized `websearch_to_tsquery` and
 `ts_rank_cd` behind a neutral `Retriever` contract.
 
-The retrieval endpoint returns evidence only. Existing processed text
-can be rebuilt idempotently with
-`python -m scripts.rebuild_document_chunks`, optionally filtered by
-`--institution-id` or `--document-id`.
+The retrieval endpoint returns evidence only. Existing processed text can be
+rebuilt idempotently with `python -m scripts.rebuild_document_chunks`,
+optionally filtered by `--institution-id` or `--document-id`; cited versions
+are skipped and reported separately.
 
 Phase 3 step 2 adds experimental grounded answering at
 `POST /api/v1/answering/ask` — see [`docs/answering.md`](docs/answering.md).
@@ -234,9 +237,19 @@ actually needed). Provider error logs contain only controlled metadata, the
 SDK client explicitly disables retries, and tests run without network or
 credentials.
 
+Phase 3 step 3 adds `POST /api/v1/conversations/{conversation_id}/ask`.
+It reuses the same provider-neutral pipeline, then revalidates and locks the
+active institution, current user/role, conversation and cited database rows.
+The retrieval-time chunk checksum is compared with the locked content before
+the user message, assistant reply (`reply_to_message_id`) and source snapshots
+are committed atomically.
+`insufficient_evidence` persists the two-message fallback with no sources.
+Message history now returns ordered sources without N+1 queries, and later
+document metadata changes do not rewrite old citations.
+
 The generation approach is experimental and replaceable, not a final
 architectural decision, and the system is **not** hallucination-free.
 There are still no embeddings, semantic or hybrid search, reranking, a
-second validating LLM, confidence scores, automatic conversation
-integration, response persistence, human escalation, feedback or a
-frontend.
+second validating LLM, confidence scores, conversational memory, idempotency,
+human escalation, feedback or a frontend. Concurrent questions are ordered
+by commit time, not submission time.

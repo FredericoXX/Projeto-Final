@@ -1,4 +1,4 @@
-# Geração Experimental de Respostas Fundamentadas (Fase 3, Etapa 2)
+# Respostas Fundamentadas e Integração Conversacional (Fase 3, Etapas 2–3)
 
 ## Natureza experimental
 
@@ -11,8 +11,8 @@ semântica.
 
 Continuam a **não** existir: embeddings, pesquisa semântica, pesquisa
 híbrida, reranking, validação por segundo LLM, confidence score final,
-integração automática com conversas, persistência de respostas ou
-prompts, feedback, escalonamento humano, frontend.
+memória/histórico no prompt, idempotência, persistência de prompts ou
+respostas brutas do fornecedor, feedback, escalonamento humano e frontend.
 
 ## Fluxo
 
@@ -28,7 +28,7 @@ pergunta autenticada
 → resposta com fontes citadas
 ```
 
-## Endpoint
+## Endpoint independente
 
 `POST /api/v1/answering/ask` — autenticado; qualquer utilizador ativo de
 uma instituição ativa pode perguntar. O endpoint de retrieval
@@ -52,6 +52,29 @@ Respostas HTTP:
   `OPENAI_API_KEY`/`OPENAI_MODEL`) quando a geração é necessária;
 - `502` (`upstream_error`) — falha operacional do provider ou resposta
   gerada que falhou a validação.
+
+## Endpoint conversacional
+
+`POST /api/v1/conversations/{conversation_id}/ask` reutiliza exatamente o
+mesmo pipeline e aceita o mesmo `AnsweringRequest`, mas devolve `201` e
+persiste um turno completo. Utilizadores comuns só podem perguntar nas suas
+conversas; admins podem usar qualquer conversa da própria instituição. Uma
+conversa inexistente, de outro tenant ou inacessível responde 404; `closed`
+e `archived` respondem 409. Campos como `institution_id`, `user_id`, `role`,
+`reply_to_message_id`, `sources` e `status` não pertencem ao payload e são
+rejeitados com 422.
+
+O resultado contém `status`, `conversation_id`, `user_message` e
+`assistant_message`. A mensagem assistant aponta para a user através de
+`reply_to_message_id`; apenas a assistant pode ter `sources`, ordenadas por
+`citation_index`. Em `insufficient_evidence` também são persistidas as duas
+mensagens (incluindo o fallback pt/en), mas nenhuma `MessageSource` é criada
+e o gerador não é chamado.
+
+O idioma explícito do pedido prevalece. Quando omitido, o endpoint
+conversacional usa `conversation.language` e, se este for nulo, o idioma
+default da instituição. O endpoint independente continua a usar diretamente
+o default da instituição.
 
 ## Arquitetura
 
@@ -83,6 +106,51 @@ Respostas HTTP:
   permitindo outro fornecedor, modelo local ou gerador determinístico.
 - `app/services/answering_service.py` — orquestração fina; sem SQL, sem
   SDK, sem persistência.
+- `app/services/conversation_answering_service.py` — coordena o turno
+  persistente sem duplicar retrieval ou geração; separa a transação de
+  leitura da transação curta de escrita.
+- `app/services/message_source_service.py` — bloqueia e revalida as fontes,
+  cria snapshots e lista citações dentro do tenant; não faz commit.
+- `app/models/message_source.py` — snapshots auditáveis dos metadados das
+  fontes efetivamente citadas.
+
+## Atomicidade, revalidação e histórico
+
+A chamada externa ocorre antes de qualquer insert e sem locks de escrita.
+Depois da geração, a transação de leitura é terminada. A instituição ativa, o
+utilizador ativo e o papel atual, e depois a conversa são relidos com
+`SELECT FOR UPDATE`; acesso e estado `active` são novamente confirmados. As
+versões/documentos/chunks citados são então bloqueados em ordem determinística.
+Os locks ficam retidos até ao commit, portanto uma desativação ou perda de
+privilégio concorrente não pode atravessar a janela entre autorização e
+persistência.
+
+A revalidação confirma tenant, IDs, estado `processed`, documento ativo,
+idioma, validade e `official_only`, além dos metadados recuperados. Um SHA-256
+é calculado internamente sobre o conteúdo devolvido pelo Retriever — e fica
+ausente de JSON, schema e OpenAPI —, depois comparado com o valor bloqueado e
+com um hash recalculado sobre `content`;
+também se verificam `normalized_content` e o trecho correspondente de
+`extracted_text`. Uma alteração concorrente responde 409 e nada é persistido.
+
+Só depois são inseridas, nesta ordem, a mensagem user, a assistant e as
+`message_sources`; existe um único commit. Qualquer erro de flush, constraint
+ou commit faz rollback do conjunto inteiro. Falhas do provider (502),
+configuração ausente quando necessária (503) e respostas/citações inválidas
+também deixam zero mensagens.
+
+Cada `MessageSource` guarda título, URL, oficialidade, idioma, validade,
+índice do chunk e SHA-256 como snapshot. Alterar posteriormente o documento
+não reescreve respostas antigas. O conteúdo não é duplicado: uma FK composta
+impede apagar ou reassociar o chunk original, e um trigger PostgreSQL impede
+qualquer `UPDATE` da linha citada. Uma versão já citada não pode ser
+reprocessada; deve ser carregada uma nova versão. O script
+`rebuild_document_chunks` também ignora versões citadas e reporta
+`skipped_referenced`.
+
+`GET /api/v1/conversations/{conversation_id}/messages` inclui
+`reply_to_message_id` e `sources` em cada item, carregadas em lote e ordenadas,
+sem alterar paginação nem a ordenação histórica por `created_at`/`id`.
 
 ## Política de evidência
 
@@ -121,3 +189,8 @@ embutido alterem sintaticamente a estrutura construída pela aplicação.
 Esta medida não elimina prompt injection nem alucinações: o conteúdo continua
 não confiável, o modelo continua sujeito a avaliação experimental e a
 validação desta etapa permanece estrutural, não semântica.
+
+Cada pergunta continua independente: mensagens anteriores nunca entram no
+prompt. Não há idempotency key nem garantia de ordem de submissão para
+perguntas concorrentes na mesma conversa; o histórico reflete a ordem dos
+commits.

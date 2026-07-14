@@ -4,7 +4,7 @@ from datetime import date
 from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, field_validator
+from pydantic import BaseModel, ConfigDict, Field, PrivateAttr, field_validator
 
 from app.core.language import normalize_language_code
 
@@ -52,6 +52,17 @@ class AnswerSourceRead(BaseModel):
     language: str
     valid_from: date | None
     valid_until: date | None
+
+    # O checksum acompanha a fonte apenas entre services. PrivateAttr não
+    # integra model_dump, JSON schema, OpenAPI nem a resposta HTTP.
+    _internal_content_sha256: str | None = PrivateAttr(default=None)
+
+    @property
+    def internal_content_sha256(self) -> str | None:
+        return self._internal_content_sha256
+
+    def set_internal_content_sha256(self, checksum: str) -> None:
+        self._internal_content_sha256 = checksum
 
 
 class AnsweringResponse(BaseModel):

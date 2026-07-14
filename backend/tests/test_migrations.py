@@ -11,8 +11,9 @@ is supposed to produce.
 """
 
 import uuid
-from collections.abc import Iterator
+from collections.abc import Iterable, Iterator
 from pathlib import Path
+from typing import Any
 
 import pytest
 from alembic import command
@@ -698,3 +699,195 @@ def test_lexical_search_vector_migration_upgrade_downgrade_upgrade(
         }
     finally:
         engine.dispose()
+
+
+def test_conversational_sources_migration_upgrade_downgrade_upgrade(
+    migrations_database_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """The reply/source schema is complete, reversible, and remains at head."""
+    monkeypatch.setattr(settings, "database_url", migrations_database_url)
+    alembic_cfg = Config(str(BACKEND_DIR / "alembic.ini"))
+
+    def constraint_names(items: Iterable[Any]) -> set[str]:
+        return {item["name"] for item in items if item["name"] is not None}
+
+    def assert_sources_schema(engine: Engine) -> None:
+        inspector = inspect(engine)
+        assert "message_sources" in inspector.get_table_names()
+
+        message_columns = {
+            column["name"] for column in inspector.get_columns("messages")
+        }
+        assert "reply_to_message_id" in message_columns
+        message_uniques = constraint_names(
+            inspector.get_unique_constraints("messages")
+        )
+        assert "uq_messages_id_conversation_institution" in message_uniques
+        assert "uq_messages_id_institution_role" in message_uniques
+        message_fks = constraint_names(inspector.get_foreign_keys("messages"))
+        assert "fk_messages_reply_to_conversation_institution" in message_fks
+        message_checks = constraint_names(
+            inspector.get_check_constraints("messages")
+        )
+        assert "ck_messages_reply_to_not_self" in message_checks
+
+        chunk_uniques = constraint_names(
+            inspector.get_unique_constraints("document_chunks")
+        )
+        assert (
+            "uq_document_chunks_id_version_document_institution" in chunk_uniques
+        )
+
+        source_columns = {
+            column["name"] for column in inspector.get_columns("message_sources")
+        }
+        assert {
+            "id",
+            "institution_id",
+            "message_id",
+            "message_role",
+            "chunk_id",
+            "document_id",
+            "document_version_id",
+            "evidence_id",
+            "citation_index",
+            "document_title",
+            "chunk_index",
+            "source_url",
+            "official_source",
+            "language",
+            "valid_from",
+            "valid_until",
+            "content_sha256",
+            "created_at",
+        } <= source_columns
+
+        source_fks = {
+            fk["name"]: fk for fk in inspector.get_foreign_keys("message_sources")
+        }
+        assert {
+            "fk_message_sources_message_institution_role",
+            "fk_message_sources_chunk_version_document_institution",
+        } <= source_fks.keys()
+        assert (
+            source_fks["fk_message_sources_message_institution_role"]
+            .get("options", {})
+            .get("ondelete")
+            == "CASCADE"
+        )
+
+        source_uniques = constraint_names(
+            inspector.get_unique_constraints("message_sources")
+        )
+        assert {
+            "uq_message_sources_message_evidence",
+            "uq_message_sources_message_citation",
+            "uq_message_sources_message_chunk",
+        } <= source_uniques
+
+        source_checks = constraint_names(
+            inspector.get_check_constraints("message_sources")
+        )
+        assert {
+            "ck_message_sources_assistant_role",
+            "ck_message_sources_citation_non_negative",
+            "ck_message_sources_chunk_index_non_negative",
+            "ck_message_sources_evidence_not_blank",
+            "ck_message_sources_evidence_format",
+            "ck_message_sources_title_not_blank",
+            "ck_message_sources_language_not_blank",
+            "ck_message_sources_checksum_length",
+            "ck_message_sources_validity_range",
+        } <= source_checks
+
+        source_indexes = {
+            index["name"] for index in inspector.get_indexes("message_sources")
+        }
+        assert {
+            "ix_message_sources_institution_id",
+            "ix_message_sources_chunk_id",
+            "ix_message_sources_document_id",
+            "ix_message_sources_document_version_id",
+        } <= source_indexes
+
+        with engine.connect() as conn:
+            trigger_exists = conn.execute(
+                text(
+                    "SELECT EXISTS ("
+                    "SELECT 1 FROM pg_trigger "
+                    "WHERE tgname = 'trg_document_chunks_prevent_referenced_update' "
+                    "AND NOT tgisinternal)"
+                )
+            ).scalar_one()
+            function_exists = conn.execute(
+                text(
+                    "SELECT EXISTS ("
+                    "SELECT 1 FROM pg_proc "
+                    "WHERE proname = 'prevent_referenced_chunk_update')"
+                )
+            ).scalar_one()
+        assert trigger_exists is True
+        assert function_exists is True
+
+    command.upgrade(alembic_cfg, "c8b4f2d9e6a1")
+    engine = create_engine(migrations_database_url)
+    try:
+        assert_sources_schema(engine)
+    finally:
+        engine.dispose()
+
+    command.downgrade(alembic_cfg, "-1")
+    engine = create_engine(migrations_database_url)
+    try:
+        inspector = inspect(engine)
+        assert "message_sources" not in inspector.get_table_names()
+        assert "reply_to_message_id" not in {
+            column["name"] for column in inspector.get_columns("messages")
+        }
+        assert "uq_messages_id_conversation_institution" not in constraint_names(
+            inspector.get_unique_constraints("messages")
+        )
+        assert "uq_messages_id_institution_role" not in constraint_names(
+            inspector.get_unique_constraints("messages")
+        )
+        assert (
+            "uq_document_chunks_id_version_document_institution"
+            not in constraint_names(
+                inspector.get_unique_constraints("document_chunks")
+            )
+        )
+        with engine.connect() as conn:
+            trigger_exists = conn.execute(
+                text(
+                    "SELECT EXISTS ("
+                    "SELECT 1 FROM pg_trigger "
+                    "WHERE tgname = 'trg_document_chunks_prevent_referenced_update' "
+                    "AND NOT tgisinternal)"
+                )
+            ).scalar_one()
+            function_exists = conn.execute(
+                text(
+                    "SELECT EXISTS ("
+                    "SELECT 1 FROM pg_proc "
+                    "WHERE proname = 'prevent_referenced_chunk_update')"
+                )
+            ).scalar_one()
+        assert trigger_exists is False
+        assert function_exists is False
+    finally:
+        engine.dispose()
+
+    command.upgrade(alembic_cfg, "head")
+    engine = create_engine(migrations_database_url)
+    try:
+        assert_sources_schema(engine)
+        with engine.connect() as conn:
+            current_revision = conn.execute(
+                text("SELECT version_num FROM alembic_version")
+            ).scalar_one()
+    finally:
+        engine.dispose()
+
+    script = ScriptDirectory.from_config(alembic_cfg)
+    assert current_revision == script.get_current_head()

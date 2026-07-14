@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import TYPE_CHECKING
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
@@ -8,17 +9,37 @@ from sqlalchemy import (
     ForeignKeyConstraint,
     String,
     Text,
+    UniqueConstraint,
     func,
 )
 from sqlalchemy.dialects.postgresql import JSONB
-from sqlalchemy.orm import Mapped, mapped_column
+from sqlalchemy.orm import Mapped, mapped_column, relationship
 
 from app.database.base import Base
+
+if TYPE_CHECKING:
+    from app.models.message_source import MessageSource
 
 
 class Message(Base):
     __tablename__ = "messages"
     __table_args__ = (
+        # Unique constraints de suporte para as foreign keys compostas de
+        # reply_to_message_id e message_sources. O id já é único por ser PK;
+        # as combinações existem para o PostgreSQL validar também conversa,
+        # instituição e role na própria base de dados.
+        UniqueConstraint(
+            "id",
+            "conversation_id",
+            "institution_id",
+            name="uq_messages_id_conversation_institution",
+        ),
+        UniqueConstraint(
+            "id",
+            "institution_id",
+            "role",
+            name="uq_messages_id_institution_role",
+        ),
         # Substitui a FK simples em conversation_id: garante não só que a
         # conversa existe, mas que message.institution_id é obrigatoriamente
         # igual ao institution_id dessa conversa.
@@ -29,7 +50,7 @@ class Message(Base):
         ),
         # Substitui a FK simples em user_id: quando presente, garante que o
         # autor pertence à mesma instituição da mensagem. user_id nulo
-        # (mensagens "assistant" futuras) continua a não ser validado por
+        # (mensagens "assistant" automáticas) continua a não ser validado por
         # esta constraint — o Postgres não a aplica quando alguma das
         # colunas da FK composta é NULL (MATCH SIMPLE, o comportamento por
         # omissão).
@@ -38,12 +59,23 @@ class Message(Base):
             ["users.id", "users.institution_id"],
             name="fk_messages_user_id_institution_id_users",
         ),
+        # Uma resposta só pode apontar para uma mensagem da mesma conversa
+        # e instituição. O service restringe adicionalmente o alvo a role=user.
+        ForeignKeyConstraint(
+            ["reply_to_message_id", "conversation_id", "institution_id"],
+            ["messages.id", "messages.conversation_id", "messages.institution_id"],
+            name="fk_messages_reply_to_conversation_institution",
+        ),
         # Espelha na base de dados os roles aceites pelos schemas
         # (app/schemas/message.py): defesa em profundidade contra inserções
         # feitas fora da API (scripts, serviços futuros, SQL direto).
         CheckConstraint(
             "role IN ('user', 'assistant', 'system')",
             name="ck_messages_role_allowed",
+        ),
+        CheckConstraint(
+            "reply_to_message_id IS NULL OR reply_to_message_id <> id",
+            name="ck_messages_reply_to_not_self",
         ),
     )
 
@@ -73,11 +105,15 @@ class Message(Base):
     # Guarda sempre o autor real da mensagem: para role="user" é o próprio
     # utilizador; para role="system", o admin que a criou manualmente (ver
     # message_service.create_message) — isto permite auditoria de quem
-    # escreveu a mensagem. Só fica nulo para mensagens "assistant" futuras,
+    # escreveu a mensagem. Só fica nulo para mensagens "assistant"
     # criadas automaticamente sem um utilizador autenticado por trás.
     user_id: Mapped[UUID | None] = mapped_column(
         nullable=True,
     )
+
+    # Definido apenas pelo fluxo interno de answering. Não faz parte de
+    # MessageCreate e, por isso, nunca pode ser escolhido pelo cliente.
+    reply_to_message_id: Mapped[UUID | None] = mapped_column(nullable=True)
 
     role: Mapped[str] = mapped_column(String(20), nullable=False)
 
@@ -96,4 +132,14 @@ class Message(Base):
         DateTime(timezone=True),
         server_default=func.now(),
         nullable=False,
+    )
+
+    # selectin permite carregar as fontes de uma página inteira de mensagens
+    # numa única query adicional, preservando a ordem das citações.
+    sources: Mapped[list["MessageSource"]] = relationship(
+        back_populates="message",
+        cascade="all, delete-orphan",
+        lazy="selectin",
+        order_by="MessageSource.citation_index",
+        passive_deletes=True,
     )

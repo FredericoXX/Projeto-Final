@@ -3,17 +3,27 @@ import uuid
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
+from app.answering.base import AnswerGenerator
+from app.answering.dependencies import get_answer_generator
 from app.api.dependencies.auth import get_current_user
 from app.database.session import get_db
 from app.models.user import User
+from app.retrieval.base import Retriever
+from app.retrieval.dependencies import get_retriever
+from app.schemas.answering import AnsweringRequest
 from app.schemas.conversation import (
     ConversationCreate,
     ConversationListResponse,
     ConversationRead,
     ConversationUpdate,
 )
-from app.schemas.message import MessageCreate, MessageListResponse, MessageRead
-from app.services import conversation_service, message_service
+from app.schemas.message import (
+    ConversationAskResponse,
+    MessageCreate,
+    MessageListResponse,
+    MessageRead,
+)
+from app.services import conversation_answering_service, conversation_service, message_service
 
 # Todas as rotas exigem um utilizador autenticado (get_current_user). O
 # isolamento multi-institucional e a regra de posse (utilizador comum vs.
@@ -76,6 +86,29 @@ def update_conversation(
         db, current_user, conversation_id, payload
     )
     return ConversationRead.model_validate(conversation)
+
+
+@router.post(
+    "/{conversation_id}/ask",
+    response_model=ConversationAskResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def ask_in_conversation(
+    conversation_id: uuid.UUID,
+    payload: AnsweringRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    retriever: Retriever = Depends(get_retriever),
+    generator: AnswerGenerator = Depends(get_answer_generator),
+) -> ConversationAskResponse:
+    return conversation_answering_service.ask_in_conversation(
+        db,
+        current_user,
+        conversation_id,
+        payload,
+        retriever,
+        generator,
+    )
 
 
 @router.post(

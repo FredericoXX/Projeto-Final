@@ -13,6 +13,7 @@
 | 7 | `1482b165c943` | Create the `documents` and `document_versions` tables (document core) |
 | 8 | `68cb34527411` | Create the `document_chunks` table and its supporting unique constraint on `document_versions` |
 | 9 | `b7e2d8a9f4c1` | Add generated lexical `search_vector` and its GIN index |
+| 10 | `c8b4f2d9e6a1` | Add `reply_to_message_id`, persisted `message_sources`, composite integrity constraints and cited-chunk immutability trigger |
 
 Since the project is still in local-only development with no shared
 environments, no production data, and disposable databases, the `users`
@@ -48,20 +49,25 @@ conversations). See
 [`app/api/routes/auth.py`](../backend/app/api/routes/auth.py) and
 [`app/api/routes/conversations.py`](../backend/app/api/routes/conversations.py).
 
-A conversation belongs to one institution and one user, and groups the
-messages exchanged in an assistant session. This phase only covers
-persistence and CRUD-style endpoints. The information-retrieval approach
-(RAG or otherwise) is still an open question for the project's
-literature review — nothing here should be read as a decision already
-made; pgvector is enabled purely as infrastructure available for that
-future work.
+A conversation belongs to one institution and one user and groups the
+messages exchanged in an assistant session. The experimental conversational
+endpoint can now persist a complete grounded turn, while the final retrieval
+approach remains an open question for the literature review. pgvector remains
+available infrastructure and is not used by the current lexical baseline.
 
 A message's `user_id` records who actually authored it: for `role="user"`
 it's the sending user; for `role="system"` it's the admin who created it
 manually (see `message_service.create_message`), which is what makes
-system messages auditable. It is only ever `NULL` for future automatic
-`"assistant"` messages, which aren't created through this API yet — role
-`"system"` does **not** imply a null `user_id`.
+system messages auditable. It is only ever `NULL` for automatic
+`"assistant"` messages created by the conversational answering
+flow — role `"system"` does **not** imply a null `user_id`.
+
+Migration `c8b4f2d9e6a1` adds nullable `messages.reply_to_message_id`.
+Assistant messages created by answering point to the user message in the
+same turn. A composite FK `(reply_to_message_id, conversation_id,
+institution_id)` ensures the target belongs to the same conversation and
+tenant, and a CHECK rejects self-reference. Manual user/system messages keep
+the field null; it is not accepted by `MessageCreate`.
 
 ## Document core (`documents` and `document_versions`)
 
@@ -111,8 +117,8 @@ Migration `68cb34527411` adds `document_chunks`: the deterministic
 segments of the extracted text of each document version. Chunks are an
 **internal structure** — there is no public chunks endpoint, and
 `normalized_content`, `content_sha256` and the offsets are never exposed
-by the API. They exist to prepare the documents for a future
-information-retrieval strategy; RAG is *not* a settled architectural
+by the API. They support the current lexical experiments while the final
+information-retrieval strategy remains unsettled; RAG is *not* a settled architectural
 decision. Phase 3 adds only the experimental lexical baseline described
 below; embeddings and vector retrieval remain absent.
 
@@ -131,7 +137,7 @@ Each row has:
   `content` (the original slice: `content ==
   extracted_text[start_char:end_char]`), `normalized_content` (see
   `app/core/text_normalization.py`: NFKD, no diacritics, casefolded,
-  whitespace collapsed — prepared for future lexical search),
+  whitespace collapsed — used by lexical search),
   `content_sha256`, `start_char`/`end_char` (end-exclusive offsets over
   the original text), `language` (inherited from the document at
   segmentation time), `created_at`;
@@ -161,6 +167,40 @@ Reprocessing replaces only that version's chunks (protected by the same
 `SELECT ... FOR UPDATE` lock as before); historical versions keep their
 own chunk sets, and uploading a new version never touches the chunks of
 previous versions.
+
+## Persisted message sources (`message_sources`)
+
+Migration `c8b4f2d9e6a1` adds one row per source actually cited by an
+assistant message. It stores the evidence ID and citation order plus a
+snapshot of public document metadata and `content_sha256`. `institution_id`
+exists only to enforce tenant integrity; the row never stores `user_id`,
+institution profile data, the question, answer, chunk content, prompt,
+provider response, tokens or credentials.
+
+Integrity is enforced in PostgreSQL, not only in services:
+
+- `(message_id, institution_id, message_role)` references
+  `messages(id, institution_id, role)` with `ON DELETE CASCADE`, and a CHECK
+  requires `message_role='assistant'`;
+- `(chunk_id, document_version_id, document_id, institution_id)` references
+  the same four-column identity on `document_chunks`, with no delete cascade;
+- `reply_to_message_id` and both FKs rely on explicit supporting UNIQUE
+  constraints, preserving conversation and tenant consistency;
+- each message has unique `evidence_id`, `citation_index` and `chunk_id`;
+  CHECKs validate citation/chunk indexes, evidence format (`E1`, `E2`, ...),
+  nonblank title/language, checksum length and validity range;
+- lookup indexes cover institution, chunk, document and version. The UNIQUE
+  indexes already cover message/citation access, so no duplicate indexes are
+  created.
+
+Document metadata is copied from locked database rows immediately before the
+turn is inserted. Later edits therefore do not alter historical citations.
+The non-cascading chunk FK prevents deletion or reassociation of a cited
+chunk. The PostgreSQL trigger
+`trg_document_chunks_prevent_referenced_update` additionally rejects every
+`UPDATE` to a cited chunk row. Reprocessing and rebuild check
+`message_sources` while holding the same `DocumentVersion` lock and
+reject/skip cited versions before changing state or content.
 
 ### Experimental lexical search vector
 
@@ -283,16 +323,10 @@ scoping already described above.
 
 ## Current status
 
-An experimental lexical evidence-retrieval baseline is implemented, but
-the definitive approach remains an open question for the literature
-review. There is no complete RAG workflow, embeddings, semantic/hybrid
-search, answer generation, LLM or agent behavior; pgvector remains
-infrastructure-only and is not used by retrieval. Current work covers
-persistence, CRUD APIs, authentication, the core domain
-invariants described above (institutional security rules,
-conversation/message state and language rules, multi-institution data
-integrity) and the document core (documents, versioned uploads, local
-file storage, synchronous text extraction and deterministic chunking —
-see [`docs/document-core.md`](document-core.md) and the
-`document_chunks` section above), plus parameterized PostgreSQL lexical
-search over the latest eligible processed version of each document.
+The project now includes an experimental end-to-end lexical grounded-answer
+flow and optional transactional persistence inside conversations. The
+definitive approach remains open: there are no embeddings, semantic/hybrid
+search, reranking, conversational memory, agents or confidence scoring, and
+the system is not hallucination-free. pgvector remains infrastructure-only.
+See [`docs/answering.md`](answering.md) for the provider-neutral pipeline,
+atomic turn semantics, source snapshots and current limitations.
