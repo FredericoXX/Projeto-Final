@@ -2,7 +2,7 @@
 
 import io
 import uuid
-from datetime import date, timedelta
+from datetime import UTC, datetime, timedelta
 
 import pytest
 from fastapi.testclient import TestClient
@@ -307,7 +307,7 @@ def test_active_official_and_nullable_validity_document_appears(client: TestClie
 
 def test_inactive_future_and_expired_documents_are_excluded(client: TestClient) -> None:
     _, headers, _ = _setup(client)
-    today = date.today()
+    today = datetime.now(UTC).date()
     inactive, _ = _create_searchable(client, headers, "termo inativo")
     client.patch(
         f"/api/v1/documents/{inactive['id']}",

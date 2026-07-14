@@ -40,6 +40,16 @@ class DocumentChunk(Base):
             "chunk_index",
             name="uq_document_chunks_document_version_id_chunk_index",
         ),
+        # Suporta a FK composta de message_sources e torna impossível
+        # associar uma citação a uma combinação inconsistente de chunk,
+        # versão, documento e instituição.
+        UniqueConstraint(
+            "id",
+            "document_version_id",
+            "document_id",
+            "institution_id",
+            name="uq_document_chunks_id_version_document_institution",
+        ),
         # O chunk pertence obrigatoriamente à versão indicada, ao documento
         # dessa versão e à mesma instituição — o PostgreSQL rejeita qualquer
         # combinação cruzada, sem depender das verificações do service.
@@ -72,7 +82,7 @@ class DocumentChunk(Base):
             "btrim(normalized_content) <> ''",
             name="ck_document_chunks_normalized_content_not_blank",
         ),
-        # Consultas futuras por instituição e idioma (retrieval multi-idioma).
+        # Consultas de retrieval por instituição e idioma.
         Index(
             "ix_document_chunks_institution_id_language",
             "institution_id",
@@ -122,7 +132,7 @@ class DocumentChunk(Base):
     content: Mapped[str] = mapped_column(Text, nullable=False)
 
     # Forma normalizada e determinística do content (ver
-    # app.core.text_normalization), preparada para pesquisa futura.
+    # app.core.text_normalization), usada pela pesquisa lexical.
     normalized_content: Mapped[str] = mapped_column(Text, nullable=False)
 
     # Baseline lexical: o PostgreSQL mantém este vetor automaticamente.

@@ -50,8 +50,8 @@ def _extract_pdf(file_path: Path) -> ExtractionResult:
             reader = PdfReader(handle)
             pages = [page.extract_text() or "" for page in reader.pages]
     except Exception as exc:
-        logger.exception("Falha ao ler PDF durante a extração de texto")
-        raise ExtractionError(UNREADABLE_PDF_MESSAGE) from exc
+        logger.error("PDF extraction failed: error_type=%s", type(exc).__name__)
+        raise ExtractionError(UNREADABLE_PDF_MESSAGE) from None
 
     text = PAGE_SEPARATOR.join(pages)
     if not text.strip():

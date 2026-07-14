@@ -25,7 +25,11 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.exceptions import ConflictError, NotFoundError
 from app.models.document_version import DocumentVersion
-from app.services import document_chunk_service, document_chunking_service
+from app.services import (
+    document_chunk_service,
+    document_chunking_service,
+    message_source_service,
+)
 from app.services.document_extraction_service import ExtractionError, extract_text
 from app.storage.base import DocumentStorage
 
@@ -54,6 +58,34 @@ def process_version(
     estarem na mesma transação — nunca há versão processed sem chunks,
     chunks parciais nem mistura de conjuntos antigo e novo.
     """
+    # O processamento inicial e o reprocessamento usam o mesmo protocolo de
+    # lock. Assim, nem um segundo processamento nem a persistência concorrente
+    # de uma fonte podem atravessar a mudança para "processing".
+    locked_version = db.scalar(
+        select(DocumentVersion)
+        .where(
+            DocumentVersion.id == version.id,
+            DocumentVersion.document_id == version.document_id,
+            DocumentVersion.institution_id == version.institution_id,
+        )
+        .with_for_update()
+        .execution_options(populate_existing=True)
+    )
+    if locked_version is None:
+        msg = f"Document version '{version.id}' not found."
+        raise NotFoundError(msg)
+    if locked_version.processing_status == "processing":
+        msg = f"Document version '{locked_version.id}' is already being processed."
+        raise ConflictError(msg)
+    if message_source_service.is_document_version_referenced(
+        db,
+        version_id=locked_version.id,
+        document_id=locked_version.document_id,
+        institution_id=locked_version.institution_id,
+    ):
+        raise ConflictError(message_source_service.REFERENCED_VERSION_MESSAGE)
+
+    version = locked_version
     version.processing_status = "processing"
     version.processing_error = None
     version.extracted_text = None
@@ -65,11 +97,13 @@ def process_version(
         result = extract_text(storage.resolve_path(version.storage_path), version.mime_type)
     except ExtractionError as exc:
         return _finalize_failure(db, version, str(exc))
-    except Exception:
+    except Exception as exc:
         # Falha imprevista (ex.: caminho inválido no storage): detalhes só
         # no logging; o cliente vê apenas a mensagem genérica.
-        logger.exception(
-            "Erro inesperado ao processar a versão de documento %s", version.id
+        logger.error(
+            "Document processing failed: version_id=%s reason=extraction_failed error_type=%s",
+            version.id,
+            type(exc).__name__,
         )
         return _finalize_failure(db, version, GENERIC_PROCESSING_ERROR)
 
@@ -82,10 +116,11 @@ def process_version(
         # Substituição atómica: remoção dos chunks antigos e inserção dos
         # novos ficam pendentes na transação até ao commit final abaixo.
         document_chunk_service.replace_version_chunks(db, version, chunks)
-    except Exception:
-        logger.exception(
-            "Erro ao segmentar ou persistir os chunks da versão de documento %s",
+    except Exception as exc:
+        logger.error(
+            "Document processing failed: version_id=%s reason=chunking_failed error_type=%s",
             version.id,
+            type(exc).__name__,
         )
         # O rollback desfaz qualquer chunk pendente (os antigos, se
         # existirem, permanecem intactos até à limpeza do estado failed).
@@ -100,15 +135,16 @@ def process_version(
 
     try:
         db.commit()
-    except Exception:
+    except Exception as exc:
         # O flush acima deteta normalmente erros de constraints, mas uma
         # falha também pode ocorrer ao confirmar a transação (por exemplo,
         # constraint diferida ou perda da ligação). Nesse caso, nenhum
         # conjunto parcial pode sobreviver e a versão não pode ficar presa
         # em processing.
-        logger.exception(
-            "Erro ao confirmar os chunks da versão de documento %s",
+        logger.error(
+            "Document processing failed: version_id=%s reason=commit_failed error_type=%s",
             version.id,
+            type(exc).__name__,
         )
         db.rollback()
         return _finalize_failure(db, version, CHUNKING_ERROR_MESSAGE)
@@ -167,11 +203,18 @@ def reprocess_version(
         msg = f"Document version '{locked_version.id}' is already being processed."
         raise ConflictError(msg)
 
+    if message_source_service.is_document_version_referenced(
+        db,
+        version_id=locked_version.id,
+        document_id=locked_version.document_id,
+        institution_id=locked_version.institution_id,
+    ):
+        raise ConflictError(message_source_service.REFERENCED_VERSION_MESSAGE)
+
     if not storage.exists(locked_version.storage_path):
         # Mensagem genérica de propósito: nunca expor o caminho.
         raise ConflictError(FILE_UNAVAILABLE_MESSAGE)
 
-    # process_version limpa os campos anteriores e faz commit do estado
-    # processing antes da extração. Esse commit liberta o lock; um segundo
-    # pedido acorda, relê processing e é recusado com 409.
+    # process_version repete a verificação sob o mesmo lock antes de gravar
+    # processing. O commit liberta o lock; outro pedido acorda e revalida.
     return process_version(db, locked_version, storage)

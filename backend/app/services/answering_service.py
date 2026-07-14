@@ -11,6 +11,7 @@ ficam apenas dados operacionais (contagens e IDs técnicos) — nunca a
 pergunta completa, o contexto documental ou a resposta bruta.
 """
 
+import hashlib
 import logging
 from datetime import UTC, datetime
 
@@ -46,12 +47,14 @@ def ask(
     payload: AnsweringRequest,
     retriever: Retriever,
     generator: AnswerGenerator,
+    *,
+    fallback_language: str | None = None,
 ) -> AnsweringResponse:
     institution = get_institution(db, current_user.institution_id)
     language = resolve_language(
         payload.language,
         supported_languages=institution.supported_languages,
-        fallback=institution.default_language,
+        fallback=fallback_language or institution.default_language,
     )
 
     normalized_query = normalize_text(payload.query)
@@ -122,22 +125,29 @@ def ask(
 
     # Apenas as fontes citadas, pela ordem das citações do gerador.
     entries_by_id = {entry.evidence_id: entry for entry in entries}
-    sources = [
-        AnswerSourceRead(
+    sources: list[AnswerSourceRead] = []
+    for evidence_id in cited_ids:
+        entry = entries_by_id[evidence_id]
+        source = AnswerSourceRead(
             evidence_id=evidence_id,
-            chunk_id=entries_by_id[evidence_id].evidence.chunk_id,
-            document_id=entries_by_id[evidence_id].evidence.document_id,
-            document_version_id=entries_by_id[evidence_id].evidence.document_version_id,
-            document_title=entries_by_id[evidence_id].evidence.document_title,
-            chunk_index=entries_by_id[evidence_id].evidence.chunk_index,
-            source_url=entries_by_id[evidence_id].evidence.source_url,
-            official_source=entries_by_id[evidence_id].evidence.official_source,
-            language=entries_by_id[evidence_id].evidence.language,
-            valid_from=entries_by_id[evidence_id].evidence.valid_from,
-            valid_until=entries_by_id[evidence_id].evidence.valid_until,
+            chunk_id=entry.evidence.chunk_id,
+            document_id=entry.evidence.document_id,
+            document_version_id=entry.evidence.document_version_id,
+            document_title=entry.evidence.document_title,
+            chunk_index=entry.evidence.chunk_index,
+            source_url=entry.evidence.source_url,
+            official_source=entry.evidence.official_source,
+            language=entry.evidence.language,
+            valid_from=entry.evidence.valid_from,
+            valid_until=entry.evidence.valid_until,
         )
-        for evidence_id in cited_ids
-    ]
+        # Captura exatamente o conteúdo que entrou no contexto do gerador.
+        # Isto mantém o contrato Retriever neutro e permite comparar esse
+        # snapshot com o chunk bloqueado antes da persistência conversacional.
+        source.set_internal_content_sha256(
+            hashlib.sha256(entry.evidence.content.encode("utf-8")).hexdigest()
+        )
+        sources.append(source)
     logger.info(
         "Answering concluído (instituição %s): %d evidências, %d citadas",
         current_user.institution_id,

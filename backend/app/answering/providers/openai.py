@@ -89,7 +89,7 @@ class OpenAIAnswerGenerator:
             # traceback superior. Sem retry próprio: falha uma vez,
             # responde 502 uma vez.
             logger.error(
-                "Answer provider request failed: provider=openai error_type=%s",
+                "Answer provider request failed: error_type=%s",
                 type(exc).__name__,
             )
             raise AnswerGenerationError(GENERATION_FAILED_MESSAGE) from None

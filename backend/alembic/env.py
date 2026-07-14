@@ -11,6 +11,7 @@ from app.models.document_chunk import DocumentChunk  # noqa: F401
 from app.models.document_version import DocumentVersion  # noqa: F401
 from app.models.institution import Institution  # noqa: F401
 from app.models.message import Message  # noqa: F401
+from app.models.message_source import MessageSource  # noqa: F401
 from app.models.user import User  # noqa: F401
 
 # this is the Alembic Config object, which provides

@@ -41,18 +41,47 @@ def get_accessible_conversation(
     db: Session,
     current_user: User,
     conversation_id: uuid.UUID,
+    *,
+    for_update: bool = False,
 ) -> Conversation:
     """Fetch a conversation, enforcing institution isolation and per-role
     ownership: an admin can access any conversation in their institution,
     a regular user only their own. Any other case (wrong institution,
     someone else's conversation) reports as 404, never revealing that the
     conversation exists elsewhere."""
+    return get_accessible_conversation_by_identity(
+        db,
+        user_id=current_user.id,
+        institution_id=current_user.institution_id,
+        user_role=current_user.role,
+        conversation_id=conversation_id,
+        for_update=for_update,
+    )
+
+
+def get_accessible_conversation_by_identity(
+    db: Session,
+    *,
+    user_id: uuid.UUID,
+    institution_id: uuid.UUID,
+    user_role: str,
+    conversation_id: uuid.UUID,
+    for_update: bool = False,
+) -> Conversation:
+    """Aplica as regras de acesso usando apenas identidade escalar.
+
+    O fluxo conversacional usa esta variante depois de terminar a transação
+    de leitura do answering, evitando depender de objetos ORM expirados pelo
+    rollback antes de bloquear novamente a conversa.
+    """
     query = select(Conversation).where(
         Conversation.id == conversation_id,
-        Conversation.institution_id == current_user.institution_id,
+        Conversation.institution_id == institution_id,
     )
-    if current_user.role != "admin":
-        query = query.where(Conversation.user_id == current_user.id)
+    if user_role != "admin":
+        query = query.where(Conversation.user_id == user_id)
+    if for_update:
+        query = query.with_for_update()
 
     conversation = db.scalar(query)
     if conversation is None:

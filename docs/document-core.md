@@ -143,7 +143,13 @@ O reprocessamento
 o ficheiro original sem criar nova versão; uma versão já em
 `processing` responde 409. Os chunks da versão são substituídos por
 inteiro (sem duplicados nem restos parciais); os chunks de outras
-versões do mesmo documento nunca são tocados.
+versões do mesmo documento nunca são tocados. Se uma versão já tiver sido
+citada por uma resposta persistida, o reprocessamento responde 409 **antes**
+de alterar estado, texto ou chunks; deve ser carregada uma nova versão. Esta
+regra preserva a evidência histórica. Uma FK sem cascade de `message_sources`
+para `document_chunks` impede apagar ou reassociar o chunk citado, e o trigger
+`trg_document_chunks_prevent_referenced_update` rejeita qualquer `UPDATE`
+direto dessa linha.
 
 ## Endpoints
 
@@ -179,13 +185,17 @@ gera uma resposta final.
 Para dados anteriores ao chunking automático ou reconstrução
 administrativa, execute `python -m scripts.rebuild_document_chunks`. O
 script não reextrai ficheiros, substitui chunks idempotentemente e aceita
-`--institution-id` e `--document-id`.
+`--institution-id` e `--document-id`. Cada versão é relida sob lock; versões
+citadas são ignoradas, registadas apenas pelo ID e motivo controlado, e
+contabilizadas em `skipped_referenced`. O resumo contém found, processed,
+chunks created, skipped referenced e failures.
 
 Sobre esta baseline existe ainda a geração experimental de respostas
-fundamentadas (`POST /api/v1/answering/ask`), documentada em
-[`docs/answering.md`](answering.md): usa as mesmas evidências e filtros,
-não persiste nada e devolve fallback determinístico quando não há
-evidências.
+fundamentadas, documentada em [`docs/answering.md`](answering.md): o endpoint
+independente `POST /api/v1/answering/ask` não persiste, enquanto
+`POST /api/v1/conversations/{conversation_id}/ask` guarda atomicamente as
+duas mensagens e snapshots apenas das fontes citadas. Ambos devolvem fallback
+determinístico quando não há evidências.
 
 Notas:
 

@@ -29,9 +29,8 @@ class Settings(BaseSettings):
     document_storage_path: str = "storage/documents"
     document_max_file_size_mb: int = 20
 
-    # Segmentação do texto extraído em chunks (estrutura interna que
-    # prepara futuras estratégias de recuperação de informação). Nomes
-    # neutros de propósito: nenhuma decisão de retrieval foi tomada.
+    # Segmentação do texto extraído em chunks, atualmente usada pela
+    # baseline lexical e mantida neutra para permitir outras estratégias.
     document_chunk_size_chars: int = 1200
     document_chunk_overlap_chars: int = 150
 

@@ -3,6 +3,7 @@
 Sem rede e sem credenciais: nenhum teste toca no SDK do fornecedor.
 """
 
+import hashlib
 import logging
 import uuid
 
@@ -153,6 +154,11 @@ def test_question_with_evidence_calls_generator_and_answers(
         assert generator.calls[0].institution_name == "Answering Institution"
         assert len(response.sources) == 1
         assert response.sources[0].evidence_id == "E1"
+        expected_checksum = hashlib.sha256(
+            generator.calls[0].evidence[0].evidence.content.encode("utf-8")
+        ).hexdigest()
+        assert response.sources[0].internal_content_sha256 == expected_checksum
+        assert "content_sha256" not in response.model_dump_json()
     finally:
         session.close()
 
@@ -205,6 +211,26 @@ def test_omitted_language_uses_institution_default(
         )
         assert response.language == "pt"
         assert retriever.calls[0]["context"].language == "pt"
+    finally:
+        session.close()
+
+
+def test_omitted_language_accepts_conversation_fallback(
+    client: TestClient, test_session_factory: sessionmaker[Session]
+) -> None:
+    session, user = _create_institution_and_admin(client, test_session_factory)
+    try:
+        retriever = FakeRetriever([_evidence()])
+        response = answering_service.ask(
+            session,
+            user,
+            _request(),
+            retriever,
+            FakeAnswerGenerator(),
+            fallback_language="en",
+        )
+        assert response.language == "en"
+        assert retriever.calls[0]["context"].language == "en"
     finally:
         session.close()
 
