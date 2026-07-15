@@ -217,6 +217,40 @@ highest-numbered `processed` version per document and filters in SQL by
 the authenticated institution, active status, language, current validity
 and `official_only` (true by default). Historical chunks remain stored.
 
+#### Progressive lexical search for natural questions
+
+With `simple` (no stopwords, no stemming) the original baseline required
+*every* word of the question to match, so "Quando começam as aulas?"
+found nothing in a document that only contains "aulas". The retriever
+now plans deterministic query variants (`app/retrieval/query_planning.py`)
+and executes them in strict priority order, returning the first
+non-empty result set:
+
+1. **exact** — the normalized query as typed (unchanged current behavior);
+2. **reduced_and** — only the informative terms, all required
+   (functional words such as articles, prepositions, interrogatives and
+   common auxiliaries are removed using small, conservative per-language
+   lists for `pt` and `en`);
+3. **reduced_or** — the same informative terms, any one sufficient.
+
+Results and scores of different strategies are never mixed or compared.
+Every variant runs the exact same SQL filters (institution, active,
+language, validity, `official_only`, latest processed version, `top_k`,
+deterministic ordering) — no fallback ever searches more broadly.
+Queries using explicit `websearch` syntax (quoted phrases, `OR`,
+negated `-terms`) run only the exact variant, so an explicit intent such
+as `matricula -propinas` is never relaxed into a search that also
+matches "propinas". A supported language without its own functional-term
+list also runs only the exact variant. A plain query made up only of
+functional terms (e.g. "O que é?") in a language with a known list runs
+**no search at all** and returns zero evidence — any match would be a
+meaningless coincidence of functional words (a document literally
+containing "o que é" must not become evidence); quoted phrases keep
+their exact search even in that case. Everything stays deterministic
+and local: no extra LLM calls, no embeddings, no stemming, no synonyms —
+the approach remains an experimental baseline for future comparison, and
+it does **not** understand questions semantically.
+
 ## Institutional security rules
 
 These rules were added after a security review found the institutions

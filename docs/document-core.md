@@ -182,6 +182,20 @@ noutra instituição. `official_only` é verdadeiro por omissão. A resposta
 expõe conteúdo original e metadados da fonte, nunca campos internos, e não
 gera uma resposta final.
 
+Perguntas naturais ("Quando começam as aulas?") são suportadas por
+pesquisa progressiva determinística (`app/retrieval/query_planning.py`):
+primeiro a consulta exata atual; sem resultados, os termos informativos
+(sem artigos, preposições, interrogativos e auxiliares comuns de PT/EN)
+com AND; por fim com OR. A primeira estratégia com evidências vence e os
+resultados nunca são misturados. Todos os filtros institucionais aplicam-se
+a todas as estratégias; consultas com operadores explícitos (aspas, OR,
+`-termo`) usam apenas a tentativa exata, preservando a intenção. Uma
+pergunta simples composta apenas por termos funcionais ("O que é?") não
+pesquisa de todo e devolve zero evidências — uma correspondência por
+coincidência de palavras funcionais não tem valor informativo. Sem
+chamadas adicionais a LLM, sem embeddings, sem stemming e sem sinónimos —
+a baseline continua lexical e experimental, sem compreensão semântica.
+
 Para dados anteriores ao chunking automático ou reconstrução
 administrativa, execute `python -m scripts.rebuild_document_chunks`. O
 script não reextrai ficheiros, substitui chunks idempotentemente e aceita
