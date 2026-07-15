@@ -28,6 +28,16 @@ pergunta autenticada
 → resposta com fontes citadas
 ```
 
+A recuperação de evidências beneficia automaticamente da pesquisa lexical
+progressiva do `PostgresLexicalRetriever` (exact → reduced_and →
+reduced_or; ver a secção de retrieval em
+[`docs/database.md`](database.md)): perguntas naturais como "Quando
+começam as aulas?" passam a encontrar evidência sem qualquer chamada
+adicional ao LLM — o planeamento é determinístico e local, e a política
+de evidência mantém-se inalterada. A melhoria não elimina a limitação
+lexical de fundo: perguntas cujo vocabulário não partilha nenhum termo
+com os documentos continuam em `insufficient_evidence`.
+
 ## Endpoint independente
 
 `POST /api/v1/answering/ask` — autenticado; qualquer utilizador ativo de

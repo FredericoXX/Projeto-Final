@@ -227,6 +227,16 @@ own institution. PostgreSQL maintains a generated `TSVECTOR` and GIN index;
 `PostgresLexicalRetriever` uses parameterized `websearch_to_tsquery` and
 `ts_rank_cd` behind a neutral `Retriever` contract.
 
+Natural questions ("Quando começam as aulas?") are supported through
+deterministic progressive search: the exact query is tried first, then
+the informative terms (functional PT/EN words removed) with AND, then
+with OR — the first non-empty strategy wins and results are never mixed.
+All institutional filters apply to every strategy, explicit operators
+(quotes, `OR`, `-term`) keep their semantics and skip relaxation, and no
+extra LLM calls, embeddings, stemming or synonyms are involved. This
+remains a lexical baseline, not semantic understanding — see
+[`docs/database.md`](docs/database.md).
+
 The retrieval endpoint returns evidence only. Existing processed text can be
 rebuilt idempotently with `python -m scripts.rebuild_document_chunks`,
 optionally filtered by `--institution-id` or `--document-id`; cited versions
