@@ -133,6 +133,29 @@ export const pt = {
   'error.versionReferenced':
     'Esta versão é referenciada por respostas guardadas e não pode ser reprocessada. Carregue uma nova versão.',
 
+  'form.save': 'Guardar',
+  'form.saveAndNew': 'Guardar e Novo',
+  'form.saving': 'A guardar…',
+  'form.edit': 'Editar',
+
+  'documents.languageLocked':
+    'O idioma não pode ser alterado depois de existirem versões carregadas.',
+  'documents.dangerZone': 'Zona de perigo',
+  'documents.delete': 'Eliminar documento',
+  'documents.deleteConfirmTitle': 'Eliminar "{title}"?',
+  'documents.deleteWarning':
+    'Serão eliminadas todas as versões, os segmentos pesquisáveis e os ficheiros deste documento.',
+  'documents.deleteIrreversible': 'Esta ação não pode ser desfeita.',
+  'documents.deleting': 'A eliminar…',
+  'documents.deleted': 'Documento eliminado.',
+
+  'error.documentReferenced':
+    'Este documento foi utilizado como fonte em respostas persistidas e não pode ser eliminado. Desative-o para impedir a sua utilização em novas respostas.',
+
+  'conversations.creating': 'A criar…',
+  'conversations.rename': 'Renomear',
+  'conversations.renameLabel': 'Título da conversa',
+
   'form.required': 'Este campo é obrigatório.',
   'form.invalidUrl': 'Indique um URL HTTP ou HTTPS válido.',
   'form.invalidDateRange': 'A data inicial não pode ser posterior à data final.',
