@@ -100,6 +100,19 @@ def update_document(
     return DocumentRead.model_validate(document)
 
 
+@router.delete("/{document_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_document(
+    document_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    admin: User = Depends(require_admin),
+    storage: DocumentStorage = Depends(get_document_storage),
+) -> None:
+    # Sem body e sem response: 204 em sucesso; 409 (via handlers globais)
+    # quando o documento está citado em respostas persistidas ou tem uma
+    # versão em processamento; 404 fora da instituição do admin.
+    document_service.delete_document(db, admin, document_id, storage=storage)
+
+
 @router.post(
     "/{document_id}/versions",
     response_model=DocumentVersionRead,

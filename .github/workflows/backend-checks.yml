@@ -36,7 +36,7 @@ jobs:
       DOCUMENT_MAX_FILE_SIZE_MB: "20"
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       # Valida apenas a sintaxe/interpolação do docker-compose.yml; a base
       # de dados de CI continua a ser o service container acima — o Compose
       # nunca é iniciado no workflow.

@@ -247,6 +247,27 @@ def list_message_sources(
     )
 
 
+def is_document_referenced(
+    db: Session,
+    *,
+    document_id: UUID,
+    institution_id: UUID,
+) -> bool:
+    """Indica se qualquer chunk/versão do documento foi citado numa
+    resposta persistida (avaliar sob os locks do chamador)."""
+    return (
+        db.scalar(
+            select(MessageSource.id)
+            .where(
+                MessageSource.document_id == document_id,
+                MessageSource.institution_id == institution_id,
+            )
+            .limit(1)
+        )
+        is not None
+    )
+
+
 def is_document_version_referenced(
     db: Session,
     *,

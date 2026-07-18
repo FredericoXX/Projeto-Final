@@ -109,9 +109,13 @@ def list_conversations(
         count_query = count_query.where(Conversation.user_id == current_user.id)
 
     total = db.scalar(count_query) or 0
+    # Ordenação por atividade recente (comportamento de chat): updated_at
+    # é atualizado explicitamente em cada turno persistido, por isso a
+    # conversa usada há menos tempo sobe para o topo; id desc desempata
+    # deterministicamente.
     items = list(
         db.scalars(
-            query.order_by(Conversation.created_at.desc(), Conversation.id.desc())
+            query.order_by(Conversation.updated_at.desc(), Conversation.id.desc())
             .limit(limit)
             .offset(offset)
         ).all()
@@ -127,14 +131,17 @@ def update_conversation(
 ) -> Conversation:
     conversation = get_accessible_conversation(db, current_user, conversation_id)
 
-    # closed e archived são estados finais neste protótipo: uma vez lá,
-    # a conversa deixa de aceitar qualquer alteração (incluindo tentar
-    # voltar a "active" — não existe endpoint de reabertura nesta fase).
-    if conversation.status != "active":
+    changes = data.model_dump(exclude_unset=True)
+
+    # closed e archived são estados finais neste protótipo: nunca voltam
+    # a active nem aceitam novas mensagens. A única alteração permitida
+    # nesses estados é renomear (payload apenas com title); qualquer
+    # payload que toque no status é recusado por inteiro — um pedido com
+    # title e status não altera nada, nem sequer o título.
+    if conversation.status != "active" and "status" in changes:
         msg = f"Conversation '{conversation_id}' is {conversation.status} and cannot be updated."
         raise ConflictError(msg)
 
-    changes = data.model_dump(exclude_unset=True)
     for field, value in changes.items():
         setattr(conversation, field, value)
 

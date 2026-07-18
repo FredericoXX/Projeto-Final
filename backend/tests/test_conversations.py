@@ -420,7 +420,10 @@ def test_message_in_archived_conversation_returns_409(client: TestClient) -> Non
     assert response.json()["detail"]["code"] == "resource_conflict"
 
 
-def test_patch_closed_conversation_returns_409(client: TestClient) -> None:
+def test_patch_closed_conversation_allows_title_only_rename(client: TestClient) -> None:
+    # Regra atualizada nesta fase: closed/archived continuam estados
+    # finais (sem novas mensagens, sem mudança de status), mas o título
+    # pode ser alterado — renomear não reabre a conversa.
     institution_id = _create_institution(client)
     admin_headers = _create_admin_and_login(client, institution_id)
     conversation = _create_conversation(client, admin_headers)
@@ -432,11 +435,13 @@ def test_patch_closed_conversation_returns_409(client: TestClient) -> None:
 
     response = client.patch(
         f"/api/v1/conversations/{conversation['id']}",
-        json={"title": "Trying to rename after close"},
+        json={"title": "Renamed after close"},
         headers=admin_headers,
     )
-    assert response.status_code == 409
-    assert response.json()["detail"]["code"] == "resource_conflict"
+    assert response.status_code == 200
+    body = response.json()
+    assert body["title"] == "Renamed after close"
+    assert body["status"] == "closed"
 
 
 def test_patch_archived_conversation_returns_409(client: TestClient) -> None:

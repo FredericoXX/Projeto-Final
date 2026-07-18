@@ -14,6 +14,7 @@
 | 8 | `68cb34527411` | Create the `document_chunks` table and its supporting unique constraint on `document_versions` |
 | 9 | `b7e2d8a9f4c1` | Add generated lexical `search_vector` and its GIN index |
 | 10 | `c8b4f2d9e6a1` | Add `reply_to_message_id`, persisted `message_sources`, composite integrity constraints and cited-chunk immutability trigger |
+| 11 | `800e7b121e93` | Create `storage_cleanup_tasks` (durable file-cleanup tasks enqueued in the document-deletion transaction) |
 
 Since the project is still in local-only development with no shared
 environments, no production data, and disposable databases, the `users`
