@@ -1,10 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
   createDocument,
+  deleteDocument,
   getDocument,
   listDocuments,
   listDocumentVersions,
   reprocessDocumentVersion,
+  updateDocument,
   uploadDocumentVersion,
 } from '../../api/documents';
 import type {
@@ -12,6 +14,7 @@ import type {
   DocumentFilters,
   DocumentListResponse,
   DocumentRead,
+  DocumentUpdateRequest,
   DocumentVersionListResponse,
   DocumentVersionRead,
 } from '../../types/documents';
@@ -45,6 +48,32 @@ export function useDocument(documentId: UUID) {
   return useQuery<DocumentRead>({
     queryKey: documentKeys.detail(documentId),
     queryFn: ({ signal }) => getDocument(documentId, signal),
+  });
+}
+
+export function useUpdateDocument(documentId: UUID) {
+  const queryClient = useQueryClient();
+  return useMutation<DocumentRead, unknown, DocumentUpdateRequest>({
+    mutationFn: (payload) => updateDocument(documentId, payload),
+    onSuccess: (document) => {
+      // O valor confirmado pelo backend é o que a página apresenta.
+      queryClient.setQueryData(documentKeys.detail(documentId), document);
+      void queryClient.invalidateQueries({ queryKey: ['documents'] });
+    },
+  });
+}
+
+export function useDeleteDocument(documentId: UUID) {
+  const queryClient = useQueryClient();
+  return useMutation<void, unknown, void>({
+    mutationFn: () => deleteDocument(documentId),
+    onSuccess: () => {
+      // O documento deixou de existir: remove as caches de detalhe e
+      // versões (nunca voltar a lê-las) e invalida as listagens.
+      queryClient.removeQueries({ queryKey: documentKeys.detail(documentId) });
+      queryClient.removeQueries({ queryKey: documentKeys.versions(documentId) });
+      void queryClient.invalidateQueries({ queryKey: ['documents'] });
+    },
   });
 }
 

@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useRef, useState, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useCreateDocument, useDocuments } from './hooks';
@@ -8,6 +8,7 @@ import { EmptyState } from '../../components/feedback/EmptyState';
 import { InlineError } from '../../components/feedback/InlineError';
 import { Pagination } from '../../components/common/Pagination';
 import { OfficialBadge } from '../../components/common/StatusBadge';
+import { FormActions } from '../../components/forms/FormActions';
 import { errorTranslationKey } from '../../api/errors';
 import { formatDate, formatDateTime, safeHttpUrl } from '../../lib/format';
 import type { DocumentCreateRequest, DocumentFilters } from '../../types/documents';
@@ -20,6 +21,20 @@ function toBool(value: TriState): boolean | undefined {
   if (value === 'all') return undefined;
   return value === 'true';
 }
+
+// Valores padrão restaurados após Guardar e Novo / Cancelar. O chat usa
+// official_only=true por omissão, por isso um documento novo nasce como
+// fonte oficial para não ficar invisível por esquecimento (é sempre
+// possível desmarcar).
+const EMPTY_DOCUMENT_FORM = {
+  title: '',
+  description: '',
+  language: '',
+  source_url: '',
+  official_source: true,
+  valid_from: '',
+  valid_until: '',
+};
 
 export function DocumentsPage() {
   const { t, language } = useTranslation();
@@ -39,38 +54,33 @@ export function DocumentsPage() {
   const documentsQuery = useDocuments(filters, offset);
   const createMutation = useCreateDocument();
 
-  const [form, setForm] = useState({
-    title: '',
-    description: '',
-    language: '',
-    source_url: '',
-    official_source: false,
-    valid_from: '',
-    valid_until: '',
-  });
+  const [form, setForm] = useState({ ...EMPTY_DOCUMENT_FORM });
   const [formError, setFormError] = useState<string | null>(null);
+  const titleInputRef = useRef<HTMLInputElement>(null);
 
   function updateForm<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((current) => ({ ...current, [key]: value }));
   }
 
-  async function handleCreate(event: FormEvent) {
-    event.preventDefault();
+  function resetForm() {
+    setForm({ ...EMPTY_DOCUMENT_FORM });
     setFormError(null);
+    createMutation.reset();
+  }
 
+  function buildPayload(): DocumentCreateRequest | null {
     if (!form.title.trim()) {
       setFormError(t('form.required'));
-      return;
+      return null;
     }
     if (form.source_url.trim() && !safeHttpUrl(form.source_url.trim())) {
       setFormError(t('form.invalidUrl'));
-      return;
+      return null;
     }
     if (form.valid_from && form.valid_until && form.valid_from > form.valid_until) {
       setFormError(t('form.invalidDateRange'));
-      return;
+      return null;
     }
-
     const payload: DocumentCreateRequest = {
       title: form.title.trim(),
       official_source: form.official_source,
@@ -80,13 +90,47 @@ export function DocumentsPage() {
     if (form.source_url.trim()) payload.source_url = form.source_url.trim();
     if (form.valid_from) payload.valid_from = form.valid_from;
     if (form.valid_until) payload.valid_until = form.valid_until;
+    return payload;
+  }
 
+  // Guardar (submit; Enter no formulário executa-o): cria e navega para o
+  // detalhe. A falha mantém os dados preenchidos.
+  async function handleSave(event: FormEvent) {
+    event.preventDefault();
+    if (createMutation.isPending) return;
+    setFormError(null);
+    const payload = buildPayload();
+    if (!payload) return;
     try {
       const created = await createMutation.mutateAsync(payload);
       navigate(`/admin/documents/${created.id}`);
     } catch (error) {
       setFormError(t(errorTranslationKey(error)));
     }
+  }
+
+  // Guardar e Novo: cria, mantém o formulário aberto, limpa os campos só
+  // depois do sucesso e devolve o foco ao título.
+  async function handleSaveAndNew() {
+    if (createMutation.isPending) return;
+    setFormError(null);
+    const payload = buildPayload();
+    if (!payload) return;
+    try {
+      await createMutation.mutateAsync(payload);
+      resetForm();
+      // O foco só pode voltar ao título depois do re-render que reativa
+      // o fieldset (desativado durante a mutation).
+      requestAnimationFrame(() => titleInputRef.current?.focus());
+    } catch (error) {
+      setFormError(t(errorTranslationKey(error)));
+    }
+  }
+
+  // Cancelar: nunca chama a API; limpa tudo e fecha.
+  function handleCancel() {
+    resetForm();
+    setCreating(false);
   }
 
   return (
@@ -99,15 +143,18 @@ export function DocumentsPage() {
       </div>
 
       {creating && (
-        <form className="card stack" onSubmit={handleCreate} style={{ marginBottom: '1.5rem' }}>
+        <form className="card stack" onSubmit={handleSave} style={{ marginBottom: '1.5rem' }}>
           <h2>{t('documents.create')}</h2>
-          <div className="form-grid">
+          {/* fieldset disabled: TODO o formulário fica inerte durante a
+              mutation, não apenas os botões. */}
+          <fieldset className="form-fieldset form-grid" disabled={createMutation.isPending}>
             <div className="field field-full">
               <label className="field-label" htmlFor="doc-title">
                 {t('documents.field.title')}
               </label>
               <input
                 id="doc-title"
+                ref={titleInputRef}
                 className="input"
                 required
                 maxLength={255}
@@ -182,16 +229,13 @@ export function DocumentsPage() {
               />
               {t('documents.field.official')}
             </label>
-          </div>
+          </fieldset>
           {formError && <InlineError message={formError} />}
-          <div className="composer-row">
-            <button type="submit" className="btn btn-primary" disabled={createMutation.isPending}>
-              {createMutation.isPending ? t('documents.creating') : t('documents.create')}
-            </button>
-            <button type="button" className="btn btn-secondary" onClick={() => setCreating(false)}>
-              {t('common.cancel')}
-            </button>
-          </div>
+          <FormActions
+            pending={createMutation.isPending}
+            onSaveAndNew={handleSaveAndNew}
+            onCancel={handleCancel}
+          />
         </form>
       )}
 

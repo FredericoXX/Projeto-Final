@@ -34,17 +34,42 @@ describe('conversation list and creation', () => {
     ).toBeInTheDocument();
   });
 
-  it('creates a conversation and opens it', async () => {
+  it('creates a conversation without asking for a title and opens it', async () => {
     authenticate();
+    let payload: unknown = { sentinel: true };
+    server.use(
+      http.post(`${API}/conversations`, async ({ request }) => {
+        payload = await request.json();
+        return HttpResponse.json(
+          { ...activeConversation, id: 'new-conversation', title: null },
+          { status: 201 },
+        );
+      }),
+    );
     const user = userEvent.setup();
     renderApp('/app/conversations');
 
+    // Sem formulário de título: o botão cria diretamente com payload {}.
     await user.click(await screen.findByRole('button', { name: 'New conversation' }));
-    await user.type(screen.getByLabelText('Title (optional)'), 'My topic');
-    await user.click(screen.getByRole('button', { name: 'Create conversation' }));
-
-    // Navigated to the new conversation view (composer visible).
     expect(await screen.findByLabelText('Your question')).toBeInTheDocument();
+    expect(payload).toEqual({});
+    expect(screen.queryByLabelText('Title (optional)')).not.toBeInTheDocument();
+  });
+
+  it('shows the untitled placeholder for conversations without a title', async () => {
+    authenticate();
+    server.use(
+      http.get(`${API}/conversations`, () =>
+        HttpResponse.json({
+          items: [{ ...activeConversation, title: null }],
+          total: 1,
+          limit: 20,
+          offset: 0,
+        }),
+      ),
+    );
+    renderApp('/app/conversations');
+    expect(await screen.findByText('Untitled conversation')).toBeInTheDocument();
   });
 });
 
@@ -390,5 +415,112 @@ describe('message history pagination', () => {
       { limit: 100, offset: 50 },
       { limit: 50, offset: 0 },
     ]);
+  });
+});
+
+describe('renaming and automatic titles', () => {
+  it('renames a conversation sending only the title', async () => {
+    authenticate();
+    let patchPayload: unknown = null;
+    server.use(
+      http.patch(`${API}/conversations/:id`, async ({ request }) => {
+        patchPayload = await request.json();
+        return HttpResponse.json({ ...activeConversation, title: 'Renamed topic' });
+      }),
+    );
+    const user = userEvent.setup();
+    renderApp(CONVERSATION_PATH);
+
+    await user.click(await screen.findByRole('button', { name: 'Rename' }));
+    const input = screen.getByLabelText('Conversation title');
+    await user.clear(input);
+    await user.type(input, '  Renamed topic  ');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    // Apenas o título (trimmed) é enviado; o cabeçalho usa o valor do backend.
+    expect(await screen.findByRole('heading', { name: 'Renamed topic' })).toBeInTheDocument();
+    expect(patchPayload).toEqual({ title: 'Renamed topic' });
+  });
+
+  it('cancels renaming without calling the API', async () => {
+    authenticate();
+    let patched = false;
+    server.use(
+      http.patch(`${API}/conversations/:id`, () => {
+        patched = true;
+        return HttpResponse.json(activeConversation);
+      }),
+    );
+    const user = userEvent.setup();
+    renderApp(CONVERSATION_PATH);
+
+    await user.click(await screen.findByRole('button', { name: 'Rename' }));
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(patched).toBe(false);
+    expect(
+      screen.getByRole('heading', { name: activeConversation.title ?? '' }),
+    ).toBeInTheDocument();
+  });
+
+  it('blocks an empty rename', async () => {
+    authenticate();
+    const user = userEvent.setup();
+    renderApp(CONVERSATION_PATH);
+
+    await user.click(await screen.findByRole('button', { name: 'Rename' }));
+    const input = screen.getByLabelText('Conversation title');
+    await user.clear(input);
+    expect(screen.getByRole('button', { name: 'Save' })).toBeDisabled();
+  });
+
+  it('allows renaming a closed conversation while keeping the composer hidden', async () => {
+    authenticate();
+    server.use(
+      http.get(`${API}/conversations/:id`, () => HttpResponse.json(closedConversation)),
+      http.patch(`${API}/conversations/:id`, () =>
+        HttpResponse.json({ ...closedConversation, title: 'Closed renamed' }),
+      ),
+    );
+    const user = userEvent.setup();
+    renderApp(`/app/conversations/${closedConversation.id}`);
+
+    await user.click(await screen.findByRole('button', { name: 'Rename' }));
+    const input = screen.getByLabelText('Conversation title');
+    await user.clear(input);
+    await user.type(input, 'Closed renamed');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(await screen.findByRole('heading', { name: 'Closed renamed' })).toBeInTheDocument();
+    expect(screen.queryByLabelText('Your question')).not.toBeInTheDocument();
+  });
+
+  it('refreshes the header title after the first question without manual refresh', async () => {
+    authenticate();
+    let detailCalls = 0;
+    server.use(
+      http.get(`${API}/conversations/:id`, () => {
+        detailCalls += 1;
+        return HttpResponse.json({
+          ...activeConversation,
+          // O backend definiu o título automático depois do primeiro turno.
+          title: detailCalls > 1 ? 'Quando começam as aulas' : null,
+        });
+      }),
+    );
+    const user = userEvent.setup();
+    renderApp(CONVERSATION_PATH);
+
+    expect(
+      await screen.findByRole('heading', { name: 'Untitled conversation' }),
+    ).toBeInTheDocument();
+    await user.type(await screen.findByLabelText('Your question'), 'Quando começam as aulas?');
+    await user.click(screen.getByRole('button', { name: 'Send' }));
+
+    // A invalidação do detalhe traz o título automático — sem refresh.
+    expect(
+      await screen.findByRole('heading', { name: 'Quando começam as aulas' }),
+    ).toBeInTheDocument();
+    expect(detailCalls).toBeGreaterThan(1);
   });
 });

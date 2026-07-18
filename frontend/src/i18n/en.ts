@@ -135,6 +135,29 @@ export const en: Record<keyof typeof pt, string> = {
   'error.versionReferenced':
     'This version is referenced by persisted answers and cannot be reprocessed. Upload a new version.',
 
+  'form.save': 'Save',
+  'form.saveAndNew': 'Save and New',
+  'form.saving': 'Saving…',
+  'form.edit': 'Edit',
+
+  'documents.languageLocked':
+    'The language can no longer be changed after versions have been uploaded.',
+  'documents.dangerZone': 'Danger zone',
+  'documents.delete': 'Delete document',
+  'documents.deleteConfirmTitle': 'Delete "{title}"?',
+  'documents.deleteWarning':
+    'All versions, searchable segments and files of this document will be deleted.',
+  'documents.deleteIrreversible': 'This action cannot be undone.',
+  'documents.deleting': 'Deleting…',
+  'documents.deleted': 'Document deleted.',
+
+  'error.documentReferenced':
+    'This document has been used as a source in persisted answers and cannot be deleted. Deactivate it to prevent its use in new answers.',
+
+  'conversations.creating': 'Creating…',
+  'conversations.rename': 'Rename',
+  'conversations.renameLabel': 'Conversation title',
+
   'form.required': 'This field is required.',
   'form.invalidUrl': 'Enter a valid HTTP or HTTPS URL.',
   'form.invalidDateRange': 'The start date cannot be after the end date.',

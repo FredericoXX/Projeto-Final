@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
-import { screen, waitFor } from '@testing-library/react';
+import { screen, waitFor, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { http, HttpResponse } from 'msw';
 import { renderApp } from '../../test/renderApp';
@@ -51,17 +51,97 @@ describe('documents admin area', () => {
     expect(await screen.findAllByText('Academic Calendar')).not.toHaveLength(0);
   });
 
-  it('creates a document and opens its detail', async () => {
+  it('creates a document with Save and opens its detail', async () => {
     tokenStorage.set('test-token');
+    let createCalls = 0;
+    server.use(
+      http.post(`${API}/documents`, () => {
+        createCalls += 1;
+        return HttpResponse.json(sampleDocument, { status: 201 });
+      }),
+    );
     const user = userEvent.setup();
     renderApp('/admin/documents');
 
     await user.click(await screen.findByRole('button', { name: 'New document' }));
+    // O documento novo nasce como fonte oficial (official_source=true).
+    expect(screen.getByRole('checkbox', { name: 'Official source' })).toBeChecked();
     await user.type(screen.getByLabelText('Title'), 'New Regulation');
-    await user.click(screen.getByRole('button', { name: 'Create document' }));
+    await user.click(screen.getByRole('button', { name: 'Save' }));
 
-    // Navigates to the document detail (upload section visible).
+    // Navigates to the document detail (upload section visible), one request.
     expect(await screen.findByRole('heading', { name: 'Upload version' })).toBeInTheDocument();
+    expect(createCalls).toBe(1);
+  });
+
+  it('Save and New keeps the form open, resets fields and refocuses the title', async () => {
+    tokenStorage.set('test-token');
+    let createCalls = 0;
+    server.use(
+      http.post(`${API}/documents`, () => {
+        createCalls += 1;
+        return HttpResponse.json(sampleDocument, { status: 201 });
+      }),
+    );
+    const user = userEvent.setup();
+    renderApp('/admin/documents');
+
+    await user.click(await screen.findByRole('button', { name: 'New document' }));
+    const title = screen.getByLabelText('Title');
+    await user.type(title, 'First Regulation');
+    await user.click(screen.getByRole('checkbox', { name: 'Official source' }));
+    expect(screen.getByRole('checkbox', { name: 'Official source' })).not.toBeChecked();
+    await user.click(screen.getByRole('button', { name: 'Save and New' }));
+
+    // Um único pedido; o formulário continua aberto, limpo, com os
+    // valores padrão restaurados e o foco no título — sem navegação.
+    await waitFor(() => expect(createCalls).toBe(1));
+    expect(screen.getByLabelText('Title')).toHaveValue('');
+    expect(screen.getByRole('checkbox', { name: 'Official source' })).toBeChecked();
+    await waitFor(() => expect(screen.getByLabelText('Title')).toHaveFocus());
+    expect(screen.queryByRole('heading', { name: 'Upload version' })).not.toBeInTheDocument();
+  });
+
+  it('Cancel clears the form and closes it without calling the API', async () => {
+    tokenStorage.set('test-token');
+    let createCalls = 0;
+    server.use(
+      http.post(`${API}/documents`, () => {
+        createCalls += 1;
+        return HttpResponse.json(sampleDocument, { status: 201 });
+      }),
+    );
+    const user = userEvent.setup();
+    renderApp('/admin/documents');
+
+    await user.click(await screen.findByRole('button', { name: 'New document' }));
+    await user.type(screen.getByLabelText('Title'), 'Discarded');
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(createCalls).toBe(0);
+    expect(screen.queryByLabelText('Title')).not.toBeInTheDocument();
+    // Reabrir mostra o formulário limpo com os padrões.
+    await user.click(screen.getByRole('button', { name: 'New document' }));
+    expect(screen.getByLabelText('Title')).toHaveValue('');
+    expect(screen.getByRole('checkbox', { name: 'Official source' })).toBeChecked();
+  });
+
+  it('keeps the typed data when creation fails', async () => {
+    tokenStorage.set('test-token');
+    server.use(
+      http.post(`${API}/documents`, () =>
+        HttpResponse.json({ detail: { code: 'resource_conflict', message: 'x' } }, { status: 409 }),
+      ),
+    );
+    const user = userEvent.setup();
+    renderApp('/admin/documents');
+
+    await user.click(await screen.findByRole('button', { name: 'New document' }));
+    await user.type(screen.getByLabelText('Title'), 'Kept After Failure');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(await screen.findByRole('alert')).toBeInTheDocument();
+    expect(screen.getByLabelText('Title')).toHaveValue('Kept After Failure');
   });
 
   it('uploads a version as multipart FormData', async () => {
@@ -232,5 +312,190 @@ describe('documents admin area', () => {
       'The generation service is currently unavailable.',
     );
     expect(createObjectURL).not.toHaveBeenCalled();
+  });
+});
+
+describe('document editing and deletion', () => {
+  it('edits metadata sending only allowed fields and leaves edit mode', async () => {
+    tokenStorage.set('test-token');
+    let patchPayload: Record<string, unknown> | null = null;
+    server.use(
+      http.patch(`${API}/documents/:id`, async ({ request }) => {
+        patchPayload = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ ...sampleDocument, title: 'Edited Title' });
+      }),
+    );
+    const user = userEvent.setup();
+    renderApp(`/admin/documents/${sampleDocument.id}`);
+
+    await user.click(await screen.findByRole('button', { name: 'Edit' }));
+    const title = screen.getByLabelText('Title');
+    await user.clear(title);
+    await user.type(title, 'Edited Title');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(await screen.findByRole('heading', { name: 'Edited Title' })).toBeInTheDocument();
+    // Sai do modo de edição e nunca envia campos internos.
+    expect(screen.queryByRole('button', { name: 'Save' })).not.toBeInTheDocument();
+    expect(patchPayload).not.toBeNull();
+    const sent = patchPayload as unknown as Record<string, unknown>;
+    expect(sent.title).toBe('Edited Title');
+    for (const forbidden of ['institution_id', 'created_by_user_id', 'storage_path', 'id']) {
+      expect(sent).not.toHaveProperty(forbidden);
+    }
+  });
+
+  it('disables the language field once versions exist and explains why', async () => {
+    tokenStorage.set('test-token');
+    const user = userEvent.setup();
+    renderApp(`/admin/documents/${sampleDocument.id}`);
+
+    await user.click(await screen.findByRole('button', { name: 'Edit' }));
+    // O handler default devolve uma versão: idioma bloqueado.
+    expect(screen.getByLabelText('Language')).toBeDisabled();
+    expect(
+      screen.getByText('The language can no longer be changed after versions have been uploaded.'),
+    ).toBeInTheDocument();
+  });
+
+  it('cancel editing restores backend values without calling the API', async () => {
+    tokenStorage.set('test-token');
+    let patched = false;
+    server.use(
+      http.patch(`${API}/documents/:id`, () => {
+        patched = true;
+        return HttpResponse.json(sampleDocument);
+      }),
+    );
+    const user = userEvent.setup();
+    renderApp(`/admin/documents/${sampleDocument.id}`);
+
+    await user.click(await screen.findByRole('button', { name: 'Edit' }));
+    const title = screen.getByLabelText('Title');
+    await user.clear(title);
+    await user.type(title, 'Discarded change');
+    await user.click(screen.getByRole('button', { name: 'Cancel' }));
+
+    expect(patched).toBe(false);
+    expect(
+      await screen.findByRole('heading', { name: sampleDocument.title }),
+    ).toBeInTheDocument();
+  });
+
+  it('deletes an uncited document after confirmation and returns to the list', async () => {
+    tokenStorage.set('test-token');
+    let deleteCalls = 0;
+    server.use(
+      http.delete(`${API}/documents/:id`, () => {
+        deleteCalls += 1;
+        return new HttpResponse(null, { status: 204 });
+      }),
+    );
+    const user = userEvent.setup();
+    renderApp(`/admin/documents/${sampleDocument.id}`);
+
+    await user.click(await screen.findByRole('button', { name: 'Delete document' }));
+    const dialog = await screen.findByRole('dialog');
+    expect(dialog).toHaveTextContent(`Delete "${sampleDocument.title}"?`);
+    expect(dialog).toHaveTextContent('This action cannot be undone.');
+    // O foco entra no Cancelar e o Escape fecha sem chamar a API.
+    await user.keyboard('{Escape}');
+    expect(deleteCalls).toBe(0);
+
+    await user.click(screen.getByRole('button', { name: 'Delete document' }));
+    const confirm = within(await screen.findByRole('dialog')).getByRole('button', {
+      name: 'Delete document',
+    });
+    await user.click(confirm);
+
+    // 204: volta à listagem de documentos.
+    expect(await screen.findByRole('heading', { name: 'Documents' })).toBeInTheDocument();
+    expect(deleteCalls).toBe(1);
+  });
+
+  it('shows the referenced-document guidance on 409 and keeps the detail visible', async () => {
+    tokenStorage.set('test-token');
+    server.use(
+      http.delete(`${API}/documents/:id`, () =>
+        HttpResponse.json(
+          { detail: { code: 'resource_conflict', message: 'referenced' } },
+          { status: 409 },
+        ),
+      ),
+    );
+    const user = userEvent.setup();
+    renderApp(`/admin/documents/${sampleDocument.id}`);
+
+    await user.click(await screen.findByRole('button', { name: 'Delete document' }));
+    const confirm = within(await screen.findByRole('dialog')).getByRole('button', {
+      name: 'Delete document',
+    });
+    await user.click(confirm);
+
+    expect(await screen.findByRole('alert')).toHaveTextContent(
+      'Deactivate it to prevent its use in new answers.',
+    );
+    // O documento continua visível no detalhe.
+    expect(screen.getByRole('heading', { name: sampleDocument.title })).toBeInTheDocument();
+  });
+});
+
+describe('pending state disables the whole form', () => {
+  it('disables every field while a document is being created', async () => {
+    tokenStorage.set('test-token');
+    const release: { create?: () => void } = {};
+    server.use(
+      http.post(`${API}/documents`, async () => {
+        await new Promise<void>((resolve) => {
+          release.create = resolve;
+        });
+        return HttpResponse.json(sampleDocument, { status: 201 });
+      }),
+    );
+    const user = userEvent.setup();
+    renderApp('/admin/documents');
+
+    await user.click(await screen.findByRole('button', { name: 'New document' }));
+    await user.type(screen.getByLabelText('Title'), 'Pending Regulation');
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    // Durante a mutation, o fieldset desativa TODOS os campos, não só os
+    // botões.
+    await waitFor(() => expect(screen.getByLabelText('Title')).toBeDisabled());
+    expect(screen.getByLabelText('Description')).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: 'Official source' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Saving…' })).toBeDisabled();
+    expect(screen.getByRole('button', { name: 'Cancel' })).toBeDisabled();
+
+    release.create?.();
+    // Conclui e navega para o detalhe.
+    expect(await screen.findByRole('heading', { name: 'Upload version' })).toBeInTheDocument();
+  });
+
+  it('disables every field while document metadata is being saved', async () => {
+    tokenStorage.set('test-token');
+    const release: { patch?: () => void } = {};
+    server.use(
+      http.patch(`${API}/documents/:id`, async () => {
+        await new Promise<void>((resolve) => {
+          release.patch = resolve;
+        });
+        return HttpResponse.json(sampleDocument);
+      }),
+    );
+    const user = userEvent.setup();
+    renderApp(`/admin/documents/${sampleDocument.id}`);
+
+    await user.click(await screen.findByRole('button', { name: 'Edit' }));
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    await waitFor(() => expect(screen.getByLabelText('Title')).toBeDisabled());
+    expect(screen.getByLabelText('Source URL')).toBeDisabled();
+    expect(screen.getByRole('checkbox', { name: 'Active' })).toBeDisabled();
+
+    release.patch?.();
+    await waitFor(() =>
+      expect(screen.queryByRole('button', { name: 'Saving…' })).not.toBeInTheDocument(),
+    );
   });
 });

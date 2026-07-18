@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from '../../i18n/useTranslation';
 import { useConversations, useCreateConversation } from './hooks';
@@ -17,26 +17,24 @@ export function ConversationsPage() {
   const { t, language } = useTranslation();
   const navigate = useNavigate();
   const [offset, setOffset] = useState(0);
-  const [creating, setCreating] = useState(false);
-  const [title, setTitle] = useState('');
-  const [formError, setFormError] = useState<string | null>(null);
+  const [createError, setCreateError] = useState<string | null>(null);
 
   const conversationsQuery = useConversations(offset);
   const createMutation = useCreateConversation();
 
-  async function handleCreate(event: FormEvent) {
-    event.preventDefault();
-    setFormError(null);
-    const trimmed = title.trim();
+  // Sem formulário de título: a conversa é criada com payload vazio e o
+  // título automático chega com a primeira pergunta persistida. O título
+  // nunca é gerado no frontend.
+  async function handleCreate() {
+    if (createMutation.isPending) {
+      return;
+    }
+    setCreateError(null);
     try {
-      const conversation = await createMutation.mutateAsync(
-        trimmed ? { title: trimmed } : {},
-      );
-      setTitle('');
-      setCreating(false);
+      const conversation = await createMutation.mutateAsync({});
       navigate(`/app/conversations/${conversation.id}`);
     } catch (error) {
-      setFormError(t(errorTranslationKey(error)));
+      setCreateError(t(errorTranslationKey(error)));
     }
   }
 
@@ -47,45 +45,14 @@ export function ConversationsPage() {
         <button
           type="button"
           className="btn btn-primary"
-          onClick={() => setCreating((open) => !open)}
+          disabled={createMutation.isPending}
+          onClick={handleCreate}
         >
-          {t('conversations.new')}
+          {createMutation.isPending ? t('conversations.creating') : t('conversations.new')}
         </button>
       </div>
 
-      {creating && (
-        <form className="card stack" onSubmit={handleCreate} style={{ marginBottom: '1.5rem' }}>
-          <div className="field">
-            <label className="field-label" htmlFor="new-conversation-title">
-              {t('conversations.titleField')}
-            </label>
-            <input
-              id="new-conversation-title"
-              className="input"
-              value={title}
-              maxLength={255}
-              placeholder={t('conversations.titlePlaceholder')}
-              onChange={(event) => setTitle(event.target.value)}
-            />
-          </div>
-          {formError && <InlineError message={formError} />}
-          <div className="composer-row">
-            <button type="submit" className="btn btn-primary" disabled={createMutation.isPending}>
-              {t('conversations.create')}
-            </button>
-            <button
-              type="button"
-              className="btn btn-secondary"
-              onClick={() => {
-                setCreating(false);
-                setFormError(null);
-              }}
-            >
-              {t('common.cancel')}
-            </button>
-          </div>
-        </form>
-      )}
+      {createError && <InlineError message={createError} />}
 
       {conversationsQuery.isPending && <LoadingState />}
       {conversationsQuery.isError && (

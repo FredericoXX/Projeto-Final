@@ -891,3 +891,46 @@ def test_conversational_sources_migration_upgrade_downgrade_upgrade(
 
     script = ScriptDirectory.from_config(alembic_cfg)
     assert current_revision == script.get_current_head()
+
+
+# Verifica a migration 800e7b121e93 (storage_cleanup_tasks):
+# upgrade -> downgrade -> upgrade, confirmando criação e remoção da tabela.
+def test_storage_cleanup_tasks_migration_upgrade_downgrade_upgrade(
+    migrations_database_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(settings, "database_url", migrations_database_url)
+    alembic_cfg = Config(str(BACKEND_DIR / "alembic.ini"))
+
+    command.upgrade(alembic_cfg, "800e7b121e93")
+    engine = create_engine(migrations_database_url)
+    try:
+        inspector = inspect(engine)
+        assert "storage_cleanup_tasks" in inspector.get_table_names()
+        columns = {c["name"] for c in inspector.get_columns("storage_cleanup_tasks")}
+        assert {"id", "document_id", "storage_path", "created_at"} <= columns
+        checks = {c["name"] for c in inspector.get_check_constraints("storage_cleanup_tasks")}
+        assert "ck_storage_cleanup_tasks_path_not_blank" in checks
+    finally:
+        engine.dispose()
+
+    command.downgrade(alembic_cfg, "-1")
+    engine = create_engine(migrations_database_url)
+    try:
+        assert "storage_cleanup_tasks" not in inspect(engine).get_table_names()
+    finally:
+        engine.dispose()
+
+    command.upgrade(alembic_cfg, "head")
+    engine = create_engine(migrations_database_url)
+    try:
+        assert "storage_cleanup_tasks" in inspect(engine).get_table_names()
+        with engine.connect() as conn:
+            current_revision = conn.execute(
+                text("SELECT version_num FROM alembic_version")
+            ).scalar()
+    finally:
+        engine.dispose()
+
+    script = ScriptDirectory.from_config(alembic_cfg)
+    assert current_revision == script.get_current_head()

@@ -269,6 +269,23 @@ are committed atomically.
 Message history now returns ordered sources without N+1 queries, and later
 document metadata changes do not rewrite old citations.
 
+The usability pass adds document lifecycle management and conversation
+titles. Admins can edit document metadata (language locks once versions
+exist), create documents with Save / Save and New / Cancel (official
+source on by default), and permanently delete a **never-cited** document —
+chunks, versions and files — behind an accessible confirmation dialog.
+A document cited by persisted answers returns 409 and can only be
+deactivated, preserving the auditable history; upload and deletion share
+a per-document advisory lock so races leave no orphan files, and file
+cleanup is enqueued as durable rows in `storage_cleanup_tasks` within the
+same transaction as the deletion, then processed and reconciled with
+`FOR UPDATE SKIP LOCKED` (local synchronous storage, not a distributed
+transaction). Conversations are created without asking for a title: the
+backend derives one locally (no LLM) from the first persisted question,
+in the same transaction as the turn; users can rename conversations —
+including closed/archived ones, which stay final — and listings order by
+recent activity (`updated_at`).
+
 The generation approach is experimental and replaceable, not a final
 architectural decision, and the system is **not** hallucination-free.
 There are still no embeddings, semantic or hybrid search, reranking, a

@@ -8,6 +8,7 @@ from sqlalchemy.orm import Session, selectinload
 
 from app.answering.base import AnswerGenerator, InvalidGeneratedAnswerError
 from app.answering.validation import INVALID_ANSWER_MESSAGE
+from app.core.conversation_title import derive_conversation_title
 from app.core.exceptions import AuthenticationError, ConflictError
 from app.models.institution import Institution
 from app.models.message import Message
@@ -102,6 +103,23 @@ def ask_in_conversation(
         )
         _ensure_active(locked_conversation.id, locked_conversation.status)
 
+        # "Primeiro turno" é decidido pela existência de mensagens
+        # persistidas (não apenas por title is null): uma conversa com
+        # histórico nunca volta a ser titulada automaticamente, mesmo que
+        # um cliente antigo tenha limpado o título entretanto. Avaliado
+        # sob o lock da conversa, antes de qualquer insert deste turno.
+        is_first_turn = (
+            db.scalar(
+                select(Message.id)
+                .where(
+                    Message.conversation_id == locked_conversation.id,
+                    Message.institution_id == locked_conversation.institution_id,
+                )
+                .limit(1)
+            )
+            is None
+        )
+
         if answer.status == "answered":
             snapshots = message_source_service.revalidate_and_lock_sources(
                 db,
@@ -159,6 +177,21 @@ def ask_in_conversation(
                 assistant_message=assistant_message,
                 snapshots=snapshots,
             )
+
+        # Título automático apenas no primeiro turno de uma conversa ainda
+        # sem título: derivado localmente da pergunta original (sem LLM) e
+        # persistido na MESMA transação das mensagens/fontes — qualquer
+        # falha até ao commit faz rollback do título junto com o turno.
+        # Título manual (na criação, renomeado ou já gerado) nunca é
+        # substituído.
+        if locked_conversation.title is None and is_first_turn:
+            locked_conversation.title = derive_conversation_title(query)
+
+        # Atividade recente: o horário do turno persistido, explícito
+        # porque o onupdate implícito não dispara quando nenhuma coluna da
+        # conversa muda (turnos seguintes sem alteração de título).
+        locked_conversation.updated_at = assistant_created_at
+
         db.flush()
         db.commit()
     except Exception:

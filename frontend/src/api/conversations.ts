@@ -37,6 +37,20 @@ export function getConversation(
   return apiRequest<ConversationRead>(`/conversations/${conversationId}`, { signal });
 }
 
+// Renomeação: envia apenas o título — o status nunca é tocado pela UI
+// (conversas closed/archived aceitam renomear sem reabrir).
+export function updateConversation(
+  conversationId: UUID,
+  payload: { title: string },
+  signal?: AbortSignal,
+): Promise<ConversationRead> {
+  return apiRequest<ConversationRead>(`/conversations/${conversationId}`, {
+    method: 'PATCH',
+    body: payload,
+    signal,
+  });
+}
+
 export function listMessages(
   conversationId: UUID,
   params: { limit?: number; offset?: number } = {},

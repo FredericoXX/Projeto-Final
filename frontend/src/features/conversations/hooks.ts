@@ -11,6 +11,7 @@ import {
   getConversation,
   listConversations,
   listMessages,
+  updateConversation,
 } from '../../api/conversations';
 import type {
   AnsweringRequest,
@@ -103,6 +104,18 @@ export function useCreateConversation() {
   });
 }
 
+export function useRenameConversation(conversationId: UUID) {
+  const queryClient = useQueryClient();
+  return useMutation<ConversationRead, unknown, string>({
+    mutationFn: (title) => updateConversation(conversationId, { title }),
+    onSuccess: (conversation) => {
+      // O valor confirmado pelo backend é a fonte de verdade do cabeçalho.
+      queryClient.setQueryData(conversationKeys.detail(conversationId), conversation);
+      void queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    },
+  });
+}
+
 export function useAsk(conversationId: UUID) {
   const queryClient = useQueryClient();
   return useMutation<ConversationAskResponse, unknown, AnsweringRequest>({
@@ -132,6 +145,12 @@ export function useAsk(conversationId: UUID) {
           };
         },
       );
+      // O backend pode ter definido o título automático no primeiro
+      // turno: o detalhe é invalidado para o cabeçalho atualizar sem
+      // refresh manual (o frontend nunca replica o algoritmo do título).
+      void queryClient.invalidateQueries({
+        queryKey: conversationKeys.detail(conversationId),
+      });
       void queryClient.invalidateQueries({ queryKey: ['conversations'] });
     },
   });

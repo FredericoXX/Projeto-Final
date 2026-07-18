@@ -18,6 +18,19 @@ export interface DocumentRead {
 
 export type DocumentListResponse = PaginatedResponse<DocumentRead>;
 
+// Campos editáveis via PATCH; institution_id, created_by_user_id, versões
+// e campos internos nunca são enviados.
+export interface DocumentUpdateRequest {
+  title?: string;
+  description?: string | null;
+  language?: string;
+  source_url?: string | null;
+  official_source?: boolean;
+  is_active?: boolean;
+  valid_from?: IsoDate | null;
+  valid_until?: IsoDate | null;
+}
+
 export interface DocumentCreateRequest {
   title: string;
   description?: string | null;

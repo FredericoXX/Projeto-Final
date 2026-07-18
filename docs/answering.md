@@ -86,6 +86,31 @@ conversacional usa `conversation.language` e, se este for nulo, o idioma
 default da instituição. O endpoint independente continua a usar diretamente
 o default da instituição.
 
+### Título automático e atividade recente
+
+No **primeiro turno persistido** de uma conversa ainda sem título, o
+backend gera o título a partir da pergunta original —
+`app/core/conversation_title.py`, função pura, **local e sem qualquer
+LLM**: normaliza whitespace, preserva acentos/maiúsculas/idioma, remove
+pontuação final e limita a 80 caracteres com corte por palavra e `…`.
+Não é um resumo semântico. "Primeiro turno" é decidido pela existência
+de mensagens persistidas (não por `title is null`), pelo que uma
+conversa com histórico nunca é retitulada; títulos manuais (na criação,
+renomeados, ou já gerados) nunca são substituídos. O título é gravado na
+**mesma transação curta** das mensagens e fontes, sob o lock da
+conversa: falhas (502/503, revalidação, conversa fechada, commit) não
+deixam título sem turno.
+
+Cada turno persistido atualiza também `conversation.updated_at` com o
+horário do turno, e a listagem ordena por `updated_at` desc (desempate
+por `id` desc) — comportamento de aplicação de chat; turnos falhados não
+alteram a posição. Renomear é `PATCH {"title": ...}`: permitido ao dono
+(ou admin da instituição) mesmo em conversas `closed`/`archived`, que
+continuam finais — qualquer payload que toque no `status` dessas
+conversas é rejeitado por inteiro com 409, sem alterar o título. A
+resposta de `/ask` não devolve o título: o frontend invalida a query de
+detalhe da conversa e obtém-no do backend.
+
 ## Arquitetura
 
 - `app/answering/base.py` — contratos neutros: `AnsweringContext`,

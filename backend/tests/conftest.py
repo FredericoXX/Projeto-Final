@@ -35,6 +35,7 @@ from app.models import document_version as _document_version  # noqa: F401
 from app.models import institution as _institution  # noqa: F401
 from app.models import message as _message  # noqa: F401
 from app.models import message_source as _message_source  # noqa: F401
+from app.models import storage_cleanup_task as _storage_cleanup_task  # noqa: F401
 from app.models import user as _user  # noqa: F401
 
 

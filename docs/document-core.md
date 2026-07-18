@@ -166,7 +166,42 @@ GET    /documents/{document_id}/versions/{version_id}      metadados (sem storag
 GET    /documents/{document_id}/versions/{version_id}/content?offset&limit
 GET    /documents/{document_id}/versions/{version_id}/download
 POST   /documents/{document_id}/versions/{version_id}/reprocess
+DELETE /documents/{document_id}                            eliminação permanente (204); ver regras abaixo
 ```
+
+## Eliminação de documentos
+
+`DELETE /api/v1/documents/{document_id}` (apenas admin, isolamento
+institucional com 404) elimina permanentemente um documento **nunca
+citado**: chunks, versões e o próprio documento numa única transação, e
+depois os ficheiros do storage. Regras:
+
+- **documento citado** (qualquer chunk/versão referenciado por uma
+  `MessageSource`) → **409**: o histórico auditável nunca é destruído.
+  A alternativa é **desativar** o documento (`is_active=false`), que o
+  exclui de novas recuperações mas preserva respostas e fontes antigas;
+- versão em estado `processing` → 409 (condição transitória);
+- o checksum fica livre: o mesmo ficheiro pode voltar a ser carregado.
+
+Concorrência: upload de versões e eliminação partilham um **advisory
+lock transacional por documento** (pg_advisory_xact_lock) — a eliminação
+nunca fotografa uma lista de versões que um upload em curso ainda vai
+alargar, e um upload que perca a corrida falha com 404 limpo e sem
+ficheiros órfãos. Contra o fluxo conversacional, a ordem de locks de
+linhas (versões → documento) é a mesma da revalidação de fontes: quem
+perder a corrida recebe 409/conflito sem estados parciais.
+
+Storage: a base tem prioridade. As tarefas de limpeza são registadas na
+tabela `storage_cleanup_tasks` **na mesma transação** que elimina os
+registos — se o registo das tarefas falhar, a eliminação inteira faz
+rollback (nunca há 204 sem limpeza agendada de forma durável). Depois do
+commit, cada ficheiro é removido e a respetiva tarefa concluída; as que
+falharem permanecem na tabela e são reconciliadas na eliminação seguinte
+ou via `document_service.reconcile_pending_deletions` (concorrência-segura
+com `FOR UPDATE SKIP LOCKED`). Limitação documentada do armazenamento
+local síncrono: não é uma transação distribuída, não há fila nem daemon —
+resíduos temporários de ficheiros são possíveis até à reconciliação
+seguinte, mas nunca sem tarefa durável associada.
 
 ## Recuperação lexical experimental
 
@@ -213,8 +248,10 @@ determinístico quando não há evidências.
 
 Notas:
 
-- não existe DELETE nesta fase; a desativação é
-  `PATCH /documents/{id}` com `{"is_active": false}`;
+- a eliminação permanente é `DELETE /documents/{id}` (ver "Eliminação de
+  documentos" acima) e só é permitida para documentos nunca citados; a
+  desativação — `PATCH /documents/{id}` com `{"is_active": false}` — é a
+  alternativa para documentos citados;
 - o idioma de um documento deixa de ser alterável depois de existir
   pelo menos uma versão (409) — uma tradução é um novo documento lógico;
 - o endpoint de conteúdo é paginado por caracteres (`offset` default 0,

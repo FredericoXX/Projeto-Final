@@ -4,6 +4,7 @@ import type {
   DocumentFilters,
   DocumentListResponse,
   DocumentRead,
+  DocumentUpdateRequest,
   DocumentVersionListResponse,
   DocumentVersionRead,
 } from '../types/documents';
@@ -37,6 +38,24 @@ export function createDocument(
 
 export function getDocument(documentId: UUID, signal?: AbortSignal): Promise<DocumentRead> {
   return apiRequest<DocumentRead>(`/documents/${documentId}`, { signal });
+}
+
+export function updateDocument(
+  documentId: UUID,
+  payload: DocumentUpdateRequest,
+  signal?: AbortSignal,
+): Promise<DocumentRead> {
+  return apiRequest<DocumentRead>(`/documents/${documentId}`, {
+    method: 'PATCH',
+    body: payload,
+    signal,
+  });
+}
+
+// 204 No Content em sucesso; 409 quando o documento está citado em
+// respostas persistidas (a UI sugere desativação em alternativa).
+export function deleteDocument(documentId: UUID, signal?: AbortSignal): Promise<void> {
+  return apiRequest<void>(`/documents/${documentId}`, { method: 'DELETE', signal });
 }
 
 export function listDocumentVersions(

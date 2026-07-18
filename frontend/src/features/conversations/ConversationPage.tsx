@@ -1,12 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from '../../i18n/useTranslation';
-import { useAsk, useConversation, useMessages } from './hooks';
+import { useAsk, useConversation, useMessages, useRenameConversation } from './hooks';
 import { MessageItem } from './MessageItem';
 import { Composer } from './Composer';
 import { LoadingState } from '../../components/feedback/LoadingState';
 import { ErrorState } from '../../components/feedback/ErrorState';
 import { EmptyState } from '../../components/feedback/EmptyState';
+import { InlineError } from '../../components/feedback/InlineError';
 import { ConversationStatusBadge } from '../../components/common/StatusBadge';
 import { errorTranslationKey } from '../../api/errors';
 import type { MessageRead } from '../../types/conversations';
@@ -27,7 +28,11 @@ export function ConversationPage() {
   const conversationQuery = useConversation(conversationId);
   const messagesQuery = useMessages(conversationId);
   const ask = useAsk(conversationId);
+  const rename = useRenameConversation(conversationId);
   const [askError, setAskError] = useState<string | null>(null);
+  const [renaming, setRenaming] = useState(false);
+  const [renameValue, setRenameValue] = useState('');
+  const [renameError, setRenameError] = useState<string | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const preserveScrollRef = useRef<{ height: number; top: number } | null>(null);
 
@@ -88,14 +93,83 @@ export function ConversationPage() {
   const conversation = conversationQuery.data;
   const isActive = conversation?.status === 'active';
 
+  async function handleRenameSubmit(event: FormEvent) {
+    event.preventDefault();
+    const trimmed = renameValue.trim();
+    if (!trimmed || rename.isPending) {
+      return;
+    }
+    setRenameError(null);
+    try {
+      await rename.mutateAsync(trimmed);
+      setRenaming(false);
+    } catch (error) {
+      // O erro mantém o modo de edição para nova tentativa.
+      setRenameError(t(errorTranslationKey(error)));
+    }
+  }
+
+  function startRenaming() {
+    setRenameValue(conversation?.title ?? '');
+    setRenameError(null);
+    setRenaming(true);
+  }
+
+  function cancelRenaming() {
+    setRenaming(false);
+    setRenameError(null);
+  }
+
   return (
     <div className="conversation-view">
       <div className="page-header">
-        <div>
+        <div style={{ minWidth: 0, flex: 1 }}>
           <Link className="text-sm" to="/app/conversations">
             ‹ {t('conversations.title')}
           </Link>
-          <h1>{conversation?.title ?? t('conversations.untitled')}</h1>
+          {renaming ? (
+            <form className="composer-row" onSubmit={handleRenameSubmit}>
+              <label className="visually-hidden" htmlFor="rename-conversation">
+                {t('conversations.renameLabel')}
+              </label>
+              <input
+                id="rename-conversation"
+                className="input"
+                value={renameValue}
+                maxLength={255}
+                required
+                autoFocus
+                onChange={(event) => setRenameValue(event.target.value)}
+              />
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={rename.isPending || renameValue.trim().length === 0}
+              >
+                {rename.isPending ? t('form.saving') : t('form.save')}
+              </button>
+              <button
+                type="button"
+                className="btn btn-secondary"
+                disabled={rename.isPending}
+                onClick={cancelRenaming}
+              >
+                {t('common.cancel')}
+              </button>
+            </form>
+          ) : (
+            <div className="composer-row" style={{ alignItems: 'center' }}>
+              <h1 style={{ margin: 0, overflowWrap: 'anywhere' }}>
+                {conversation?.title ?? t('conversations.untitled')}
+              </h1>
+              {conversation && (
+                <button type="button" className="btn btn-ghost" onClick={startRenaming}>
+                  {t('conversations.rename')}
+                </button>
+              )}
+            </div>
+          )}
+          {renameError && <InlineError message={renameError} />}
         </div>
         {conversation && <ConversationStatusBadge status={conversation.status} />}
       </div>

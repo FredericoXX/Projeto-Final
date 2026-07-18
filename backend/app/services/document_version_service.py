@@ -29,6 +29,7 @@ from app.core.exceptions import (
 from app.models.document import Document
 from app.models.document_version import DocumentVersion
 from app.models.user import User
+from app.services import document_service
 from app.services.document_service import get_accessible_document
 from app.services.user_service import get_constraint_name
 from app.storage.base import DocumentStorage
@@ -154,9 +155,22 @@ def create_version(
         checksum = hasher.hexdigest()
         _ensure_checksum_unique(db, document.institution_id, checksum)
 
+        # Serializa contra a eliminação do documento (advisory lock
+        # partilhado com delete_document): um upload nunca insere uma
+        # versão numa transação concorrente com a eliminação, e por isso
+        # nenhum ficheiro fica órfão fora do snapshot da eliminação.
+        document_service.acquire_document_lifecycle_lock(db, document.id)
         # Lock da linha do documento: serializa uploads concorrentes, para
         # que dois pedidos nunca calculem o mesmo número de versão.
-        db.execute(select(Document.id).where(Document.id == document.id).with_for_update())
+        locked_document_id = db.scalar(
+            select(Document.id).where(Document.id == document.id).with_for_update()
+        )
+        if locked_document_id is None:
+            # O documento foi eliminado entre a leitura inicial e o lock:
+            # o upload falha limpo (404) e o ficheiro temporário/final é
+            # removido pelo tratamento de erro abaixo.
+            msg = f"Document '{document_id}' not found."
+            raise NotFoundError(msg)
         current_max = db.scalar(
             select(func.max(DocumentVersion.version_number)).where(
                 DocumentVersion.document_id == document.id
