@@ -1,0 +1,34 @@
+[
+  {
+    "id": "synthetic-event-date",
+    "question": "Quando decorre o evento de teste?",
+    "language": "pt",
+    "expected_answer": "10 a 14 de março de 2031",
+    "expected_facts": [
+      {
+        "name": "event",
+        "alternatives": ["Evento sintético de teste"]
+      },
+      {
+        "name": "date",
+        "alternatives": ["10 a 14 de março de 2031", "10 a 14 de marco de 2031"]
+      }
+    ]
+  },
+  {
+    "id": "synthetic-deadline",
+    "question": "Qual é o prazo sintético de inscrição?",
+    "language": "pt",
+    "expected_answer": "Até 1 de abril de 2031",
+    "expected_facts": [
+      {
+        "name": "event",
+        "alternatives": ["Prazo sintético de inscrição"]
+      },
+      {
+        "name": "date",
+        "alternatives": ["até 1 de abril de 2031"]
+      }
+    ]
+  }
+]

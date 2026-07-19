@@ -27,3 +27,8 @@ frontend/dist/
 # Sistema operativo
 .DS_Store
 Thumbs.db
+
+# Relatórios reais do diagnóstico do pipeline documental (podem conter
+# excertos institucionais e IDs reais; apenas exemplos sanitizados em
+# docs/diagnostics/examples/ são versionáveis)
+docs/diagnostics/generated/

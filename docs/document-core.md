@@ -246,6 +246,123 @@ independente `POST /api/v1/answering/ask` não persiste, enquanto
 duas mensagens e snapshots apenas das fontes citadas. Ambos devolvem fallback
 determinístico quando não há evidências.
 
+## Diagnóstico do pipeline documental
+
+`python -m scripts.diagnose_document_pipeline`, executado a partir de
+`backend/`, é uma ferramenta interna, removível e exclusivamente de
+diagnóstico. Ela observa os dados já persistidos de uma versão — metadados,
+`extracted_text`, chunks e resultados do retriever lexical existente — e gera
+um relatório técnico Markdown ou JSON. Não corrige nenhuma etapa e não altera
+o comportamento da aplicação.
+
+Pré-requisitos: PostgreSQL e a configuração normal do backend acessíveis,
+migrations atualizadas, virtual environment existente ativa e um ID explícito
+da instituição autorizada. O utilizador precisa ainda de um ficheiro JSON de
+perguntas válido dentro da raiz do repositório e de acesso de escrita a
+`docs/diagnostics/generated/`. Relatórios nessa diretoria são ignorados pelo
+Git porque podem conter IDs e pequenos excertos institucionais.
+
+Argumentos obrigatórios:
+
+- `--institution-id UUID`, `--questions-file PATH` e `--output PATH`;
+- exatamente um de `--document-id UUID`, `--version-id UUID` ou
+  `--filename TEXT`.
+
+Argumentos opcionais:
+
+- `--format markdown|json` (default `markdown`);
+- `--reference-date YYYY-MM-DD` (default: data UTC atual);
+- `--top-k INTEGER` entre 1 e 20 (default 5);
+- `--official-only` (default) ou `--include-non-official`;
+- `--max-excerpt-chars INTEGER` entre 80 e 1000 (default 240);
+- `--overwrite`, necessário para substituir conscientemente um relatório.
+
+A seleção por `document-id` usa a versão de maior número, qualquer que seja o
+estado. A seleção por `version-id` usa exatamente a versão indicada. A seleção
+por `filename` é exata e case-insensitive dentro da instituição; várias versões
+do mesmo documento não são ambíguas, mas vários documentos lógicos com o mesmo
+nome geram erro controlado. O nome nunca é usado para construir um caminho nem
+para abrir o ficheiro armazenado.
+
+O relatório distingue dois conceitos:
+
+- `selected_version`: versão pedida explicitamente ou versão carregada mais
+  recente do documento;
+- `effective_retrieval_version`: versão `processed` de maior número que o
+  retriever atual considera.
+
+Assim, uma versão mais recente `failed` ou `processing` pode ser analisada ao
+lado de uma versão processada anterior efetivamente usada na pesquisa. A
+ausência de versão efetiva é registada como condição de elegibilidade, não
+altera o documento nem dispara reprocessamento.
+
+O ficheiro de perguntas é uma lista JSON não vazia. Cada item aceita apenas
+`id`, `question`, `language`, `expected_answer` e `expected_facts`; cada facto
+tem `name` e uma lista não vazia de `alternatives`. IDs duplicados, campos
+desconhecidos e strings vazias são rejeitados. A fixture em
+`backend/tests/fixtures/` é exclusivamente sintética. O exemplo sanitizado do
+calendário está em
+`docs/diagnostics/examples/calendar-2026-2027.example.json` e os respetivos
+valores esperados devem ser confirmados por uma pessoa contra a fonte antes de
+serem tratados como referência.
+
+As conclusões principais são:
+
+- `EXTRACTION_FAILURE`: facto esperado ausente de `extracted_text`;
+- `CHUNK_INTEGRITY_FAILURE`: facto extraído ausente dos chunks ou chunk
+  relevante com offsets/conteúdo incoerentes;
+- `DOCUMENT_NOT_RETRIEVAL_ELIGIBLE`: os filtros atuais excluem a evidência;
+- `RETRIEVAL_FAILURE`: evidência elegível existe, mas o conjunto recuperado não
+  cobre todos os factos esperados;
+- `PRE_GENERATION_PIPELINE_OK`: não foi detetada falha antes da geração; a
+  formulação final deve ser analisada posteriormente.
+
+Findings são riscos ou observações adicionais. Em particular,
+`CONTEXT_FRAGMENTATION_RISK` significa que os factos estão divididos entre
+chunks, mas isso não é automaticamente uma falha: o answering atual pode
+receber vários chunks no mesmo contexto e o diagnóstico mede também a cobertura
+pela união dos resultados. Outros findings assinalam proximidade/ocorrências
+concorrentes, diferença entre versão selecionada e efetiva, uso de outro
+documento ou ausência da versão efetiva.
+
+A ferramenta aplica `institution_id` em todas as suas consultas SQL. Ao chamar
+o retriever existente, reutiliza os filtros institucionais dele e verifica que
+todos os resultados pertencem à instituição pedida. Antes das leituras inicia
+uma transação PostgreSQL com `SET TRANSACTION READ ONLY`; não executa `commit` e
+faz rollback no final, portanto uma escrita acidental é rejeitada pela própria
+base. A sessão é sempre fechada pela CLI.
+
+O diagnóstico não importa nem instancia o cliente OpenAI, não chama o answering
+pipeline e não usa rede. Também não abre o PDF, não repete extração, não executa
+OCR, não interpreta tabelas visualmente, não recria chunks, não muda retrieval,
+não gera respostas e não modifica a base de dados.
+
+Códigos de saída:
+
+| Código | Significado |
+| --- | --- |
+| 0 | relatório concluído, mesmo quando identifica falha funcional |
+| 2 | argumentos, paths ou ficheiro de perguntas inválidos |
+| 3 | instituição não encontrada |
+| 4 | documento não encontrado ou filename ambíguo |
+| 5 | versão não encontrada ou documento sem versões |
+| 6 | versão selecionada sem `extracted_text` utilizável |
+| 7 | erro controlado de base de dados |
+| 8 | falha na escrita atómica do relatório |
+| 9 | destino existente sem `--overwrite` |
+
+Exemplo Markdown, a partir de `backend/`:
+
+```powershell
+python -m scripts.diagnose_document_pipeline --institution-id "<INSTITUTION_ID>" --filename "Calendário Academico para Cursos de Graduação para o ano letivo de 2026-2027.pdf" --questions-file "../docs/diagnostics/examples/calendar-2026-2027.example.json" --output "../docs/diagnostics/generated/calendar-2026-2027.md" --format markdown --reference-date "2026-10-01" --top-k 5 --official-only
+```
+
+Para JSON, use o mesmo comando com output `.json` e `--format json`. Os dois
+formatos são produzidos a partir do mesmo objeto interno; a renderização não
+repete o retrieval. O único valor de domínio a substituir no exemplo é
+`<INSTITUTION_ID>`. Não publique o resultado sem revisão humana e nunca force a
+inclusão dos relatórios de `generated/` no Git.
+
 Notas:
 
 - a eliminação permanente é `DELETE /documents/{id}` (ver "Eliminação de

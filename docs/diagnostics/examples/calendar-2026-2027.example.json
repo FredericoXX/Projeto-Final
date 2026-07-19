@@ -1,0 +1,139 @@
+[
+  {
+    "id": "academic-week",
+    "question": "Quando começa a semana académica?",
+    "language": "pt",
+    "expected_answer": "05 a 09 de outubro de 2026",
+    "expected_facts": [
+      {
+        "name": "event",
+        "alternatives": [
+          "Semana académica"
+        ]
+      },
+      {
+        "name": "date",
+        "alternatives": [
+          "05 a 09 de outubro de 2026",
+          "5 a 9 de outubro de 2026",
+          "05 a 09 de outubro 2026"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "first-day-of-classes",
+    "question": "Qual é o primeiro dia de aulas?",
+    "language": "pt",
+    "expected_answer": "05 de outubro de 2026",
+    "expected_facts": [
+      {
+        "name": "event",
+        "alternatives": [
+          "Primeiro dia de aulas do 1.º semestre",
+          "Primeiro dia de aulas 1º semestre"
+        ]
+      },
+      {
+        "name": "date",
+        "alternatives": [
+          "05 de outubro de 2026",
+          "5 de outubro de 2026",
+          "05 de outubro 2026"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "evaluation-regime",
+    "question": "Até quando posso mudar o regime de avaliação?",
+    "language": "pt",
+    "expected_answer": "Até 6 de novembro de 2026",
+    "expected_facts": [
+      {
+        "name": "event",
+        "alternatives": [
+          "Mudança do regime de avaliação",
+          "Mudanca do regime de avaliacao"
+        ]
+      },
+      {
+        "name": "date",
+        "alternatives": [
+          "Até 6 de novembro de 2026",
+          "Até 06 de novembro de 2026",
+          "Até 6 de novembro 2026"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "first-call-exams",
+    "question": "Quando são os exames da 1.ª chamada?",
+    "language": "pt",
+    "expected_answer": "01 a 12 de fevereiro de 2027",
+    "expected_facts": [
+      {
+        "name": "event",
+        "alternatives": [
+          "Realização dos exames da 1.ª chamada",
+          "Realizacao dos exames da 1 chamada"
+        ]
+      },
+      {
+        "name": "date",
+        "alternatives": [
+          "01 a 12 de fevereiro de 2027",
+          "1 a 12 de fevereiro de 2027",
+          "01 a 12 de fevereiro 2027"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "second-call-exams-numeric",
+    "question": "Quando são os exames da 2.ª chamada?",
+    "language": "pt",
+    "expected_answer": "22 de fevereiro a 06 de março de 2027",
+    "expected_facts": [
+      {
+        "name": "event",
+        "alternatives": [
+          "Realização dos exames da 2.ª chamada",
+          "Realizacao dos exames da 2 chamada"
+        ]
+      },
+      {
+        "name": "date",
+        "alternatives": [
+          "22 de fevereiro a 06 de março de 2027",
+          "22 de fevereiro a 6 de março de 2027",
+          "22 de fevereiro a 06 de março 2027"
+        ]
+      }
+    ]
+  },
+  {
+    "id": "second-call-exams-written",
+    "question": "Quando são os exames da segunda chamada?",
+    "language": "pt",
+    "expected_answer": "22 de fevereiro a 06 de março de 2027",
+    "expected_facts": [
+      {
+        "name": "event",
+        "alternatives": [
+          "Realização dos exames da 2.ª chamada",
+          "Realizacao dos exames da 2 chamada"
+        ]
+      },
+      {
+        "name": "date",
+        "alternatives": [
+          "22 de fevereiro a 06 de março de 2027",
+          "22 de fevereiro a 6 de março de 2027",
+          "22 de fevereiro a 06 de março 2027"
+        ]
+      }
+    ]
+  }
+]
