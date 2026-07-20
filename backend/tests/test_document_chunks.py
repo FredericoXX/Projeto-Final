@@ -639,8 +639,8 @@ def test_failed_reprocessing_removes_stale_chunks(
     finally:
         session.close()
 
-    def failing_extract(*_args: object):  # type: ignore[no-untyped-def]
-        msg = "No extractable text was found. OCR is not available in this prototype."
+    def failing_extract(*_args: object, **_kwargs: object):  # type: ignore[no-untyped-def]
+        msg = "No extractable text was found in this document."
         raise ExtractionError(msg)
 
     monkeypatch.setattr(document_processing_service, "extract_text", failing_extract)

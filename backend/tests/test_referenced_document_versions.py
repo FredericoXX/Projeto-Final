@@ -557,7 +557,7 @@ def test_concurrent_source_first_makes_reprocessing_fail_without_extraction(
     extraction_calls = 0
     result_lock = threading.Lock()
 
-    def unexpected_extract(*_args: object) -> ExtractionResult:
+    def unexpected_extract(*_args: object, **_kwargs: object) -> ExtractionResult:
         nonlocal extraction_calls
         with result_lock:
             extraction_calls += 1
@@ -665,7 +665,7 @@ def test_concurrent_reprocessing_first_rejects_stale_source_then_completes(
     reprocess_errors: list[Exception] = []
     source_errors: list[Exception] = []
 
-    def blocking_extract(*_args: object) -> ExtractionResult:
+    def blocking_extract(*_args: object, **_kwargs: object) -> ExtractionResult:
         extraction_started.set()
         if not release_extraction.wait(timeout=10):
             raise TimeoutError("source validation did not finish")

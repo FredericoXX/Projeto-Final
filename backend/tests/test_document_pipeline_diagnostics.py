@@ -245,6 +245,14 @@ def _minimal_report(**overrides: Any) -> diagnostic.DiagnosticReport:
             1,
             42,
             "2031-01-01T00:00:00+00:00",
+            # Metadados de extração do Momento 2 (None: versão histórica).
+            extraction_method=None,
+            extraction_quality=None,
+            extraction_warning=None,
+            native_page_count=None,
+            ocr_page_count=None,
+            low_quality_page_count=None,
+            page_summaries=(),
         ),
         "effective_retrieval_version": diagnostic.EffectiveVersionInfo(
             version_id, 1, "processed", "effective", False
@@ -1382,3 +1390,75 @@ def test_80_synthetic_fixture_has_no_real_ids_or_private_data() -> None:
     assert all(
         forbidden not in raw for forbidden in ("institution_id", "storage_path", "token", "@")
     )
+
+
+# --- Momento 2: metadados de extração no relatório ---------------------------
+
+
+def _selected_version_with_ocr_metadata() -> diagnostic.SelectedVersionInfo:
+    base = _minimal_report().selected_version
+    return diagnostic.SelectedVersionInfo(
+        version_id=base.version_id,
+        version_number=base.version_number,
+        original_filename="scanned.pdf",
+        mime_type="application/pdf",
+        size_bytes=base.size_bytes,
+        checksum_sha256_prefix=base.checksum_sha256_prefix,
+        processing_status="processed",
+        processing_error=None,
+        page_count=2,
+        extracted_text_length=base.extracted_text_length,
+        processed_at=base.processed_at,
+        extraction_method="mixed",
+        extraction_quality="low",
+        extraction_warning="OCR completed, but the extracted text may require manual review.",
+        native_page_count=1,
+        ocr_page_count=1,
+        low_quality_page_count=1,
+        page_summaries=(
+            diagnostic.ExtractionPageSummary(1, "native", 400, None, "high", None),
+            diagnostic.ExtractionPageSummary(2, "ocr", 120, 42.5, "low", "aviso"),
+        ),
+    )
+
+
+def test_report_shows_extraction_metadata_and_page_table() -> None:
+    report = _minimal_report(selected_version=_selected_version_with_ocr_metadata())
+    rendered = diagnostic.render_markdown(report)
+    assert "- extraction_method: mixed" in rendered
+    assert "- extraction_quality: low" in rendered
+    assert "manual review" in rendered
+    assert "| Página | Método | Caracteres | Confiança OCR | Qualidade | Aviso |" in rendered
+    assert "| 2 | ocr | 120 | 42.5 | low | aviso |" in rendered
+    payload = json.loads(diagnostic.render_json(report))
+    assert payload["selected_version"]["extraction_method"] == "mixed"
+    assert payload["selected_version"]["page_summaries"][1]["ocr_confidence"] == 42.5
+
+
+def test_report_supports_historical_versions_with_null_metadata() -> None:
+    rendered = diagnostic.render_markdown(_minimal_report())
+    assert "- extraction_method: —" in rendered
+    assert "- extraction_quality: —" in rendered
+    # Sem metadados não há tabela por página.
+    assert "| Página | Método |" not in rendered
+
+
+def test_page_summary_builder_tolerates_malformed_details() -> None:
+    summaries, native_pages, ocr_pages, low_pages = (
+        diagnostic._build_extraction_page_summaries(
+            [
+                {"page_number": 1, "method": "native", "quality": "high",
+                 "extracted_characters": 10},
+                {"page_number": "x", "method": 3, "ocr_confidence": "abc"},
+                "entrada inválida",
+                {"page_number": 2, "method": "ocr", "quality": "low",
+                 "ocr_confidence": 55, "warning": "w\x00arn"},
+            ]
+        )
+    )
+    assert native_pages == 1 and ocr_pages == 1 and low_pages == 1
+    assert len(summaries) == 3  # a entrada não-dict é ignorada
+    assert summaries[1].page_number is None and summaries[1].method is None
+    assert summaries[2].ocr_confidence == 55.0
+    assert "\x00" not in (summaries[2].warning or "")
+    assert diagnostic._build_extraction_page_summaries(None) == ((), None, None, None)

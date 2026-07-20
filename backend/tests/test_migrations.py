@@ -934,3 +934,60 @@ def test_storage_cleanup_tasks_migration_upgrade_downgrade_upgrade(
 
     script = ScriptDirectory.from_config(alembic_cfg)
     assert current_revision == script.get_current_head()
+
+
+def test_extraction_metadata_migration_upgrade_downgrade_upgrade(
+    migrations_database_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A migration dos metadados de extração aplica, reverte e reaplica.
+
+    Dados históricos (linhas anteriores à migration) continuam válidos:
+    as novas colunas são nullable e as CHECK constraints aceitam NULL.
+    """
+    monkeypatch.setattr(settings, "database_url", migrations_database_url)
+    alembic_cfg = Config(str(BACKEND_DIR / "alembic.ini"))
+
+    new_columns = {
+        "extraction_method",
+        "extraction_quality",
+        "extraction_warning",
+        "extraction_details",
+    }
+
+    command.upgrade(alembic_cfg, "f2a91c47d3b8")
+    engine = create_engine(migrations_database_url)
+    try:
+        inspector = inspect(engine)
+        columns = {c["name"]: c for c in inspector.get_columns("document_versions")}
+        assert new_columns <= set(columns)
+        # Nullable: versões históricas ficam NULL, sem backfill.
+        assert all(columns[name]["nullable"] for name in new_columns)
+        checks = {c["name"] for c in inspector.get_check_constraints("document_versions")}
+        assert "ck_document_versions_extraction_method_allowed" in checks
+        assert "ck_document_versions_extraction_quality_allowed" in checks
+    finally:
+        engine.dispose()
+
+    command.downgrade(alembic_cfg, "-1")
+    engine = create_engine(migrations_database_url)
+    try:
+        columns_after = {c["name"] for c in inspect(engine).get_columns("document_versions")}
+        assert not (new_columns & columns_after)
+    finally:
+        engine.dispose()
+
+    command.upgrade(alembic_cfg, "head")
+    engine = create_engine(migrations_database_url)
+    try:
+        columns_final = {c["name"] for c in inspect(engine).get_columns("document_versions")}
+        assert new_columns <= columns_final
+        with engine.connect() as conn:
+            current_revision = conn.execute(
+                text("SELECT version_num FROM alembic_version")
+            ).scalar()
+    finally:
+        engine.dispose()
+
+    script = ScriptDirectory.from_config(alembic_cfg)
+    assert current_revision == script.get_current_head()

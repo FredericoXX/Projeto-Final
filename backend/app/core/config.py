@@ -34,6 +34,21 @@ class Settings(BaseSettings):
     document_chunk_size_chars: int = 1200
     document_chunk_overlap_chars: int = 150
 
+    # OCR local (Tesseract) para páginas de PDF sem texto pesquisável.
+    # O comando vazio usa a resolução normal do PATH do sistema; a
+    # ausência do executável nunca impede o arranque nem o processamento
+    # de documentos que não precisam de OCR — só falha, de forma
+    # controlada, o processamento que exigir OCR.
+    document_ocr_enabled: bool = True
+    document_ocr_command: str | None = None
+    document_ocr_languages: str = "por+eng"
+    document_ocr_dpi: int = 300
+    document_ocr_timeout_seconds: int = 60
+    document_ocr_min_native_chars: int = 40
+    document_ocr_min_confidence: int = 60
+    document_ocr_max_pages: int = 200
+    document_ocr_max_pixels_per_page: int = 25_000_000
+
     # Geração experimental de respostas fundamentadas. Nomes neutros: o
     # provider é substituível e a abordagem não é uma decisão definitiva.
     answer_generator_provider: str = "openai"
@@ -66,6 +81,31 @@ class Settings(BaseSettings):
             raise ValueError(msg)
         if self.document_chunk_overlap_chars >= self.document_chunk_size_chars:
             msg = "DOCUMENT_CHUNK_OVERLAP_CHARS must be smaller than DOCUMENT_CHUNK_SIZE_CHARS"
+            raise ValueError(msg)
+        return self
+
+    @model_validator(mode="after")
+    def check_ocr_configuration(self) -> "Settings":
+        if not (72 <= self.document_ocr_dpi <= 600):
+            msg = "DOCUMENT_OCR_DPI must be between 72 and 600"
+            raise ValueError(msg)
+        if self.document_ocr_timeout_seconds <= 0:
+            msg = "DOCUMENT_OCR_TIMEOUT_SECONDS must be greater than zero"
+            raise ValueError(msg)
+        if self.document_ocr_min_native_chars < 0:
+            msg = "DOCUMENT_OCR_MIN_NATIVE_CHARS must not be negative"
+            raise ValueError(msg)
+        if not (0 <= self.document_ocr_min_confidence <= 100):
+            msg = "DOCUMENT_OCR_MIN_CONFIDENCE must be between 0 and 100"
+            raise ValueError(msg)
+        if self.document_ocr_max_pages <= 0:
+            msg = "DOCUMENT_OCR_MAX_PAGES must be greater than zero"
+            raise ValueError(msg)
+        if self.document_ocr_max_pixels_per_page < 1_000_000:
+            msg = "DOCUMENT_OCR_MAX_PIXELS_PER_PAGE must be at least 1000000"
+            raise ValueError(msg)
+        if not self.document_ocr_languages.strip():
+            msg = "DOCUMENT_OCR_LANGUAGES must not be empty"
             raise ValueError(msg)
         return self
 

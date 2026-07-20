@@ -20,7 +20,11 @@ from app.core.config import settings
 from app.core.exceptions import ConflictError
 from app.models.document_version import DocumentVersion
 from app.models.user import User
-from app.services import document_processing_service, document_version_service
+from app.services import (
+    document_extraction_service,
+    document_processing_service,
+    document_version_service,
+)
 from app.services.document_extraction_service import ExtractionResult
 from app.storage import get_document_storage
 from tests.pdf_utils import build_pdf
@@ -374,7 +378,7 @@ def test_pdf_without_text_is_marked_failed_with_ocr_message(client: TestClient) 
 
     body = response.json()
     assert body["processing_status"] == "failed"
-    assert "OCR is not available" in body["processing_error"]
+    assert body["processing_error"] == document_extraction_service.NO_TEXT_MESSAGE
 
 
 # --- Conteúdo paginado -----------------------------------------------------------
@@ -545,7 +549,7 @@ def test_concurrent_reprocessing_starts_only_one_extraction(
     result_lock = threading.Lock()
     extraction_calls = 0
 
-    def blocking_extract(*_args: object) -> ExtractionResult:
+    def blocking_extract(*_args: object, **_kwargs: object) -> ExtractionResult:
         nonlocal extraction_calls
         with result_lock:
             extraction_calls += 1

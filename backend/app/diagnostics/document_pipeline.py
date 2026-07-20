@@ -1439,6 +1439,19 @@ class DocumentInfo:
 
 
 @dataclass(frozen=True)
+class ExtractionPageSummary:
+    """Linha da tabela por página: apenas metadados persistidos e
+    sanitizados; o diagnóstico nunca reexecuta OCR."""
+
+    page_number: int | None
+    method: str | None
+    extracted_characters: int | None
+    ocr_confidence: float | None
+    quality: str | None
+    warning: str | None
+
+
+@dataclass(frozen=True)
 class SelectedVersionInfo:
     version_id: UUID
     version_number: int
@@ -1451,6 +1464,14 @@ class SelectedVersionInfo:
     page_count: int | None
     extracted_text_length: int
     processed_at: str | None
+    # Metadados de extração do Momento 2; None em versões históricas.
+    extraction_method: str | None
+    extraction_quality: str | None
+    extraction_warning: str | None
+    native_page_count: int | None
+    ocr_page_count: int | None
+    low_quality_page_count: int | None
+    page_summaries: tuple[ExtractionPageSummary, ...]
 
 
 @dataclass(frozen=True)
@@ -1490,6 +1511,93 @@ class DiagnosticReport:
     questions: tuple[QuestionDiagnostic, ...]
     global_conclusion: GlobalConclusion
     limitations: tuple[str, ...]
+
+
+# Limite deliberado da tabela por página no relatório: evita relatórios
+# excessivos em documentos longos.
+MAX_PAGE_SUMMARIES_IN_REPORT = 60
+
+
+def _build_extraction_page_summaries(
+    details: object,
+) -> tuple[tuple[ExtractionPageSummary, ...], int | None, int | None, int | None]:
+    """Converte extraction_details persistido (JSONB) em linhas seguras.
+
+    Defensivo por construção: aceita None e entradas malformadas (versões
+    históricas ou dados futuros) sem falhar; sanitiza avisos.
+    """
+    if not isinstance(details, list):
+        return (), None, None, None
+    summaries: list[ExtractionPageSummary] = []
+    native_pages = 0
+    ocr_pages = 0
+    low_quality_pages = 0
+    for entry in details:
+        if not isinstance(entry, dict):
+            continue
+        method = entry.get("method")
+        quality = entry.get("quality")
+        if method == "native":
+            native_pages += 1
+        elif method == "ocr":
+            ocr_pages += 1
+        if quality == "low":
+            low_quality_pages += 1
+        warning = entry.get("warning")
+        confidence = entry.get("ocr_confidence")
+        characters = entry.get("extracted_characters")
+        page_number = entry.get("page_number")
+        summaries.append(
+            ExtractionPageSummary(
+                page_number=page_number if isinstance(page_number, int) else None,
+                method=method if isinstance(method, str) else None,
+                extracted_characters=characters if isinstance(characters, int) else None,
+                ocr_confidence=(
+                    float(confidence) if isinstance(confidence, int | float) else None
+                ),
+                quality=quality if isinstance(quality, str) else None,
+                warning=(
+                    sanitize_excerpt(warning)[:160] if isinstance(warning, str) else None
+                ),
+            )
+        )
+    return tuple(summaries), native_pages, ocr_pages, low_quality_pages
+
+
+def _build_selected_version_info(
+    selected: DocumentVersion, extracted_text_length: int
+) -> SelectedVersionInfo:
+    summaries, native_pages, ocr_pages, low_pages = _build_extraction_page_summaries(
+        selected.extraction_details
+    )
+    return SelectedVersionInfo(
+        version_id=selected.id,
+        version_number=selected.version_number,
+        original_filename=selected.original_filename,
+        mime_type=selected.mime_type,
+        size_bytes=selected.size_bytes,
+        checksum_sha256_prefix=selected.checksum_sha256[:12],
+        processing_status=selected.processing_status,
+        processing_error=(
+            sanitize_excerpt(selected.processing_error)[:200]
+            if selected.processing_error
+            else None
+        ),
+        page_count=selected.page_count,
+        extracted_text_length=extracted_text_length,
+        processed_at=(selected.processed_at.isoformat() if selected.processed_at else None),
+        extraction_method=selected.extraction_method,
+        extraction_quality=selected.extraction_quality,
+        extraction_warning=(
+            sanitize_excerpt(selected.extraction_warning)[:200]
+            if selected.extraction_warning
+            else None
+        ),
+        native_page_count=native_pages,
+        ocr_page_count=ocr_pages,
+        low_quality_page_count=low_pages,
+        page_summaries=summaries[:MAX_PAGE_SUMMARIES_IN_REPORT],
+    )
 
 
 LIMITATIONS: tuple[str, ...] = (
@@ -1705,23 +1813,7 @@ def run_diagnostic(
                 valid_from=selection.document.valid_from,
                 valid_until=selection.document.valid_until,
             ),
-            selected_version=SelectedVersionInfo(
-                version_id=selected.id,
-                version_number=selected.version_number,
-                original_filename=selected.original_filename,
-                mime_type=selected.mime_type,
-                size_bytes=selected.size_bytes,
-                checksum_sha256_prefix=selected.checksum_sha256[:12],
-                processing_status=selected.processing_status,
-                processing_error=(
-                    sanitize_excerpt(selected.processing_error)[:200]
-                    if selected.processing_error
-                    else None
-                ),
-                page_count=selected.page_count,
-                extracted_text_length=len(extracted_text),
-                processed_at=(selected.processed_at.isoformat() if selected.processed_at else None),
-            ),
+            selected_version=_build_selected_version_info(selected, len(extracted_text)),
             effective_retrieval_version=EffectiveVersionInfo(
                 version_id=effective.id if effective else None,
                 version_number=effective.version_number if effective else None,
@@ -1864,6 +1956,37 @@ def render_markdown(report: DiagnosticReport) -> str:
     add(f"- page_count: {selected.page_count if selected.page_count is not None else '—'}")
     add(f"- Total de caracteres extraídos: {selected.extracted_text_length}")
     add(f"- Processado em: {selected.processed_at or '—'}")
+    add(f"- extraction_method: {selected.extraction_method or '—'}")
+    add(f"- extraction_quality: {selected.extraction_quality or '—'}")
+    if selected.extraction_warning:
+        add(f"- extraction_warning: {_md_escape(selected.extraction_warning)}")
+    if selected.native_page_count is not None:
+        add(f"- Páginas extraídas nativamente: {selected.native_page_count}")
+        add(f"- Páginas extraídas por OCR: {selected.ocr_page_count}")
+        add(f"- Páginas com qualidade baixa: {selected.low_quality_page_count}")
+    if selected.page_summaries:
+        add("")
+        add("| Página | Método | Caracteres | Confiança OCR | Qualidade | Aviso |")
+        add("| --- | --- | --- | --- | --- | --- |")
+        for page_row in selected.page_summaries:
+            row_confidence = (
+                f"{page_row.ocr_confidence:.1f}"
+                if page_row.ocr_confidence is not None
+                else "—"
+            )
+            row_characters = (
+                page_row.extracted_characters
+                if page_row.extracted_characters is not None
+                else "—"
+            )
+            add(
+                f"| {page_row.page_number if page_row.page_number is not None else '—'} "
+                f"| {page_row.method or '—'} "
+                f"| {row_characters} "
+                f"| {row_confidence} "
+                f"| {page_row.quality or '—'} "
+                f"| {_md_escape(page_row.warning) if page_row.warning else '—'} |"
+            )
     add("")
     add("## Versão efetiva do retrieval")
     add("")

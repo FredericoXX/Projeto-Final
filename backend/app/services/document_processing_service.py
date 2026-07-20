@@ -17,6 +17,7 @@ assíncrona (fila/worker) possa reutilizá-la sem alterações à lógica.
 """
 
 import logging
+from dataclasses import asdict
 from datetime import UTC, datetime
 
 from sqlalchemy import select
@@ -24,6 +25,7 @@ from sqlalchemy.orm import Session
 
 from app.core.config import settings
 from app.core.exceptions import ConflictError, NotFoundError
+from app.models.document import Document
 from app.models.document_version import DocumentVersion
 from app.services import (
     document_chunk_service,
@@ -91,10 +93,29 @@ def process_version(
     version.extracted_text = None
     version.page_count = None
     version.processed_at = None
+    # Nenhum metadado de extração de uma tentativa anterior sobrevive ao
+    # início de um novo processamento.
+    version.extraction_method = None
+    version.extraction_quality = None
+    version.extraction_warning = None
+    version.extraction_details = None
     db.commit()
 
+    # O idioma do OCR deriva sempre do documento já persistido (nunca de
+    # payload externo); a consulta mantém o âmbito institucional.
+    document_language = db.scalar(
+        select(Document.language).where(
+            Document.id == version.document_id,
+            Document.institution_id == version.institution_id,
+        )
+    )
+
     try:
-        result = extract_text(storage.resolve_path(version.storage_path), version.mime_type)
+        result = extract_text(
+            storage.resolve_path(version.storage_path),
+            version.mime_type,
+            document_language=document_language,
+        )
     except ExtractionError as exc:
         return _finalize_failure(db, version, str(exc))
     except Exception as exc:
@@ -130,6 +151,12 @@ def process_version(
     version.processing_status = "processed"
     version.extracted_text = result.text
     version.page_count = result.page_count
+    version.extraction_method = result.extraction_method
+    version.extraction_quality = result.extraction_quality
+    # extraction_warning distingue "concluído com qualidade baixa" de
+    # falha: nunca usa processing_error num processamento com sucesso.
+    version.extraction_warning = result.extraction_warning
+    version.extraction_details = [asdict(detail) for detail in result.page_details] or None
     # processed_at regista apenas conclusões com sucesso.
     version.processed_at = datetime.now(UTC)
 
@@ -167,6 +194,12 @@ def _finalize_failure(
     document_chunk_service.delete_version_chunks(db, version.id)
     version.processing_status = "failed"
     version.processing_error = message
+    # Uma falha nunca mantém metadados de sucesso (reais ou de uma
+    # tentativa anterior).
+    version.extraction_method = None
+    version.extraction_quality = None
+    version.extraction_warning = None
+    version.extraction_details = None
     db.commit()
     db.refresh(version)
     return version

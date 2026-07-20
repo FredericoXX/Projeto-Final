@@ -10,12 +10,12 @@ handlers globais.
 
 import uuid
 
-from fastapi import APIRouter, Depends, Query, UploadFile, status
+from fastapi import APIRouter, Depends, Query, Request, UploadFile, status
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
 
 from app.api.dependencies.auth import require_admin
-from app.core.exceptions import ConflictError
+from app.core.exceptions import ConflictError, ValidationError
 from app.database.session import get_db
 from app.models.user import User
 from app.schemas.document import (
@@ -113,6 +113,37 @@ def delete_document(
     document_service.delete_document(db, admin, document_id, storage=storage)
 
 
+# Campos que o cliente nunca pode enviar no upload: os metadados de
+# extração são calculados exclusivamente pelo servidor e "force_ocr" não
+# existe nesta fase (a decisão de OCR é automática, por página).
+FORBIDDEN_UPLOAD_FORM_FIELDS = frozenset(
+    {
+        "extraction_method",
+        "extraction_quality",
+        "extraction_warning",
+        "extraction_details",
+        "force_ocr",
+    }
+)
+
+
+async def _reject_server_calculated_fields(request: Request) -> None:
+    """Rejeita (422) campos calculados pelo servidor no multipart.
+
+    O Request.form() do Starlette é memoizado, pelo que o UploadFile do
+    endpoint continua a usar a mesma leitura do corpo. A mensagem só pode
+    conter nomes da lista fixa acima — nunca input arbitrário do cliente.
+    """
+    form = await request.form()
+    forbidden = FORBIDDEN_UPLOAD_FORM_FIELDS.intersection(form.keys())
+    if forbidden:
+        msg = (
+            "These fields are calculated by the server and must not be "
+            f"sent: {', '.join(sorted(forbidden))}."
+        )
+        raise ValidationError(msg)
+
+
 @router.post(
     "/{document_id}/versions",
     response_model=DocumentVersionRead,
@@ -123,6 +154,8 @@ def upload_document_version(
     file: UploadFile,
     db: Session = Depends(get_db),
     admin: User = Depends(require_admin),
+    # Depois da autenticação: pedidos não autenticados continuam 401/403.
+    _: None = Depends(_reject_server_calculated_fields),
     storage: DocumentStorage = Depends(get_document_storage),
 ) -> DocumentVersionRead:
     version = document_version_service.create_version(

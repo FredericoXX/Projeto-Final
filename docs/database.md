@@ -15,6 +15,7 @@
 | 9 | `b7e2d8a9f4c1` | Add generated lexical `search_vector` and its GIN index |
 | 10 | `c8b4f2d9e6a1` | Add `reply_to_message_id`, persisted `message_sources`, composite integrity constraints and cited-chunk immutability trigger |
 | 11 | `800e7b121e93` | Create `storage_cleanup_tasks` (durable file-cleanup tasks enqueued in the document-deletion transaction) |
+| 12 | `f2a91c47d3b8` | Add extraction metadata to `document_versions` (`extraction_method`, `extraction_quality`, `extraction_warning`, `extraction_details` JSONB; nullable, CHECK-constrained; historical rows stay NULL — no backfill) |
 
 Since the project is still in local-only development with no shared
 environments, no production data, and disposable databases, the `users`

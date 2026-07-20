@@ -1,4 +1,5 @@
 from datetime import datetime
+from typing import Any
 from uuid import UUID, uuid4
 
 from sqlalchemy import (
@@ -13,6 +14,7 @@ from sqlalchemy import (
     UniqueConstraint,
     func,
 )
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import Mapped, mapped_column
 
 from app.database.base import Base
@@ -82,6 +84,17 @@ class DocumentVersion(Base):
             "page_count IS NULL OR page_count >= 0",
             name="ck_document_versions_page_count_non_negative",
         ),
+        # Metadados de extração: nullable porque versões históricas
+        # (anteriores ao OCR) ficam NULL — nunca se assume que foram
+        # extraídas por "native" e nunca se faz backfill.
+        CheckConstraint(
+            "extraction_method IS NULL OR extraction_method IN ('native', 'ocr', 'mixed')",
+            name="ck_document_versions_extraction_method_allowed",
+        ),
+        CheckConstraint(
+            "extraction_quality IS NULL OR extraction_quality IN ('high', 'medium', 'low')",
+            name="ck_document_versions_extraction_quality_allowed",
+        ),
     )
 
     id: Mapped[UUID] = mapped_column(
@@ -141,6 +154,23 @@ class DocumentVersion(Base):
     extracted_text: Mapped[str | None] = mapped_column(Text, nullable=True)
 
     page_count: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    # Como o texto foi obtido: native, ocr ou mixed (NULL em versões
+    # históricas anteriores à introdução do OCR).
+    extraction_method: Mapped[str | None] = mapped_column(String(10), nullable=True)
+
+    # Qualidade agregada e determinística da extração: high, medium, low.
+    extraction_quality: Mapped[str | None] = mapped_column(String(10), nullable=True)
+
+    # Aviso curto e seguro quando o processamento terminou com sucesso mas
+    # com qualidade baixa; nunca substitui processing_error.
+    extraction_warning: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    # Metadados por página (método, contagens, confiança, qualidade) —
+    # nunca texto integral, imagens, caminhos ou comandos.
+    extraction_details: Mapped[list[dict[str, Any]] | None] = mapped_column(
+        JSONB, nullable=True
+    )
 
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True),

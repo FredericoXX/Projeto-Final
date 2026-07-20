@@ -160,6 +160,24 @@ class DocumentListResponse(BaseModel):
     offset: int
 
 
+class ExtractionPageDetail(BaseModel):
+    """Metadados de extração de uma página — calculados pelo servidor.
+
+    Nunca contêm texto integral, imagens ou caminhos; `extra="ignore"`
+    tolera a evolução futura dos metadados persistidos em JSONB.
+    """
+
+    page_number: int
+    method: str
+    native_characters: int
+    extracted_characters: int
+    ocr_confidence: float | None = None
+    quality: str
+    warning: str | None = None
+
+    model_config = ConfigDict(extra="ignore")
+
+
 class DocumentVersionRead(BaseModel):
     # storage_path e extracted_text nunca são expostos aqui: o caminho é
     # um detalhe interno do armazenamento e o texto tem um endpoint
@@ -176,6 +194,13 @@ class DocumentVersionRead(BaseModel):
     processing_status: str
     processing_error: str | None
     page_count: int | None
+    # Metadados de extração calculados pelo servidor; NULL em versões
+    # históricas anteriores ao suporte OCR. Nunca são aceites em payloads
+    # de criação/atualização.
+    extraction_method: str | None
+    extraction_quality: str | None
+    extraction_warning: str | None
+    extraction_details: list[ExtractionPageDetail] | None
     created_at: datetime
     updated_at: datetime
     processed_at: datetime | None
