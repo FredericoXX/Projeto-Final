@@ -207,6 +207,21 @@ documents with versioned file uploads (PDF, TXT, Markdown), local file
 storage, duplicate detection and synchronous text extraction — see
 [`docs/document-core.md`](docs/document-core.md).
 
+Scanned PDFs are supported through local, offline OCR (Tesseract):
+each page is analysed separately, native text is used whenever it is
+sufficient, and OCR runs only on pages that need it (page order and the
+`\f` page separator are preserved; OCR line reconstruction keeps simple
+two-column tables — e.g. event | date — on one line). Extraction
+metadata (`extraction_method` native/ocr/mixed, `extraction_quality`
+high/medium/low, `extraction_warning`, per-page `extraction_details`)
+is persisted and exposed read-only; historical versions keep these
+fields NULL. The Tesseract runtime is optional: the application starts
+and native documents process without it — only OCR-requiring documents
+fail, with a short controlled error, and can be reprocessed later.
+Configuration (languages, DPI, timeout, page/pixel limits) lives in
+`.env.example`; details in
+[`docs/document-core.md`](docs/document-core.md).
+
 After a successful extraction, the text of each document version is also
 split into internal, deterministic chunks (`document_chunks` table),
 stored with character offsets, a normalized copy for lexical search and a

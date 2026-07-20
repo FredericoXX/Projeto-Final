@@ -47,6 +47,14 @@ jobs:
           POSTGRES_PASSWORD: test_password
           POSTGRES_HOST_PORT: "5433"
         run: docker compose config --quiet
+      # Runtime OCR local para o smoke test real (Tesseract + dados de
+      # idioma pt/en). Instalado antes dos testes; nada é descarregado
+      # durante a execução da suite.
+      - name: Install OCR runtime (Tesseract)
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-por tesseract-ocr-eng
+          tesseract --version
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"

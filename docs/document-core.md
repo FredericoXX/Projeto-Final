@@ -134,9 +134,82 @@ O upload devolve **201 mesmo que a extração falhe** — a versão foi
 criada; o resultado fica visível em `processing_status` e
 `processing_error`. As mensagens de erro são curtas e seguras (sem
 traceback, caminhos ou detalhes internos; esses ficam apenas no logging
-do servidor). Um PDF sem texto extraível (ex.: digitalizado) fica
-`failed` com a mensagem "No extractable text was found. OCR is not
-available in this prototype." — não existe OCR nesta fase.
+do servidor).
+
+## Extração com OCR local (PDFs digitalizados)
+
+PDFs são analisados **página a página**, de forma determinística e
+conservadora:
+
+1. cada página tenta primeiro a extração nativa (pypdf, com modo de
+   preservação de layout e fallback seguro para o modo simples);
+2. uma página com pelo menos `DOCUMENT_OCR_MIN_NATIVE_CHARS` caracteres
+   úteis usa o texto nativo — **o OCR nunca corre em páginas com texto
+   nativo suficiente** e o mesmo texto nunca é duplicado por OCR;
+3. uma página sem texto suficiente **e com imagens** é candidata a OCR;
+4. uma página com pouco texto e sem imagens (capa, número de página)
+   mantém o texto nativo;
+5. uma página sem texto e sem imagens é uma página vazia legítima —
+   nunca se inventa texto.
+
+A ordem das páginas nunca muda e o separador persistido continua a ser
+`PAGE_SEPARATOR = "\f"`. O runtime OCR (Tesseract, local e offline —
+nenhum serviço externo, nenhuma rede, nenhum download de modelos) só é
+verificado quando alguma página exige OCR; a sua ausência **não impede o
+arranque da aplicação** nem o processamento de documentos nativos. Para
+verificar o runtime local: `tesseract --version`.
+
+Renderização e OCR são limitados por configuração (`.env.example`):
+`DOCUMENT_OCR_DPI` (72–600), `DOCUMENT_OCR_MAX_PIXELS_PER_PAGE` (a
+escala de renderização é reduzida automaticamente para nunca exceder o
+limite), `DOCUMENT_OCR_TIMEOUT_SECONDS` e `DOCUMENT_OCR_MAX_PAGES`
+(documentos com mais páginas OCR do que o limite falham de forma
+controlada). O OCR pode ser desativado com `DOCUMENT_OCR_ENABLED=false`;
+nesse caso, um documento que exija OCR fica `failed` com "OCR is
+required for this document but is disabled.". O idioma do OCR deriva do
+idioma persistido do documento (`pt` → `por`, `en` → `eng`; outros
+idiomas usam o fallback explícito `DOCUMENT_OCR_LANGUAGES`, por omissão
+`por+eng`). O processamento continua **síncrono**: o OCR pode aumentar
+significativamente a latência do upload/reprocessamento de PDFs
+digitalizados.
+
+As linhas de OCR são reconstruídas deterministicamente (palavras
+ordenadas por bloco/parágrafo/linha/posição horizontal); um intervalo
+horizontal significativamente maior do que a largura média dos
+caracteres da linha gera o separador de coluna `" | "`, preservando a
+relação evento↔data de **tabelas institucionais simples** na mesma
+linha (ex.: `Primeiro dia de aulas do 1.º semestre | 05 de outubro de
+2026`). Não existe interpretação semântica genérica de tabelas, deteção
+de células fundidas nem inferência de valores; nem todos os PDFs
+digitalizados ou formatos de tabela são suportados. O chunking continua
+a ser o algoritmo anterior, inalterado (a segmentação estruturada é
+tema do Momento 3).
+
+Cada versão processada regista metadados de extração (expostos em
+`DocumentVersionRead` e no relatório de diagnóstico, que **não**
+reexecuta OCR):
+
+- `extraction_method`: `native` (todas as páginas com conteúdo são
+  nativas), `ocr` (todas exigiram OCR) ou `mixed`; páginas vazias não
+  alteram, sozinhas, o método;
+- `extraction_quality`: `high`/`medium`/`low` — regra conservadora e
+  determinística: a pior qualidade entre as páginas com conteúdo
+  (páginas OCR: `low` abaixo de `DOCUMENT_OCR_MIN_CONFIDENCE`, `high` a
+  partir de 80 de confiança média, `medium` entre ambos);
+- `extraction_warning`: presente quando o processamento **terminou com
+  sucesso** mas com qualidade baixa ("OCR completed, but the extracted
+  text may require manual review.") — qualidade baixa nunca é tratada
+  como falha, e falha nunca usa este campo;
+- `extraction_details`: metadados por página (método, contagens,
+  confiança, qualidade, aviso) — nunca texto integral, imagens ou
+  caminhos.
+
+Versões históricas anteriores a esta funcionalidade mantêm estes campos
+`NULL` (sem backfill). Falhas de OCR são controladas e seguras:
+runtime indisponível, timeout, limite de páginas, resultado vazio numa
+página necessária ou dados de idioma em falta deixam a versão `failed`
+com uma mensagem curta; uma versão `failed` pode ser reprocessada
+(`POST .../reprocess`) depois de instalar/ativar o OCR.
 
 O reprocessamento
 (`POST .../versions/{version_id}/reprocess`) reexecuta a extração sobre
