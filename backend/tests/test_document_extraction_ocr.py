@@ -17,6 +17,14 @@ from pathlib import Path
 
 import pytest
 from PIL import Image, ImageDraw, ImageFont
+from pypdf import PdfReader, PdfWriter
+from pypdf.generic import (
+    ArrayObject,
+    DecodedStreamObject,
+    DictionaryObject,
+    NameObject,
+    NumberObject,
+)
 
 from app.core.config import settings
 from app.core.text_normalization import normalize_text
@@ -36,9 +44,12 @@ from app.services.document_extraction_service import (
     OCR_TIMEOUT_MESSAGE,
     OCR_UNAVAILABLE_MESSAGE,
     PAGE_SEPARATOR,
+    VISUAL_DETECTION_DPI,
+    VISUAL_DETECTION_MAX_PIXELS,
     ExtractionError,
     capped_render_scale,
     extract_text,
+    is_approximately_blank,
     resolve_tesseract_language,
 )
 from app.services.ocr_engine import (
@@ -116,11 +127,221 @@ class FakeOcrEngine:
 def _scanned_pdf_bytes(page_count: int = 1) -> bytes:
     """PDF "digitalizado" sintético: páginas que são apenas imagens."""
     images = [Image.new("RGB", (200, 100), "white") for _ in range(page_count)]
+    for image in images:
+        ImageDraw.Draw(image).rectangle((20, 20, 180, 80), fill="black")
     buffer = io.BytesIO()
     images[0].save(buffer, format="PDF", save_all=True, append_images=images[1:])
     for image in images:
         image.close()
     return buffer.getvalue()
+
+
+def _pdf_with_visual_stream(
+    content: bytes,
+    *,
+    xobjects: DictionaryObject | None = None,
+    include_font: bool = False,
+) -> bytes:
+    """Constrói uma página sintética com operações PDF controladas."""
+    writer = PdfWriter()
+    page = writer.add_blank_page(width=200, height=100)
+    resources = DictionaryObject()
+    if xobjects is not None:
+        resources[NameObject("/XObject")] = xobjects
+    if include_font:
+        font = DictionaryObject(
+            {
+                NameObject("/Type"): NameObject("/Font"),
+                NameObject("/Subtype"): NameObject("/Type1"),
+                NameObject("/BaseFont"): NameObject("/Helvetica"),
+            }
+        )
+        resources[NameObject("/Font")] = DictionaryObject(
+            {NameObject("/F1"): writer._add_object(font)}
+        )
+    page[NameObject("/Resources")] = resources
+    stream = DecodedStreamObject()
+    stream.set_data(content)
+    page[NameObject("/Contents")] = writer._add_object(stream)
+    output = io.BytesIO()
+    writer.write(output)
+    return output.getvalue()
+
+
+def _image_xobject() -> DecodedStreamObject:
+    image = DecodedStreamObject()
+    image.set_data(b"\x00\x00\x00" * 4)
+    image.update(
+        {
+            NameObject("/Type"): NameObject("/XObject"),
+            NameObject("/Subtype"): NameObject("/Image"),
+            NameObject("/Width"): NumberObject(2),
+            NameObject("/Height"): NumberObject(2),
+            NameObject("/ColorSpace"): NameObject("/DeviceRGB"),
+            NameObject("/BitsPerComponent"): NumberObject(8),
+        }
+    )
+    return image
+
+
+def _form_image_pdf_bytes() -> bytes:
+    writer = PdfWriter()
+    page = writer.add_blank_page(width=200, height=100)
+    image_ref = writer._add_object(_image_xobject())
+    form = DecodedStreamObject()
+    form.set_data(b"q 180 0 0 80 10 10 cm /Im1 Do Q")
+    form.update(
+        {
+            NameObject("/Type"): NameObject("/XObject"),
+            NameObject("/Subtype"): NameObject("/Form"),
+            NameObject("/BBox"): ArrayObject(
+                [NumberObject(0), NumberObject(0), NumberObject(200), NumberObject(100)]
+            ),
+            NameObject("/Resources"): DictionaryObject(
+                {
+                    NameObject("/XObject"): DictionaryObject(
+                        {NameObject("/Im1"): image_ref}
+                    )
+                }
+            ),
+        }
+    )
+    form_ref = writer._add_object(form)
+    page[NameObject("/Resources")] = DictionaryObject(
+        {NameObject("/XObject"): DictionaryObject({NameObject("/Fm1"): form_ref})}
+    )
+    stream = DecodedStreamObject()
+    stream.set_data(b"/Fm1 Do")
+    page[NameObject("/Contents")] = writer._add_object(stream)
+    output = io.BytesIO()
+    writer.write(output)
+    return output.getvalue()
+
+
+def _nested_form_image_pdf_bytes() -> bytes:
+    """Página -> Form externo -> Form interno -> imagem."""
+    writer = PdfWriter()
+    page = writer.add_blank_page(width=200, height=100)
+    image_ref = writer._add_object(_image_xobject())
+
+    inner = DecodedStreamObject()
+    inner.set_data(b"q 180 0 0 80 10 10 cm /Im1 Do Q")
+    inner.update(
+        {
+            NameObject("/Type"): NameObject("/XObject"),
+            NameObject("/Subtype"): NameObject("/Form"),
+            NameObject("/BBox"): ArrayObject(
+                [NumberObject(0), NumberObject(0), NumberObject(200), NumberObject(100)]
+            ),
+            NameObject("/Resources"): DictionaryObject(
+                {
+                    NameObject("/XObject"): DictionaryObject(
+                        {NameObject("/Im1"): image_ref}
+                    )
+                }
+            ),
+        }
+    )
+    inner_ref = writer._add_object(inner)
+
+    outer = DecodedStreamObject()
+    outer.set_data(b"/Inner Do")
+    outer.update(
+        {
+            NameObject("/Type"): NameObject("/XObject"),
+            NameObject("/Subtype"): NameObject("/Form"),
+            NameObject("/BBox"): ArrayObject(
+                [NumberObject(0), NumberObject(0), NumberObject(200), NumberObject(100)]
+            ),
+            NameObject("/Resources"): DictionaryObject(
+                {
+                    NameObject("/XObject"): DictionaryObject(
+                        {NameObject("/Inner"): inner_ref}
+                    )
+                }
+            ),
+        }
+    )
+    outer_ref = writer._add_object(outer)
+    page[NameObject("/Resources")] = DictionaryObject(
+        {NameObject("/XObject"): DictionaryObject({NameObject("/Outer"): outer_ref})}
+    )
+    stream = DecodedStreamObject()
+    stream.set_data(b"/Outer Do")
+    page[NameObject("/Contents")] = writer._add_object(stream)
+    output = io.BytesIO()
+    writer.write(output)
+    return output.getvalue()
+
+
+def _cyclic_form_pdf_bytes() -> bytes:
+    """Dois Forms sem imagem que se referenciam mutuamente."""
+    writer = PdfWriter()
+    page = writer.add_blank_page(width=200, height=100)
+    form_a = DecodedStreamObject()
+    form_a.set_data(b"/B Do")
+    form_b = DecodedStreamObject()
+    form_b.set_data(b"/A Do")
+    form_a_ref = writer._add_object(form_a)
+    form_b_ref = writer._add_object(form_b)
+    common = {
+        NameObject("/Type"): NameObject("/XObject"),
+        NameObject("/Subtype"): NameObject("/Form"),
+        NameObject("/BBox"): ArrayObject(
+            [NumberObject(0), NumberObject(0), NumberObject(200), NumberObject(100)]
+        ),
+    }
+    form_a.update(
+        {
+            **common,
+            NameObject("/Resources"): DictionaryObject(
+                {
+                    NameObject("/XObject"): DictionaryObject(
+                        {NameObject("/B"): form_b_ref}
+                    )
+                }
+            ),
+        }
+    )
+    form_b.update(
+        {
+            **common,
+            NameObject("/Resources"): DictionaryObject(
+                {
+                    NameObject("/XObject"): DictionaryObject(
+                        {NameObject("/A"): form_a_ref}
+                    )
+                }
+            ),
+        }
+    )
+    page[NameObject("/Resources")] = DictionaryObject(
+        {NameObject("/XObject"): DictionaryObject({NameObject("/A"): form_a_ref})}
+    )
+    stream = DecodedStreamObject()
+    stream.set_data(b"/A Do")
+    page[NameObject("/Contents")] = writer._add_object(stream)
+    output = io.BytesIO()
+    writer.write(output)
+    return output.getvalue()
+
+
+def _inline_image_pdf_bytes() -> bytes:
+    inline = (
+        b"q 180 0 0 80 10 10 cm "
+        b"BI /W 2 /H 2 /CS /RGB /BPC 8 ID "
+        + b"\x00\x00\x00" * 4
+        + b" EI Q"
+    )
+    return _pdf_with_visual_stream(inline)
+
+
+def _vector_pdf_bytes(*, residual_text: bool = False) -> bytes:
+    prefix = b"BT /F1 12 Tf 10 90 Td (7) Tj ET " if residual_text else b""
+    return _pdf_with_visual_stream(
+        prefix + b"0 0 0 rg 10 10 180 60 re f",
+        include_font=residual_text,
+    )
 
 
 def _mixed_pdf_bytes(tmp_path: Path) -> bytes:
@@ -190,6 +411,44 @@ def test_scanned_pdf_calls_ocr(tmp_path: Path) -> None:
     assert "SINTETICO" in result.text
 
 
+def test_image_inside_form_xobject_calls_ocr(tmp_path: Path) -> None:
+    engine = FakeOcrEngine()
+    path = _write(tmp_path, "form-image.pdf", _form_image_pdf_bytes())
+    result = extract_text(path, "application/pdf", ocr_engine=engine)
+    assert engine.recognize_calls == 1
+    assert result.extraction_method == EXTRACTION_METHOD_OCR
+
+
+def test_image_inside_nested_form_xobjects_calls_ocr(tmp_path: Path) -> None:
+    engine = FakeOcrEngine()
+    path = _write(tmp_path, "nested-form-image.pdf", _nested_form_image_pdf_bytes())
+    result = extract_text(path, "application/pdf", ocr_engine=engine)
+    assert engine.recognize_calls == 1
+    assert result.extraction_method == EXTRACTION_METHOD_OCR
+
+
+def test_cyclic_form_xobjects_do_not_recurse_forever() -> None:
+    page = PdfReader(io.BytesIO(_cyclic_form_pdf_bytes())).pages[0]
+    state = document_extraction_service._inspect_structural_visual_content(page)
+    assert state == document_extraction_service._VisualState.BLANK
+
+
+def test_inline_image_calls_ocr(tmp_path: Path) -> None:
+    engine = FakeOcrEngine()
+    path = _write(tmp_path, "inline-image.pdf", _inline_image_pdf_bytes())
+    result = extract_text(path, "application/pdf", ocr_engine=engine)
+    assert engine.recognize_calls == 1
+    assert result.extraction_method == EXTRACTION_METHOD_OCR
+
+
+def test_vector_page_without_searchable_text_calls_ocr(tmp_path: Path) -> None:
+    engine = FakeOcrEngine()
+    path = _write(tmp_path, "vector.pdf", _vector_pdf_bytes())
+    result = extract_text(path, "application/pdf", ocr_engine=engine)
+    assert engine.recognize_calls == 1
+    assert result.extraction_method == EXTRACTION_METHOD_OCR
+
+
 def test_mixed_pdf_runs_ocr_only_on_needed_page(tmp_path: Path) -> None:
     engine = FakeOcrEngine()
     path = _write(tmp_path, "mixed.pdf", _mixed_pdf_bytes(tmp_path))
@@ -214,6 +473,109 @@ def test_legitimate_empty_page_produces_no_invented_text(tmp_path: Path) -> None
     assert result.page_details[1].method == "empty"
     # Páginas vazias não transformam, sozinhas, native noutro método.
     assert result.extraction_method == EXTRACTION_METHOD_NATIVE
+
+
+def test_approximately_blank_image_tolerates_off_white_and_isolated_noise() -> None:
+    image = Image.new("L", (400, 300), 247)
+    draw = ImageDraw.Draw(image)
+    for x, y in ((50, 50), (120, 180), (300, 90), (250, 240)):
+        draw.point((x, y), fill=210)
+    try:
+        assert is_approximately_blank(image)
+    finally:
+        image.close()
+
+
+def test_visual_content_is_not_approximately_blank() -> None:
+    image = Image.new("L", (400, 300), "white")
+    ImageDraw.Draw(image).rectangle((50, 80, 350, 220), fill="black")
+    try:
+        assert not is_approximately_blank(image)
+    finally:
+        image.close()
+
+
+def test_few_native_characters_with_visual_content_use_ocr(tmp_path: Path) -> None:
+    engine = FakeOcrEngine()
+    path = _write(tmp_path, "residual-vector.pdf", _vector_pdf_bytes(residual_text=True))
+    result = extract_text(path, "application/pdf", ocr_engine=engine)
+    assert engine.recognize_calls == 1
+    assert result.extraction_method == EXTRACTION_METHOD_OCR
+    assert "7" not in result.text  # fonte escolhida é OCR; sem duplicação residual
+
+
+def test_few_native_characters_without_visual_content_stay_native(tmp_path: Path) -> None:
+    engine = FakeOcrEngine()
+    path = _write(tmp_path, "residual-only.pdf", build_pdf(["7"]))
+    result = extract_text(path, "application/pdf", ocr_engine=engine)
+    assert engine.recognize_calls == 0
+    assert engine.availability_checks == 0
+    assert result.extraction_method == EXTRACTION_METHOD_NATIVE
+    assert result.text.strip() == "7"
+
+
+def test_inconclusive_structural_inspection_uses_visual_fallback(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    engine = FakeOcrEngine()
+    path = _write(tmp_path, "inconclusive.pdf", _vector_pdf_bytes())
+    monkeypatch.setattr(
+        document_extraction_service,
+        "_inspect_structural_visual_content",
+        lambda _page: document_extraction_service._VisualState.INCONCLUSIVE,
+    )
+    result = extract_text(path, "application/pdf", ocr_engine=engine)
+    assert engine.recognize_calls == 1
+    assert result.extraction_method == EXTRACTION_METHOD_OCR
+
+
+def test_structural_inspection_exception_is_explicitly_inconclusive() -> None:
+    class BrokenResourcesPage:
+        pdf = object()
+
+        def get_object(self) -> object:
+            return self
+
+        def get(self, _key: str) -> object:
+            raise RuntimeError("synthetic resource failure")
+
+    state = document_extraction_service._inspect_structural_visual_content(
+        BrokenResourcesPage()
+    )
+    assert state == document_extraction_service._VisualState.INCONCLUSIVE
+
+
+def test_preview_and_ocr_images_are_always_closed(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    rendered: list[Image.Image] = []
+    calls: list[tuple[int | None, int | None]] = []
+
+    def fake_render(
+        _path: Path,
+        _page_index: int,
+        *,
+        dpi: int | None = None,
+        max_pixels: int | None = None,
+    ) -> Image.Image:
+        image = Image.new("L", (200, 100), "white")
+        ImageDraw.Draw(image).rectangle((20, 20, 180, 80), fill="black")
+        rendered.append(image)
+        calls.append((dpi, max_pixels))
+        return image
+
+    monkeypatch.setattr(document_extraction_service, "_render_page_image", fake_render)
+    path = _write(tmp_path, "closed.pdf", _scanned_pdf_bytes())
+    extract_text(path, "application/pdf", ocr_engine=FakeOcrEngine())
+
+    assert calls == [
+        (VISUAL_DETECTION_DPI, VISUAL_DETECTION_MAX_PIXELS),
+        (None, None),
+    ]
+    assert len(rendered) == 2
+    for image in rendered:
+        with pytest.raises(ValueError):
+            image.getbbox()
 
 
 # --- Falhas controladas ------------------------------------------------------

@@ -21,9 +21,12 @@ PDFs são analisados página a página:
 Heurística de decisão por página (determinística e conservadora):
 
 1. caracteres úteis nativos >= DOCUMENT_OCR_MIN_NATIVE_CHARS -> nativa;
-2. senão, se a página tem imagens -> candidata a OCR;
-3. senão, se tem algum texto residual (capa, número de página) -> nativa;
-4. senão -> página vazia legítima.
+2. senão, inspeciona imagens diretas/aninhadas/inline e desenho vetorial;
+3. quando necessário, uma renderização pequena distingue conteúdo visual
+   de uma página aproximadamente vazia;
+4. pouco texto sem outro conteúdo visual permanece nativo;
+5. conteúdo visual relevante ou análise inconclusiva -> candidata a OCR;
+6. só uma página visualmente vazia permanece vazia.
 
 O OCR nunca corre em páginas com texto nativo suficiente e o runtime só
 é verificado quando alguma página o exige.
@@ -32,9 +35,12 @@ O OCR nunca corre em páginas com texto nativo suficiente e o runtime só
 import logging
 import math
 from dataclasses import dataclass
+from enum import Enum
 from pathlib import Path
 
+from PIL import Image
 from pypdf import PdfReader
+from pypdf.generic import ContentStream
 
 from app.core.config import settings
 from app.services.ocr_engine import (
@@ -82,6 +88,38 @@ PAGE_METHOD_EMPTY = "empty"
 # Acima desta confiança média o OCR da página é considerado "high";
 # abaixo de DOCUMENT_OCR_MIN_CONFIDENCE é "low"; entre ambos, "medium".
 HIGH_CONFIDENCE_THRESHOLD = 80.0
+
+# A decisão visual usa uma renderização pequena e independente da imagem
+# normal do OCR. Assim, a página só é renderizada em alta resolução quando
+# o OCR for realmente necessário.
+VISUAL_DETECTION_DPI = 72
+VISUAL_DETECTION_MAX_PIXELS = 1_000_000
+
+# Ignora a moldura exterior, pequenas diferenças de branco/compressão e
+# ruído isolado. Uma página é aproximadamente vazia quando, depois do crop,
+# no máximo 0,1% dos pixels difere significativamente da cor de fundo modal.
+VISUAL_DETECTION_MARGIN_FRACTION = 0.02
+VISUAL_BACKGROUND_TOLERANCE = 18
+VISUAL_CONTENT_RATIO_THRESHOLD = 0.001
+
+# Operadores PDF que pintam conteúdo não textual. XObjects ``Do`` são
+# percorridos pelos resources sem descodificar imagens; INLINE IMAGE é
+# emitido pelo parser do pypdf para BI/EI.
+_VISUAL_DRAWING_OPERATORS = frozenset(
+    {
+        b"INLINE IMAGE",
+        b"S",
+        b"s",
+        b"f",
+        b"F",
+        b"f*",
+        b"B",
+        b"B*",
+        b"b",
+        b"b*",
+        b"sh",
+    }
+)
 
 # Mapeamento mínimo idioma do documento -> dados de idioma Tesseract.
 # Idiomas sem mapeamento usam DOCUMENT_OCR_LANGUAGES (fallback explícito);
@@ -160,23 +198,102 @@ def _useful_characters(text: str) -> int:
     return len("".join(text.split()))
 
 
-def _page_has_images(page: object) -> bool:
-    """Deteção leve de conteúdo visual: XObjects de subtipo Image nos
-    recursos da página. Qualquer erro estrutural conta como "sem imagem"
-    (a heurística é conservadora; a decisão final continua nos limiares)."""
+class _VisualState(Enum):
+    FILLED = "filled"
+    BLANK = "blank"
+    INCONCLUSIVE = "inconclusive"
+
+
+def _inspect_structural_visual_content(page: object) -> _VisualState:
+    """Inspeciona conteúdo visual sem confundir uma falha com ausência.
+
+    Percorre os resources e Form XObjects sem descodificar os pixels das
+    imagens. Os content streams acrescentam imagens inline e desenho
+    vetorial. Ciclos de referência são ignorados de forma determinística.
+    """
+
+    def inspect_container(
+        container: object,
+        pdf: object,
+        visited: set[int],
+        *,
+        is_page: bool,
+    ) -> _VisualState:
+        resolved = container.get_object()  # type: ignore[attr-defined]
+        identity = id(resolved)
+        if identity in visited:
+            return _VisualState.BLANK
+        visited.add(identity)
+
+        resources = resolved.get("/Resources")  # type: ignore[attr-defined]
+        if resources is not None:
+            resource_dict = resources.get_object()
+            xobjects = resource_dict.get("/XObject")
+            if xobjects is not None:
+                for reference in xobjects.get_object().values():
+                    xobject = reference.get_object()
+                    subtype = xobject.get("/Subtype")
+                    if subtype == "/Image":
+                        return _VisualState.FILLED
+                    if subtype == "/Form" and inspect_container(
+                        xobject, pdf, visited, is_page=False
+                    ) == _VisualState.FILLED:
+                        return _VisualState.FILLED
+
+        contents = (
+            resolved.get_contents()  # type: ignore[attr-defined]
+            if is_page
+            else ContentStream(resolved, pdf)
+        )
+        if contents is not None and any(
+            operator in _VISUAL_DRAWING_OPERATORS
+            for _operands, operator in contents.operations
+        ):
+            return _VisualState.FILLED
+        return _VisualState.BLANK
+
     try:
-        resources = page.get("/Resources")  # type: ignore[attr-defined]
-        if resources is None:
-            return False
-        xobjects = resources.get_object().get("/XObject")
-        if xobjects is None:
-            return False
-        for reference in xobjects.get_object().values():
-            if reference.get_object().get("/Subtype") == "/Image":
-                return True
-    except Exception:
-        return False
-    return False
+        pdf = page.pdf  # type: ignore[attr-defined]
+        return inspect_container(page, pdf, set(), is_page=True)
+    except Exception as exc:
+        logger.warning(
+            "PDF structural visual inspection was inconclusive: error_type=%s",
+            type(exc).__name__,
+        )
+        return _VisualState.INCONCLUSIVE
+
+
+def is_approximately_blank(image: Image.Image) -> bool:
+    """Determina, de forma pura, se uma renderização não tem conteúdo útil.
+
+    A cor modal da área interior é usada como fundo, tolerando páginas
+    off-white e compressão. A margem exterior é ignorada e uma proporção
+    mínima de outliers não transforma ruído isolado em conteúdo.
+    """
+    grayscale = image.convert("L")
+    cropped: Image.Image | None = None
+    try:
+        width, height = grayscale.size
+        margin_x = min(width // 4, int(width * VISUAL_DETECTION_MARGIN_FRACTION))
+        margin_y = min(height // 4, int(height * VISUAL_DETECTION_MARGIN_FRACTION))
+        if width - 2 * margin_x <= 0 or height - 2 * margin_y <= 0:
+            return True
+        cropped = grayscale.crop((margin_x, margin_y, width - margin_x, height - margin_y))
+        histogram = cropped.histogram()
+        total_pixels = cropped.width * cropped.height
+        if total_pixels == 0:
+            return True
+        background = max(range(256), key=histogram.__getitem__)
+        content_pixels = sum(
+            count
+            for value, count in enumerate(histogram)
+            if abs(value - background) > VISUAL_BACKGROUND_TOLERANCE
+        )
+        return content_pixels / total_pixels <= VISUAL_CONTENT_RATIO_THRESHOLD
+    finally:
+        if cropped is not None:
+            cropped.close()
+        grayscale.close()
 
 
 def _native_page_text(page: object) -> str:
@@ -212,7 +329,13 @@ def capped_render_scale(
     return scale
 
 
-def _render_page_image(file_path: Path, page_index: int):
+def _render_page_image(
+    file_path: Path,
+    page_index: int,
+    *,
+    dpi: int | None = None,
+    max_pixels: int | None = None,
+) -> Image.Image:
     """Renderiza apenas a página pedida via pypdfium2, com DPI e pixels
     limitados; a imagem é descartada pelo chamador logo após o OCR."""
     # Import tardio: só quando há OCR a fazer. Sem stubs de tipos
@@ -226,8 +349,12 @@ def _render_page_image(file_path: Path, page_index: int):
         scale = capped_render_scale(
             width_points,
             height_points,
-            settings.document_ocr_dpi,
-            settings.document_ocr_max_pixels_per_page,
+            dpi if dpi is not None else settings.document_ocr_dpi,
+            (
+                max_pixels
+                if max_pixels is not None
+                else settings.document_ocr_max_pixels_per_page
+            ),
         )
         bitmap = page.render(scale=scale)
         try:
@@ -246,7 +373,58 @@ class _PagePlan:
     method: str  # PAGE_METHOD_*
 
 
-def _plan_pages(reader: PdfReader) -> list[_PagePlan]:
+def _rendered_visual_state(file_path: Path, page_index: int) -> _VisualState:
+    """Classifica uma página por preview limitado; nunca deixa a imagem aberta."""
+    try:
+        image = _render_page_image(
+            file_path,
+            page_index,
+            dpi=VISUAL_DETECTION_DPI,
+            max_pixels=VISUAL_DETECTION_MAX_PIXELS,
+        )
+    except Exception as exc:
+        logger.warning(
+            "PDF visual page inspection was inconclusive: page=%d error_type=%s",
+            page_index + 1,
+            type(exc).__name__,
+        )
+        return _VisualState.INCONCLUSIVE
+    try:
+        return (
+            _VisualState.BLANK
+            if is_approximately_blank(image)
+            else _VisualState.FILLED
+        )
+    finally:
+        image.close()
+
+
+def _classify_insufficient_page(
+    file_path: Path,
+    page_index: int,
+    page: object,
+    native_characters: int,
+) -> str:
+    structural = _inspect_structural_visual_content(page)
+
+    # Se a estrutura é conclusivamente apenas texto residual, preserva-o
+    # sem o duplicar por OCR. Páginas sem texto ainda recebem a verificação
+    # visual, para cobrir conteúdo que o parser estrutural não reconheceu.
+    if structural == _VisualState.BLANK and native_characters > 0:
+        return PAGE_METHOD_NATIVE
+
+    visual = _rendered_visual_state(file_path, page_index)
+    if visual == _VisualState.FILLED:
+        return PAGE_METHOD_OCR
+    if visual == _VisualState.BLANK:
+        return PAGE_METHOD_NATIVE if native_characters > 0 else PAGE_METHOD_EMPTY
+
+    # Nunca transformar uma falha estrutural/de renderização em prova de
+    # página vazia. O caminho OCR aplicará os limites e erros seguros normais.
+    return PAGE_METHOD_OCR
+
+
+def _plan_pages(reader: PdfReader, file_path: Path) -> list[_PagePlan]:
     plans: list[_PagePlan] = []
     minimum = settings.document_ocr_min_native_chars
     for index, page in enumerate(reader.pages):
@@ -254,14 +432,8 @@ def _plan_pages(reader: PdfReader) -> list[_PagePlan]:
         useful = _useful_characters(native_text)
         if useful >= minimum:
             method = PAGE_METHOD_NATIVE
-        elif _page_has_images(page):
-            method = PAGE_METHOD_OCR
-        elif useful > 0:
-            # Pouco texto sem conteúdo visual (capa, número de página):
-            # preserva-se o texto nativo, nunca se força OCR.
-            method = PAGE_METHOD_NATIVE
         else:
-            method = PAGE_METHOD_EMPTY
+            method = _classify_insufficient_page(file_path, index, page, useful)
         plans.append(
             _PagePlan(
                 page_number=index + 1,
@@ -357,7 +529,7 @@ def _extract_pdf(
         # à medida que são pedidas, sem exigir o ficheiro inteiro em memória.
         with file_path.open("rb") as handle:
             reader = PdfReader(handle)
-            plans = _plan_pages(reader)
+            plans = _plan_pages(reader, file_path)
     except Exception as exc:
         logger.error("PDF extraction failed: error_type=%s", type(exc).__name__)
         raise ExtractionError(UNREADABLE_PDF_MESSAGE) from None

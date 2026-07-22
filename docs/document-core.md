@@ -146,11 +146,24 @@ conservadora:
 2. uma página com pelo menos `DOCUMENT_OCR_MIN_NATIVE_CHARS` caracteres
    úteis usa o texto nativo — **o OCR nunca corre em páginas com texto
    nativo suficiente** e o mesmo texto nunca é duplicado por OCR;
-3. uma página sem texto suficiente **e com imagens** é candidata a OCR;
-4. uma página com pouco texto e sem imagens (capa, número de página)
-   mantém o texto nativo;
-5. uma página sem texto e sem imagens é uma página vazia legítima —
-   nunca se inventa texto.
+3. para texto insuficiente, a inspeção estrutural reconhece imagens
+   diretas, imagens dentro de Form XObjects, imagens inline e operações
+   de desenho vetorial; uma exceção nesta análise fica explicitamente
+   inconclusiva, nunca equivale a "sem imagem";
+4. quando existe evidência visual, não existe texto ou a inspeção foi
+   inconclusiva, a página é renderizada uma vez a baixa resolução (72 DPI,
+   no máximo 1.000.000 pixels) para distinguir conteúdo de uma página
+   aproximadamente vazia;
+5. a deteção de vazio converte o preview para grayscale, ignora 2% de
+   margem, usa a cor modal como fundo, tolera diferenças de até 18 níveis
+   e considera ruído de até 0,1% dos pixels; os limiares são genéricos e
+   não contêm regras específicas de documentos ou calendários;
+6. pouco texto sem outro conteúdo visual mantém o texto nativo; pouco
+   texto com conteúdo visual relevante escolhe OCR, sem combinar nem
+   duplicar as duas fontes;
+7. apenas uma página visualmente vazia permanece vazia. Se até o preview
+   falhar, a página segue pelo caminho OCR e pelos seus limites/erros
+   seguros, em vez de ser declarada vazia sem prova.
 
 A ordem das páginas nunca muda e o separador persistido continua a ser
 `PAGE_SEPARATOR = "\f"`. O runtime OCR (Tesseract, local e offline —
@@ -158,6 +171,10 @@ nenhum serviço externo, nenhuma rede, nenhum download de modelos) só é
 verificado quando alguma página exige OCR; a sua ausência **não impede o
 arranque da aplicação** nem o processamento de documentos nativos. Para
 verificar o runtime local: `tesseract --version`.
+
+O preview de decisão é sempre fechado e não substitui nem duplica uma
+renderização OCR em alta resolução. Só páginas classificadas para OCR usam
+a renderização normal, que também é sempre fechada.
 
 Renderização e OCR são limitados por configuração (`.env.example`):
 `DOCUMENT_OCR_DPI` (72–600), `DOCUMENT_OCR_MAX_PIXELS_PER_PAGE` (a
