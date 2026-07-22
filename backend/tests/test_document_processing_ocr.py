@@ -10,7 +10,7 @@ import uuid
 
 import pytest
 from fastapi.testclient import TestClient
-from PIL import Image
+from PIL import Image, ImageDraw
 from sqlalchemy import func, select, text
 from sqlalchemy.engine import Engine
 from sqlalchemy.orm import Session, sessionmaker
@@ -81,6 +81,7 @@ def _install_fake_engine(monkeypatch: pytest.MonkeyPatch, engine: FakeOcrEngine)
 
 def _scanned_pdf_bytes() -> bytes:
     image = Image.new("RGB", (200, 100), "white")
+    ImageDraw.Draw(image).rectangle((20, 20, 180, 80), fill="black")
     buffer = io.BytesIO()
     image.save(buffer, format="PDF")
     image.close()

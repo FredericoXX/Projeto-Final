@@ -209,9 +209,12 @@ storage, duplicate detection and synchronous text extraction — see
 
 Scanned PDFs are supported through local, offline OCR (Tesseract):
 each page is analysed separately, native text is used whenever it is
-sufficient, and OCR runs only on pages that need it (page order and the
-`\f` page separator are preserved; OCR line reconstruction keeps simple
-two-column tables — e.g. event | date — on one line). Extraction
+sufficient, and OCR runs only on pages that need it. Detection covers
+direct, nested Form and inline images plus vector drawing; an independent,
+pixel-limited 72-DPI preview distinguishes visual pages from approximately
+blank pages when native text is insufficient or structural inspection is
+inconclusive (page order and the `\f` page separator are preserved; OCR line
+reconstruction keeps simple two-column tables — e.g. event | date — on one line). Extraction
 metadata (`extraction_method` native/ocr/mixed, `extraction_quality`
 high/medium/low, `extraction_warning`, per-page `extraction_details`)
 is persisted and exposed read-only; historical versions keep these
