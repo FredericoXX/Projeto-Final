@@ -65,8 +65,8 @@ export function listMessages(
   );
 }
 
-// The only way the UI asks the assistant a question. Manual message creation
-// (POST .../messages) is never used for questions.
+// Única forma de a interface fazer perguntas ao assistente. A criação manual
+// de mensagens (POST .../messages) nunca é usada para perguntas.
 export function askInConversation(
   conversationId: UUID,
   payload: AnsweringRequest,

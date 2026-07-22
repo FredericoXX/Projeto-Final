@@ -65,8 +65,8 @@ export interface ConversationAskResponse {
   assistant_message: MessageRead;
 }
 
-// Only the fields the frontend is allowed to send. institution_id, user_id,
-// role, reply_to_message_id, sources, status and metadata are never sent.
+// Apenas os campos que o frontend pode enviar. institution_id, user_id, role,
+// reply_to_message_id, sources, status e metadata nunca são enviados.
 export interface AnsweringRequest {
   query: string;
   language?: string;

@@ -17,7 +17,7 @@ describe('route guards and session', () => {
   it('restores the session from a stored token', async () => {
     tokenStorage.set('test-token');
     renderApp('/app/conversations');
-    // /auth/me is the source of truth; the list renders once restored.
+    // /auth/me é a fonte de verdade; a lista aparece após restaurar a sessão.
     expect(await screen.findByText('Academic matters')).toBeInTheDocument();
   });
 

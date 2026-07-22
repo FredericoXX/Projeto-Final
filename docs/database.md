@@ -1,368 +1,336 @@
-# Database Notes
+# Notas sobre a base de dados
 
-## Migration history
+## Histórico de migrações
 
-| Order | Revision | Description |
+| Ordem | Revisão | Descrição |
 |---|---|---|
-| 1 | `db13417f9dc4` | Enable the `pgvector` extension |
-| 2 | `de4e133df3c9` | Create the `institutions` table |
-| 3 | `9cf6ff5ac49c` | Create the `users` table with `institution_id` and the required multi-institution fields |
-| 4 | `9ec09d09f22f` | Create the `conversations` and `messages` tables |
-| 5 | `3ed4bcad52c8` | Add composite multi-institution foreign keys and their supporting unique constraints |
-| 6 | `5f638cb2d2c3` | Add domain-value CHECK constraints for `users.role`, `conversations.status` and `messages.role` |
-| 7 | `1482b165c943` | Create the `documents` and `document_versions` tables (document core) |
-| 8 | `68cb34527411` | Create the `document_chunks` table and its supporting unique constraint on `document_versions` |
-| 9 | `b7e2d8a9f4c1` | Add generated lexical `search_vector` and its GIN index |
-| 10 | `c8b4f2d9e6a1` | Add `reply_to_message_id`, persisted `message_sources`, composite integrity constraints and cited-chunk immutability trigger |
-| 11 | `800e7b121e93` | Create `storage_cleanup_tasks` (durable file-cleanup tasks enqueued in the document-deletion transaction) |
-| 12 | `f2a91c47d3b8` | Add extraction metadata to `document_versions` (`extraction_method`, `extraction_quality`, `extraction_warning`, `extraction_details` JSONB; nullable, CHECK-constrained; historical rows stay NULL — no backfill) |
+| 1 | `db13417f9dc4` | Ativa a extensão `pgvector` |
+| 2 | `de4e133df3c9` | Cria a tabela `institutions` |
+| 3 | `9cf6ff5ac49c` | Cria a tabela `users` com `institution_id` e os campos multi-institucionais necessários |
+| 4 | `9ec09d09f22f` | Cria as tabelas `conversations` e `messages` |
+| 5 | `3ed4bcad52c8` | Adiciona chaves estrangeiras multi-institucionais compostas e as restrições únicas que as suportam |
+| 6 | `5f638cb2d2c3` | Adiciona restrições CHECK de valores de domínio para `users.role`, `conversations.status` e `messages.role` |
+| 7 | `1482b165c943` | Cria as tabelas `documents` e `document_versions` (núcleo documental) |
+| 8 | `68cb34527411` | Cria a tabela `document_chunks` e a restrição única de suporte em `document_versions` |
+| 9 | `b7e2d8a9f4c1` | Adiciona o `search_vector` lexical gerado e o respetivo índice GIN |
+| 10 | `c8b4f2d9e6a1` | Adiciona `reply_to_message_id`, `message_sources` persistidas, restrições compostas de integridade e o trigger de imutabilidade de chunks citados |
+| 11 | `800e7b121e93` | Cria `storage_cleanup_tasks` (tarefas duráveis de limpeza de arquivos, enfileiradas na transação de eliminação do documento) |
+| 12 | `f2a91c47d3b8` | Adiciona metadados de extração a `document_versions` (`extraction_method`, `extraction_quality`, `extraction_warning` e `extraction_details` JSONB; anuláveis e limitados por CHECK; linhas históricas permanecem NULL, sem backfill) |
 
-Since the project is still in local-only development with no shared
-environments, no production data, and disposable databases, the `users`
-migration was rewritten in place to create the table already correctly
-shaped for the multi-institution model, instead of adding a fourth
-migration to alter it later. There is no separate "complete `users`"
-migration — the historical migration itself is now correct.
+Como o projeto ainda está em desenvolvimento exclusivamente local, sem
+ambientes partilhados, dados de produção ou bases de dados permanentes, a
+migração de `users` foi reescrita no próprio local para criar a tabela já com o
+formato correto para o modelo multi-institucional, em vez de adicionar uma
+quarta migração para alterá-la depois. Não existe uma migração separada para
+“completar `users`”: a própria migração histórica está agora correta.
 
-The `users` table (as created by `9cf6ff5ac49c`) has:
+A tabela `users`, criada por `9cf6ff5ac49c`, possui:
 
-- `id` — UUID, primary key, application-generated via the ORM default
-- `institution_id` — UUID, `NOT NULL`, foreign key to `institutions.id`, indexed
-- `full_name` — `String(255)`, `NOT NULL`
-- `email` — `String(255)`, `NOT NULL`, globally unique
-- `password_hash` — `String(255)`, `NOT NULL`
-- `role` — `String(50)`, `NOT NULL`, server default `"user"`
-- `is_active` — `Boolean`, `NOT NULL`, server default `true`
-- `created_at` — timezone-aware timestamp, `NOT NULL`, server default `now()`
-- `updated_at` — timezone-aware timestamp, `NOT NULL`, server default `now()`
+- `id` — UUID, chave primária, gerado pela aplicação por omissão no ORM;
+- `institution_id` — UUID, `NOT NULL`, chave estrangeira para
+  `institutions.id`, indexado;
+- `full_name` — `String(255)`, `NOT NULL`;
+- `email` — `String(255)`, `NOT NULL`, globalmente único;
+- `password_hash` — `String(255)`, `NOT NULL`;
+- `role` — `String(50)`, `NOT NULL`, valor padrão do servidor `"user"`;
+- `is_active` — `Boolean`, `NOT NULL`, valor padrão do servidor `true`;
+- `created_at` — timestamp com fuso horário, `NOT NULL`, padrão `now()`;
+- `updated_at` — timestamp com fuso horário, `NOT NULL`, padrão `now()`.
 
-`email` uniqueness remains global (not scoped per institution) — that is
-unchanged from the original design and was not revisited in this pass.
+A unicidade de `email` continua global, não limitada por instituição. Isso não
+mudou em relação ao desenho original e não foi revisto nesta etapa.
 
-The `institutions`, `users`, `conversations` and `messages` tables all
-have a full API on top of them: institution management, a user
-management API scoped to the authenticated admin's institution,
-JWT + Argon2 based authentication (login and initial-admin
-registration), and a conversations/messages API scoped to the
-authenticated user's institution (and, for non-admins, to their own
-conversations). See
+As tabelas `institutions`, `users`, `conversations` e `messages` possuem APIs
+completas: gestão de instituições, gestão de utilizadores limitada à
+instituição do administrador autenticado, autenticação baseada em JWT + Argon2
+(login e registo do administrador inicial) e uma API de conversas/mensagens
+limitada à instituição do utilizador autenticado — e, para não administradores,
+às próprias conversas. Consulte
 [`app/api/routes/institutions.py`](../backend/app/api/routes/institutions.py),
 [`app/api/routes/users.py`](../backend/app/api/routes/users.py),
-[`app/api/routes/auth.py`](../backend/app/api/routes/auth.py) and
+[`app/api/routes/auth.py`](../backend/app/api/routes/auth.py) e
 [`app/api/routes/conversations.py`](../backend/app/api/routes/conversations.py).
 
-A conversation belongs to one institution and one user and groups the
-messages exchanged in an assistant session. The experimental conversational
-endpoint can now persist a complete grounded turn, while the final retrieval
-approach remains an open question for the literature review. pgvector remains
-available infrastructure and is not used by the current lexical baseline.
+Uma conversa pertence a uma instituição e a um utilizador e agrupa as mensagens
+trocadas numa sessão do assistente. O endpoint conversacional experimental já
+pode persistir um turno fundamentado completo, mas a abordagem final de
+recuperação continua em aberto para a revisão da literatura. O pgvector
+permanece disponível como infraestrutura e não é usado pela baseline lexical.
 
-A message's `user_id` records who actually authored it: for `role="user"`
-it's the sending user; for `role="system"` it's the admin who created it
-manually (see `message_service.create_message`), which is what makes
-system messages auditable. It is only ever `NULL` for automatic
-`"assistant"` messages created by the conversational answering
-flow — role `"system"` does **not** imply a null `user_id`.
+O `user_id` de uma mensagem regista o seu autor real: para `role="user"`, é o
+utilizador que a enviou; para `role="system"`, é o administrador que a criou
+manualmente (consulte `message_service.create_message`). Isso torna as mensagens
+de sistema auditáveis. O campo só é `NULL` em mensagens automáticas
+`"assistant"` criadas pelo fluxo de respostas conversacionais; o papel
+`"system"` **não** implica um `user_id` nulo.
 
-Migration `c8b4f2d9e6a1` adds nullable `messages.reply_to_message_id`.
-Assistant messages created by answering point to the user message in the
-same turn. A composite FK `(reply_to_message_id, conversation_id,
-institution_id)` ensures the target belongs to the same conversation and
-tenant, and a CHECK rejects self-reference. Manual user/system messages keep
-the field null; it is not accepted by `MessageCreate`.
+A migração `c8b4f2d9e6a1` adiciona o campo anulável
+`messages.reply_to_message_id`. Mensagens do assistente criadas pelo fluxo de
+respostas apontam para a mensagem do utilizador no mesmo turno. Uma chave
+estrangeira composta `(reply_to_message_id, conversation_id, institution_id)`
+garante que o alvo pertence à mesma conversa e instituição, e um CHECK rejeita
+autorreferências. Mensagens manuais de utilizador ou sistema mantêm o campo nulo;
+ele não é aceite por `MessageCreate`.
 
-## Document core (`documents` and `document_versions`)
+## Núcleo documental (`documents` e `document_versions`)
 
-Migration `1482b165c943` adds the document layer, split into two tables
-on purpose: `documents` is the logical institutional document
-(regulation, calendar, manual...) and its metadata; `document_versions`
-is each concrete uploaded file/revision, so a document can be updated
-without losing its history.
+A migração `1482b165c943` adiciona a camada documental, intencionalmente
+dividida em duas tabelas: `documents` representa o documento institucional
+lógico (regulamento, calendário, manual etc.) e os seus metadados;
+`document_versions` representa cada arquivo ou revisão concreta enviada, para
+que um documento possa ser atualizado sem perder o histórico.
 
-`documents` (all rows scoped by `institution_id`):
+`documents` (todas as linhas limitadas por `institution_id`):
 
-- `id` (UUID, app-generated), `institution_id` (FK to `institutions`),
-  `created_by_user_id` — with a composite FK
-  `(created_by_user_id, institution_id)` → `users(id, institution_id)`,
-  so the creator must belong to the same institution;
-- `title`, `description`, `language` (institution-aware, resolved with
-  the same `resolve_language` rule as conversations), `source_url`,
-  `official_source`, `is_active`, `valid_from`/`valid_until` (with a
-  CHECK enforcing `valid_from <= valid_until`);
-- a degenerate `UNIQUE (id, institution_id)` supporting the composite
-  FKs from `document_versions`.
+- `id` (UUID gerado pela aplicação), `institution_id` (FK para
+  `institutions`) e `created_by_user_id`, com uma FK composta
+  `(created_by_user_id, institution_id)` → `users(id, institution_id)`, que
+  obriga o criador a pertencer à mesma instituição;
+- `title`, `description`, `language` (sensível à instituição e resolvido pela
+  mesma regra `resolve_language` das conversas), `source_url`,
+  `official_source`, `is_active` e `valid_from`/`valid_until`, com um CHECK que
+  exige `valid_from <= valid_until`;
+- um `UNIQUE (id, institution_id)` degenerado que suporta as chaves
+  estrangeiras compostas de `document_versions`.
 
 `document_versions`:
 
-- composite FKs `(document_id, institution_id)` →
-  `documents(id, institution_id)` and
-  `(uploaded_by_user_id, institution_id)` → `users(id, institution_id)`:
-  PostgreSQL itself rejects any cross-institution combination;
-- `UNIQUE (document_id, version_number)` (second defense behind the
-  `SELECT ... FOR UPDATE` lock used to assign version numbers) and
-  `UNIQUE (institution_id, checksum_sha256)` (the same file content may
-  exist in different institutions, never twice in the same one);
+- chaves estrangeiras compostas `(document_id, institution_id)` →
+  `documents(id, institution_id)` e `(uploaded_by_user_id, institution_id)` →
+  `users(id, institution_id)`; o próprio PostgreSQL rejeita combinações entre
+  instituições;
+- `UNIQUE (document_id, version_number)`, segunda defesa após o bloqueio
+  `SELECT ... FOR UPDATE` usado para atribuir números de versão, e
+  `UNIQUE (institution_id, checksum_sha256)`, pois o mesmo conteúdo pode existir
+  em instituições diferentes, mas nunca duas vezes na mesma;
 - CHECKs: `version_number > 0`, `size_bytes > 0`,
-  `processing_status IN ('pending','processing','processed','failed')`,
+  `processing_status IN ('pending','processing','processed','failed')` e
   `page_count IS NULL OR page_count >= 0`;
-- the binary file lives in local storage (`storage_path` is always
-  relative to the storage root); PostgreSQL stores only metadata and
-  the extracted text (`extracted_text`).
+- o arquivo binário reside no armazenamento local (`storage_path` é sempre
+  relativo à raiz); o PostgreSQL guarda apenas metadados e o texto extraído
+  (`extracted_text`).
 
-See [`docs/document-core.md`](document-core.md) for the full phase
-documentation (endpoints, upload rules, processing states, storage
-layout and limitations).
+Consulte [`docs/document-core.md`](document-core.md) para a documentação
+completa da fase: endpoints, regras de upload, estados de processamento,
+estrutura de armazenamento e limitações.
 
-## Document chunks (`document_chunks`)
+## Segmentos de documentos (`document_chunks`)
 
-Migration `68cb34527411` adds `document_chunks`: the deterministic
-segments of the extracted text of each document version. Chunks are an
-**internal structure** — there is no public chunks endpoint, and
-`normalized_content`, `content_sha256` and the offsets are never exposed
-by the API. They support the current lexical experiments while the final
-information-retrieval strategy remains unsettled; RAG is *not* a settled architectural
-decision. Phase 3 adds only the experimental lexical baseline described
-below; embeddings and vector retrieval remain absent.
+A migração `68cb34527411` adiciona `document_chunks`, os segmentos
+determinísticos do texto extraído de cada versão. Os chunks são uma
+**estrutura interna**: não há endpoint público, e `normalized_content`,
+`content_sha256` e os offsets nunca são expostos pela API. Eles suportam as
+experiências lexicais atuais enquanto a estratégia final de recuperação de
+informação continua indefinida. RAG não é uma decisão arquitetural consolidada;
+a fase 3 adiciona apenas a baseline lexical experimental descrita abaixo, sem
+embeddings nem recuperação vetorial.
 
-Each row has:
+Cada linha possui:
 
-- `id` (UUID, app-generated), `institution_id`, `document_id`,
-  `document_version_id` — with a composite three-column FK
+- `id` (UUID gerado pela aplicação), `institution_id`, `document_id` e
+  `document_version_id`, com uma FK composta de três colunas
   `(document_version_id, document_id, institution_id)` →
-  `document_versions(id, document_id, institution_id)`, backed by a
-  degenerate `UNIQUE (id, document_id, institution_id)` on
-  `document_versions` (id alone is already unique; it exists only to be
-  referenced). PostgreSQL itself therefore rejects a chunk that points
-  at the wrong version, the wrong document or another institution —
-  the service checks are not the only defense;
-- `chunk_index` (0-based, `UNIQUE (document_version_id, chunk_index)`),
-  `content` (the original slice: `content ==
-  extracted_text[start_char:end_char]`), `normalized_content` (see
-  `app/core/text_normalization.py`: NFKD, no diacritics, casefolded,
-  whitespace collapsed — used by lexical search),
-  `content_sha256`, `start_char`/`end_char` (end-exclusive offsets over
-  the original text), `language` (inherited from the document at
-  segmentation time), `created_at`;
-- CHECKs: `chunk_index >= 0`, `start_char >= 0`,
-  `end_char > start_char`, `btrim(content) <> ''`,
-  `btrim(normalized_content) <> ''`;
-- indexes on `institution_id`, `document_id`, `document_version_id` and
-  `(institution_id, language)`; the pair
-  `(document_version_id, chunk_index)` is already indexed by its UNIQUE
-  constraint, so no duplicate index is created. There are deliberately
-  **no** vector/embedding columns; the generated lexical vector below is
-  unrelated to pgvector.
+  `document_versions(id, document_id, institution_id)`, apoiada por um
+  `UNIQUE (id, document_id, institution_id)` degenerado em `document_versions`.
+  O PostgreSQL rejeita um chunk que aponte para uma versão, documento ou
+  instituição incorretos; as verificações do serviço não são a única defesa;
+- `chunk_index` (base zero e `UNIQUE (document_version_id, chunk_index)`),
+  `content` (fatia original em que
+  `content == extracted_text[start_char:end_char]`), `normalized_content`
+  (consulte `app/core/text_normalization.py`: NFKD, sem diacríticos, com
+  casefold e espaços colapsados, usado na pesquisa lexical),
+  `content_sha256`, `start_char`/`end_char` (offset final exclusivo), `language`
+  (herdado do documento no momento da segmentação) e `created_at`;
+- CHECKs: `chunk_index >= 0`, `start_char >= 0`, `end_char > start_char`,
+  `btrim(content) <> ''` e `btrim(normalized_content) <> ''`;
+- índices em `institution_id`, `document_id`, `document_version_id` e
+  `(institution_id, language)`. O par `(document_version_id, chunk_index)` já
+  é indexado pela restrição UNIQUE, portanto não há índice duplicado. Não
+  existem colunas vetoriais ou de embeddings; o vetor lexical gerado abaixo
+  não se relaciona com pgvector.
 
-Chunking is integrated into the synchronous processing flow
-(`document_processing_service.process_version`): extraction → chunking
-(`document_chunking_service.chunk_text`, paragraph-preferring,
-character-window fallback with configurable overlap; see
-`DOCUMENT_CHUNK_SIZE_CHARS` / `DOCUMENT_CHUNK_OVERLAP_CHARS`) →
-atomic replacement of the version's chunk set
-(`document_chunk_service.replace_version_chunks`, no commit of its own)
-→ version marked `processed`, all in one transaction. A version is
-never `processed` without its chunks; a failure in chunking or
-persistence rolls back, leaves no partial chunks and marks the version
-`failed` with a short, safe error message. A `failed` version keeps no
-chunks at all (having chunks is equivalent to being `processed`).
-Reprocessing replaces only that version's chunks (protected by the same
-`SELECT ... FOR UPDATE` lock as before); historical versions keep their
-own chunk sets, and uploading a new version never touches the chunks of
-previous versions.
+A segmentação integra o processamento síncrono
+(`document_processing_service.process_version`): extração → segmentação
+(`document_chunking_service.chunk_text`, com preferência por parágrafos e
+fallback por janela de caracteres com sobreposição configurável; consulte
+`DOCUMENT_CHUNK_SIZE_CHARS` e `DOCUMENT_CHUNK_OVERLAP_CHARS`) → substituição
+atómica do conjunto da versão (`document_chunk_service.replace_version_chunks`,
+sem commit próprio) → versão marcada como `processed`, tudo numa transação.
 
-## Persisted message sources (`message_sources`)
+Uma versão nunca fica `processed` sem os seus chunks. Uma falha na segmentação
+ou persistência reverte a transação, não deixa chunks parciais e marca a versão
+como `failed` com uma mensagem curta e segura. Uma versão `failed` não mantém
+chunks; possuí-los equivale a estar `processed`. O reprocessamento substitui
+apenas os chunks da versão, protegido pelo mesmo `SELECT ... FOR UPDATE`.
+Versões históricas preservam os seus conjuntos, e o upload de uma nova versão
+nunca altera as anteriores.
 
-Migration `c8b4f2d9e6a1` adds one row per source actually cited by an
-assistant message. It stores the evidence ID and citation order plus a
-snapshot of public document metadata and `content_sha256`. `institution_id`
-exists only to enforce tenant integrity; the row never stores `user_id`,
-institution profile data, the question, answer, chunk content, prompt,
-provider response, tokens or credentials.
+## Fontes de mensagens persistidas (`message_sources`)
 
-Integrity is enforced in PostgreSQL, not only in services:
+A migração `c8b4f2d9e6a1` adiciona uma linha por fonte efetivamente citada numa
+mensagem do assistente. Ela guarda o ID da evidência, a ordem da citação, um
+snapshot de metadados públicos do documento e `content_sha256`.
+`institution_id` existe apenas para garantir integridade entre instituições; a
+linha nunca guarda `user_id`, perfil institucional, pergunta, resposta,
+conteúdo do chunk, prompt, resposta do fornecedor, tokens ou credenciais.
 
-- `(message_id, institution_id, message_role)` references
-  `messages(id, institution_id, role)` with `ON DELETE CASCADE`, and a CHECK
-  requires `message_role='assistant'`;
-- `(chunk_id, document_version_id, document_id, institution_id)` references
-  the same four-column identity on `document_chunks`, with no delete cascade;
-- `reply_to_message_id` and both FKs rely on explicit supporting UNIQUE
-  constraints, preserving conversation and tenant consistency;
-- each message has unique `evidence_id`, `citation_index` and `chunk_id`;
-  CHECKs validate citation/chunk indexes, evidence format (`E1`, `E2`, ...),
-  nonblank title/language, checksum length and validity range;
-- lookup indexes cover institution, chunk, document and version. The UNIQUE
-  indexes already cover message/citation access, so no duplicate indexes are
-  created.
+A integridade é aplicada no PostgreSQL, não apenas nos serviços:
 
-Document metadata is copied from locked database rows immediately before the
-turn is inserted. Later edits therefore do not alter historical citations.
-The non-cascading chunk FK prevents deletion or reassociation of a cited
-chunk. The PostgreSQL trigger
-`trg_document_chunks_prevent_referenced_update` additionally rejects every
-`UPDATE` to a cited chunk row. Reprocessing and rebuild check
-`message_sources` while holding the same `DocumentVersion` lock and
-reject/skip cited versions before changing state or content.
+- `(message_id, institution_id, message_role)` referencia
+  `messages(id, institution_id, role)` com `ON DELETE CASCADE`, e um CHECK exige
+  `message_role='assistant'`;
+- `(chunk_id, document_version_id, document_id, institution_id)` referencia a
+  mesma identidade de quatro colunas em `document_chunks`, sem cascata de
+  eliminação;
+- `reply_to_message_id` e ambas as FKs dependem de restrições UNIQUE explícitas,
+  preservando a consistência da conversa e da instituição;
+- cada mensagem possui `evidence_id`, `citation_index` e `chunk_id` únicos;
+  CHECKs validam índices, formato da evidência (`E1`, `E2`...), título e idioma
+  não vazios, tamanho do checksum e intervalo de validade;
+- índices de consulta cobrem instituição, chunk, documento e versão. Os índices
+  UNIQUE já cobrem o acesso por mensagem/citação, evitando duplicados.
 
-### Experimental lexical search vector
+Os metadados do documento são copiados de linhas bloqueadas imediatamente
+antes da inserção do turno. Edições posteriores não alteram citações históricas.
+A FK do chunk sem cascata impede a eliminação ou reassociação de um chunk
+citado. O trigger PostgreSQL
+`trg_document_chunks_prevent_referenced_update` também rejeita qualquer
+`UPDATE` numa linha citada. Reprocessamento e reconstrução consultam
+`message_sources` com o mesmo bloqueio de `DocumentVersion` e rejeitam ou
+ignoram versões citadas antes de alterar estado ou conteúdo.
 
-Migration `b7e2d8a9f4c1` adds `search_vector TSVECTOR` as a generated,
-stored column computed with `to_tsvector('simple', normalized_content)`.
-The application never writes it manually. The explicit `simple`
-configuration avoids choosing Portuguese- or English-specific stemming
-before the baseline is evaluated. A GIN index named
-`ix_document_chunks_search_vector` supports the `@@` match operator.
+### Vetor experimental de pesquisa lexical
 
-`PostgresLexicalRetriever` uses parameterized
-`websearch_to_tsquery('simple', ...)` and `ts_rank_cd`. It selects only the
-highest-numbered `processed` version per document and filters in SQL by
-the authenticated institution, active status, language, current validity
-and `official_only` (true by default). Historical chunks remain stored.
+A migração `b7e2d8a9f4c1` adiciona `search_vector TSVECTOR` como coluna gerada e
+armazenada, calculada por `to_tsvector('simple', normalized_content)`. A
+aplicação nunca a escreve manualmente. A configuração explícita `simple` evita
+escolher stemming específico de português ou inglês antes de avaliar a
+baseline. O índice GIN `ix_document_chunks_search_vector` suporta o operador
+de correspondência `@@`.
 
-#### Progressive lexical search for natural questions
+`PostgresLexicalRetriever` usa `websearch_to_tsquery('simple', ...)`
+parametrizado e `ts_rank_cd`. Seleciona apenas a versão `processed` de maior
+número por documento e filtra em SQL pela instituição autenticada, estado
+ativo, idioma, validade atual e `official_only` (verdadeiro por omissão). Os
+chunks históricos permanecem armazenados.
 
-With `simple` (no stopwords, no stemming) the original baseline required
-*every* word of the question to match, so "Quando começam as aulas?"
-found nothing in a document that only contains "aulas". The retriever
-now plans deterministic query variants (`app/retrieval/query_planning.py`)
-and executes them in strict priority order, returning the first
-non-empty result set:
+#### Pesquisa lexical progressiva para perguntas naturais
 
-1. **exact** — the normalized query as typed (unchanged current behavior);
-2. **reduced_and** — only the informative terms, all required
-   (functional words such as articles, prepositions, interrogatives and
-   common auxiliaries are removed using small, conservative per-language
-   lists for `pt` and `en`);
-3. **reduced_or** — the same informative terms, any one sufficient.
+Com `simple`, sem stopwords nem stemming, a baseline original exigia que
+*todas* as palavras da pergunta correspondessem. Assim, “Quando começam as
+aulas?” não encontrava um documento que contivesse apenas “aulas”. O
+recuperador agora planeia variantes determinísticas
+(`app/retrieval/query_planning.py`) e executa-as por prioridade estrita,
+devolvendo o primeiro conjunto não vazio:
 
-Results and scores of different strategies are never mixed or compared.
-Every variant runs the exact same SQL filters (institution, active,
-language, validity, `official_only`, latest processed version, `top_k`,
-deterministic ordering) — no fallback ever searches more broadly.
-Queries using explicit `websearch` syntax (quoted phrases, `OR`,
-negated `-terms`) run only the exact variant, so an explicit intent such
-as `matricula -propinas` is never relaxed into a search that also
-matches "propinas". A supported language without its own functional-term
-list also runs only the exact variant. A plain query made up only of
-functional terms (e.g. "O que é?") in a language with a known list runs
-**no search at all** and returns zero evidence — any match would be a
-meaningless coincidence of functional words (a document literally
-containing "o que é" must not become evidence); quoted phrases keep
-their exact search even in that case. Everything stays deterministic
-and local: no extra LLM calls, no embeddings, no stemming, no synonyms —
-the approach remains an experimental baseline for future comparison, and
-it does **not** understand questions semantically.
+1. **exact** — consulta normalizada tal como foi escrita, sem alteração;
+2. **reduced_and** — apenas os termos informativos, todos obrigatórios; palavras
+   funcionais como artigos, preposições, interrogativos e auxiliares comuns são
+   removidas por pequenas listas conservadoras para `pt` e `en`;
+3. **reduced_or** — os mesmos termos informativos, sendo qualquer um suficiente.
 
-## Institutional security rules
+Resultados e pontuações de estratégias diferentes nunca são misturados nem
+comparados. Todas as variantes usam exatamente os mesmos filtros SQL:
+instituição, estado ativo, idioma, validade, `official_only`, versão processada
+mais recente, `top_k` e ordenação determinística. Nenhum fallback pesquisa num
+âmbito mais amplo.
 
-These rules were added after a security review found the institutions
-API was fully public and a few multi-institution invariants were
-unenforced. They apply on top of the per-request `institution_id`
-scoping already described above.
+Consultas com sintaxe `websearch` explícita — frases entre aspas, `OR` ou
+`-termos` negados — executam apenas a variante exata. Assim, uma intenção como
+`matricula -propinas` nunca é relaxada para uma pesquisa que também encontre
+“propinas”. Um idioma suportado sem lista própria de termos funcionais também
+executa apenas a variante exata. Uma consulta simples formada somente por
+termos funcionais, como “O que é?”, num idioma com lista conhecida não executa
+**pesquisa alguma** e devolve zero evidências; uma correspondência seria uma
+coincidência sem significado. Frases entre aspas mantêm a pesquisa exata mesmo
+nesse caso. Tudo permanece determinístico e local: sem chamadas adicionais a
+LLM, embeddings, stemming ou sinónimos. A abordagem continua uma baseline
+experimental e **não** compreende semanticamente as perguntas.
 
-- **No `platform_admin` role yet.** Creating an institution
-  (`POST /api/v1/institutions`) and registering its first admin
-  (`POST /api/v1/auth/register-initial-admin`) are bootstrap-only
-  operations, gated by the `BOOTSTRAP_TOKEN` setting sent as the
-  `X-Bootstrap-Token` header — not by a JWT, since no admin exists yet
-  at that point. A missing or wrong token, or an unset `BOOTSTRAP_TOKEN`,
-  fails closed with 401. This is a temporary stand-in until a real
-  platform-level admin role exists; see the
-  [README bootstrap walkthrough](../README.md#bootstrapping-an-institution).
-- **Reading and updating an institution require an authenticated admin,
-  scoped to their own institution.** `GET /api/v1/institutions`,
-  `GET /api/v1/institutions/{id}` and `PATCH /api/v1/institutions/{id}`
-  all require a valid admin JWT. An admin's `institution_id` is never
-  taken from the request payload or path for authorization purposes —
-  only from the authenticated user. Any `id` other than the admin's own
-  institution is reported as 404 (`resource_not_found`), the same as a
-  non-existent institution, so these endpoints never confirm that
-  another tenant exists.
-- **An institution's `is_active` flag is enforced on every authenticated
-  request, not only at login.** `get_current_user` re-checks both the
-  user's and their institution's `is_active` on every call, so
-  deactivating an institution immediately invalidates all outstanding
-  tokens for its users (they get 401 on their next request, including
-  `/auth/me`). Login also fails (401, generic message) if the user's
-  institution is inactive, using the same wording as a wrong password so
-  the response never reveals *why* it failed.
-- **An institution must always keep at least one active admin.** In
-  `PATCH /api/v1/users/{id}`: an admin can never deactivate their own
-  account; and if a user is the institution's last active admin,
-  neither deactivating them (`is_active: false`) nor changing their
-  `role` away from `"admin"` is allowed (409 `resource_conflict`). With
-  two or more active admins, one admin may deactivate or change the role
-  of another.
-- **`register_initial_admin` is race-safe, and refuses inactive
-  institutions.** It takes a `SELECT ... FOR UPDATE` lock on the
-  institution row before checking for an existing admin, so two
-  concurrent registrations for the same institution are serialized —
-  only one can succeed; the other gets 409. It also rejects (409) an
-  attempt to register the first admin of an institution whose
-  `is_active` is `false`: that admin could never log in anyway
-  (`authenticate_user` also checks the institution's `is_active`), so
-  it's better to refuse upfront than create an unusable account.
-- **The last-admin invariant is enforced transactionally.** When
-  `PATCH /api/v1/users/{id}` would deactivate or demote the institution's
-  last active admin, `user_service.update_user` takes a
-  `SELECT ... FOR UPDATE` lock on the institution row before counting
-  active admins, so two concurrent requests targeting admins of the same
-  institution are serialized — the second one re-counts active admins
-  only after the first has committed, so the invariant (at least one
-  active admin) can't be violated by a race.
-- **An institutional admin can't (de)activate their own institution.**
-  `PATCH /api/v1/institutions/{id}` uses the `InstitutionAdminUpdate`
-  schema, which has no `is_active` field and uses `extra="forbid"` —
-  sending `is_active` there is a 422, not a silent no-op. This closes
-  off the obvious way an admin could lock themselves (and everyone else
-  at that institution) out with no recovery path. The only way to
-  (de)activate an institution now is the bootstrap-only
-  `PATCH /api/v1/bootstrap/institutions/{id}/status` endpoint (gated by
-  `X-Bootstrap-Token`, payload limited to `{"is_active": bool}`); see the
-  [README walkthrough](../README.md#reactivating-an-institution).
-- **PostgreSQL enforces cross-institution consistency directly, not just
-  application code.** Migration `3ed4bcad52c8` adds "degenerate" unique
-  constraints on `(id, institution_id)` for `users` and `conversations`
-  (id alone is already unique; these exist only to be referenced) and
-  replaces the plain foreign keys they superseded with composite ones:
+## Regras de segurança institucional
+
+Estas regras foram adicionadas depois de uma revisão de segurança identificar
+que a API de instituições era totalmente pública e algumas invariantes
+multi-institucionais não eram aplicadas. Elas complementam a limitação por
+`institution_id` em cada pedido descrita acima.
+
+- **Ainda não existe o papel `platform_admin`.** Criar uma instituição
+  (`POST /api/v1/institutions`) e registar o primeiro administrador
+  (`POST /api/v1/auth/register-initial-admin`) são operações de inicialização,
+  protegidas por `BOOTSTRAP_TOKEN` no cabeçalho `X-Bootstrap-Token`, não por um
+  JWT, pois nesse momento ainda não existe administrador. Token ausente,
+  incorreto ou não configurado falha de forma segura com 401. É um substituto
+  temporário até existir um papel real de administração da plataforma; consulte
+  o [fluxo de inicialização no README](../README.md#inicialização-de-uma-instituição).
+- **Ler ou atualizar uma instituição exige um administrador autenticado e fica
+  limitado à própria instituição.** `GET /api/v1/institutions`,
+  `GET /api/v1/institutions/{id}` e `PATCH /api/v1/institutions/{id}` exigem um
+  JWT de administrador válido. Para autorização, o `institution_id` nunca vem
+  do payload ou caminho, apenas do utilizador autenticado. Outro `id` é
+  informado como 404 (`resource_not_found`), tal como uma instituição
+  inexistente, sem confirmar a existência de outro locatário.
+- **O campo `is_active` da instituição é verificado em todos os pedidos
+  autenticados, não apenas no login.** `get_current_user` volta a verificar o
+  estado do utilizador e da instituição em cada chamada. Desativar uma
+  instituição invalida imediatamente todos os tokens dos seus utilizadores,
+  que recebem 401 no pedido seguinte, inclusive em `/auth/me`. O login também
+  falha com 401 e mensagem genérica se a instituição estiver inativa, usando o
+  mesmo texto de uma palavra-passe incorreta para não revelar o motivo.
+- **Uma instituição deve manter sempre pelo menos um administrador ativo.** Em
+  `PATCH /api/v1/users/{id}`, um administrador nunca pode desativar a própria
+  conta. Se um utilizador for o último administrador ativo, desativá-lo ou
+  alterar o seu papel é rejeitado com 409 `resource_conflict`. Com dois ou mais
+  administradores ativos, um deles pode desativar ou alterar o papel de outro.
+- **`register_initial_admin` é seguro contra condições de corrida e recusa
+  instituições inativas.** Um bloqueio `SELECT ... FOR UPDATE` na instituição
+  serializa dois registos concorrentes; apenas um tem sucesso e o outro recebe
+  409. O serviço também rejeita com 409 o primeiro administrador de uma
+  instituição inativa, pois essa conta não conseguiria iniciar sessão.
+- **A invariante do último administrador é aplicada transacionalmente.** Quando
+  `PATCH /api/v1/users/{id}` desativaria ou rebaixaria o último administrador,
+  `user_service.update_user` bloqueia a instituição antes de contar os
+  administradores ativos. Pedidos concorrentes ficam serializados e o segundo
+  só volta a contar depois do commit do primeiro.
+- **Um administrador institucional não pode ativar ou desativar a própria
+  instituição.** `PATCH /api/v1/institutions/{id}` usa
+  `InstitutionAdminUpdate`, que não possui `is_active` e define
+  `extra="forbid"`; enviar o campo devolve 422. A única forma de alterar esse
+  estado é `PATCH /api/v1/bootstrap/institutions/{id}/status`, protegido por
+  `X-Bootstrap-Token` e limitado a `{"is_active": bool}`. Consulte o
+  [fluxo no README](../README.md#reativação-de-uma-instituição).
+- **O PostgreSQL aplica diretamente a consistência entre instituições, não
+  apenas o código da aplicação.** A migração `3ed4bcad52c8` adiciona restrições
+  únicas degeneradas em `(id, institution_id)` para `users` e `conversations`
+  e substitui as chaves estrangeiras simples por compostas:
   `conversations.(user_id, institution_id)` → `users.(id, institution_id)`,
   `messages.(conversation_id, institution_id)` →
-  `conversations.(id, institution_id)`, and
-  `messages.(user_id, institution_id)` → `users.(id, institution_id)`
-  (skipped by PostgreSQL when `user_id` is `NULL`, its default `MATCH
-  SIMPLE` behavior). A conversation whose `user_id` belongs to a
-  different institution than its own `institution_id`, or a message
-  whose `conversation_id`/`user_id` belongs to a different institution,
-  is now rejected by the database itself — the previous simple foreign
-  keys only checked that the referenced row existed, not that it
-  belonged to the same institution.
-- **A conversation's `status` gates further activity.** `active` is the
-  only status that accepts new messages or `PATCH` updates; `closed` and
-  `archived` are **final** states in this prototype — both reject new
-  messages and any `PATCH` (including one attempting to move the status
-  back to `active`) with 409. There is no reopen endpoint in this phase.
-- **A conversation's/message's `language` is always institution-aware.**
-  On `POST /api/v1/conversations`, an omitted `language` defaults to
-  `institution.default_language`; a provided one is normalized and must
-  be one of `institution.supported_languages`, or the request gets 422.
-  On `POST .../messages`, an omitted `language` inherits the
-  conversation's `language`; a provided one is validated the same way,
-  against the *same* institution's `supported_languages` (different
-  institutions can support different languages). This resolution lives
-  in `app.core.language.resolve_language`, called from both
-  `conversation_service` and `message_service`, so the rule is
-  implemented once. Updating an institution's `supported_languages` to
-  drop its current `default_language` was already rejected before this
-  pass (`institution_service.update_institution` re-validates the
-  resulting configuration on every `PATCH`); historical conversations
-  are not migrated if an institution's supported languages change later.
+  `conversations.(id, institution_id)` e
+  `messages.(user_id, institution_id)` → `users.(id, institution_id)`. A última
+  é ignorada pelo PostgreSQL quando `user_id` é `NULL`, conforme `MATCH SIMPLE`.
+  A base rejeita diretamente conversas e mensagens cujas referências pertençam
+  a outra instituição.
+- **O `status` de uma conversa controla novas atividades.** Apenas `active`
+  aceita novas mensagens ou atualizações PATCH. `closed` e `archived` são
+  estados **finais** neste protótipo: ambos rejeitam novas mensagens e qualquer
+  PATCH com 409. Não há endpoint de reabertura nesta fase.
+- **O `language` de conversas e mensagens é sempre sensível à instituição.** Em
+  `POST /api/v1/conversations`, a omissão herda
+  `institution.default_language`; um valor fornecido é normalizado e deve
+  pertencer a `institution.supported_languages`, ou o pedido recebe 422. Em
+  `POST .../messages`, a omissão herda o idioma da conversa e um valor
+  fornecido é validado da mesma forma. A regra está centralizada em
+  `app.core.language.resolve_language`, usado por `conversation_service` e
+  `message_service`. Remover o idioma padrão da lista de suportados já era
+  rejeitado por `institution_service.update_institution`; conversas históricas
+  não são migradas quando a lista muda.
 
-## Current status
+## Estado atual
 
-The project now includes an experimental end-to-end lexical grounded-answer
-flow and optional transactional persistence inside conversations. The
-definitive approach remains open: there are no embeddings, semantic/hybrid
-search, reranking, conversational memory, agents or confidence scoring, and
-the system is not hallucination-free. pgvector remains infrastructure-only.
-See [`docs/answering.md`](answering.md) for the provider-neutral pipeline,
-atomic turn semantics, source snapshots and current limitations.
+O projeto inclui um fluxo experimental completo de respostas fundamentadas por
+pesquisa lexical, com persistência transacional opcional nas conversas. A
+abordagem definitiva permanece em aberto: não há embeddings, pesquisa semântica
+ou híbrida, reranking, memória conversacional, agentes nem pontuação de
+confiança, e o sistema não está livre de alucinações. O pgvector permanece
+apenas como infraestrutura. Consulte [`docs/answering.md`](answering.md) para o
+pipeline neutro em relação ao fornecedor, a semântica atómica dos turnos, os
+snapshots das fontes e as limitações atuais.

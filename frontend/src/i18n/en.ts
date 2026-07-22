@@ -1,7 +1,7 @@
 import type { pt } from './pt';
 
-// Typed against the Portuguese source of truth: any missing or extra key is a
-// compile error.
+// Tipado contra a fonte de verdade portuguesa: qualquer chave ausente ou extra
+// causa um erro de compilação.
 export const en: Record<keyof typeof pt, string> = {
   'app.tagline': 'Institutional assistant',
   'lang.pt': 'Portuguese',

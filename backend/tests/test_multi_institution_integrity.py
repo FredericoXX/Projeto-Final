@@ -65,9 +65,9 @@ def test_conversation_rejects_user_from_another_institution(db_session: Session)
     db_session.add(user_b)
     db_session.flush()
 
-    # user_b belongs to institution_b, but the conversation claims
-    # institution_a: the composite FK on (user_id, institution_id) must
-    # reject this, even though user_b.id alone is a valid user.
+    # user_b pertence a institution_b, mas a conversa declara institution_a: a
+    # FK composta em (user_id, institution_id) deve rejeitar isto, embora
+    # user_b.id isoladamente seja um utilizador válido.
     conversation = Conversation(
         institution_id=institution_a.id,
         user_id=user_b.id,
@@ -94,9 +94,8 @@ def test_message_rejects_conversation_from_another_institution(db_session: Sessi
     db_session.add(conversation_a)
     db_session.flush()
 
-    # conversation_a belongs to institution_a; the message falsely claims
-    # institution_b. The composite FK on (conversation_id, institution_id)
-    # must reject this.
+    # conversation_a pertence a institution_a; a mensagem declara falsamente
+    # institution_b. A FK composta em (conversation_id, institution_id) deve rejeitar.
     message = Message(
         conversation_id=conversation_a.id,
         institution_id=institution_b.id,
@@ -125,9 +124,8 @@ def test_message_rejects_user_from_another_institution(db_session: Session) -> N
     db_session.add(conversation_a)
     db_session.flush()
 
-    # The conversation and institution_id are consistent (institution_a),
-    # but user_b belongs to institution_b: the composite FK on
-    # (user_id, institution_id) must reject this.
+    # A conversa e institution_id são consistentes (institution_a), mas user_b
+    # pertence a institution_b: a FK composta em (user_id, institution_id) deve rejeitar.
     message = Message(
         conversation_id=conversation_a.id,
         institution_id=institution_a.id,

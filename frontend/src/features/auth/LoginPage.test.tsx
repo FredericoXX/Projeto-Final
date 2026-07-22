@@ -16,7 +16,7 @@ describe('LoginPage', () => {
     await user.type(screen.getByLabelText('Password'), VALID_PASSWORD);
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
 
-    // Lands on the conversations list (default fixture title).
+    // Abre a lista de conversas (título padrão da fixture).
     expect(await screen.findByText('Academic matters')).toBeInTheDocument();
     expect(tokenStorage.get()).toBe('test-token');
   });
@@ -43,7 +43,7 @@ describe('LoginPage', () => {
     await user.click(screen.getByRole('button', { name: 'Sign in' }));
 
     await screen.findByText('Academic matters');
-    // The login form (and its password input) is unmounted after navigation.
+    // O formulário de login e o campo de palavra-passe são desmontados após navegar.
     expect(screen.queryByLabelText('Password')).not.toBeInTheDocument();
     expect(document.body.innerHTML).not.toContain(VALID_PASSWORD);
   });

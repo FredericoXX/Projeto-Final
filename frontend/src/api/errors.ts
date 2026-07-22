@@ -1,8 +1,8 @@
 import type { ValidationIssue } from '../types/api';
 import type { TranslationKey } from '../i18n';
 
-// A typed error the whole app throws and renders. It never carries raw
-// response bodies, tokens or headers — only a safe status/code/message.
+// Erro tipado lançado e apresentado em toda a aplicação. Nunca transporta
+// corpos brutos, tokens ou cabeçalhos, apenas estado/código/mensagem seguros.
 export class ApiError extends Error {
   readonly status: number;
   readonly code: string;
@@ -36,9 +36,8 @@ function isValidationDetail(detail: unknown): detail is ValidationIssue[] {
   return Array.isArray(detail);
 }
 
-// Interprets the two documented backend error shapes plus anything else
-// (HTML error pages, non-JSON, network) as a safe ApiError. Never surfaces the
-// raw payload to the caller.
+// Interpreta os dois formatos de erro documentados e qualquer outro conteúdo
+// (HTML, não JSON ou rede) como ApiError seguro. Nunca expõe o payload bruto.
 export async function parseApiError(response: Response): Promise<ApiError> {
   let detail: unknown;
   try {
@@ -47,7 +46,7 @@ export async function parseApiError(response: Response): Promise<ApiError> {
       detail = (data as { detail: unknown }).detail;
     }
   } catch {
-    // Non-JSON body (e.g. an HTML error page): keep detail undefined.
+    // Corpo não JSON (por exemplo, página HTML): manter detail indefinido.
   }
 
   if (isDomainError(detail)) {
@@ -64,9 +63,9 @@ export async function parseApiError(response: Response): Promise<ApiError> {
   return new ApiError(response.status, 'unknown_error', 'unknown_error');
 }
 
-// Maps an error to a stable, localized translation key. The backend message
-// is intentionally not shown verbatim for most cases so the UI stays
-// consistent and never leaks internal detail.
+// Mapeia um erro para uma chave de tradução localizada e estável. A mensagem do
+// backend não é exibida literalmente na maioria dos casos, mantendo a interface
+// consistente e sem expor detalhes internos.
 export function errorTranslationKey(error: unknown): TranslationKey {
   if (!(error instanceof ApiError)) {
     return 'error.network';

@@ -16,16 +16,16 @@ class Settings(BaseSettings):
     jwt_algorithm: str = "HS256"
     access_token_expire_minutes: int = 60
 
-    # Bootstrap-only secret that gates institution creation,
-    # register-initial-admin and PATCH
-    # /api/v1/bootstrap/institutions/{id}/status until a real platform_admin
-    # role exists. None (the default) disables these operations rather than
-    # leaving them open, so an unset token fails closed in any environment.
+    # Segredo exclusivo de inicialização que protege a criação de instituições,
+    # register-initial-admin e PATCH
+    # /api/v1/bootstrap/institutions/{id}/status até existir um papel
+    # platform_admin real. None (o padrão) desativa as operações em vez de as
+    # deixar abertas; um token ausente falha de forma segura em qualquer ambiente.
     bootstrap_token: str | None = None
 
-    # Root of the local document storage. A relative value is resolved
-    # against the repository root, keeping the default inside the
-    # gitignored storage/ directory.
+    # Raiz do armazenamento local. Um valor relativo é resolvido a partir da
+    # raiz do repositório, mantendo o padrão dentro da diretoria storage/,
+    # ignorada pelo Git.
     document_storage_path: str = "storage/documents"
     document_max_file_size_mb: int = 20
 
@@ -154,7 +154,7 @@ class Settings(BaseSettings):
         return f"{base}/{db_name}_test"
 
 
-# pydantic-settings fills required fields (database_url, jwt_secret_key)
-# from the environment/.env at runtime; mypy only sees BaseSettings'
-# generated __init__ and can't verify that, so it flags them as missing.
+# pydantic-settings preenche os campos obrigatórios (database_url, jwt_secret_key)
+# a partir do ambiente/.env em runtime; o mypy vê apenas o __init__ gerado por
+# BaseSettings e não consegue verificar isso, marcando-os como ausentes.
 settings = Settings()  # type: ignore[call-arg]

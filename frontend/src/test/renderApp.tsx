@@ -18,8 +18,8 @@ function Providers({ children }: { children: ReactNode }) {
   );
 }
 
-// Renders the full application (all routes) starting at `initialPath`. Used for
-// route-guard and end-to-end-style flows against MSW.
+// Renderiza a aplicação completa (todas as rotas) a partir de `initialPath`.
+// Usado em proteções de rota e fluxos completos simulados com MSW.
 export function renderApp(initialPath = '/') {
   const router = createMemoryRouter(routes, { initialEntries: [initialPath] });
   return render(
@@ -29,7 +29,7 @@ export function renderApp(initialPath = '/') {
   );
 }
 
-// Renders an isolated element with all app providers and a memory router.
+// Renderiza um elemento isolado com todos os provedores e um roteador em memória.
 export function renderWithProviders(ui: ReactElement, initialPath = '/') {
   return render(
     <Providers>

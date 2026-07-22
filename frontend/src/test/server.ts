@@ -1,5 +1,5 @@
 import { setupServer } from 'msw/node';
 import { handlers } from './handlers';
 
-// A single MSW server for the whole suite. No test ever hits the real network.
+// Um único servidor MSW para toda a suite. Nenhum teste acede à rede real.
 export const server = setupServer(...handlers);

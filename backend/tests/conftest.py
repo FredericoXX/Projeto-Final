@@ -26,8 +26,8 @@ from app.database.base import Base
 from app.database.session import get_db
 from app.main import app
 
-# Import every model module so its table is registered on Base.metadata
-# before create_all runs.
+# Importar todos os módulos de modelos para registar as tabelas em Base.metadata
+# antes da execução de create_all.
 from app.models import conversation as _conversation  # noqa: F401
 from app.models import document as _document  # noqa: F401
 from app.models import document_chunk as _document_chunk  # noqa: F401
@@ -65,8 +65,8 @@ def test_engine() -> Iterator[Engine]:
 
     engine = create_engine(test_url, pool_pre_ping=True)
 
-    # Required before create_all: model columns backed by pgvector's
-    # VECTOR type would otherwise fail to create on a fresh test database.
+    # Necessário antes de create_all: colunas baseadas no tipo VECTOR do pgvector
+    # falhariam ao ser criadas numa base de testes nova.
     with engine.begin() as conn:
         conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
 

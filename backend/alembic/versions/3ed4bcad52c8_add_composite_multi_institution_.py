@@ -9,7 +9,7 @@ from typing import Sequence, Union
 
 from alembic import op
 
-# revision identifiers, used by Alembic.
+# Identificadores da revisão, usados pelo Alembic.
 revision: str = '3ed4bcad52c8'
 down_revision: Union[str, Sequence[str], None] = '9ec09d09f22f'
 branch_labels: Union[str, Sequence[str], None] = None
@@ -34,7 +34,7 @@ def upgrade() -> None:
         "uq_conversations_id_institution_id", "conversations", ["id", "institution_id"]
     )
 
-    # conversations.user_id must belong to conversations.institution_id.
+    # conversations.user_id deve pertencer a conversations.institution_id.
     op.drop_constraint("fk_conversations_user_id_users", "conversations", type_="foreignkey")
     op.create_foreign_key(
         "fk_conversations_user_id_institution_id_users",
@@ -44,7 +44,7 @@ def upgrade() -> None:
         ["id", "institution_id"],
     )
 
-    # messages.conversation_id must belong to messages.institution_id.
+    # messages.conversation_id deve pertencer a messages.institution_id.
     op.drop_constraint(
         "fk_messages_conversation_id_conversations", "messages", type_="foreignkey"
     )
@@ -56,10 +56,10 @@ def upgrade() -> None:
         ["id", "institution_id"],
     )
 
-    # messages.user_id, when not null, must belong to messages.institution_id.
-    # PostgreSQL's default MATCH SIMPLE means this constraint is skipped
-    # entirely when user_id is NULL, so it stays compatible with future
-    # "assistant" messages created without an authenticated user.
+    # messages.user_id, quando não nulo, deve pertencer a messages.institution_id.
+    # O MATCH SIMPLE padrão do PostgreSQL ignora esta restrição quando user_id é
+    # NULL, mantendo compatibilidade com mensagens "assistant" futuras criadas
+    # sem um utilizador autenticado.
     op.drop_constraint("fk_messages_user_id_users", "messages", type_="foreignkey")
     op.create_foreign_key(
         "fk_messages_user_id_institution_id_users",

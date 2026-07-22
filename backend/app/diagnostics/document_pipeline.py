@@ -1877,8 +1877,8 @@ def render_json(report: DiagnosticReport) -> str:
 
 
 def _md_escape(value: str) -> str:
-    # Keep all user/document supplied values on one Markdown line and prevent
-    # them from becoming headings, HTML or table/code delimiters.
+    # Manter os valores fornecidos pelo utilizador/documento numa única linha
+    # Markdown e impedir que se tornem títulos, HTML ou delimitadores de tabela/código.
     sanitized = sanitize_excerpt(value)
     return (
         sanitized.replace("\\", "\\\\")

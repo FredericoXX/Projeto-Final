@@ -4,8 +4,8 @@ import { useAuth } from './useAuth';
 import { FullPageLoader } from '../components/feedback/FullPageLoader';
 import { AccessDeniedPage } from '../features/common/AccessDeniedPage';
 
-// Admin-only gate. The backend still authorizes every admin request; this only
-// avoids offering admin UI to non-admins (defense in depth, not the boundary).
+// Proteção exclusiva para administradores. O backend continua a autorizar cada
+// pedido; isto só evita oferecer a interface administrativa a não administradores.
 export function AdminRoute({ children }: { children: ReactNode }) {
   const { status, isAdmin } = useAuth();
 

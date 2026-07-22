@@ -101,8 +101,8 @@ def list_institutions_for_admin(
     limit: int = 20,
     offset: int = 0,
 ) -> tuple[list[Institution], int]:
-    # Scoped to the admin's own institution only: there is no
-    # platform_admin role yet able to browse across tenants.
+    # Limitado apenas à instituição do administrador: ainda não existe um papel
+    # platform_admin capaz de listar várias instituições.
     query = select(Institution).where(Institution.id == admin.institution_id)
     count_query = (
         select(func.count())
@@ -126,8 +126,8 @@ def update_institution(
 
     changes = data.model_dump(exclude_unset=True)
 
-    # Partial payloads can't be validated at the schema level, since the
-    # resulting state depends on fields not present in this request.
+    # Payloads parciais não podem ser validados no schema, pois o estado
+    # resultante depende de campos ausentes deste pedido.
     resulting_default = changes.get("default_language", institution.default_language)
     resulting_supported = changes.get("supported_languages", institution.supported_languages)
     validate_language_configuration(resulting_default, resulting_supported)

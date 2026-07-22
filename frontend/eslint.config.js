@@ -37,7 +37,7 @@ export default tseslint.config(
       globals: { ...globals.browser, ...globals.node },
     },
     rules: {
-      // Test helpers are never fast-refreshed; mixing helper exports is fine.
+      // Auxiliares de teste não usam fast refresh; misturar exports é aceitável.
       'react-refresh/only-export-components': 'off',
     },
   },

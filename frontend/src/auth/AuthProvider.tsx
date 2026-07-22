@@ -18,13 +18,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     queryClient.clear();
   }, [queryClient]);
 
-  // A 401 anywhere in the app clears the session exactly once, centrally.
+  // Um 401 em qualquer ponto limpa a sessão uma única vez e de forma centralizada.
   useEffect(() => {
     setUnauthorizedHandler(clearSession);
     return () => setUnauthorizedHandler(null);
   }, [clearSession]);
 
-  // Restore the session on load / refresh: /auth/me is the source of truth.
+  // Restaura a sessão ao carregar/atualizar: /auth/me é a fonte de verdade.
   useEffect(() => {
     const controller = new AbortController();
     const token = tokenStorage.get();
@@ -57,8 +57,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         setUser(restored);
         setStatus('authenticated');
       } catch (error) {
-        // A login is complete only after /auth/me validates the token and
-        // supplies the authoritative role. Never retain a half-created session.
+        // O login só termina depois de /auth/me validar o token e fornecer o
+        // papel autoritativo. Nunca manter uma sessão criada parcialmente.
         clearSession();
         throw error;
       }

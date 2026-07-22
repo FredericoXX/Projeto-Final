@@ -23,8 +23,9 @@ export function MessageItem({ message }: { message: MessageRead }) {
   return (
     <article className={`message message--${roleClass}`}>
       <span className="message-role">{roleLabel}</span>
-      {/* Rendered as plain text: React escapes it and CSS preserves newlines.
-          Message content is untrusted and never interpreted as HTML. */}
+      {/* Apresentado como texto simples: o React escapa-o e o CSS preserva as
+          quebras de linha. O conteúdo da mensagem não é fiável e nunca é
+          interpretado como HTML. */}
       <div className="message-body">{message.content}</div>
 
       {grounded && <span className="message-note">✓ {t('message.grounded')}</span>}

@@ -4,8 +4,8 @@ import { cleanup } from '@testing-library/react';
 import { server } from './server';
 import { tokenStorage } from '../api/token';
 
-// Unhandled requests are an error: every test must mock exactly what it needs,
-// and nothing ever escapes to the real network.
+// Pedidos não tratados são erros: cada teste deve simular exatamente o que
+// precisa, e nada pode alcançar a rede real.
 beforeAll(() => server.listen({ onUnhandledRequest: 'error' }));
 
 afterEach(() => {

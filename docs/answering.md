@@ -201,7 +201,7 @@ não é tratado como probabilidade nem como medida universal de confiança.
 
 Ver `.env.example`:
 
-- `ANSWER_GENERATOR_PROVIDER` (default `openai`);
+- `ANSWER_GENERATOR_PROVIDER` (padrão: `openai`);
 - `ANSWERING_DEFAULT_TOP_K` / `ANSWERING_MAX_TOP_K`;
 - `ANSWERING_MAX_CONTEXT_CHARS` / `ANSWERING_MAX_ANSWER_CHARS`;
 - `OPENAI_API_KEY`, `OPENAI_MODEL`, `OPENAI_TIMEOUT_SECONDS`.

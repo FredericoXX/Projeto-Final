@@ -59,7 +59,7 @@ export function ConfirmDialog({
       if (event.key !== 'Tab') {
         return;
       }
-      // Focus trap: Tab e Shift+Tab ciclam dentro do diálogo.
+      // Retenção de foco: Tab e Shift+Tab ciclam dentro do diálogo.
       const container = dialogRef.current;
       if (!container) {
         return;

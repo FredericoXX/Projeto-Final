@@ -9,8 +9,8 @@ export function login(payload: LoginRequest, signal?: AbortSignal): Promise<Toke
   });
 }
 
-// GET /auth/me is the single source of truth for the current user; the JWT is
-// never decoded on the client to make authorization decisions.
+// GET /auth/me é a única fonte de verdade para o utilizador atual; o JWT nunca
+// é decodificado no cliente para tomar decisões de autorização.
 export function fetchCurrentUser(signal?: AbortSignal): Promise<UserRead> {
   return apiRequest<UserRead>('/auth/me', { signal });
 }

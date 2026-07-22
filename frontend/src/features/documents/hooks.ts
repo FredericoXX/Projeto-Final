@@ -89,7 +89,7 @@ export function useUploadVersion(documentId: UUID) {
   return useMutation<DocumentVersionRead, unknown, File>({
     mutationFn: (file) => uploadDocumentVersion(documentId, file),
     onSuccess: () => {
-      // Processing is synchronous today: refresh the version list afterwards.
+      // O processamento atual é síncrono: atualizar depois a lista de versões.
       void queryClient.invalidateQueries({ queryKey: documentKeys.versions(documentId) });
     },
   });
