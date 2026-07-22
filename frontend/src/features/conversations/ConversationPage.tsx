@@ -72,8 +72,8 @@ export function ConversationPage() {
       await ask.mutateAsync({ query, official_only: officialOnly });
       return true;
     } catch (error) {
-      // 502/503 (and any error) never inject a local message — the backend
-      // does not persist partial turns. Keep the typed text for retry.
+      // 502/503 (e qualquer erro) nunca insere uma mensagem local: o backend não
+      // persiste turnos parciais. Manter o texto digitado para nova tentativa.
       setAskError(t(errorTranslationKey(error)));
       return false;
     }

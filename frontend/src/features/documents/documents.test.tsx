@@ -69,7 +69,7 @@ describe('documents admin area', () => {
     await user.type(screen.getByLabelText('Title'), 'New Regulation');
     await user.click(screen.getByRole('button', { name: 'Save' }));
 
-    // Navigates to the document detail (upload section visible), one request.
+    // Navega para o detalhe do documento (secção de upload visível), num pedido.
     expect(await screen.findByRole('heading', { name: 'Upload version' })).toBeInTheDocument();
     expect(createCalls).toBe(1);
   });

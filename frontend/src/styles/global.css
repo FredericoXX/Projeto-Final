@@ -80,7 +80,7 @@ a {
   top: var(--space-2);
 }
 
-/* Buttons */
+/* Botões */
 .btn {
   display: inline-flex;
   align-items: center;
@@ -127,7 +127,7 @@ a {
   width: 100%;
 }
 
-/* Form controls */
+/* Controlos de formulário */
 .field {
   display: flex;
   flex-direction: column;
@@ -165,7 +165,7 @@ a {
   font-size: var(--font-size-sm);
 }
 
-/* Cards & surfaces */
+/* Cartões e superfícies */
 .card {
   background: var(--color-surface);
   border: var(--border-width) solid var(--color-border);
@@ -180,7 +180,7 @@ a {
   gap: var(--space-4);
 }
 
-/* Feedback states */
+/* Estados de feedback */
 .inline-error {
   color: var(--color-danger);
   font-size: var(--font-size-sm);
@@ -194,7 +194,7 @@ a {
   color: var(--color-danger);
 }
 
-/* Status badges */
+/* Indicadores de estado */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -233,7 +233,7 @@ a {
   font-size: var(--font-size-sm);
 }
 
-/* Danger actions and confirmation dialog */
+/* Ações perigosas e diálogo de confirmação */
 .btn-danger {
   background: var(--color-danger);
   color: var(--color-text-inverse);
@@ -266,8 +266,8 @@ a {
   flex-wrap: wrap;
 }
 
-/* Fieldset used to disable a whole form during a pending mutation without
-   affecting the grid layout. */
+/* Fieldset usado para desativar todo o formulário durante uma mutação pendente sem
+   afetar o layout da grelha. */
 .form-fieldset {
   border: 0;
   margin: 0;

@@ -33,8 +33,8 @@ export function LoginPage() {
       await login(email.trim(), password);
       navigate(target, { replace: true });
     } catch (caught) {
-      // Login failures are intentionally generic; only unexpected transport
-      // errors show the network message.
+      // Falhas de login são intencionalmente genéricas; apenas erros inesperados
+      // de transporte apresentam a mensagem de rede.
       if (caught instanceof ApiError && caught.status !== 0) {
         setError(t('auth.invalidCredentials'));
       } else {

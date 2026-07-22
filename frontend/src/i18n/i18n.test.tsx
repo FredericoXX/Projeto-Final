@@ -20,7 +20,7 @@ describe('interface language switching', () => {
     const user = userEvent.setup();
     renderApp('/login');
 
-    // Defaults to English in the jsdom environment (navigator language).
+    // Usa inglês por omissão no ambiente jsdom (idioma do navegador).
     expect(await screen.findByRole('button', { name: 'Sign in' })).toBeInTheDocument();
     await waitFor(() => expect(document.documentElement.lang).toBe('en'));
 

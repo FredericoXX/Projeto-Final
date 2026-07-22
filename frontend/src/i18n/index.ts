@@ -15,8 +15,8 @@ function isUiLanguage(value: string | null | undefined): value is UiLanguage {
   return value === 'pt' || value === 'en';
 }
 
-// Resolution order: language stored in session, then the browser language,
-// then the Portuguese fallback.
+// Ordem de resolução: idioma guardado na sessão, idioma do navegador e, por
+// fim, fallback em português.
 export function detectInitialLanguage(): UiLanguage {
   try {
     const stored = window.sessionStorage.getItem(LANGUAGE_STORAGE_KEY);
@@ -24,7 +24,7 @@ export function detectInitialLanguage(): UiLanguage {
       return stored;
     }
   } catch {
-    // sessionStorage may be unavailable; fall through to browser/fallback.
+    // sessionStorage pode estar indisponível; usar o navegador/fallback.
   }
   const browser = navigator.language?.slice(0, 2).toLowerCase();
   if (isUiLanguage(browser)) {
@@ -37,7 +37,7 @@ export function persistLanguage(language: UiLanguage): void {
   try {
     window.sessionStorage.setItem(LANGUAGE_STORAGE_KEY, language);
   } catch {
-    // Best-effort persistence only.
+    // Persistência apenas por melhor esforço.
   }
 }
 

@@ -3,8 +3,8 @@ import { tokenStorage } from './token';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? '/api/v1';
 
-// The AuthProvider registers a handler so a 401 anywhere clears the session
-// once, centrally, instead of every caller handling it.
+// AuthProvider regista um handler para que um 401 limpe a sessão uma única vez,
+// de forma centralizada, em vez de cada chamador tratar o erro.
 type UnauthorizedHandler = () => void;
 let unauthorizedHandler: UnauthorizedHandler | null = null;
 
@@ -14,8 +14,8 @@ export function setUnauthorizedHandler(handler: UnauthorizedHandler | null): voi
 
 export interface RequestOptions {
   method?: 'GET' | 'POST' | 'PATCH' | 'PUT' | 'DELETE';
-  // JSON body (serialized automatically) or FormData (sent as-is so the
-  // browser sets the multipart boundary).
+  // Corpo JSON (serializado automaticamente) ou FormData (enviado sem alteração
+  // para o navegador definir o delimitador multipart).
   body?: unknown;
   signal?: AbortSignal;
   headers?: Record<string, string>;
@@ -30,7 +30,7 @@ function buildHeaders(options: RequestOptions): { headers: Headers; body: BodyIn
 
   let body: BodyInit | undefined;
   if (options.body instanceof FormData) {
-    // Never set Content-Type for FormData: the browser adds the boundary.
+    // Nunca definir Content-Type para FormData: o navegador adiciona o delimitador.
     body = options.body;
   } else if (options.body !== undefined) {
     headers.set('Content-Type', 'application/json');
@@ -60,7 +60,7 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     if (error instanceof DOMException && error.name === 'AbortError') {
       throw error;
     }
-    // Network failure: never expose the underlying error object.
+    // Falha de rede: nunca expor o objeto de erro subjacente.
     throw new ApiError(0, 'network_error', 'network_error');
   }
 
@@ -81,8 +81,8 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
   return JSON.parse(text) as T;
 }
 
-// Authenticated binary download (e.g. document file). Returns a Blob so the
-// caller can create a temporary object URL without an unprotected link.
+// Download binário autenticado (por exemplo, um documento). Devolve um Blob
+// para criar um URL de objeto temporário sem um link desprotegido.
 export async function apiRequestBlob(path: string, options: RequestOptions = {}): Promise<Blob> {
   const { headers, body } = buildHeaders(options);
 

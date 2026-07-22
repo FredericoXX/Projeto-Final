@@ -1,5 +1,5 @@
-// The access token lives in sessionStorage only (cleared when the tab
-// closes). It is never written to localStorage, URLs, query strings or logs.
+// O token de acesso reside apenas em sessionStorage (limpo ao fechar o
+// separador). Nunca é escrito em localStorage, URLs, consultas ou logs.
 const TOKEN_KEY = 'institutional_assistant_access_token';
 
 export const tokenStorage = {
@@ -14,14 +14,14 @@ export const tokenStorage = {
     try {
       window.sessionStorage.setItem(TOKEN_KEY, token);
     } catch {
-      // Ignore storage failures; the session simply won't persist.
+      // Ignorar falhas de armazenamento; a sessão simplesmente não persiste.
     }
   },
   clear(): void {
     try {
       window.sessionStorage.removeItem(TOKEN_KEY);
     } catch {
-      // Ignore.
+      // Ignorar.
     }
   },
 };

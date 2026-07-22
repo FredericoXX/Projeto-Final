@@ -365,8 +365,8 @@ def test_concurrent_admin_deactivation_keeps_at_least_one_active_admin(
         finally:
             session.close()
 
-    # Thread 1: A deactivates B. Thread 2: B deactivates A. Neither is a
-    # self-deactivation attempt.
+    # Thread 1: A desativa B. Thread 2: B desativa A. Nenhuma é uma
+    # tentativa de autodesativação.
     t1 = threading.Thread(target=deactivate, args=(admin_a_id, admin_b_id))
     t2 = threading.Thread(target=deactivate, args=(admin_b_id, admin_a_id))
     t1.start()

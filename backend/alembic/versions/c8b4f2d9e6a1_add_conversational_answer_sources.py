@@ -146,8 +146,8 @@ def upgrade() -> None:
             name="ck_message_sources_validity_range",
         ),
     )
-    # message_id and (message_id, citation_index) are already covered by the
-    # three UNIQUE indexes above; only non-duplicating lookup indexes follow.
+    # message_id e (message_id, citation_index) já são cobertos pelos três índices
+    # UNIQUE acima; seguem apenas índices de consulta não duplicados.
     op.create_index(
         "ix_message_sources_institution_id", "message_sources", ["institution_id"]
     )

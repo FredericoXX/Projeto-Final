@@ -2,8 +2,8 @@ import { Navigate } from 'react-router-dom';
 import { useAuth } from '../auth/useAuth';
 import { FullPageLoader } from '../components/feedback/FullPageLoader';
 
-// Sends the user to conversations or login depending on the resolved session,
-// showing a loader while the session is still initializing.
+// Envia o utilizador para as conversas ou o login conforme a sessão resolvida,
+// apresentando um indicador enquanto a sessão ainda está a iniciar.
 export function RootRedirect() {
   const { status } = useAuth();
   if (status === 'initializing') {

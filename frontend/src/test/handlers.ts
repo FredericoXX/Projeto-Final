@@ -9,7 +9,7 @@ import type { ConversationAskResponse, MessageRead } from '../types/conversation
 
 export const API = 'http://localhost/api/v1';
 
-// Valid demo credentials used by the default login handler.
+// Credenciais válidas de demonstração usadas pelo handler de login padrão.
 export const VALID_EMAIL = 'admin@example.edu';
 export const VALID_PASSWORD = 'password123';
 
@@ -33,7 +33,7 @@ function userMessage(content: string): MessageRead {
   };
 }
 
-// Happy-path defaults; individual tests override with server.use(...).
+// Padrões do fluxo de sucesso; testes individuais substituem com server.use(...).
 export const handlers = [
   http.post(`${API}/auth/login`, async ({ request }) => {
     const body = (await request.json()) as { email: string; password: string };

@@ -6,8 +6,8 @@ const MAX_QUERY_LENGTH = 1000;
 interface ComposerProps {
   disabled: boolean;
   pending: boolean;
-  // Resolves true when the turn was persisted (clear the text) or false when it
-  // failed (keep the text so the user can retry).
+  // Resolve true quando o turno foi persistido (limpar o texto) ou false quando
+  // falhou (manter o texto para o utilizador tentar novamente).
   onSubmit: (query: string, officialOnly: boolean) => Promise<boolean>;
 }
 
@@ -18,7 +18,7 @@ export function Composer({ disabled, pending, onSubmit }: ComposerProps) {
 
   async function submit() {
     const trimmed = value.trim();
-    // Block empty and concurrent submissions at the UX level (not idempotency).
+    // Bloquear envios vazios e concorrentes na experiência de uso (não idempotência).
     if (!trimmed || pending || disabled) {
       return;
     }

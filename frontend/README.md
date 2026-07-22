@@ -1,59 +1,62 @@
-# Institutional Assistant — Frontend
+# Assistente Institucional — Frontend
 
-Minimal, responsive web interface for the Institutional Assistant prototype. It
-demonstrates the full flow without Swagger or manual requests: sign in, hold a
-grounded conversation with sources, and (as an admin) manage documents and
-their versions.
+Interface web mínima e responsiva para o protótipo do Assistente Institucional.
+Ela demonstra o fluxo completo sem Swagger nem pedidos manuais: iniciar sessão,
+manter uma conversa fundamentada com fontes e, como administrador, gerir
+documentos e as respetivas versões.
 
-The UI is **institution-neutral** — the app name comes from `VITE_APP_NAME`,
-never hard-coded — and multilingual (PT/EN), independent of the language of the
-conversation itself.
+A interface é **neutra em relação à instituição**: o nome da aplicação vem de
+`VITE_APP_NAME` e nunca fica fixo no código. Também é multilíngue (PT/EN),
+independentemente do idioma da própria conversa.
 
-## Technologies
+## Tecnologias
 
-React 18 + TypeScript (strict), Vite, React Router, TanStack Query, Vitest +
-React Testing Library + MSW, ESLint. No UI framework and no state library
-beyond TanStack Query; the HTTP layer is native `fetch`.
+React 18 + TypeScript (strict), Vite, React Router, TanStack Query, Vitest,
+React Testing Library, MSW e ESLint. Não há framework de interface nem
+biblioteca de estado além do TanStack Query; a camada HTTP usa `fetch` nativo.
 
-## Structure
+## Estrutura
 
 ```
 src/
-  api/         typed HTTP client, error parsing, token storage, endpoint modules
-  app/         App, router, query client
-  auth/        AuthProvider, ProtectedRoute, AdminRoute
-  components/  layout, feedback and common presentational components
-  features/    auth, conversations and documents pages + query hooks
-  i18n/        PT/EN dictionaries, provider and hook
-  lib/         date / size / URL helpers
-  styles/      CSS variables and global/layout styles
-  test/        Vitest setup, MSW server/handlers, fixtures, render helpers
-  types/       API DTOs mirroring the backend contracts
+  api/         cliente HTTP tipado, tratamento de erros, armazenamento do token e módulos de endpoints
+  app/         aplicação, roteador e cliente de consultas
+  auth/        provedor de autenticação e proteções de rotas
+  components/  layout, feedback e componentes visuais comuns
+  features/    páginas de autenticação, conversas e documentos, com hooks de consulta
+  i18n/        dicionários PT/EN, provedor e hook
+  lib/         utilitários de data, tamanho e URL
+  styles/      variáveis CSS e estilos globais/de layout
+  test/        configuração do Vitest, servidor/handlers MSW, fixtures e auxiliares de renderização
+  types/       DTOs da API que refletem os contratos do backend
 ```
 
-## Configuration
+## Configuração
 
-Copy the example env file and adjust if needed:
+Copie o arquivo de ambiente de exemplo e ajuste-o, se necessário:
 
 ```bash
 cd frontend
 cp .env.example .env
 ```
 
-- `VITE_APP_NAME` — visible application name.
-- `VITE_API_BASE_URL` — API base path (default `/api/v1`, kept same-origin).
-- `DEV_PROXY_TARGET` — where the dev server proxies `/api/*` (default
-  `http://127.0.0.1:8000`).
+- `VITE_APP_NAME` — nome visível da aplicação.
+- `VITE_API_BASE_URL` — caminho-base da API (por omissão, `/api/v1`, mantido
+  na mesma origem).
+- `DEV_PROXY_TARGET` — destino para o qual o servidor de desenvolvimento
+  encaminha `/api/*` (por omissão, `http://127.0.0.1:8000`).
 
-The dev server proxies `/api` to the backend, so the browser makes same-origin
-requests and the backend needs **no permissive CORS**. In production, serve the
-built assets and the API on the same origin or behind a reverse proxy.
+O servidor de desenvolvimento encaminha `/api` para o backend. Assim, o
+navegador faz pedidos de mesma origem e o backend **não precisa de CORS
+permissivo**. Em produção, disponibilize os arquivos compilados e a API na
+mesma origem ou por trás de um proxy reverso.
 
-Never commit real secrets, tokens or passwords; `.env` is gitignored.
+Nunca faça commit de segredos, tokens ou palavras-passe reais; `.env` está
+ignorado pelo Git.
 
-## Running
+## Execução
 
-Backend (in another terminal):
+Backend (noutro terminal):
 
 ```bash
 cd backend
@@ -74,50 +77,56 @@ npm run dev
 
 ## Scripts
 
-- `npm run dev` — start the dev server.
-- `npm run build` — type-check and build for production.
-- `npm run preview` — preview the production build.
-- `npm run lint` — ESLint.
-- `npm run typecheck` — TypeScript, no emit.
-- `npm run test` / `npm run test:run` — Vitest (watch / once).
+- `npm run dev` — inicia o servidor de desenvolvimento.
+- `npm run build` — verifica os tipos e compila para produção.
+- `npm run preview` — pré-visualiza a compilação de produção.
+- `npm run lint` — executa o ESLint.
+- `npm run typecheck` — verifica o TypeScript sem emitir arquivos.
+- `npm run test` / `npm run test:run` — executa o Vitest em modo contínuo ou
+  uma única vez, respetivamente.
 
-## Authentication & routes
+## Autenticação e rotas
 
-The access token is stored in `sessionStorage` only and sent as a bearer
-header; `GET /auth/me` is the single source of truth for the current user (the
-JWT is never decoded client-side). A 401 anywhere clears the session centrally.
-The frontend is **not** a security boundary — the backend authorizes every
-request.
+O token de acesso é guardado apenas em `sessionStorage` e enviado no cabeçalho
+Bearer. `GET /auth/me` é a única fonte de verdade para o utilizador atual; o
+JWT nunca é decodificado no cliente. Uma resposta 401 em qualquer ponto limpa
+a sessão de forma centralizada. O frontend **não** é uma fronteira de
+segurança: o backend autoriza todos os pedidos.
 
-Routes: `/login`, `/app/conversations`, `/app/conversations/:id`,
-`/admin/documents`, `/admin/documents/:id`. Protected routes render nothing
-until the session resolves; `/admin/*` additionally requires an admin.
+Rotas: `/login`, `/app/conversations`, `/app/conversations/:id`,
+`/admin/documents` e `/admin/documents/:id`. As rotas protegidas não renderizam
+conteúdo até a sessão ser resolvida; `/admin/*` exige adicionalmente um
+administrador.
 
-## Conversations
+## Conversas
 
-Questions go only through `POST /conversations/{id}/ask` (never the manual
-message endpoint). The persisted turn returned by the backend is the source of
-truth — both messages are appended, de-duplicated by id, with no optimistic
-insert. Answers render as plain text (never HTML); `insufficient_evidence` is a
-normal state, not an error; 502/503 never add a local message and keep the
-typed text for retry. `/ask` mutations are never auto-retried.
+As perguntas passam apenas por `POST /conversations/{id}/ask`, nunca pelo
+endpoint de criação manual de mensagens. O turno persistido devolvido pelo
+backend é a fonte de verdade: ambas as mensagens são acrescentadas e
+desduplicadas por ID, sem inserção otimista. As respostas são apresentadas
+como texto simples, nunca como HTML. `insufficient_evidence` é um estado normal,
+não um erro; respostas 502/503 não acrescentam uma mensagem local e preservam
+o texto digitado para nova tentativa. As mutações de `/ask` nunca são repetidas
+automaticamente.
 
-## Admin documents
+## Administração de documentos
 
-Admins can list/filter documents, create a document, upload a version
-(multipart `FormData`, boundary set by the browser), reprocess failed versions
-(a 409 for referenced versions shows a safe message) and download the original
-file via an authenticated request converted to a temporary object URL.
+Administradores podem listar e filtrar documentos, criar um documento, enviar
+uma versão (`FormData` multipart, com o delimitador definido pelo navegador),
+reprocessar versões com falha — um 409 para versões referenciadas apresenta uma
+mensagem segura — e descarregar o arquivo original por um pedido autenticado
+convertido num URL de objeto temporário.
 
-## Testing
+## Testes
 
-All tests run against MSW — no real network, no backend, no API key. Untrusted
-content (message bodies, titles, source URLs) is covered by dedicated safety
-tests: it is always rendered as text, and only `http`/`https` source URLs
-become links.
+Todos os testes usam MSW: não há rede real, backend nem chave de API. Conteúdo
+não confiável — corpos de mensagens, títulos e URLs de fontes — possui testes
+de segurança dedicados: é sempre renderizado como texto, e apenas URLs de fonte
+`http`/`https` se tornam links.
 
-## Limitations (this phase)
+## Limitações desta fase
 
-No streaming, WebSocket/SSE, message editing/deletion, feedback, search,
-conversational memory, rich Markdown/HTML, dark mode, PWA or production
-container. The generation remains experimental and is not hallucination-free.
+Não há streaming, WebSocket/SSE, edição ou eliminação de mensagens, feedback,
+pesquisa, memória conversacional, Markdown/HTML rico, modo escuro, PWA nem
+contentor de produção. A geração continua experimental e não está livre de
+alucinações.

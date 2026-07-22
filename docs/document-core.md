@@ -10,7 +10,7 @@ administrativa dos metadados e do texto extraído.
 
 A etapa seguinte desta fase acrescentou a segmentação do texto extraído
 em *chunks* internos (tabela `document_chunks`, sem endpoint público) —
-ver a secção "Document chunks" em [`docs/database.md`](database.md).
+ver a secção "Segmentos de documentos" em [`docs/database.md`](database.md).
 
 **Fora do âmbito desta fase** (deliberadamente não implementado):
 embeddings, pgvector no domínio documental, pesquisa semântica ou híbrida,
@@ -360,11 +360,11 @@ Argumentos obrigatórios:
 
 Argumentos opcionais:
 
-- `--format markdown|json` (default `markdown`);
-- `--reference-date YYYY-MM-DD` (default: data UTC atual);
-- `--top-k INTEGER` entre 1 e 20 (default 5);
-- `--official-only` (default) ou `--include-non-official`;
-- `--max-excerpt-chars INTEGER` entre 80 e 1000 (default 240);
+- `--format markdown|json` (padrão: `markdown`);
+- `--reference-date YYYY-MM-DD` (padrão: data UTC atual);
+- `--top-k INTEGER` entre 1 e 20 (padrão: 5);
+- `--official-only` (padrão) ou `--include-non-official`;
+- `--max-excerpt-chars INTEGER` entre 80 e 1000 (padrão: 240);
 - `--overwrite`, necessário para substituir conscientemente um relatório.
 
 A seleção por `document-id` usa a versão de maior número, qualquer que seja o

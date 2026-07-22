@@ -121,8 +121,8 @@ export function useAsk(conversationId: UUID) {
   return useMutation<ConversationAskResponse, unknown, AnsweringRequest>({
     mutationFn: (payload) => askInConversation(conversationId, payload),
     onSuccess: (response) => {
-      // The persisted turn is the source of truth: append both returned
-      // messages, de-duplicating by id, instead of an optimistic insert.
+      // O turno persistido é a fonte de verdade: acrescentar ambas as mensagens
+      // devolvidas, desduplicadas por ID, em vez de fazer uma inserção otimista.
       queryClient.setQueryData<MessagePages>(
         conversationKeys.messages(conversationId),
         (current) => {

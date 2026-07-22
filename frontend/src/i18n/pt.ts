@@ -1,6 +1,6 @@
-// Portuguese is the source of truth for translation keys: the English
-// dictionary is type-checked against `typeof pt`, so a missing key fails the
-// build rather than silently falling back at runtime.
+// O português é a fonte de verdade das chaves de tradução: o dicionário inglês
+// é verificado contra `typeof pt`, portanto uma chave ausente falha a compilação
+// em vez de usar silenciosamente um fallback em runtime.
 export const pt = {
   'app.tagline': 'Assistente institucional',
   'lang.pt': 'Português',

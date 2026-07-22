@@ -91,9 +91,8 @@ def test_alembic_upgrade_head_creates_expected_schema(
     migrations_database_url: str,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    # alembic/env.py always points itself at `settings.database_url`, so
-    # this is how the migration run is redirected to the disposable
-    # database instead of the development one.
+    # alembic/env.py aponta sempre para `settings.database_url`; assim a migração
+    # é redirecionada para a base descartável em vez da base de desenvolvimento.
     monkeypatch.setattr(settings, "database_url", migrations_database_url)
 
     alembic_cfg = Config(str(BACKEND_DIR / "alembic.ini"))
@@ -144,7 +143,7 @@ def test_alembic_upgrade_head_creates_expected_schema(
         )
         # user_id's foreign key is composite (migration 3ed4bcad52c8):
         # (user_id, institution_id) -> users(id, institution_id), so a
-        # conversation can never reference a user from another institution.
+        # Uma conversa nunca pode referenciar um utilizador de outra instituição.
         assert any(
             fk["referred_table"] == "users"
             and set(fk["constrained_columns"]) == {"user_id", "institution_id"}
@@ -166,9 +165,9 @@ def test_alembic_upgrade_head_creates_expected_schema(
         message_columns = {column["name"] for column in inspector.get_columns("messages")}
         assert EXPECTED_MESSAGE_COLUMNS <= message_columns
 
-        # conversation_id's and user_id's foreign keys are composite
-        # (migration 3ed4bcad52c8): a message can never reference a
-        # conversation or a user from another institution.
+        # As FKs de conversation_id e user_id são compostas (migração
+        # 3ed4bcad52c8): uma mensagem nunca pode referenciar uma conversa ou um
+        # utilizador de outra instituição.
         message_fks = inspector.get_foreign_keys("messages")
         assert any(
             fk["referred_table"] == "conversations"

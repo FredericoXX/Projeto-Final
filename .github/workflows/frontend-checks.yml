@@ -28,14 +28,14 @@ jobs:
           node-version: '22'
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      # Uses the committed lockfile; no network beyond the registry install.
+      # Usa o lockfile versionado; sem rede além da instalação pelo registry.
       - name: Install dependencies
         run: npm ci
       - name: Lint
         run: npm run lint
       - name: Type check
         run: npm run typecheck
-      # Tests run entirely against MSW — no backend and no API key required.
+      # Os testes usam apenas MSW; não exigem backend nem chave de API.
       - name: Test
         run: npm run test:run
       - name: Build

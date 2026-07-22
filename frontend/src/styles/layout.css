@@ -97,7 +97,7 @@
   display: none;
 }
 
-/* List rows */
+/* Linhas de listas */
 .list {
   display: flex;
   flex-direction: column;
@@ -156,7 +156,7 @@
   margin-top: var(--space-4);
 }
 
-/* Conversation view */
+/* Vista da conversa */
 .conversation-view {
   display: flex;
   flex-direction: column;
@@ -274,7 +274,7 @@
   color: var(--color-text-muted);
 }
 
-/* Simple responsive table for versions */
+/* Tabela responsiva simples para versões */
 .table-wrap {
   overflow-x: auto;
 }

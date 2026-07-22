@@ -10,9 +10,9 @@ export interface LoginRequest {
   password: string;
 }
 
-// Roles supported by the backend in this phase. The frontend never uses the
-// role as a security boundary — it only tailors what UI is offered; the
-// backend authorizes every request.
+// Papéis suportados pelo backend nesta fase. O frontend nunca usa o papel como
+// fronteira de segurança; apenas adapta a interface oferecida. O backend
+// autoriza todos os pedidos.
 export type UserRole = 'admin' | 'staff' | 'student' | 'user';
 
 export interface UserRead {

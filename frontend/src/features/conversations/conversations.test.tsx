@@ -87,7 +87,7 @@ describe('asking a question', () => {
     expect(
       await screen.findByText('The enrollment period runs in September.'),
     ).toBeInTheDocument();
-    // Text cleared after a successful turn.
+    // Texto limpo após um turno bem-sucedido.
     expect(screen.getByLabelText('Your question')).toHaveValue('');
   });
 
@@ -138,11 +138,11 @@ describe('asking a question', () => {
     await user.click(screen.getByRole('button', { name: 'Send' }));
 
     expect(await screen.findByText('Not enough information.')).toBeInTheDocument();
-    // The note has a leading icon, so match on a substring.
+    // A nota começa com um ícone, portanto comparar uma substring.
     expect(
       screen.getByText(/Not enough institutional information was found/),
     ).toBeInTheDocument();
-    // insufficient_evidence is not an error: no alert is shown.
+    // insufficient_evidence não é um erro: nenhum alerta é apresentado.
     expect(screen.queryByRole('alert')).not.toBeInTheDocument();
   });
 
@@ -161,9 +161,9 @@ describe('asking a question', () => {
     await user.click(screen.getByRole('button', { name: 'Send' }));
 
     expect(await screen.findByRole('alert')).toHaveTextContent('Answer generation failed.');
-    // No message bubble was inserted (the empty state remains).
+    // Nenhum balão de mensagem foi inserido (o estado vazio permanece).
     expect(document.querySelectorAll('article.message')).toHaveLength(0);
-    // The text is preserved in the composer for retry.
+    // O texto é preservado no compositor para nova tentativa.
     expect(input).toHaveValue('a question that fails');
   });
 
@@ -288,7 +288,7 @@ describe('asking a question', () => {
 
     const input = await screen.findByLabelText('Your question');
     await user.type(input, 'once{Enter}');
-    // While pending the input is disabled, so a second Enter cannot submit.
+    // Enquanto pendente, o campo fica desativado e outro Enter não envia.
     await user.type(input, '{Enter}');
 
     await waitFor(() => expect(screen.getByText('Answer.')).toBeInTheDocument());
@@ -342,7 +342,7 @@ describe('message rendering safety', () => {
     );
     renderApp(CONVERSATION_PATH);
 
-    // The exact string appears as text; no <script>/<img> element was created.
+    // A string exata aparece como texto; nenhum elemento <script>/<img> foi criado.
     expect(await screen.findByText(malicious)).toBeInTheDocument();
     const scope = within(document.body);
     expect(scope.queryByRole('img')).not.toBeInTheDocument();

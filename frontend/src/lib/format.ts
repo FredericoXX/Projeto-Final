@@ -47,8 +47,8 @@ export function formatFileSize(bytes: number | null | undefined, language: UiLan
   return `${formatted} ${units[unitIndex]}`;
 }
 
-// Only http/https URLs become clickable links; anything else (javascript:,
-// data:, relative, malformed) returns null and is never rendered as a link.
+// Apenas URLs http/https se tornam links; qualquer outro formato (javascript:,
+// data:, relativo ou inválido) devolve null e nunca é renderizado como link.
 export function safeHttpUrl(value: string | null | undefined): string | null {
   if (!value) return null;
   try {

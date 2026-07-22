@@ -70,7 +70,7 @@ describe('apiRequest', () => {
     const form = new FormData();
     form.append('file', new File(['data'], 'a.txt', { type: 'text/plain' }));
     await apiRequest('/upload', { method: 'POST', body: form });
-    // The browser/undici sets multipart with a boundary; we never set it.
+    // O navegador/undici define multipart com delimitador; nunca o definimos.
     expect(contentType).toContain('multipart/form-data');
     expect(contentType).toContain('boundary=');
   });
