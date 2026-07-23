@@ -123,6 +123,10 @@ def _chunk(
     index: int = 0,
     start: int = 0,
     end: int | None = None,
+    page_number: int | None = None,
+    section_title: str | None = None,
+    structure_type: str | None = None,
+    chunking_strategy: str | None = None,
 ) -> DocumentChunk:
     return DocumentChunk(
         id=uuid4(),
@@ -135,6 +139,10 @@ def _chunk(
         content_sha256="b" * 64,
         start_char=start,
         end_char=len(content) if end is None else end,
+        page_number=page_number,
+        section_title=section_title,
+        structure_type=structure_type,
+        chunking_strategy=chunking_strategy,
         language="pt",
     )
 
@@ -949,6 +957,120 @@ def test_46_gap_between_chunks_is_detected() -> None:
     ]
     result = diagnostic.analyze_chunk_integrity(chunks, "abc---ghi")
     assert result.gap_count == 1
+
+
+def test_page_separator_is_a_valid_structural_gap() -> None:
+    document = _document()
+    version = _version(document)
+    chunks = [
+        _chunk(
+            document,
+            version,
+            "abc",
+            index=0,
+            start=0,
+            end=3,
+            page_number=1,
+            structure_type="paragraph",
+            chunking_strategy="structured_v1",
+        ),
+        _chunk(
+            document,
+            version,
+            "def",
+            index=1,
+            start=4,
+            end=7,
+            page_number=2,
+            structure_type="paragraph",
+            chunking_strategy="structured_v1",
+        ),
+    ]
+    result = diagnostic.analyze_chunk_integrity(chunks, "abc\fdef")
+    assert result.gap_count == 0
+    assert result.cross_page_chunk_count == 0
+    assert result.chunks_by_page == ((1, 1), (2, 1))
+
+
+def test_cross_page_chunk_and_structural_counts_are_reported() -> None:
+    document = _document()
+    version = _version(document)
+    text_value = "Evento | Data\fOutro"
+    chunk = _chunk(
+        document,
+        version,
+        text_value,
+        end=len(text_value),
+        page_number=1,
+        structure_type="fallback_fragment",
+        chunking_strategy="character_fallback_v1",
+    )
+    result = diagnostic.analyze_chunk_integrity([chunk], text_value)
+    assert result.cross_page_chunk_count == 1
+    assert result.fallback_fragment_count == 1
+    assert any("PAGE_SEPARATOR" in issue.issue for issue in result.issues)
+
+
+def test_split_table_row_is_reported() -> None:
+    document = _document()
+    version = _version(document)
+    text_value = "Evento sintético | Período sintético"
+    split = text_value.index("|")
+    chunks = [
+        _chunk(
+            document,
+            version,
+            text_value[: split + 1],
+            index=0,
+            start=0,
+            end=split + 1,
+            page_number=1,
+            structure_type="fallback_fragment",
+            chunking_strategy="character_fallback_v1",
+        ),
+        _chunk(
+            document,
+            version,
+            text_value[split - 2 :],
+            index=1,
+            start=split - 2,
+            end=len(text_value),
+            page_number=1,
+            structure_type="fallback_fragment",
+            chunking_strategy="character_fallback_v1",
+        ),
+    ]
+    result = diagnostic.analyze_chunk_integrity(chunks, text_value)
+    assert result.split_table_row_count == 1
+
+
+def test_expected_facts_in_same_table_row_are_reported() -> None:
+    question = _question()
+    document = _document()
+    text_value = "Evento sintético | 10 de março de 2031"
+    version = _version(document, extracted_text=text_value)
+    chunk = _chunk(
+        document,
+        version,
+        text_value,
+        page_number=1,
+        section_title="AGENDA SINTÉTICA",
+        structure_type="table_row",
+        chunking_strategy="structured_v1",
+    )
+    index = diagnostic.build_normalized_index(text_value)
+    extraction = tuple(
+        diagnostic.find_fact_in_text(index, text_value, fact, 240)
+        for fact in question.expected_facts
+    )
+    result = diagnostic.analyze_question_chunks(
+        question, [chunk], extraction, 240
+    )
+    assert result.all_facts_in_same_chunk is True
+    assert result.expected_facts_in_same_table_row is True
+    assert result.relevant_chunks[0].page_number == 1
+    assert result.relevant_chunks[0].section_title == "AGENDA SINTÉTICA"
+    assert result.relevant_chunks[0].structure_type == "table_row"
 
 
 def _retrieval_inputs() -> tuple[Any, ...]:

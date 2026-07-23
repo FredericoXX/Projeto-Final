@@ -697,15 +697,13 @@ def test_lines_keep_vertical_order() -> None:
     assert reconstruct_lines(words) == "primeira\nsegunda\nterceira"
 
 
-def test_conflicting_vertical_coordinates_follow_logical_order() -> None:
-    """A ordem vertical é a ordem lógica do Tesseract (block/paragraph/
-    line), não o `top` bruto: com coordenadas conflitantes (ex.: colunas
-    ou rotações ligeiras), prevalece a ordem de leitura do motor."""
+def test_conflicting_tesseract_order_follows_visual_coordinates() -> None:
+    """A reconstrução visual usa ``top``, não a ordem de blocos do motor."""
     words = (
         _word("logicamente-primeira", 0, block=1, line=1, top=500),
         _word("logicamente-segunda", 0, block=2, line=1, top=10),
     )
-    assert reconstruct_lines(words) == "logicamente-primeira\nlogicamente-segunda"
+    assert reconstruct_lines(words) == "logicamente-segunda\nlogicamente-primeira"
 
 
 def test_mean_confidence_ignores_invalid_tokens() -> None:

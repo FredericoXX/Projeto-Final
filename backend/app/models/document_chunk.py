@@ -17,7 +17,11 @@ from sqlalchemy import (
 from sqlalchemy.dialects.postgresql import TSVECTOR
 from sqlalchemy.orm import Mapped, mapped_column
 
+from app.core.document_structure import CHUNKING_STRATEGIES, STRUCTURE_TYPES
 from app.database.base import Base
+
+_STRUCTURE_TYPES_SQL = ", ".join(f"'{value}'" for value in STRUCTURE_TYPES)
+_CHUNKING_STRATEGIES_SQL = ", ".join(f"'{value}'" for value in CHUNKING_STRATEGIES)
 
 
 class DocumentChunk(Base):
@@ -81,6 +85,19 @@ class DocumentChunk(Base):
         CheckConstraint(
             "btrim(normalized_content) <> ''",
             name="ck_document_chunks_normalized_content_not_blank",
+        ),
+        CheckConstraint(
+            "page_number IS NULL OR page_number > 0",
+            name="ck_document_chunks_page_number_positive",
+        ),
+        CheckConstraint(
+            f"structure_type IS NULL OR structure_type IN ({_STRUCTURE_TYPES_SQL})",
+            name="ck_document_chunks_structure_type_allowed",
+        ),
+        CheckConstraint(
+            "chunking_strategy IS NULL OR "
+            f"chunking_strategy IN ({_CHUNKING_STRATEGIES_SQL})",
+            name="ck_document_chunks_chunking_strategy_allowed",
         ),
         # Consultas de retrieval por instituição e idioma.
         Index(
@@ -152,6 +169,16 @@ class DocumentChunk(Base):
     start_char: Mapped[int] = mapped_column(Integer, nullable=False)
 
     end_char: Mapped[int] = mapped_column(Integer, nullable=False)
+
+    # Metadados estruturais anuláveis: chunks históricos anteriores à
+    # segmentação structured_v1 permanecem NULL, sem backfill.
+    page_number: Mapped[int | None] = mapped_column(Integer, nullable=True)
+
+    section_title: Mapped[str | None] = mapped_column(Text, nullable=True)
+
+    structure_type: Mapped[str | None] = mapped_column(String(32), nullable=True)
+
+    chunking_strategy: Mapped[str | None] = mapped_column(String(32), nullable=True)
 
     # Idioma herdado do documento no momento da segmentação.
     language: Mapped[str] = mapped_column(String(8), nullable=False)

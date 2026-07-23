@@ -990,3 +990,71 @@ def test_extraction_metadata_migration_upgrade_downgrade_upgrade(
 
     script = ScriptDirectory.from_config(alembic_cfg)
     assert current_revision == script.get_current_head()
+
+
+def test_structured_chunk_metadata_migration_upgrade_downgrade_upgrade(
+    migrations_database_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Metadados estruturais são anuláveis, reversíveis e sem backfill."""
+
+    monkeypatch.setattr(settings, "database_url", migrations_database_url)
+    alembic_cfg = Config(str(BACKEND_DIR / "alembic.ini"))
+    new_columns = {
+        "page_number",
+        "section_title",
+        "structure_type",
+        "chunking_strategy",
+    }
+    new_checks = {
+        "ck_document_chunks_page_number_positive",
+        "ck_document_chunks_structure_type_allowed",
+        "ck_document_chunks_chunking_strategy_allowed",
+    }
+
+    command.upgrade(alembic_cfg, "4a7c1e9d2b63")
+    engine = create_engine(migrations_database_url)
+    try:
+        inspector = inspect(engine)
+        columns = {
+            column["name"]: column
+            for column in inspector.get_columns("document_chunks")
+        }
+        assert new_columns <= set(columns)
+        assert all(columns[name]["nullable"] for name in new_columns)
+        checks = {
+            check["name"]
+            for check in inspector.get_check_constraints("document_chunks")
+        }
+        assert new_checks <= checks
+    finally:
+        engine.dispose()
+
+    command.downgrade(alembic_cfg, "-1")
+    engine = create_engine(migrations_database_url)
+    try:
+        columns_after = {
+            column["name"]
+            for column in inspect(engine).get_columns("document_chunks")
+        }
+        assert not (new_columns & columns_after)
+    finally:
+        engine.dispose()
+
+    command.upgrade(alembic_cfg, "head")
+    engine = create_engine(migrations_database_url)
+    try:
+        inspector = inspect(engine)
+        columns_final = {
+            column["name"] for column in inspector.get_columns("document_chunks")
+        }
+        assert new_columns <= columns_final
+        with engine.connect() as conn:
+            current_revision = conn.execute(
+                text("SELECT version_num FROM alembic_version")
+            ).scalar()
+    finally:
+        engine.dispose()
+
+    script = ScriptDirectory.from_config(alembic_cfg)
+    assert current_revision == script.get_current_head()

@@ -220,9 +220,12 @@ deteção abrange imagens diretas, imagens em Form XObjects, imagens inline e
 desenhos vetoriais. Uma pré-visualização independente a 72 DPI, com limite de
 pixels, distingue páginas visuais de páginas aproximadamente vazias quando o
 texto nativo é insuficiente ou a inspeção estrutural é inconclusiva. A ordem
-das páginas e o separador `\f` são preservados, e a reconstrução de linhas do
-OCR mantém tabelas simples de duas colunas — por exemplo, evento | data — numa
-única linha.
+das páginas e o separador `\f` são preservados. A reconstrução de linhas do
+OCR usa a geometria das palavras (sobreposição vertical, centros, alturas e
+posição horizontal), em vez da ordem de blocos do Tesseract. Gaps horizontais
+adaptativos preservam colunas observáveis com `" | "` e uma heurística
+conservadora pode associar a continuação visual de uma célula multilinha. Não
+há correção ortográfica, validação de datas ou interpretação semântica.
 
 Os metadados de extração (`extraction_method` com native/ocr/mixed,
 `extraction_quality` com high/medium/low, `extraction_warning` e
@@ -234,13 +237,22 @@ reprocessados posteriormente. A configuração de idiomas, DPI, timeout e
 limites de páginas/pixels está em `.env.example`; os detalhes encontram-se em
 [`docs/document-core.md`](docs/document-core.md).
 
-Após uma extração bem-sucedida, o texto de cada versão também é dividido em
-segmentos internos e determinísticos (tabela `document_chunks`), armazenados
-com offsets de caracteres, uma cópia normalizada para pesquisa lexical e um
-SHA-256 por segmento. O tamanho e a sobreposição são configurados por
-`DOCUMENT_CHUNK_SIZE_CHARS` e `DOCUMENT_CHUNK_OVERLAP_CHARS`. Uma versão só é
-marcada como `processed` depois de os segmentos serem persistidos, e o
-reprocessamento substitui atomicamente o conjunto da versão.
+Após uma extração bem-sucedida, o texto de cada versão é dividido em segmentos
+internos e determinísticos (tabela `document_chunks`). `PAGE_SEPARATOR = "\f"`
+é uma fronteira obrigatória: nenhum chunk atravessa páginas e os offsets
+continuam globais sobre `extracted_text`. Títulos, parágrafos, linhas de tabela
+e listas são unidades estruturais; uma `table_row` que caiba no limite permanece
+inteira e separada das outras linhas. Apenas uma unidade individual demasiado
+grande usa o fallback por caracteres, com overlap restrito a essa unidade.
+
+Além dos offsets, normalização e SHA-256, chunks novos guardam `page_number`,
+`section_title`, `structure_type` e `chunking_strategy` (`structured_v1` ou
+`character_fallback_v1`). As colunas são anuláveis e não houve backfill:
+chunks históricos continuam válidos com `NULL`. Uma versão só é marcada como
+`processed` depois da substituição atómica dos chunks. A segmentação recebe
+apenas texto/estruturas internas e não depende da rota, `UploadFile`, filename,
+URL, instituição ou armazenamento local, mantendo compatibilidade com uma
+futura fonte documental por API.
 
 Os segmentos são uma estrutura interna sem endpoint público e preparam o
 sistema para experiências de recuperação. Depois de um segmento ser citado
@@ -270,7 +282,10 @@ O endpoint de recuperação devolve apenas evidências. O texto processado
 existente pode ser reconstruído de forma idempotente com
 `python -m scripts.rebuild_document_chunks`, opcionalmente filtrado por
 `--institution-id` ou `--document-id`; versões citadas são ignoradas e
-informadas separadamente.
+informadas separadamente. O resumo inclui versões processadas/estruturadas,
+chunks gerados, `table_row`, fragments de fallback, versões citadas ignoradas e
+falhas. O rebuild usa somente `extracted_text` persistido: não reabre PDFs, não
+executa OCR e não usa rede.
 
 O passo 2 da fase 3 adiciona respostas fundamentadas experimentais em
 `POST /api/v1/answering/ask` — consulte

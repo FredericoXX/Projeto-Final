@@ -7,6 +7,18 @@ texto extraído, chunks e resultados do retrieval existente — numa
 transação PostgreSQL read-only e produz um relatório técnico. Não corrige
 nada, não chama o answering pipeline nem a OpenAI.
 
+O formato de relatório v2 inclui os metadados estruturais persistidos
+(`page_number`, `section_title`, `structure_type` e `chunking_strategy`),
+contagens de chunks por página/tipo, `table_row`, fragments de fallback,
+chunks que atravessam páginas e linhas de tabela divididas. Para cada pergunta,
+continua a indicar factos no mesmo chunk/contexto fragmentado e acrescenta se
+todos os factos esperados aparecem na mesma `table_row`.
+
+`PAGE_SEPARATOR = "\f"` é tratado como fronteira válida, não como conteúdo
+perdido entre chunks. O diagnóstico apenas observa o texto e os metadados já
+guardados: não reabre PDF, não executa OCR/rebuild, não interpreta a tabela e
+não altera retrieval, ranking, answering ou a base.
+
 ## Estrutura
 
 - `examples/` — ficheiros de perguntas **sanitizados** e versionáveis

@@ -26,6 +26,7 @@ import json
 import logging
 import re
 import unicodedata
+from collections import Counter
 from dataclasses import dataclass, fields, is_dataclass
 from datetime import UTC, date, datetime
 from enum import StrEnum
@@ -48,7 +49,7 @@ from app.services.document_extraction_service import PAGE_SEPARATOR
 
 logger = logging.getLogger(__name__)
 
-DIAGNOSTIC_REPORT_VERSION = 1
+DIAGNOSTIC_REPORT_VERSION = 2
 
 # Limites deliberados: o relatório é evidência, não um dump do documento.
 MAX_OCCURRENCES_PER_FACT = 8
@@ -753,6 +754,12 @@ class ChunkIntegritySummary:
     out_of_order_indexes: bool
     gap_count: int
     overlap_count: int
+    chunks_by_page: tuple[tuple[int | None, int], ...] = ()
+    chunks_by_type: tuple[tuple[str | None, int], ...] = ()
+    table_row_count: int = 0
+    fallback_fragment_count: int = 0
+    cross_page_chunk_count: int = 0
+    split_table_row_count: int = 0
 
     @property
     def compromised_chunk_ids(self) -> frozenset[UUID]:
@@ -766,6 +773,7 @@ def analyze_chunk_integrity(
     text_length = len(extracted_text)
     seen_indexes: set[int] = set()
     duplicates: list[int] = []
+    cross_page_chunk_count = 0
     for chunk in chunks:
         if chunk.chunk_index in seen_indexes:
             duplicates.append(chunk.chunk_index)
@@ -799,6 +807,30 @@ def analyze_chunk_integrity(
             )
         if not chunk.content.strip():
             issues.append(ChunkIntegrityIssue(chunk.id, chunk.chunk_index, "content is blank"))
+        if (
+            0 <= chunk.start_char < chunk.end_char <= text_length
+            and PAGE_SEPARATOR in extracted_text[chunk.start_char : chunk.end_char]
+        ):
+            cross_page_chunk_count += 1
+            issues.append(
+                ChunkIntegrityIssue(
+                    chunk.id,
+                    chunk.chunk_index,
+                    "chunk crosses a PAGE_SEPARATOR boundary",
+                )
+            )
+        if (
+            chunk.page_number is not None
+            and 0 <= chunk.start_char < text_length
+            and _page_number(extracted_text, chunk.start_char) != chunk.page_number
+        ):
+            issues.append(
+                ChunkIntegrityIssue(
+                    chunk.id,
+                    chunk.chunk_index,
+                    "page_number differs from the global start_char page",
+                )
+            )
     ordered_indexes = [chunk.chunk_index for chunk in chunks]
     out_of_order = ordered_indexes != sorted(ordered_indexes)
     by_offset = sorted(chunks, key=lambda chunk: (chunk.start_char, chunk.end_char))
@@ -806,9 +838,28 @@ def analyze_chunk_integrity(
     overlap_count = 0
     for previous, current in zip(by_offset, by_offset[1:], strict=False):
         if current.start_char > previous.end_char:
-            gap_count += 1
+            gap_text = extracted_text[previous.end_char : current.start_char]
+            if any(
+                not character.isspace()
+                for character in gap_text.replace(PAGE_SEPARATOR, "")
+            ):
+                gap_count += 1
         elif current.start_char < previous.end_char:
             overlap_count += 1
+    table_row_spans = [
+        (match.start(), match.end())
+        for match in re.finditer(r"[^\r\n\f]* \| [^\r\n\f]*", extracted_text)
+    ]
+    split_table_row_count = sum(
+        sum(
+            chunk.start_char < row_end and chunk.end_char > row_start
+            for chunk in chunks
+        )
+        > 1
+        for row_start, row_end in table_row_spans
+    )
+    pages = Counter(chunk.page_number for chunk in chunks)
+    types = Counter(chunk.structure_type for chunk in chunks)
     sizes = [len(chunk.content) for chunk in chunks]
     return ChunkIntegritySummary(
         total_chunks=len(chunks),
@@ -820,6 +871,16 @@ def analyze_chunk_integrity(
         out_of_order_indexes=out_of_order,
         gap_count=gap_count,
         overlap_count=overlap_count,
+        chunks_by_page=tuple(
+            sorted(pages.items(), key=lambda item: (item[0] is None, item[0] or 0))
+        ),
+        chunks_by_type=tuple(
+            sorted(types.items(), key=lambda item: (item[0] is None, item[0] or ""))
+        ),
+        table_row_count=types.get("table_row", 0),
+        fallback_fragment_count=types.get("fallback_fragment", 0),
+        cross_page_chunk_count=cross_page_chunk_count,
+        split_table_row_count=split_table_row_count,
     )
 
 
@@ -839,6 +900,10 @@ class ChunkFactView:
     content_length: int
     excerpt: str
     facts_found: tuple[str, ...]
+    page_number: int | None = None
+    section_title: str | None = None
+    structure_type: str | None = None
+    chunking_strategy: str | None = None
 
 
 @dataclass(frozen=True)
@@ -853,6 +918,7 @@ class QuestionChunkAnalysis:
     minimum_covering_chunk_count: int | None
     relevant_chunks: tuple[ChunkFactView, ...]
     fact_pair_proximity_by_chunk: tuple[FactPairProximity, ...]
+    expected_facts_in_same_table_row: bool = False
 
 
 def _facts_in_chunk(chunk: DocumentChunk, facts: tuple[ExpectedFact, ...]) -> tuple[str, ...]:
@@ -930,6 +996,7 @@ def analyze_question_chunks(
     proximity_by_chunk: list[FactPairProximity] = []
     facts_anywhere: set[str] = set()
     matching_ids: list[UUID] = []
+    matching_table_row_ids: list[UUID] = []
     for chunk in chunks:
         found = _facts_in_chunk(chunk, question.expected_facts)
         chunk_fact_map.append((chunk.id, frozenset(found)))
@@ -947,10 +1014,16 @@ def analyze_question_chunks(
                 content_length=len(chunk.content),
                 excerpt=_limit_excerpt(chunk.content, max_excerpt_chars),
                 facts_found=found,
+                page_number=chunk.page_number,
+                section_title=chunk.section_title,
+                structure_type=chunk.structure_type,
+                chunking_strategy=chunk.chunking_strategy,
             )
         )
         if set(found) >= set(fact_names):
             matching_ids.append(chunk.id)
+            if chunk.structure_type == "table_row":
+                matching_table_row_ids.append(chunk.id)
         if len(found) >= 2:
             chunk_index = build_normalized_index(chunk.content)
             presences = [
@@ -985,6 +1058,7 @@ def analyze_question_chunks(
         minimum_covering_chunk_count=minimum_cover,
         relevant_chunks=tuple(relevant_views),
         fact_pair_proximity_by_chunk=tuple(proximity_by_chunk),
+        expected_facts_in_same_table_row=bool(matching_table_row_ids),
     )
 
 
@@ -2019,6 +2093,18 @@ def render_markdown(report: DiagnosticReport) -> str:
     add(f"- Índices fora de ordem: {_md_bool(integrity.out_of_order_indexes)}")
     add(f"- Gaps entre chunks: {integrity.gap_count}")
     add(f"- Sobreposições (não são erro): {integrity.overlap_count}")
+    add(
+        "- Chunks por página: "
+        f"{dict(integrity.chunks_by_page) if integrity.chunks_by_page else 'nenhum'}"
+    )
+    add(
+        "- Chunks por tipo: "
+        f"{dict(integrity.chunks_by_type) if integrity.chunks_by_type else 'nenhum'}"
+    )
+    add(f"- table_rows: {integrity.table_row_count}")
+    add(f"- fallback fragments: {integrity.fallback_fragment_count}")
+    add(f"- Chunks que atravessam página: {integrity.cross_page_chunk_count}")
+    add(f"- table_rows divididas: {integrity.split_table_row_count}")
     if integrity.issues:
         add(f"- Problemas de integridade ({len(integrity.issues)}):")
         for issue in integrity.issues:
@@ -2092,6 +2178,10 @@ def render_markdown(report: DiagnosticReport) -> str:
         add(f"- all_facts_in_extracted_text: {_md_bool(analysis.all_facts_in_extracted_text)}")
         add(f"- all_facts_present_in_chunks: {_md_bool(analysis.all_facts_present_in_chunks)}")
         add(f"- all_facts_in_same_chunk: {_md_bool(analysis.all_facts_in_same_chunk)}")
+        add(
+            "- expected_facts_in_same_table_row: "
+            f"{_md_bool(analysis.expected_facts_in_same_table_row)}"
+        )
         add(f"- facts_split_across_chunks: {_md_bool(analysis.facts_split_across_chunks)}")
         add(f"- missing_from_chunks: {list(analysis.missing_from_chunks) or 'nenhum'}")
         add(
@@ -2121,6 +2211,10 @@ def render_markdown(report: DiagnosticReport) -> str:
                 f"- chunk_index={view.chunk_index} chunk_id={view.chunk_id} "
                 f"[{view.start_char}, {view.end_char}) sha256={view.content_sha256[:12]}… "
                 f"idioma={view.language} tamanho={view.content_length} "
+                f"página={view.page_number if view.page_number is not None else '—'} "
+                f"tipo={view.structure_type or '—'} "
+                f"estratégia={view.chunking_strategy or '—'} "
+                f"secção={_md_escape(view.section_title) if view.section_title else '—'} "
                 f"factos={list(view.facts_found)}"
             )
             add(f"  - excerto: `{_md_escape(view.excerpt)}`")
