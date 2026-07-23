@@ -168,7 +168,31 @@ def test_valid_chunk_creation(
         assert stored.institution_id == uuid.UUID(institution_id)
         assert stored.document_id == uuid.UUID(document["id"])
         assert stored.document_version_id == uuid.UUID(version["id"])
+        assert stored.page_number is None
+        assert stored.section_title is None
+        assert stored.structure_type is None
+        assert stored.chunking_strategy is None
         assert stored.created_at is not None
+    finally:
+        session.close()
+
+
+def test_empty_replacement_is_rejected_without_deleting_existing_chunks(
+    client: TestClient, test_session_factory: sessionmaker[Session]
+) -> None:
+    _, _, _, version = _setup_with_version(client)
+
+    session = test_session_factory()
+    try:
+        existing_count = _count_chunks(session, version["id"])
+        stored_version = session.get(DocumentVersion, uuid.UUID(version["id"]))
+        assert stored_version is not None
+        assert existing_count > 0
+
+        with pytest.raises(ValueError, match="empty collection"):
+            document_chunk_service.replace_version_chunks(session, stored_version, [])
+
+        assert _count_chunks(session, version["id"]) == existing_count
     finally:
         session.close()
 
@@ -187,6 +211,10 @@ def test_valid_chunk_creation(
         {"content": "   "},
         {"normalized_content": ""},
         {"normalized_content": "   "},
+        {"page_number": 0},
+        {"page_number": -1},
+        {"structure_type": "semantic_guess"},
+        {"chunking_strategy": "unknown_v9"},
     ],
 )
 def test_invalid_chunk_values_are_rejected_by_postgres(
@@ -340,12 +368,38 @@ def test_successful_processing_creates_chunks(
             assert chunk.institution_id == uuid.UUID(institution_id)
             assert chunk.document_id == uuid.UUID(document["id"])
             assert chunk.language == document["language"]
+            assert chunk.page_number == 1
+            assert chunk.structure_type is not None
+            assert chunk.chunking_strategy in {
+                "structured_v1",
+                "character_fallback_v1",
+            }
             # Os offsets reconstroem o content a partir do texto extraído.
             assert chunk.content == text[chunk.start_char : chunk.end_char]
             assert (
                 chunk.content_sha256
                 == hashlib.sha256(chunk.content.encode("utf-8")).hexdigest()
             )
+    finally:
+        session.close()
+
+
+def test_structured_metadata_and_section_title_are_persisted(
+    client: TestClient, test_session_factory: sessionmaker[Session]
+) -> None:
+    heading = "CALENDÁRIO SINTÉTICO 2045"
+    text = f"{heading}\n\nEvento institucional | Período institucional"
+    _, _, _, version = _setup_with_version(client, text.encode())
+
+    session = test_session_factory()
+    try:
+        chunks = document_chunk_service.list_version_chunks(
+            session, uuid.UUID(version["id"])
+        )
+        assert [chunk.structure_type for chunk in chunks] == ["heading", "table_row"]
+        assert all(chunk.page_number == 1 for chunk in chunks)
+        assert all(chunk.section_title == heading for chunk in chunks)
+        assert all(chunk.chunking_strategy == "structured_v1" for chunk in chunks)
     finally:
         session.close()
 

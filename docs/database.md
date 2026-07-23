@@ -16,6 +16,7 @@
 | 10 | `c8b4f2d9e6a1` | Adiciona `reply_to_message_id`, `message_sources` persistidas, restrições compostas de integridade e o trigger de imutabilidade de chunks citados |
 | 11 | `800e7b121e93` | Cria `storage_cleanup_tasks` (tarefas duráveis de limpeza de arquivos, enfileiradas na transação de eliminação do documento) |
 | 12 | `f2a91c47d3b8` | Adiciona metadados de extração a `document_versions` (`extraction_method`, `extraction_quality`, `extraction_warning` e `extraction_details` JSONB; anuláveis e limitados por CHECK; linhas históricas permanecem NULL, sem backfill) |
+| 13 | `4a7c1e9d2b63` | Adiciona metadados estruturais anuláveis a `document_chunks` (`page_number`, `section_title`, `structure_type`, `chunking_strategy`), com CHECKs e sem backfill |
 
 Como o projeto ainda está em desenvolvimento exclusivamente local, sem
 ambientes partilhados, dados de produção ou bases de dados permanentes, a
@@ -141,8 +142,15 @@ Cada linha possui:
   casefold e espaços colapsados, usado na pesquisa lexical),
   `content_sha256`, `start_char`/`end_char` (offset final exclusivo), `language`
   (herdado do documento no momento da segmentação) e `created_at`;
+- `page_number` (base um), `section_title` (título observado, não copiado para
+  `content`), `structure_type` (`heading`, `paragraph`, `table_row`,
+  `list_item`, `list_block`, `mixed` ou `fallback_fragment`) e
+  `chunking_strategy` (`structured_v1` ou `character_fallback_v1`). Estes quatro
+  campos são anuláveis: linhas históricas permanecem `NULL`, sem backfill;
 - CHECKs: `chunk_index >= 0`, `start_char >= 0`, `end_char > start_char`,
-  `btrim(content) <> ''` e `btrim(normalized_content) <> ''`;
+  `btrim(content) <> ''`, `btrim(normalized_content) <> ''`,
+  `page_number IS NULL OR page_number > 0` e listas fechadas para tipo e
+  estratégia;
 - índices em `institution_id`, `document_id`, `document_version_id` e
   `(institution_id, language)`. O par `(document_version_id, chunk_index)` já
   é indexado pela restrição UNIQUE, portanto não há índice duplicado. Não
@@ -151,19 +159,37 @@ Cada linha possui:
 
 A segmentação integra o processamento síncrono
 (`document_processing_service.process_version`): extração → segmentação
-(`document_chunking_service.chunk_text`, com preferência por parágrafos e
-fallback por janela de caracteres com sobreposição configurável; consulte
-`DOCUMENT_CHUNK_SIZE_CHARS` e `DOCUMENT_CHUNK_OVERLAP_CHARS`) → substituição
-atómica do conjunto da versão (`document_chunk_service.replace_version_chunks`,
-sem commit próprio) → versão marcada como `processed`, tudo numa transação.
+estruturada → substituição atómica do conjunto da versão
+(`document_chunk_service.replace_version_chunks`, sem commit próprio) → versão
+marcada como `processed`, tudo numa transação. `PAGE_SEPARATOR = "\f"` é uma
+fronteira obrigatória: não entra em `content`, os offsets permanecem globais e
+nenhum overlap atravessa página.
+
+`structured_v1` classifica unidades contíguas por pequenas heurísticas locais:
+títulos, parágrafos, linhas que contêm `" | "` e itens de lista. Linhas de
+tabela que cabem no limite são chunks próprios e nunca são fundidas entre si;
+parágrafos e listas só são agrupados quando página, secção e tipo são
+compatíveis. `character_fallback_v1` é reservado a uma unidade individual
+maior do que `DOCUMENT_CHUNK_SIZE_CHARS`; prefere quebra de linha/espaço e o
+overlap fica dentro dessa unidade. Nenhuma etapa interpreta datas, corrige OCR
+ou usa LLM. Uma linha curta sem marcador explícito só é tratada como título
+quando está isolada por uma quebra em branco e existe conteúdo posterior.
 
 Uma versão nunca fica `processed` sem os seus chunks. Uma falha na segmentação
 ou persistência reverte a transação, não deixa chunks parciais e marca a versão
 como `failed` com uma mensagem curta e segura. Uma versão `failed` não mantém
-chunks; possuí-los equivale a estar `processed`. O reprocessamento substitui
+chunks; possuí-los equivale a estar `processed`. Uma substituição vazia é
+rejeitada antes da remoção do conjunto existente. O reprocessamento substitui
 apenas os chunks da versão, protegido pelo mesmo `SELECT ... FOR UPDATE`.
 Versões históricas preservam os seus conjuntos, e o upload de uma nova versão
 nunca altera as anteriores.
+
+O rebuild administrativo continua a usar exclusivamente `extracted_text`
+persistido e ignora versões citadas. Não reabre PDF nem executa OCR. O
+retrieval lexical continua a consultar somente `content`,
+`normalized_content`/`search_vector`; os novos metadados não participam no
+ranking, filtros, score ou `top_k`. Answering e snapshots de `message_sources`
+também permanecem inalterados.
 
 ## Fontes de mensagens persistidas (`message_sources`)
 

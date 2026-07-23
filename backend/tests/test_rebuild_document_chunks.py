@@ -50,8 +50,22 @@ def test_processed_version_without_chunks_receives_chunks(
         assert summary.versions_found == 1
         assert summary.versions_processed == 1
         assert summary.chunks_created >= 1
+        assert summary.processed_versions == 1
+        assert summary.structured_versions == 1
+        assert summary.generated_chunks >= 1
+        assert summary.table_row_chunks == 0
+        assert summary.fallback_chunks == 0
         assert summary.failures == 0
         assert _count_chunks(session, version["id"]) >= 1
+        rebuilt = list(
+            session.scalars(
+                select(DocumentChunk).where(
+                    DocumentChunk.document_version_id == uuid.UUID(version["id"])
+                )
+            ).all()
+        )
+        assert all(chunk.page_number == 1 for chunk in rebuilt)
+        assert all(chunk.chunking_strategy == "structured_v1" for chunk in rebuilt)
     finally:
         session.close()
 

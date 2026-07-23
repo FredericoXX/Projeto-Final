@@ -190,17 +190,21 @@ idiomas usam o fallback explícito `DOCUMENT_OCR_LANGUAGES`, por omissão
 significativamente a latência do upload/reprocessamento de PDFs
 digitalizados.
 
-As linhas de OCR são reconstruídas deterministicamente (palavras
-ordenadas por bloco/parágrafo/linha/posição horizontal); um intervalo
-horizontal significativamente maior do que a largura média dos
-caracteres da linha gera o separador de coluna `" | "`, preservando a
-relação evento↔data de **tabelas institucionais simples** na mesma
-linha (ex.: `Primeiro dia de aulas do 1.º semestre | 05 de outubro de
-2026`). Não existe interpretação semântica genérica de tabelas, deteção
-de células fundidas nem inferência de valores; nem todos os PDFs
-digitalizados ou formatos de tabela são suportados. O chunking continua
-a ser o algoritmo anterior, inalterado (a segmentação estruturada é
-tema do Momento 3).
+As linhas OCR são reconstruídas por geometria, sem depender da ordem
+`block/paragraph/line` do Tesseract. Tokens vazios e confianças inválidas
+são ignorados; coordenadas anómalas são limitadas apenas para os cálculos,
+sem corrigir o texto reconhecido. O agrupamento usa sobreposição vertical,
+distância entre centros e alturas medianas relativas. Depois, linhas são
+ordenadas verticalmente e as palavras horizontalmente.
+
+Dentro de cada linha, a largura mediana por carácter, a altura mediana e a
+distribuição dos gaps distinguem espaço normal de separação de coluna. Um
+outlier suficientemente grande gera `" | "` independentemente da resolução.
+Uma célula esquerda pode ser associada à linha seguinte somente quando existe
+alinhamento das margens, pequena distância vertical e uma coluna direita
+observável na segunda linha; na dúvida, as linhas permanecem separadas. Não
+há procura de datas ou termos, correção ortográfica, validação de ordinais,
+interpretação semântica, grelha completa ou deteção de células fundidas.
 
 Cada versão processada regista metadados de extração (expostos em
 `DocumentVersionRead` e no relatório de diagnóstico, que **não**
@@ -240,6 +244,52 @@ regra preserva a evidência histórica. Uma FK sem cascade de `message_sources`
 para `document_chunks` impede apagar ou reassociar o chunk citado, e o trigger
 `trg_document_chunks_prevent_referenced_update` rejeita qualquer `UPDATE`
 direto dessa linha.
+
+## Segmentação documental estruturada
+
+`document_chunking_service.chunk_text` recebe somente o texto extraído e a
+configuração de tamanho/overlap. Não depende de `UploadFile`, rota multipart,
+filename, `source_url`, instituição, fornecedor de armazenamento ou OCR; uma
+futura integração com API institucional pode alimentar o mesmo contrato.
+
+A estratégia `structured_v1`:
+
+1. separa páginas por `PAGE_SEPARATOR = "\f"`; páginas vazias não produzem
+   chunks, a numeração começa em 1 e nenhum conteúdo inclui o separador;
+2. constrói unidades contíguas com offsets globais e classifica heurísticas
+   pequenas de `heading`, `paragraph`, `table_row` e `list_item`; uma linha
+   curta genérica só é título quando está isolada por uma quebra em branco e
+   existe conteúdo posterior, evitando confundir a primeira linha curta de um
+   parágrafo corrido com um título;
+3. mantém o título observado como `section_title` dos chunks subsequentes,
+   sem copiar esse título artificialmente para `content`;
+4. emite cada `table_row` pequena separadamente, sem a fundir com outra linha
+   para preencher o limite;
+5. agrupa parágrafos compatíveis e itens consecutivos (`list_block`) apenas
+   dentro da mesma página/secção;
+6. usa `character_fallback_v1` somente quando uma unidade individual excede
+   `DOCUMENT_CHUNK_SIZE_CHARS`.
+
+O fallback prefere quebra de linha, depois espaço e finalmente o limite da
+janela. O overlap configurado existe apenas entre fragments da mesma unidade
+longa, garante progresso e nunca passa para outra unidade ou página. Esses
+chunks são marcados como `fallback_fragment`.
+
+Todos os chunks continuam auditáveis:
+`content == extracted_text[start_char:end_char]`; `end_char` é exclusivo,
+SHA-256 é calculado sobre `content` original e `normalized_content` reutiliza
+a normalização lexical existente. Chunks novos persistem `page_number`,
+`section_title`, `structure_type` e `chunking_strategy`. Os tipos permitidos
+são `heading`, `paragraph`, `table_row`, `list_item`, `list_block`, `mixed` e
+`fallback_fragment`; as estratégias permitidas são `structured_v1` e
+`character_fallback_v1`.
+
+As quatro colunas são anuláveis. Chunks históricos permanecem válidos com
+`NULL`, sem backfill e sem atribuição fictícia de página/estratégia. O fluxo
+continua extração → chunking → substituição atómica → `processed`; versões
+citadas permanecem bloqueadas. A persistência rejeita uma coleção nova vazia
+antes de remover o conjunto anterior. Retrieval, ranking, `top_k`, answering,
+prompts, OpenAI e `message_sources` não foram alterados por esta estratégia.
 
 ## Endpoints
 
@@ -326,8 +376,11 @@ administrativa, execute `python -m scripts.rebuild_document_chunks`. O
 script não reextrai ficheiros, substitui chunks idempotentemente e aceita
 `--institution-id` e `--document-id`. Cada versão é relida sob lock; versões
 citadas são ignoradas, registadas apenas pelo ID e motivo controlado, e
-contabilizadas em `skipped_referenced`. O resumo contém found, processed,
-chunks created, skipped referenced e failures.
+contabilizadas em `skipped_referenced`. O resumo apresenta versões encontradas,
+processadas e estruturadas, chunks gerados, `table_row`, fragments de fallback,
+versões citadas ignoradas e falhas. O script usa apenas `extracted_text`
+persistido: não reabre PDF, não executa OCR, não usa OpenAI/rede e não imprime
+conteúdo.
 
 Sobre esta baseline existe ainda a geração experimental de respostas
 fundamentadas, documentada em [`docs/answering.md`](answering.md): o endpoint

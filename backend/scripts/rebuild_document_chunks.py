@@ -29,10 +29,23 @@ logger = logging.getLogger(__name__)
 @dataclass(frozen=True)
 class RebuildSummary:
     versions_found: int
-    versions_processed: int
-    chunks_created: int
+    processed_versions: int
+    structured_versions: int
+    generated_chunks: int
+    table_row_chunks: int
+    fallback_chunks: int
     skipped_referenced: int
     failures: int
+
+    @property
+    def versions_processed(self) -> int:
+        """Alias histórico para consumidores internos anteriores ao Momento 3."""
+        return self.processed_versions
+
+    @property
+    def chunks_created(self) -> int:
+        """Alias histórico para consumidores internos anteriores ao Momento 3."""
+        return self.generated_chunks
 
 
 def rebuild_document_chunks(
@@ -61,7 +74,10 @@ def rebuild_document_chunks(
     # bloqueada numa transação curta própria antes de qualquer substituição.
     db.rollback()
     processed = 0
+    structured_versions = 0
     chunks_created = 0
+    table_row_chunks = 0
+    fallback_chunks = 0
     skipped_referenced = 0
     failures = 0
     for version_id in version_ids:
@@ -115,12 +131,23 @@ def rebuild_document_chunks(
             )
         else:
             processed += 1
+            structured_versions += 1
             chunks_created += len(entities)
+            table_row_chunks += sum(
+                chunk.structure_type == "table_row" for chunk in chunks
+            )
+            fallback_chunks += sum(
+                chunk.chunking_strategy == "character_fallback_v1"
+                for chunk in chunks
+            )
 
     return RebuildSummary(
         versions_found=len(version_ids),
-        versions_processed=processed,
-        chunks_created=chunks_created,
+        processed_versions=processed,
+        structured_versions=structured_versions,
+        generated_chunks=chunks_created,
+        table_row_chunks=table_row_chunks,
+        fallback_chunks=fallback_chunks,
         skipped_referenced=skipped_referenced,
         failures=failures,
     )
@@ -144,8 +171,11 @@ def main() -> None:
             document_id=args.document_id,
         )
     print(f"Versions found: {summary.versions_found}")
-    print(f"Versions processed: {summary.versions_processed}")
-    print(f"Chunks created: {summary.chunks_created}")
+    print(f"Processed versions: {summary.processed_versions}")
+    print(f"Structured versions: {summary.structured_versions}")
+    print(f"Generated chunks: {summary.generated_chunks}")
+    print(f"Table row chunks: {summary.table_row_chunks}")
+    print(f"Fallback chunks: {summary.fallback_chunks}")
     print(f"Skipped referenced: {summary.skipped_referenced}")
     print(f"Failures: {summary.failures}")
 

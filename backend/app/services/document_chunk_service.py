@@ -33,6 +33,10 @@ def replace_version_chunks(
     documento mantêm os seus — e insere o novo conjunto na mesma
     transação. O idioma é herdado do documento da versão.
     """
+    if not chunks:
+        msg = "Cannot replace document version chunks with an empty collection."
+        raise ValueError(msg)
+
     language = db.scalar(select(Document.language).where(Document.id == version.document_id))
     if language is None:
         # A FK composta garante que o documento existe; um None aqui só
@@ -53,6 +57,10 @@ def replace_version_chunks(
             content_sha256=chunk.content_sha256,
             start_char=chunk.start_char,
             end_char=chunk.end_char,
+            page_number=chunk.page_number,
+            section_title=chunk.section_title,
+            structure_type=chunk.structure_type,
+            chunking_strategy=chunk.chunking_strategy,
             language=language,
         )
         for chunk in chunks

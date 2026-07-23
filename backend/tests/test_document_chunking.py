@@ -23,6 +23,10 @@ def _assert_invariants(text: str, chunks: list[ChunkData], chunk_size: int) -> N
         assert chunk.end_char - chunk.start_char <= chunk_size
         assert chunk.content == text[chunk.start_char : chunk.end_char]
         assert chunk.content_sha256 == hashlib.sha256(chunk.content.encode("utf-8")).hexdigest()
+        assert chunk.page_number > 0
+        assert chunk.structure_type
+        assert chunk.chunking_strategy in {"structured_v1", "character_fallback_v1"}
+        assert "\f" not in chunk.content
     # A ordem original é preservada: os inícios são estritamente crescentes.
     starts = [chunk.start_char for chunk in chunks]
     assert starts == sorted(starts)
@@ -246,3 +250,234 @@ def test_chunking_is_deterministic() -> None:
     first = chunk_text(text, 150, 30)
     second = chunk_text(text, 150, 30)
     assert first == second
+
+
+# --- Páginas e estrutura ------------------------------------------------------
+
+
+def test_multiple_pages_never_share_a_chunk() -> None:
+    text = "Conteúdo da página um.\fConteúdo da página dois."
+    chunks = chunk_text(text, 200, 20)
+    assert [chunk.page_number for chunk in chunks] == [1, 2]
+    assert [chunk.content for chunk in chunks] == [
+        "Conteúdo da página um.",
+        "Conteúdo da página dois.",
+    ]
+    assert [(chunk.start_char, chunk.end_char) for chunk in chunks] == [
+        (0, text.index("\f")),
+        (text.index("\f") + 1, len(text)),
+    ]
+    _assert_invariants(text, chunks, 200)
+
+
+def test_empty_pages_generate_no_chunks_but_keep_page_numbers() -> None:
+    text = "Página um\f   \fPágina três"
+    chunks = chunk_text(text, 100, 10)
+    assert [(chunk.page_number, chunk.content) for chunk in chunks] == [
+        (1, "Página um"),
+        (3, "Página três"),
+    ]
+
+
+def test_page_separator_is_not_content_or_gap_loss() -> None:
+    text = "A\fB"
+    chunks = chunk_text(text, 10, 2)
+    assert all("\f" not in chunk.content for chunk in chunks)
+    assert chunks[0].end_char + 1 == chunks[1].start_char
+
+
+def test_small_table_row_stays_whole() -> None:
+    text = "Primeiro evento | 05 de outubro de 2040"
+    chunks = chunk_text(text, 100, 10)
+    assert len(chunks) == 1
+    assert chunks[0].content == text
+    assert chunks[0].structure_type == "table_row"
+    assert chunks[0].chunking_strategy == "structured_v1"
+
+
+def test_table_rows_are_kept_as_separate_chunks() -> None:
+    text = (
+        "Evento A | 05 de outubro de 2040\n"
+        "Evento B | 12 de outubro de 2040\n"
+        "Evento C | 19 de outubro de 2040"
+    )
+    chunks = chunk_text(text, 500, 20)
+    assert [chunk.content for chunk in chunks] == text.splitlines()
+    assert [chunk.structure_type for chunk in chunks] == ["table_row"] * 3
+
+
+def test_synthetic_event_and_date_remain_in_same_table_row() -> None:
+    text = "Semana de integração | 05 a 09 de outubro de 2041"
+    chunks = chunk_text(text, 80, 10)
+    assert len(chunks) == 1
+    assert "Semana de integração" in chunks[0].content
+    assert "05 a 09 de outubro de 2041" in chunks[0].content
+
+
+def test_heading_sets_section_title_without_copying_it_to_following_content() -> None:
+    heading = "CALENDÁRIO SINTÉTICO 2042/2043"
+    text = f"{heading}\n\nPrimeiro período letivo."
+    chunks = chunk_text(text, 200, 20)
+    assert [chunk.structure_type for chunk in chunks] == ["heading", "paragraph"]
+    assert chunks[0].section_title == heading
+    assert chunks[1].section_title == heading
+    assert chunks[1].content == "Primeiro período letivo."
+    assert heading not in chunks[1].content
+
+
+def test_markdown_heading_is_recognized() -> None:
+    chunks = chunk_text("# Secção sintética\n\nConteúdo da secção.", 100, 10)
+    assert chunks[0].structure_type == "heading"
+    assert chunks[1].section_title == "# Secção sintética"
+
+
+def test_isolated_short_heading_is_recognized() -> None:
+    heading = "Resumo do período"
+    chunks = chunk_text(f"{heading}\n\nConteúdo completo da secção.", 100, 10)
+    assert [chunk.structure_type for chunk in chunks] == ["heading", "paragraph"]
+    assert chunks[1].section_title == heading
+
+
+def test_short_first_line_of_wrapped_paragraph_is_not_assumed_heading() -> None:
+    text = "Resumo breve\ncontinuação do mesmo parágrafo com pontuação."
+    chunks = chunk_text(text, 200, 20)
+    assert len(chunks) == 1
+    assert chunks[0].structure_type == "paragraph"
+    assert chunks[0].section_title is None
+    assert chunks[0].content == text
+
+
+def test_paragraphs_in_same_section_can_be_grouped() -> None:
+    text = "Primeiro parágrafo.\n\nSegundo parágrafo."
+    chunks = chunk_text(text, 200, 20)
+    assert len(chunks) == 1
+    assert chunks[0].structure_type == "paragraph"
+    assert chunks[0].content == text
+
+
+def test_heading_and_table_row_are_not_packed_together() -> None:
+    text = "AGENDA 2044\nEvento sintético | Período sintético"
+    chunks = chunk_text(text, 500, 20)
+    assert [chunk.structure_type for chunk in chunks] == ["heading", "table_row"]
+
+
+def test_list_markers_are_preserved_in_list_block() -> None:
+    text = "- primeiro item\n- segundo item\n- terceiro item"
+    chunks = chunk_text(text, 200, 20)
+    assert len(chunks) == 1
+    assert chunks[0].structure_type == "list_block"
+    assert chunks[0].content == text
+
+
+def test_single_list_item_keeps_list_item_type() -> None:
+    chunks = chunk_text("1) item único", 100, 10)
+    assert len(chunks) == 1
+    assert chunks[0].structure_type == "list_item"
+    assert chunks[0].content.startswith("1)")
+
+
+def test_blank_line_separates_list_blocks() -> None:
+    text = "- item A\n- item B\n\n- item C"
+    chunks = chunk_text(text, 200, 20)
+    assert [chunk.content for chunk in chunks] == ["- item A\n- item B", "- item C"]
+    assert [chunk.structure_type for chunk in chunks] == ["list_block", "list_item"]
+
+
+def test_large_unit_uses_character_fallback() -> None:
+    text = "palavra " * 80
+    chunks = chunk_text(text, 90, 15)
+    assert len(chunks) > 1
+    assert {chunk.structure_type for chunk in chunks} == {"fallback_fragment"}
+    assert {chunk.chunking_strategy for chunk in chunks} == {
+        "character_fallback_v1"
+    }
+    _assert_invariants(text, chunks, 90)
+
+
+def test_large_table_row_uses_fallback_only_inside_that_row() -> None:
+    long_row = f"{'evento ' * 30}| {'período ' * 30}"
+    text = f"{long_row}\nLinha seguinte | valor"
+    chunks = chunk_text(text, 100, 20)
+    fallback = [chunk for chunk in chunks if chunk.chunking_strategy == "character_fallback_v1"]
+    regular = [chunk for chunk in chunks if chunk.structure_type == "table_row"]
+    assert len(fallback) > 1
+    assert len(regular) == 1
+    assert regular[0].content == "Linha seguinte | valor"
+    assert all(chunk.end_char <= len(long_row) for chunk in fallback)
+
+
+def test_fallback_overlap_stays_inside_same_unit() -> None:
+    first = "x" * 250
+    second = "Segundo parágrafo curto."
+    text = f"{first}\n\n{second}"
+    chunks = chunk_text(text, 100, 20)
+    fallback = [chunk for chunk in chunks if chunk.structure_type == "fallback_fragment"]
+    paragraph = [chunk for chunk in chunks if chunk.structure_type == "paragraph"]
+    assert [(chunk.start_char, chunk.end_char) for chunk in fallback] == [
+        (0, 100),
+        (80, 180),
+        (160, 250),
+    ]
+    assert len(paragraph) == 1
+    assert paragraph[0].content == second
+    assert fallback[-1].end_char < paragraph[0].start_char
+
+
+def test_fallback_does_not_cross_page() -> None:
+    text = f"{'a' * 180}\f{'b' * 180}"
+    chunks = chunk_text(text, 80, 10)
+    assert {chunk.page_number for chunk in chunks} == {1, 2}
+    assert all("\f" not in chunk.content for chunk in chunks)
+    assert all(
+        set(chunk.content) <= ({"a"} if chunk.page_number == 1 else {"b"})
+        for chunk in chunks
+    )
+
+
+def test_fallback_always_progresses_without_whitespace() -> None:
+    chunks = chunk_text("z" * 1000, 37, 36)
+    assert chunks
+    assert chunks[-1].end_char == 1000
+    assert all(
+        current.start_char > previous.start_char
+        for previous, current in zip(chunks, chunks[1:], strict=False)
+    )
+
+
+def test_crlf_offsets_and_content_are_exact() -> None:
+    text = "Primeira linha.\r\nsegunda linha.\r\n\r\nTerceiro parágrafo."
+    chunks = chunk_text(text, 200, 20)
+    assert len(chunks) == 1
+    assert chunks[0].content == text
+    _assert_invariants(text, chunks, 200)
+
+
+def test_ocr_column_separator_classifies_table_row() -> None:
+    text = "Campo reconhecido | Valor reconhecido"
+    assert chunk_text(text, 100, 10)[0].structure_type == "table_row"
+
+
+def test_unknown_plain_structure_falls_back_to_paragraph() -> None:
+    chunks = chunk_text("§§ bloco experimental sem marcador conhecido", 100, 10)
+    assert len(chunks) == 1
+    assert chunks[0].structure_type == "paragraph"
+    assert chunks[0].chunking_strategy == "structured_v1"
+
+
+def test_document_with_only_table_has_one_chunk_per_row() -> None:
+    text = "A | 1\nB | 2\nC | 3"
+    chunks = chunk_text(text, 100, 10)
+    assert len(chunks) == 3
+    assert all(chunk.structure_type == "table_row" for chunk in chunks)
+
+
+def test_document_with_only_list_has_list_block() -> None:
+    chunks = chunk_text("* alfa\n* beta\n* gama", 100, 10)
+    assert len(chunks) == 1
+    assert chunks[0].structure_type == "list_block"
+
+
+def test_document_without_headings_uses_no_section_title() -> None:
+    chunks = chunk_text("Texto normal.\n\nOutro parágrafo.", 100, 10)
+    assert chunks
+    assert all(chunk.section_title is None for chunk in chunks)
