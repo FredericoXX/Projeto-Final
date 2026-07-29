@@ -348,8 +348,9 @@ seguinte, mas nunca sem tarefa durável associada.
 `POST /api/v1/retrieval/search` permite a qualquer utilizador autenticado
 pesquisar evidências da própria instituição. A rota delega num contrato
 neutro `Retriever`; a implementação atual, `PostgresLexicalRetriever`, usa
-o vetor lexical gerado dos chunks, `websearch_to_tsquery('simple', ...)`,
-`@@` e `ts_rank_cd`.
+o vetor lexical gerado dos chunks (configuração FTS **por idioma**:
+`portuguese`/`english`/`simple`, ver `app/retrieval/fts_config.py`),
+`websearch_to_tsquery`, `@@` e `ts_rank_cd`.
 
 A consulta considera apenas a versão `processed` de maior número por
 documento e exclui documentos inativos, fora da validade, noutro idioma ou
@@ -358,17 +359,24 @@ expõe conteúdo original e metadados da fonte, nunca campos internos, e não
 gera uma resposta final.
 
 Perguntas naturais ("Quando começam as aulas?") são suportadas por
-pesquisa progressiva determinística (`app/retrieval/query_planning.py`):
-primeiro a consulta exata atual; sem resultados, os termos informativos
-(sem artigos, preposições, interrogativos e auxiliares comuns de PT/EN)
-com AND; por fim com OR. A primeira estratégia com evidências vence e os
-resultados nunca são misturados. Todos os filtros institucionais aplicam-se
-a todas as estratégias; consultas com operadores explícitos (aspas, OR,
-`-termo`) usam apenas a tentativa exata, preservando a intenção. Uma
-pergunta simples composta apenas por termos funcionais ("O que é?") não
-pesquisa de todo e devolve zero evidências — uma correspondência por
-coincidência de palavras funcionais não tem valor informativo. Sem
-chamadas adicionais a LLM, sem embeddings, sem stemming e sem sinónimos —
+variantes determinísticas (`app/retrieval/query_planning.py`): a consulta
+exata, os termos informativos (sem artigos, preposições, interrogativos e
+auxiliares comuns de PT/EN) com AND, e com OR. A partir do Momento 4, o
+retriever executa **todas** as variantes permitidas, agrega os candidatos
+num *candidate pool* limitado (deduplicado por `chunk_id`) e aplica um
+**reranking lexical determinístico** (`app/retrieval/reranking.py`):
+cobertura dos termos, frase exata, proximidade, ordem, título/secção,
+benefício condicionado de `table_row` e comprimento, com o `ts_rank_cd`
+apenas como sinal auxiliar. Ordinais padrão e intervalos numéricos
+explícitos são canonizados na comparação de cobertura
+(`app/retrieval/lexical_normalization.py`), sem corrigir OCR nem
+interpretar datas. Um limiar mínimo (`RETRIEVAL_MIN_RELEVANCE_SCORE`) e a
+dominância entre candidatos removem coincidências fracas; o `score` público
+passa a ser a relevância lexical composta em `[0, 1]`. Todos os filtros
+institucionais aplicam-se a todas as variantes; operadores explícitos
+(aspas, OR, `-termo`) usam apenas a tentativa exata, preservando a intenção.
+Uma pergunta composta apenas por termos funcionais ("O que é?") não pesquisa
+de todo e devolve zero evidências. Sem LLM, sem embeddings e sem sinónimos —
 a baseline continua lexical e experimental, sem compreensão semântica.
 
 Para dados anteriores ao chunking automático ou reconstrução

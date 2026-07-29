@@ -27,6 +27,7 @@ import logging
 import re
 import unicodedata
 from collections import Counter
+from collections.abc import Callable
 from dataclasses import dataclass, fields, is_dataclass
 from datetime import UTC, date, datetime
 from enum import StrEnum
@@ -45,11 +46,15 @@ from app.models.document_chunk import DocumentChunk
 from app.models.document_version import DocumentVersion
 from app.models.institution import Institution
 from app.retrieval.base import Evidence, RetrievalContext, Retriever
+from app.retrieval.lexical import LexicalRetrievalTrace
 from app.services.document_extraction_service import PAGE_SEPARATOR
 
 logger = logging.getLogger(__name__)
 
-DIAGNOSTIC_REPORT_VERSION = 2
+# Versão 3: o relatório passa a incluir o trace interno do retriever lexical
+# (config FTS, termos informativos, ordinais/intervalos, variantes, candidate
+# pool, limiar e componentes do score), quando o retriever o suporta.
+DIAGNOSTIC_REPORT_VERSION = 3
 
 # Limites deliberados: o relatório é evidência, não um dump do documento.
 MAX_OCCURRENCES_PER_FACT = 8
@@ -1364,6 +1369,9 @@ class QuestionDiagnostic:
     primary_conclusion: PrimaryConclusion
     findings: tuple[DiagnosticFinding, ...]
     evidence_summary: tuple[str, ...]
+    # Trace interno do retriever lexical (None quando o retriever ativo não
+    # o suporta, ex.: um retriever alternativo ou um duplo de teste).
+    lexical_trace: LexicalRetrievalTrace | None = None
 
 
 def classify_question(
@@ -1726,6 +1734,27 @@ def _build_global_conclusion(
     )
 
 
+def _search_with_optional_trace(
+    retriever: Retriever,
+    db: Session,
+    normalized_query: str,
+    context: RetrievalContext,
+    top_k: int,
+    official_only: bool,
+) -> tuple[list[Evidence], LexicalRetrievalTrace | None]:
+    """Executa a pesquisa uma única vez, capturando o trace se existir.
+
+    O contrato ``Retriever`` mantém-se neutro (só ``search``); o trace é
+    um extra opcional, detetado por introspeção. Um retriever alternativo
+    ou um duplo de teste sem ``search_with_trace`` continua a funcionar.
+    """
+    search_with_trace = getattr(retriever, "search_with_trace", None)
+    if callable(search_with_trace):
+        results, trace = search_with_trace(db, normalized_query, context, top_k, official_only)
+        return results, trace
+    return retriever.search(db, normalized_query, context, top_k, official_only), None
+
+
 def run_diagnostic(
     db: Session,
     retriever: Retriever,
@@ -1818,13 +1847,17 @@ def run_diagnostic(
             )
             # O retrieval corre exatamente uma vez por pergunta, com o
             # contrato real: pergunta normalizada, contexto e filtros atuais.
+            # Quando o retriever suporta um trace interno, usa-se a variante
+            # que o devolve — a pesquisa continua a correr uma só vez.
             normalized_query = normalize_text(question.question)
             context = RetrievalContext(
                 institution_id=institution_id,
                 language=question.language,
                 reference_date=resolved_reference_date,
             )
-            results = retriever.search(db, normalized_query, context, top_k, official_only)
+            results, lexical_trace = _search_with_optional_trace(
+                retriever, db, normalized_query, context, top_k, official_only
+            )
             verify_results_institution(db, results, institution_id)
             retrieval = analyze_question_retrieval(
                 question,
@@ -1861,6 +1894,7 @@ def run_diagnostic(
                     primary_conclusion=conclusion,
                     findings=findings,
                     evidence_summary=summary,
+                    lexical_trace=lexical_trace,
                 )
             )
 
@@ -1971,6 +2005,43 @@ def _md_bool(value: bool | None) -> str:
     if value is None:
         return "—"
     return "sim" if value else "não"
+
+
+def _add_lexical_trace(
+    add: Callable[[str], None], trace: LexicalRetrievalTrace
+) -> None:
+    """Renderiza o trace lexical: apenas metadados e componentes do score.
+
+    Nunca conteúdo dos chunks, títulos fornecidos, secções, URLs ou
+    segredos — só a config FTS, os termos informativos/ordinais/intervalos
+    canónicos da pergunta, contagens e os sinais do ranking.
+    """
+    add("")
+    add("#### Trace do retrieval lexical")
+    add("")
+    add(f"- Configuração FTS: {trace.fts_config}")
+    add(f"- Termos informativos: {list(trace.informative_terms) or 'nenhum'}")
+    add(f"- Ordinais reconhecidos: {list(trace.query_ordinals) or 'nenhum'}")
+    add(f"- Intervalos reconhecidos: {list(trace.query_ranges) or 'nenhum'}")
+    add(f"- Variantes planeadas: {list(trace.planned_variants) or 'nenhuma'}")
+    for variant in trace.variant_candidate_counts:
+        add(f"  - {variant.strategy}: {variant.candidate_count} candidato(s)")
+    add(f"- candidate_limit: {trace.candidate_limit}")
+    add(f"- Candidatos únicos: {trace.unique_candidate_count}")
+    add(f"- Candidatos antes do limiar: {trace.candidates_before_threshold}")
+    add(f"- Removidos pelo limiar: {trace.removed_by_threshold}")
+    for result in trace.results:
+        add(
+            f"- chunk_id={result.chunk_id} estratégia={result.strategy} "
+            f"raw_fts={result.raw_score:.6f} score={result.score:.6f} "
+            f"cobertura={result.coverage:.2f} frase_exata={result.exact_phrase:.0f} "
+            f"proximidade={result.proximity:.2f} titulo={result.title_overlap:.2f} "
+            f"seccao={result.section_overlap:.2f} tipo={result.structure_type or '—'}"
+        )
+        add(
+            "  - termos correspondidos: "
+            f"{list(result.matched_terms) or 'nenhum'}; razão: {result.reason}"
+        )
 
 
 def render_markdown(report: DiagnosticReport) -> str:
@@ -2311,6 +2382,8 @@ def render_markdown(report: DiagnosticReport) -> str:
             "- correct_target_evidence_exists_but_other_document_was_used: "
             f"{_md_bool(retrieval.correct_target_evidence_exists_but_other_document_was_used)}"
         )
+        if question.lexical_trace is not None:
+            _add_lexical_trace(add, question.lexical_trace)
         add("")
         add("#### Conclusão principal")
         add("")

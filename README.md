@@ -268,15 +268,21 @@ própria instituição. O PostgreSQL mantém um `TSVECTOR` gerado e um índice G
 `PostgresLexicalRetriever` usa `websearch_to_tsquery` parametrizado e
 `ts_rank_cd` por trás de um contrato neutro `Retriever`.
 
-Perguntas naturais ("Quando começam as aulas?") são suportadas por pesquisa
-progressiva determinística: primeiro tenta-se a consulta exata, depois os
-termos informativos (sem palavras funcionais em PT/EN) com AND e, por fim, com
-OR. A primeira estratégia não vazia vence e os resultados nunca são
-misturados. Todos os filtros institucionais aplicam-se a todas as estratégias.
-Operadores explícitos (aspas, `OR`, `-termo`) preservam a sua semântica e não
-passam por relaxamento. Não há chamadas adicionais a LLM, embeddings,
-stemming nem sinónimos. Esta continua a ser uma baseline lexical, não uma
-compreensão semântica — consulte [`docs/database.md`](docs/database.md).
+O Momento 4 reforça a recuperação sem sair do lexical, determinístico e local.
+A configuração Full-Text Search passa a ser **por idioma** (`portuguese`/
+`english`/`simple`, por allowlist), melhorando a recuperação por stemming. O
+retriever executa **todas** as variantes da consulta (exact, reduced_and,
+reduced_or), agrega-as num *candidate pool* limitado e aplica um **reranking
+lexical determinístico**: cobertura dos termos, frase exata, proximidade,
+título/secção, estrutura (`table_row`) e comprimento, com o `ts_rank_cd` como
+sinal apenas auxiliar. Ordinais padrão (`1.ª`/`primeira` ⇒ o mesmo) e
+intervalos numéricos explícitos são canonizados; o OCR não é corrigido nem
+adivinhado. Um limiar mínimo (`RETRIEVAL_MIN_RELEVANCE_SCORE`) e a dominância
+entre candidatos excluem coincidências fracas. O `score` de `Evidence` passa a
+ser a relevância lexical composta em `[0, 1]`. Operadores explícitos (aspas,
+`OR`, `-termo`) preservam a intenção; todos os filtros institucionais aplicam-se
+a todas as variantes. Sem embeddings, sem pesquisa semântica e sem LLM no
+retrieval — consulte [`docs/database.md`](docs/database.md).
 
 O endpoint de recuperação devolve apenas evidências. O texto processado
 existente pode ser reconstruído de forma idempotente com

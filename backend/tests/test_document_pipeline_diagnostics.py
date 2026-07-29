@@ -1565,6 +1565,69 @@ def test_report_supports_historical_versions_with_null_metadata() -> None:
     assert "| Página | Método |" not in rendered
 
 
+def test_real_retriever_populates_lexical_trace_in_report(
+    client: TestClient, test_session_factory: sessionmaker[Session]
+) -> None:
+    """Com o PostgresLexicalRetriever, o relatório inclui o trace lexical
+    (config FTS, termos, variantes, candidate pool e componentes do score),
+    e o formato do relatório é a versão 3."""
+    from app.retrieval.lexical import PostgresLexicalRetriever
+
+    institution, _, document, _ = _persisted_graph(client)
+    with test_session_factory() as db:
+        report = diagnostic.run_diagnostic(
+            db,
+            PostgresLexicalRetriever(),
+            institution_id=UUID(institution["id"]),
+            questions=(_question(),),
+            document_id=UUID(document["id"]),
+            reference_date=date(2031, 3, 1),
+            clock=lambda: datetime(2031, 3, 1, tzinfo=UTC),
+        )
+    assert report.diagnostic_report_version == 3
+    trace = report.questions[0].lexical_trace
+    assert trace is not None
+    assert trace.fts_config == "portuguese"
+    assert "evento" in trace.informative_terms
+    assert trace.planned_variants  # pelo menos a variante exact
+
+    rendered = diagnostic.render_markdown(report)
+    assert "#### Trace do retrieval lexical" in rendered
+    assert "- Configuração FTS: portuguese" in rendered
+    # O trace também é serializável em JSON, sem conteúdo documental.
+    payload = json.loads(diagnostic.render_json(report))
+    assert payload["questions"][0]["lexical_trace"]["fts_config"] == "portuguese"
+
+
+def test_empty_retriever_leaves_lexical_trace_absent() -> None:
+    """Um retriever sem search_with_trace mantém o relatório válido, com o
+    trace lexical a None (contrato Retriever permanece neutro)."""
+    state = _classification_state()
+    report = _minimal_report(
+        diagnostic_report_version=3,
+        questions=(
+            diagnostic.QuestionDiagnostic(
+                question_id="q",
+                question="Quando decorre o evento sintético?",
+                language="pt",
+                expected_answer="10 de março de 2031",
+                extraction=state[4],
+                fact_pair_proximity=(),
+                chunk_analysis=state[5],
+                selected_version_eligibility=state[6],
+                effective_version_eligibility=state[6],
+                retrieval=state[7],
+                primary_conclusion=diagnostic.PrimaryConclusion.PRE_GENERATION_PIPELINE_OK,
+                findings=(),
+                evidence_summary=(),
+            ),
+        ),
+    )
+    assert report.questions[0].lexical_trace is None
+    rendered = diagnostic.render_markdown(report)
+    assert "#### Trace do retrieval lexical" not in rendered
+
+
 def test_page_summary_builder_tolerates_malformed_details() -> None:
     summaries, native_pages, ocr_pages, low_pages = (
         diagnostic._build_extraction_page_summaries(
