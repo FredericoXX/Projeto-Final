@@ -153,12 +153,21 @@ class DocumentChunk(Base):
     normalized_content: Mapped[str] = mapped_column(Text, nullable=False)
 
     # Baseline lexical: o PostgreSQL mantém este vetor automaticamente.
-    # A configuração simple evita assumir stemming específico de português
-    # ou inglês antes da avaliação experimental da estratégia de retrieval.
+    # A configuração é escolhida pela subtag primária do idioma do chunk
+    # (portuguese/english/simple), para que o stemming linguístico melhore
+    # a recuperação. A expressão é idêntica à da migração
+    # e7b1c9d4a2f0; o nome da configuração é sempre um literal fixo, nunca
+    # input do utilizador. Ver app.retrieval.fts_config.
     search_vector: Mapped[str | None] = mapped_column(
         TSVECTOR,
         Computed(
-            "to_tsvector('simple'::regconfig, normalized_content)",
+            "CASE "
+            "WHEN lower(split_part(language, '-', 1)) = 'pt' "
+            "THEN to_tsvector('portuguese'::regconfig, normalized_content) "
+            "WHEN lower(split_part(language, '-', 1)) = 'en' "
+            "THEN to_tsvector('english'::regconfig, normalized_content) "
+            "ELSE to_tsvector('simple'::regconfig, normalized_content) "
+            "END",
             persisted=True,
         ),
         nullable=True,

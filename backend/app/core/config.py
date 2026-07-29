@@ -34,6 +34,15 @@ class Settings(BaseSettings):
     document_chunk_size_chars: int = 1200
     document_chunk_overlap_chars: int = 150
 
+    # Limiar mínimo de relevância lexical composta (ver
+    # app.retrieval.reranking): candidatos multi-termo abaixo deste score
+    # são excluídos do top_k, exceto correspondências de frase exata. Os
+    # pesos do ranking não são configuráveis — são constantes versionadas
+    # no módulo; só este limiar operacional é ajustável. O score composto
+    # está em [0, 1]; um valor de 0.0 desativa o piso (a dominância
+    # continua a aplicar-se).
+    retrieval_min_relevance_score: float = 0.05
+
     # OCR local (Tesseract) para páginas de PDF sem texto pesquisável.
     # O comando vazio usa a resolução normal do PATH do sistema; a
     # ausência do executável nunca impede o arranque nem o processamento
@@ -81,6 +90,19 @@ class Settings(BaseSettings):
             raise ValueError(msg)
         if self.document_chunk_overlap_chars >= self.document_chunk_size_chars:
             msg = "DOCUMENT_CHUNK_OVERLAP_CHARS must be smaller than DOCUMENT_CHUNK_SIZE_CHARS"
+            raise ValueError(msg)
+        return self
+
+    @model_validator(mode="after")
+    def check_retrieval_configuration(self) -> "Settings":
+        score = self.retrieval_min_relevance_score
+        # O score composto é finito e vive em [0, 1]; o limiar tem de o
+        # respeitar para ser comparável.
+        if not (score == score):  # NaN
+            msg = "RETRIEVAL_MIN_RELEVANCE_SCORE must be a finite number"
+            raise ValueError(msg)
+        if not (0.0 <= score <= 1.0):
+            msg = "RETRIEVAL_MIN_RELEVANCE_SCORE must be between 0 and 1"
             raise ValueError(msg)
         return self
 

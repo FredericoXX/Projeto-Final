@@ -13,8 +13,12 @@ Este módulo produz variantes ordenadas de uma consulta já normalizada
 2. reduced_and — apenas os termos informativos, todos obrigatórios;
 3. reduced_or — os mesmos termos informativos, qualquer um suficiente.
 
-O retriever executa as variantes por ordem e devolve o primeiro conjunto
-não vazio; resultados de estratégias diferentes nunca são misturados.
+A partir do Momento 4, o retriever executa **todas** as variantes
+permitidas, agrega os candidatos num pool limitado (deduplicado por
+chunk_id, preservando a melhor estratégia) e aplica um reranking lexical
+determinístico. A estratégia que recuperou cada candidato passa a ser um
+sinal explícito do ranking (exact > reduced_and > reduced_or), em vez de
+"a primeira variante com resultados vence".
 
 Regras deliberadas:
 - determinístico, local, sem LLM, sem embeddings, sem stemming próprio
@@ -106,6 +110,17 @@ def _functional_terms_for(language: str) -> frozenset[str] | None:
         return _FUNCTIONAL_TERMS[normalized]
     primary = normalized.split("-")[0]
     return _FUNCTIONAL_TERMS.get(primary)
+
+
+def functional_terms_for(language: str) -> frozenset[str]:
+    """Termos funcionais do idioma (vazio quando não há lista própria).
+
+    Acessor público reutilizado pelo reranking lexical para distinguir os
+    termos informativos da consulta e do conteúdo. Nunca é ``None``: um
+    idioma sem lista devolve um conjunto vazio, o que significa "nenhum
+    termo é considerado funcional".
+    """
+    return _functional_terms_for(language) or frozenset()
 
 
 def _uses_advanced_syntax(normalized_query: str) -> bool:

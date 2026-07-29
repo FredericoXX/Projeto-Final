@@ -28,13 +28,15 @@ pergunta autenticada
 → resposta com fontes citadas
 ```
 
-A recuperação de evidências beneficia automaticamente da pesquisa lexical
-progressiva do `PostgresLexicalRetriever` (exact → reduced_and →
-reduced_or; ver a secção de retrieval em
-[`docs/database.md`](database.md)): perguntas naturais como "Quando
-começam as aulas?" passam a encontrar evidência sem qualquer chamada
-adicional ao LLM — o planeamento é determinístico e local, e a política
-de evidência mantém-se inalterada. A melhoria não elimina a limitação
+A recuperação de evidências beneficia automaticamente do retrieval lexical
+do `PostgresLexicalRetriever` através do contrato `Retriever` inalterado.
+A partir do Momento 4, esse retriever agrega as variantes da consulta
+(exact, reduced_and, reduced_or) e aplica um reranking lexical
+determinístico por cobertura/proximidade/estrutura (ver a secção de
+retrieval em [`docs/database.md`](database.md)). O answering usa apenas a
+**ordem** do ranking e o conteúdo das evidências, não o valor do `score`,
+pelo que a nova semântica do score composto não altera a seleção de
+contexto nem a política de evidência. A melhoria não elimina a limitação
 lexical de fundo: perguntas cujo vocabulário não partilha nenhum termo
 com os documentos continuam em `insufficient_evidence`.
 
@@ -194,8 +196,11 @@ sem alterar paginação nem a ordenação histórica por `created_at`/`id`.
 - resposta sem citações válidas → geração rejeitada (502);
 - todas as fontes devolvidas foram citadas pelo gerador.
 
-Sem confidence score numérico nesta etapa; o score lexical (`ts_rank_cd`)
-não é tratado como probabilidade nem como medida universal de confiança.
+Sem confidence score numérico nesta etapa. O `score` das evidências é a
+relevância lexical composta em `[0, 1]` (Momento 4), determinística e
+ordenável, mas **não** é uma probabilidade nem uma medida universal de
+confiança factual; o `ts_rank_cd` cru é apenas um dos seus sinais
+auxiliares e não é exposto pelo answering.
 
 ## Configuração
 

@@ -81,10 +81,11 @@ def test_natural_english_question_finds_evidence(client: TestClient) -> None:
 
 def test_reduced_and_priority_excludes_partial_matches(client: TestClient) -> None:
     """A pergunta contém termos funcionais ("qual", "e", "o", "dos"), por
-    isso a variante exata falha; a conjuntiva (periodo & exames) encontra
-    o documento certo e a disjuntiva nunca chega a executar — se
-    executasse (ou se os resultados fossem misturados), o documento de
-    matrículas, que também contém "período", apareceria."""
+    isso a variante exata falha. As variantes passam a ser agregadas
+    (Momento 4), incluindo a disjuntiva, pelo que o documento de matrículas
+    (que também contém "período") entra no candidate pool — mas é removido
+    por dominância no reranking, por cobrir apenas o termo genérico
+    "período" quando existe um candidato que cobre "período" e "exames"."""
     _, headers, _ = _setup(client)
     exams, _ = _create_searchable(
         client,
@@ -104,10 +105,11 @@ def test_reduced_and_priority_excludes_partial_matches(client: TestClient) -> No
 
 
 def test_exact_strategy_priority_over_disjunctive_fallback(client: TestClient) -> None:
-    """Sem termos funcionais na consulta, a variante exata (conjuntiva)
-    devolve apenas o documento com ambos os termos; o documento que só
-    contém "aulas" apareceria se a disjuntiva fosse executada ou os
-    resultados misturados."""
+    """Sem termos funcionais, a variante exata (conjuntiva) já casa o
+    documento com ambos os termos. As variantes são agregadas, pelo que o
+    documento que só contém "aulas" entra no candidate pool pela
+    disjuntiva, mas é removido por dominância: cobre apenas "aulas" quando
+    existe um candidato que cobre "aulas" e "setembro"."""
     _, headers, _ = _setup(client)
     both, _ = _create_searchable(
         client, headers, "aulas de setembro no campus", title="Com Ambos"
@@ -130,8 +132,10 @@ def test_precision_natural_question_prefers_relevant_document(
     )
 
     items = _search(client, headers, "Quando começam as aulas?").json()["items"]
-    # Sem stemming, "começam" não corresponde a "começa": apenas o
-    # documento de aulas é devolvido.
+    # Com a configuração portuguesa, "começa" casa "começam" na recuperação
+    # FTS, mas o reranking por cobertura mantém apenas o documento de aulas:
+    # o documento de atendimento cobre um termo apenas por stemming, sem
+    # cobertura de superfície, e é dominado.
     assert [item["document_id"] for item in items] == [relevant["id"]]
 
 

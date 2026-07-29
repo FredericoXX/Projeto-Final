@@ -14,6 +14,17 @@ chunks que atravessam páginas e linhas de tabela divididas. Para cada pergunta,
 continua a indicar factos no mesmo chunk/contexto fragmentado e acrescenta se
 todos os factos esperados aparecem na mesma `table_row`.
 
+O formato de relatório **v3** (Momento 4) acrescenta, quando o retriever ativo
+o suporta, o **trace do retrieval lexical** por pergunta: a configuração FTS
+usada (`portuguese`/`english`/`simple`), os termos informativos e ordinais/
+intervalos canónicos da pergunta, as variantes planeadas e o número de
+candidatos por variante, o `candidate_limit`, os candidatos únicos, os removidos
+pelo limiar, e — por resultado — a estratégia, o `ts_rank_cd` cru, o score
+composto e os componentes do ranking (cobertura, frase exata, proximidade,
+título, secção, estrutura) com uma razão resumida. O trace contém apenas
+metadados e sinais de ranking: **nunca** conteúdo de chunks, títulos fornecidos,
+secções, URLs ou segredos. O retrieval corre uma única vez por pergunta.
+
 `PAGE_SEPARATOR = "\f"` é tratado como fronteira válida, não como conteúdo
 perdido entre chunks. O diagnóstico apenas observa o texto e os metadados já
 guardados: não reabre PDF, não executa OCR/rebuild, não interpreta a tabela e

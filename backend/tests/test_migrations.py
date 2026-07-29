@@ -1058,3 +1058,169 @@ def test_structured_chunk_metadata_migration_upgrade_downgrade_upgrade(
 
     script = ScriptDirectory.from_config(alembic_cfg)
     assert current_revision == script.get_current_head()
+
+
+def test_localized_search_vector_migration_upgrade_downgrade_upgrade(
+    migrations_database_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A migração localiza o search_vector por idioma, é reversível e
+    revectoriza chunks históricos automaticamente (sem backfill)."""
+    monkeypatch.setattr(settings, "database_url", migrations_database_url)
+    alembic_cfg = Config(str(BACKEND_DIR / "alembic.ini"))
+    command.upgrade(alembic_cfg, "e7b1c9d4a2f0")
+
+    engine = create_engine(migrations_database_url)
+    institution_id = uuid.uuid4()
+    user_id = uuid.uuid4()
+    document_id = uuid.uuid4()
+    version_id = uuid.uuid4()
+    pt_chunk = uuid.uuid4()
+    en_chunk = uuid.uuid4()
+    other_chunk = uuid.uuid4()
+    try:
+        inspector = inspect(engine)
+        columns = {column["name"]: column for column in inspector.get_columns("document_chunks")}
+        expression = columns["search_vector"]["computed"]["sqltext"]
+        assert "portuguese" in expression
+        assert "english" in expression
+        assert "simple" in expression
+
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    """INSERT INTO institutions
+                    (id, name, code, default_language, supported_languages, is_active)
+                    VALUES (:id, 'Test', :code, 'pt', ARRAY['pt','en'], true)"""
+                ),
+                {"id": institution_id, "code": f"LOC-{uuid.uuid4().hex[:8]}"},
+            )
+            conn.execute(
+                text(
+                    """INSERT INTO users
+                    (id, institution_id, full_name, email, password_hash, role, is_active)
+                    VALUES (:id, :institution_id, 'Admin', :email, 'hash', 'admin', true)"""
+                ),
+                {
+                    "id": user_id,
+                    "institution_id": institution_id,
+                    "email": f"loc-{uuid.uuid4().hex[:8]}@example.com",
+                },
+            )
+            conn.execute(
+                text(
+                    """INSERT INTO documents
+                    (id, institution_id, created_by_user_id, title, language,
+                     official_source, is_active)
+                    VALUES (:id, :institution_id, :user_id, 'Doc', 'pt', true, true)"""
+                ),
+                {"id": document_id, "institution_id": institution_id, "user_id": user_id},
+            )
+            conn.execute(
+                text(
+                    """INSERT INTO document_versions
+                    (id, document_id, institution_id, uploaded_by_user_id,
+                     version_number, original_filename, mime_type, size_bytes,
+                     checksum_sha256, storage_path, processing_status)
+                    VALUES (:id, :document_id, :institution_id, :user_id,
+                            1, 'doc.txt', 'text/plain', 10, :checksum,
+                            'inst/doc/version/source.txt', 'processed')"""
+                ),
+                {
+                    "id": version_id,
+                    "document_id": document_id,
+                    "institution_id": institution_id,
+                    "user_id": user_id,
+                    "checksum": "a" * 64,
+                },
+            )
+            insert_chunk = text(
+                """INSERT INTO document_chunks
+                (id, institution_id, document_id, document_version_id,
+                 chunk_index, content, normalized_content, content_sha256,
+                 start_char, end_char, language)
+                VALUES (:id, :institution_id, :document_id, :version_id,
+                        :index, :content, :normalized, :checksum, 0, 20, :language)"""
+            )
+            common = {
+                "institution_id": institution_id,
+                "document_id": document_id,
+                "version_id": version_id,
+            }
+            conn.execute(
+                insert_chunk,
+                {
+                    **common, "id": pt_chunk, "index": 0,
+                    "content": "matricula matriculas", "normalized": "matricula matriculas",
+                    "checksum": "b" * 64, "language": "pt",
+                },
+            )
+            conn.execute(
+                insert_chunk,
+                {
+                    **common, "id": en_chunk, "index": 1,
+                    "content": "enrollment enrollments", "normalized": "enrollment enrollments",
+                    "checksum": "c" * 64, "language": "en",
+                },
+            )
+            conn.execute(
+                insert_chunk,
+                {
+                    **common, "id": other_chunk, "index": 2,
+                    "content": "matriculas", "normalized": "matriculas",
+                    "checksum": "d" * 64, "language": "fr",
+                },
+            )
+
+        def vector(conn: Any, chunk_id: uuid.UUID) -> str:
+            return conn.execute(
+                text("SELECT search_vector::text FROM document_chunks WHERE id = :id"),
+                {"id": chunk_id},
+            ).scalar_one()
+
+        with engine.connect() as conn:
+            # Português: singular e plural colapsam no mesmo stem.
+            pt_vector = vector(conn, pt_chunk)
+            assert "matricul" in pt_vector
+            assert "matriculas" not in pt_vector
+            # Inglês: stemming próprio do inglês.
+            en_vector = vector(conn, en_chunk)
+            assert "enrol" in en_vector
+            assert "enrollments" not in en_vector
+            # Idioma sem configuração: simple, sem stemming.
+            assert "matriculas" in vector(conn, other_chunk)
+
+            index_definition = conn.execute(
+                text(
+                    "SELECT indexdef FROM pg_indexes "
+                    "WHERE indexname = 'ix_document_chunks_search_vector'"
+                )
+            ).scalar_one()
+            assert "USING gin" in index_definition
+    finally:
+        engine.dispose()
+
+    # Downgrade: volta ao simple; o chunk pt deixa de colapsar o plural.
+    command.downgrade(alembic_cfg, "-1")
+    engine = create_engine(migrations_database_url)
+    try:
+        with engine.connect() as conn:
+            reverted = conn.execute(
+                text("SELECT search_vector::text FROM document_chunks WHERE id = :id"),
+                {"id": pt_chunk},
+            ).scalar_one()
+        assert "matriculas" in reverted
+    finally:
+        engine.dispose()
+
+    command.upgrade(alembic_cfg, "head")
+    engine = create_engine(migrations_database_url)
+    try:
+        with engine.connect() as conn:
+            current_revision = conn.execute(
+                text("SELECT version_num FROM alembic_version")
+            ).scalar()
+    finally:
+        engine.dispose()
+    script = ScriptDirectory.from_config(alembic_cfg)
+    assert current_revision == script.get_current_head()

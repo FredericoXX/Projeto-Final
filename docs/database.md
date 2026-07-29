@@ -17,6 +17,7 @@
 | 11 | `800e7b121e93` | Cria `storage_cleanup_tasks` (tarefas duráveis de limpeza de arquivos, enfileiradas na transação de eliminação do documento) |
 | 12 | `f2a91c47d3b8` | Adiciona metadados de extração a `document_versions` (`extraction_method`, `extraction_quality`, `extraction_warning` e `extraction_details` JSONB; anuláveis e limitados por CHECK; linhas históricas permanecem NULL, sem backfill) |
 | 13 | `4a7c1e9d2b63` | Adiciona metadados estruturais anuláveis a `document_chunks` (`page_number`, `section_title`, `structure_type`, `chunking_strategy`), com CHECKs e sem backfill |
+| 14 | `e7b1c9d4a2f0` | Localiza o `search_vector` por idioma: a coluna gerada passa a escolher `portuguese`/`english`/`simple` pela subtag primária de `language`. Revectoriza os chunks históricos automaticamente, sem backfill; recria o índice GIN. Reversível para `simple` |
 
 Como o projeto ainda está em desenvolvimento exclusivamente local, sem
 ambientes partilhados, dados de produção ou bases de dados permanentes, a
@@ -225,53 +226,110 @@ citado. O trigger PostgreSQL
 `message_sources` com o mesmo bloqueio de `DocumentVersion` e rejeitam ou
 ignoram versões citadas antes de alterar estado ou conteúdo.
 
-### Vetor experimental de pesquisa lexical
+### Vetor de pesquisa lexical localizado por idioma
 
-A migração `b7e2d8a9f4c1` adiciona `search_vector TSVECTOR` como coluna gerada e
-armazenada, calculada por `to_tsvector('simple', normalized_content)`. A
-aplicação nunca a escreve manualmente. A configuração explícita `simple` evita
-escolher stemming específico de português ou inglês antes de avaliar a
-baseline. O índice GIN `ix_document_chunks_search_vector` suporta o operador
-de correspondência `@@`.
+A migração `b7e2d8a9f4c1` introduziu `search_vector TSVECTOR` como coluna gerada
+e armazenada; a migração `e7b1c9d4a2f0` (Momento 4) substitui a expressão única
+`simple` por uma seleção de configuração FTS **por idioma**, escolhida pela
+subtag primária de `language`:
 
-`PostgresLexicalRetriever` usa `websearch_to_tsquery('simple', ...)`
-parametrizado e `ts_rank_cd`. Seleciona apenas a versão `processed` de maior
-número por documento e filtra em SQL pela instituição autenticada, estado
-ativo, idioma, validade atual e `official_only` (verdadeiro por omissão). Os
-chunks históricos permanecem armazenados.
+```sql
+CASE
+    WHEN lower(split_part(language, '-', 1)) = 'pt'
+        THEN to_tsvector('portuguese'::regconfig, normalized_content)
+    WHEN lower(split_part(language, '-', 1)) = 'en'
+        THEN to_tsvector('english'::regconfig, normalized_content)
+    ELSE to_tsvector('simple'::regconfig, normalized_content)
+END
+```
 
-#### Pesquisa lexical progressiva para perguntas naturais
+A aplicação nunca escreve a coluna manualmente. O nome da configuração é sempre
+um literal fixo (`portuguese`/`english`/`simple`); `language` é uma referência a
+coluna, nunca input interpolado. A seleção é centralizada em
+`app/retrieval/fts_config.py` (`resolve_fts_config`), usada tanto na coluna
+gerada como na `websearch_to_tsquery` da consulta, para que ambas usem sempre a
+mesma configuração para o mesmo idioma. O stemming do PostgreSQL melhora a
+**recuperação** (ex.: `matrícula`/`matrículas`, `começa`/`começam` colapsam no
+mesmo stem em `portuguese`; `enrollment`/`enrollments` em `english`). Como o
+`normalized_content` já vem sem acentos, o stemming atua sobre texto sem
+diacríticos; alguns pares (`avaliar`/`avaliação`, `mudar`/`mudança`) não
+colapsam nesse regime — a **ordenação** por cobertura (abaixo) trata desses
+casos. Chunks históricos são revectorizados automaticamente pela coluna gerada,
+sem backfill. O índice GIN `ix_document_chunks_search_vector` suporta `@@`.
 
-Com `simple`, sem stopwords nem stemming, a baseline original exigia que
-*todas* as palavras da pergunta correspondessem. Assim, “Quando começam as
-aulas?” não encontrava um documento que contivesse apenas “aulas”. O
-recuperador agora planeia variantes determinísticas
-(`app/retrieval/query_planning.py`) e executa-as por prioridade estrita,
-devolvendo o primeiro conjunto não vazio:
+#### Etapa A — candidate generation
 
-1. **exact** — consulta normalizada tal como foi escrita, sem alteração;
-2. **reduced_and** — apenas os termos informativos, todos obrigatórios; palavras
-   funcionais como artigos, preposições, interrogativos e auxiliares comuns são
-   removidas por pequenas listas conservadoras para `pt` e `en`;
-3. **reduced_or** — os mesmos termos informativos, sendo qualquer um suficiente.
+`PostgresLexicalRetriever` planeia variantes determinísticas da consulta
+(`app/retrieval/query_planning.py`) e executa-as **todas** contra o índice GIN,
+com a configuração FTS do idioma:
 
-Resultados e pontuações de estratégias diferentes nunca são misturados nem
-comparados. Todas as variantes usam exatamente os mesmos filtros SQL:
-instituição, estado ativo, idioma, validade, `official_only`, versão processada
-mais recente, `top_k` e ordenação determinística. Nenhum fallback pesquisa num
-âmbito mais amplo.
+1. **exact** — consulta normalizada tal como foi escrita;
+2. **reduced_and** — apenas os termos informativos, todos obrigatórios (palavras
+   funcionais removidas por pequenas listas conservadoras `pt`/`en`);
+3. **reduced_or** — os mesmos termos informativos, qualquer um suficiente.
+
+Ao contrário da baseline anterior (que parava na primeira variante com
+resultados), os candidatos de todas as variantes são **agregados** num
+*candidate pool* limitado e determinístico
+(`candidate_limit = min(100, max(20, top_k × 5))`), deduplicado por `chunk_id`,
+preservando a melhor estratégia (exact > reduced_and > reduced_or) e o melhor
+`ts_rank_cd`. Uma única consulta traz também os metadados estruturais
+(`page_number`, `section_title`, `structure_type`) usados no ranking, sem N+1.
+Todas as variantes aplicam **exatamente** os mesmos filtros SQL: instituição,
+estado ativo, idioma, validade, `official_only`, versão `processed` mais
+recente. O reranker nunca recebe chunks de outra instituição.
 
 Consultas com sintaxe `websearch` explícita — frases entre aspas, `OR` ou
-`-termos` negados — executam apenas a variante exata. Assim, uma intenção como
-`matricula -propinas` nunca é relaxada para uma pesquisa que também encontre
-“propinas”. Um idioma suportado sem lista própria de termos funcionais também
-executa apenas a variante exata. Uma consulta simples formada somente por
-termos funcionais, como “O que é?”, num idioma com lista conhecida não executa
-**pesquisa alguma** e devolve zero evidências; uma correspondência seria uma
-coincidência sem significado. Frases entre aspas mantêm a pesquisa exata mesmo
-nesse caso. Tudo permanece determinístico e local: sem chamadas adicionais a
-LLM, embeddings, stemming ou sinónimos. A abordagem continua uma baseline
-experimental e **não** compreende semanticamente as perguntas.
+`-termos` negados — planeiam apenas a variante exata, para que a intenção nunca
+seja relaxada (`matricula -propinas` nunca volta a procurar “propinas”). Uma
+consulta formada só por termos funcionais (“O que é?”) num idioma com lista
+conhecida não executa pesquisa alguma e devolve zero evidências.
+
+#### Etapa B — reranking lexical determinístico
+
+Os candidatos são reordenados por uma política explicável
+(`app/retrieval/reranking.py`), com pesos que são **constantes versionadas** no
+módulo (não configuráveis). O score final é uma soma ponderada de sinais, todos
+em `[0, 1]`, com a **cobertura** dominante:
+
+- cobertura dos termos informativos/canónicos no conteúdo;
+- frase exata (sequência informativa contígua) e ordem dos termos;
+- proximidade entre os termos correspondidos;
+- sobreposição com o título do documento e o título da secção;
+- benefício condicionado para `table_row` (curta, coberta e próxima);
+- `ts_rank_cd` como sinal **auxiliar** e saturante (não domina a cobertura);
+- qualidade da estratégia (exact > reduced_and > reduced_or);
+- fator de comprimento (um parágrafo longo não vence só por repetir um termo).
+
+A comparação de cobertura usa formas canónicas
+(`app/retrieval/lexical_normalization.py`): ordinais padrão (`1.ª`, `1º`, `1o`,
+`primeira`… ⇒ `ord:1`) e intervalos numéricos **explícitos** (`01 a 12`,
+`01-12`, `01a12`). Cardinais isolados nunca viram ordinais (`12` ≠ `ord:1`); uma
+sequência sem separador nunca é dividida (`0509`, `20262027`). O OCR não é
+corrigido: `Ro` continua palavra, `12` continua cardinal.
+
+Um **limiar** (`RETRIEVAL_MIN_RELEVANCE_SCORE`, padrão `0.05`) e uma regra de
+**dominância** (um candidato cujos termos correspondidos são subconjunto próprio
+dos de um candidato melhor é removido como redundante) excluem coincidências
+fracas do `top_k`. Consultas de um único termo institucional e correspondências
+de frase exata nunca são eliminadas; o melhor candidato recuperado sobrevive
+sempre. A ordenação final é totalmente determinística
+(score↓, cobertura↓, estratégia↓, `ts_rank_cd`↓, `document_id`↑, `chunk_index`↑,
+`chunk_id`↑).
+
+O `score` público de `Evidence` passa a representar esta **relevância lexical
+composta** em `[0, 1]`, não o valor cru de `ts_rank_cd` (que fica disponível só
+no trace interno de diagnóstico). Tudo permanece determinístico e local: sem
+embeddings, sem pesquisa vetorial/semântica, sem LLM e sem sinónimos no
+retrieval. A abordagem **não** compreende semanticamente as perguntas nem
+interpreta datas; o `score` não é uma probabilidade nem uma confiança factual.
+
+O retrieval opera exclusivamente sobre chunks **já persistidos**: não depende do
+`UploadFile`, do armazenamento local, do nome do ficheiro nem da rota de upload.
+Documentos obtidos futuramente por uma API institucional externa serão
+recuperáveis do mesmo modo, desde que os seus chunks estejam persistidos e
+elegíveis; esta branch não adiciona qualquer cliente, connector, scheduler ou
+worker para essa integração.
 
 ## Regras de segurança institucional
 
