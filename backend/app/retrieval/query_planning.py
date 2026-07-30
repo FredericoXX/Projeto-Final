@@ -41,6 +41,8 @@ import re
 from dataclasses import dataclass
 from enum import StrEnum
 
+from app.retrieval.lexical_normalization import build_lexical_representation
+
 # Uma pergunta pode ter até 1000 caracteres; a tsquery reduzida nunca
 # precisa de mais do que isto para uma baseline lexical.
 MAX_INFORMATIVE_TERMS = 12
@@ -163,6 +165,33 @@ def extract_informative_terms(normalized_query: str, language: str) -> tuple[str
     return tuple(terms)
 
 
+def _ordinal_numeric_expansions(
+    normalized_query: str, language: str, existing: tuple[str, ...]
+) -> list[str]:
+    """Formas numéricas dos ordinais reconhecidos na pergunta, ainda ausentes.
+
+    Um ordinal escrito ("primeira") ou com indicador ("1.ª") é expandido
+    para o seu dígito ("1") na variante disjuntiva, para que um chunk que
+    use a forma numérica (ex.: "Exames da 1.ª chamada", cujo vetor contém o
+    token "1") seja **recuperado** por uma pergunta que use a forma escrita.
+    A ordenação por cobertura (que canoniza ambos para ``ord:1``) continua a
+    tratar o ranking. Só se adicionam dígitos ainda não presentes, e apenas
+    à variante OR (nunca à conjuntiva, que exigiria o dígito literal).
+    """
+    representation = build_lexical_representation(normalized_query, language)
+    seen = set(existing)
+    expansions: list[str] = []
+    for token in representation.tokens:
+        if token.ordinal is None:
+            continue
+        digit = str(token.ordinal)
+        if digit in seen:
+            continue
+        seen.add(digit)
+        expansions.append(digit)
+    return expansions
+
+
 def plan_lexical_query(normalized_query: str, language: str) -> LexicalQueryPlan:
     """Produz variantes ordenadas para uma consulta normalizada.
 
@@ -198,11 +227,20 @@ def plan_lexical_query(normalized_query: str, language: str) -> LexicalQueryPlan
                 LexicalQueryStrategy.REDUCED_AND, " ".join(informative)
             )
         )
-    # Com um único termo, OR e AND são a mesma consulta.
-    if len(informative) >= 2:
+    # A variante disjuntiva usa os termos informativos mais as formas
+    # numéricas dos ordinais reconhecidos (ver _ordinal_numeric_expansions),
+    # para não perder a geração de candidatos quando a pergunta usa a forma
+    # escrita e o documento a forma numérica.
+    or_terms = list(informative) + _ordinal_numeric_expansions(
+        normalized_query, language, informative
+    )
+    # Com um único termo, OR e AND são a mesma consulta; a disjuntiva só
+    # acrescenta valor com dois ou mais termos (incluindo a expansão de
+    # ordinal, que permite uma variante OR mesmo para "a segunda").
+    if len(or_terms) >= 2:
         variants.append(
             LexicalQueryVariant(
-                LexicalQueryStrategy.REDUCED_OR, " OR ".join(informative)
+                LexicalQueryStrategy.REDUCED_OR, " OR ".join(or_terms)
             )
         )
     return LexicalQueryPlan(tuple(variants))

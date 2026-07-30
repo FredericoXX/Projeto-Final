@@ -2026,9 +2026,11 @@ def _add_lexical_trace(
     add(f"- Variantes planeadas: {list(trace.planned_variants) or 'nenhuma'}")
     for variant in trace.variant_candidate_counts:
         add(f"  - {variant.strategy}: {variant.candidate_count} candidato(s)")
-    add(f"- candidate_limit: {trace.candidate_limit}")
+    add(f"- candidate_limit (por variante): {trace.candidate_limit}")
+    add(f"- candidate_ceiling (teto global): {trace.candidate_ceiling}")
     add(f"- Candidatos únicos: {trace.unique_candidate_count}")
-    add(f"- Candidatos antes do limiar: {trace.candidates_before_threshold}")
+    add(f"- Candidatos antes da filtragem: {trace.candidates_before_threshold}")
+    add(f"- Removidos por dominância: {trace.removed_by_dominance}")
     add(f"- Removidos pelo limiar: {trace.removed_by_threshold}")
     for result in trace.results:
         add(
@@ -2042,6 +2044,14 @@ def _add_lexical_trace(
             "  - termos correspondidos: "
             f"{list(result.matched_terms) or 'nenhum'}; razão: {result.reason}"
         )
+    if trace.excluded:
+        add("- Excluídos:")
+        for result in trace.excluded:
+            add(
+                f"  - chunk_id={result.chunk_id} motivo={result.removal_reason or '—'} "
+                f"score={result.score:.6f} cobertura={result.coverage:.2f} "
+                f"termos={list(result.matched_terms) or 'nenhum'}"
+            )
 
 
 def render_markdown(report: DiagnosticReport) -> str:

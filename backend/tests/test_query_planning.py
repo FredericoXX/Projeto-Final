@@ -219,3 +219,41 @@ def test_hyphenated_word_is_not_treated_as_negation() -> None:
 def test_plan_is_deterministic() -> None:
     query = "Quando começam as aulas do primeiro semestre?"
     assert _plan(query) == _plan(query)
+
+
+# --- Expansão numérica de ordinais na geração de candidatos (Momento 4) -------
+
+
+def test_written_ordinal_adds_numeric_form_to_reduced_or() -> None:
+    # "segunda" é expandido para "2" na variante disjuntiva, para recuperar
+    # conteúdo que use a forma numérica ("2.ª").
+    or_variant = _variant(
+        "exames da segunda chamada", LexicalQueryStrategy.REDUCED_OR
+    ).split(" OR ")
+    assert "segunda" in or_variant
+    assert "2" in or_variant
+    # A conjuntiva NÃO exige o dígito literal.
+    assert "2" not in _variant(
+        "exames da segunda chamada", LexicalQueryStrategy.REDUCED_AND
+    ).split(" ")
+
+
+def test_single_ordinal_term_gains_reduced_or_variant() -> None:
+    # "a segunda" (um único termo informativo, ordinal) ganha uma variante OR
+    # "segunda OR 2" para poder recuperar o conteúdo numérico.
+    assert "reduced_or" in _strategies("a segunda")
+    assert set(_variant("a segunda", LexicalQueryStrategy.REDUCED_OR).split(" OR ")) == {
+        "segunda",
+        "2",
+    }
+
+
+def test_numeric_ordinal_is_not_duplicated_in_reduced_or() -> None:
+    # "1.ª" já contribui com o token "1"; a expansão não o duplica.
+    terms = _variant("exames da 1.ª chamada", LexicalQueryStrategy.REDUCED_OR).split(" OR ")
+    assert terms.count("1") == 1
+
+
+def test_non_ordinal_query_reduced_or_is_unchanged() -> None:
+    # Sem ordinais, a disjuntiva mantém-se exatamente como antes.
+    assert _variant("aulas setembro", LexicalQueryStrategy.REDUCED_OR) == "aulas OR setembro"

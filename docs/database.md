@@ -252,10 +252,15 @@ mesma configuração para o mesmo idioma. O stemming do PostgreSQL melhora a
 **recuperação** (ex.: `matrícula`/`matrículas`, `começa`/`começam` colapsam no
 mesmo stem em `portuguese`; `enrollment`/`enrollments` em `english`). Como o
 `normalized_content` já vem sem acentos, o stemming atua sobre texto sem
-diacríticos; alguns pares (`avaliar`/`avaliação`, `mudar`/`mudança`) não
-colapsam nesse regime — a **ordenação** por cobertura (abaixo) trata desses
-casos. Chunks históricos são revectorizados automaticamente pela coluna gerada,
-sem backfill. O índice GIN `ix_document_chunks_search_vector` suporta `@@`.
+diacríticos; alguns pares (`avaliar`/`avaliação`, `mudar`/`mudança`) **não**
+colapsam nesse regime — nem no FTS, nem na cobertura (que compara formas de
+superfície/canónicas, não stems). Um chunk cuja evidência usa uma dessas
+variantes é recuperado e ordenado pelos **restantes** termos da pergunta: por
+exemplo, a linha "Mudança do regime de avaliação | Até 6 de novembro" fica em
+primeiro para "mudar o regime de avaliação" porque cobre `regime` e
+`avaliação` (não porque `mudar` seja associado a `mudança`). Chunks históricos
+são revectorizados automaticamente pela coluna gerada, sem backfill. O índice
+GIN `ix_document_chunks_search_vector` suporta `@@`.
 
 #### Etapa A — candidate generation
 
@@ -266,18 +271,26 @@ com a configuração FTS do idioma:
 1. **exact** — consulta normalizada tal como foi escrita;
 2. **reduced_and** — apenas os termos informativos, todos obrigatórios (palavras
    funcionais removidas por pequenas listas conservadoras `pt`/`en`);
-3. **reduced_or** — os mesmos termos informativos, qualquer um suficiente.
+3. **reduced_or** — os mesmos termos informativos, qualquer um suficiente; a
+   variante disjuntiva acrescenta a **forma numérica** dos ordinais reconhecidos
+   (`primeira` ⇒ `… OR 1`), para recuperar conteúdo que usa a forma numérica
+   (`1.ª`) quando a pergunta usa a forma escrita. A conjuntiva não exige o
+   dígito literal; a ordenação por cobertura (que canoniza ambos para `ord:1`)
+   faz o resto.
 
 Ao contrário da baseline anterior (que parava na primeira variante com
-resultados), os candidatos de todas as variantes são **agregados** num
-*candidate pool* limitado e determinístico
-(`candidate_limit = min(100, max(20, top_k × 5))`), deduplicado por `chunk_id`,
-preservando a melhor estratégia (exact > reduced_and > reduced_or) e o melhor
-`ts_rank_cd`. Uma única consulta traz também os metadados estruturais
-(`page_number`, `section_title`, `structure_type`) usados no ranking, sem N+1.
-Todas as variantes aplicam **exatamente** os mesmos filtros SQL: instituição,
-estado ativo, idioma, validade, `official_only`, versão `processed` mais
-recente. O reranker nunca recebe chunks de outra instituição.
+resultados), os candidatos de todas as variantes são **agregados**, deduplicados
+por `chunk_id` (preservando a melhor estratégia exact > reduced_and > reduced_or
+e o melhor `ts_rank_cd`) e limitados por dois tetos: cada variante devolve no
+máximo `candidate_limit = min(100, max(20, top_k × 5))` candidatos em SQL, e o
+pool agregado é depois limitado a um teto global `CANDIDATE_MAX = 100`
+(deterministicamente, por melhor `ts_rank_cd`). Assim o reranker nunca recebe um
+pool ilimitado nem todos os chunks da instituição. Uma única consulta traz
+também os metadados estruturais (`page_number`, `section_title`,
+`structure_type`) usados no ranking, sem N+1. Todas as variantes aplicam
+**exatamente** os mesmos filtros SQL: instituição, estado ativo, idioma,
+validade, `official_only`, versão `processed` mais recente. O reranker nunca
+recebe chunks de outra instituição.
 
 Consultas com sintaxe `websearch` explícita — frases entre aspas, `OR` ou
 `-termos` negados — planeiam apenas a variante exata, para que a intenção nunca
@@ -297,23 +310,37 @@ em `[0, 1]`, com a **cobertura** dominante:
 - proximidade entre os termos correspondidos;
 - sobreposição com o título do documento e o título da secção;
 - benefício condicionado para `table_row` (curta, coberta e próxima);
-- `ts_rank_cd` como sinal **auxiliar** e saturante (não domina a cobertura);
 - qualidade da estratégia (exact > reduced_and > reduced_or);
-- fator de comprimento (um parágrafo longo não vence só por repetir um termo).
+- um sinal **auxiliar** combinado `ts_rank_cd × fator de comprimento`, com peso
+  pequeno: o comprimento amortece o FTS (um parágrafo longo não vence só por
+  repetir um termo) e — por serem os únicos sinais que não dependem de
+  correspondência real — nenhum deles dá pontos independentes a conteúdo que
+  nada corresponde. A proximidade é `0` quando nenhum termo é correspondido (sem
+  bónus "de graça").
 
 A comparação de cobertura usa formas canónicas
 (`app/retrieval/lexical_normalization.py`): ordinais padrão (`1.ª`, `1º`, `1o`,
 `primeira`… ⇒ `ord:1`) e intervalos numéricos **explícitos** (`01 a 12`,
-`01-12`, `01a12`). Cardinais isolados nunca viram ordinais (`12` ≠ `ord:1`); uma
-sequência sem separador nunca é dividida (`0509`, `20262027`). O OCR não é
-corrigido: `Ro` continua palavra, `12` continua cardinal.
+`01-12`, `01a12` ⇒ endpoints inteiros `1`/`12` mais o marcador `rng:1-12`, todos
+participantes na cobertura). Cardinais isolados nunca viram ordinais
+(`12` ≠ `ord:1`); uma sequência sem separador nunca é dividida (`0509`,
+`20262027`). O OCR não é corrigido: `Ro` continua palavra, `12` continua
+cardinal.
 
-Um **limiar** (`RETRIEVAL_MIN_RELEVANCE_SCORE`, padrão `0.05`) e uma regra de
-**dominância** (um candidato cujos termos correspondidos são subconjunto próprio
-dos de um candidato melhor é removido como redundante) excluem coincidências
-fracas do `top_k`. Consultas de um único termo institucional e correspondências
-de frase exata nunca são eliminadas; o melhor candidato recuperado sobrevive
-sempre. A ordenação final é totalmente determinística
+Duas exclusões **distintas** removem candidatos, registadas em separado no
+trace (`removed_by_dominance` vs `removed_by_threshold`):
+
+- **dominância** — um candidato cujos termos correspondidos são um subconjunto
+  próprio dos de um candidato mantido é redundante;
+- **limiar** (`RETRIEVAL_MIN_RELEVANCE_SCORE`, padrão `0.05`) — aplica-se a
+  **todos** os candidatos multi-termo, incluindo o melhor: se todos ficarem
+  abaixo do limiar, o resultado é vazio (e o answering devolve
+  `insufficient_evidence` em vez de gerar sobre uma coincidência fraca). Uma
+  correspondência de frase exata nunca é eliminada pelo limiar.
+
+Consultas de um único termo informativo têm política própria (mantêm todos os
+candidatos recuperados, para não perder recall quando o termo casou por
+stemming). A ordenação final é totalmente determinística
 (score↓, cobertura↓, estratégia↓, `ts_rank_cd`↓, `document_id`↑, `chunk_index`↑,
 `chunk_id`↑).
 

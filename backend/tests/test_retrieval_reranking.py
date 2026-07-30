@@ -130,6 +130,22 @@ def test_ordinal_distinguishes_first_from_second_chamada(client: TestClient) -> 
     assert "Exames da 2.ª chamada" in second[0]["content"]
 
 
+def test_ordinal_only_query_generates_candidate_via_numeric_expansion(
+    client: TestClient,
+) -> None:
+    """Sem a expansão numérica, "primeira" (só a forma escrita, um único
+    termo) nunca recuperaria conteúdo que usa "1.ª": a variante exata
+    procuraria literalmente "primeira". A expansão para "primeira OR 1" na
+    geração de candidatos torna o chunk recuperável; a cobertura ordena-o."""
+    _, headers, _ = _setup(client)
+    _create_searchable(
+        client, headers, "Sessao 1.ª de janeiro de 2030 | detalhes", title="Sessao"
+    )
+    items = _search(client, headers, "primeira").json()["items"]
+    assert items
+    assert "1.ª" in items[0]["content"]
+
+
 # --- Trace, candidate pool e limiar (secções 19, 25, 30) ---------------------
 
 
@@ -175,9 +191,11 @@ def test_candidate_pool_is_limited_and_deduplicated(
             top_k=5,
             official_only=True,
         )
-    # candidate_limit = min(MAX, max(20, 5*5)) = 25.
+    # candidate_limit = min(MAX, max(20, 5*5)) = 25 (por variante).
     assert trace.candidate_limit == 25
-    assert trace.unique_candidate_count <= CANDIDATE_MAX
+    # Teto global do pool agregado.
+    assert trace.candidate_ceiling == CANDIDATE_MAX
+    assert trace.unique_candidate_count <= trace.candidate_ceiling
     assert trace.unique_candidate_count <= 25
 
 
@@ -204,8 +222,9 @@ def test_threshold_removes_weak_partial_generic_match(
         )
     titles = [ev.document_title for ev in evidence]
     assert titles == ["Exames"]
-    # O documento de matrícula (só cobre "periodo") é removido por dominância.
-    assert trace.removed_by_threshold >= 1
+    # O documento de matrícula (só cobre "periodo", subconjunto de
+    # {periodo, exames}) é removido por DOMINÂNCIA, não pelo limiar.
+    assert trace.removed_by_dominance >= 1
 
 
 # --- Benefício condicionado de table_row (secção 24) -------------------------

@@ -217,11 +217,17 @@ def build_lexical_representation(
             start_value = int(range_match.group(1))
             end_value = int(range_match.group(2))
             ranges.append(NumericRange(start_value, end_value, position))
-            for endpoint in (range_match.group(1), range_match.group(2)):
+            # A forma canónica do endpoint é o inteiro (sem zeros à
+            # esquerda), para que "01 a 12" e "1 a 12" partilhem cobertura; a
+            # superfície original é preservada.
+            for endpoint, value in (
+                (range_match.group(1), start_value),
+                (range_match.group(2), end_value),
+            ):
                 tokens.append(
                     LexicalToken(
                         surface=endpoint,
-                        canonical=endpoint,
+                        canonical=str(value),
                         position=position,
                         kind=TokenKind.RANGE_ENDPOINT,
                     )

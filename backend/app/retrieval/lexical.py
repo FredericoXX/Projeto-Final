@@ -43,6 +43,7 @@ from app.retrieval.query_planning import (
 from app.retrieval.reranking import (
     LexicalCandidate,
     RankedCandidate,
+    RemovalReason,
     rerank,
 )
 
@@ -92,6 +93,9 @@ class RankedResultTrace:
     structure_type: str | None
     matched_terms: tuple[str, ...]
     reason: str
+    # Presente apenas nas linhas excluídas: motivo estável da remoção
+    # ("below_threshold" ou "dominated").
+    removal_reason: str | None = None
 
 
 @dataclass(frozen=True)
@@ -110,15 +114,38 @@ class LexicalRetrievalTrace:
     planned_variants: tuple[str, ...]
     variant_candidate_counts: tuple[VariantTrace, ...]
     candidate_limit: int
+    candidate_ceiling: int
     unique_candidate_count: int
     candidates_before_threshold: int
     removed_by_threshold: int
+    removed_by_dominance: int
     results: tuple[RankedResultTrace, ...]
     excluded: tuple[RankedResultTrace, ...]
 
 
 def _candidate_limit(top_k: int) -> int:
     return min(CANDIDATE_MAX, max(CANDIDATE_MIN, top_k * CANDIDATE_MULTIPLIER))
+
+
+def _apply_candidate_ceiling(candidates: list[LexicalCandidate]) -> list[LexicalCandidate]:
+    """Limita o pool agregado a CANDIDATE_MAX, deterministicamente.
+
+    A ordenação é por melhor score FTS cru (desc) e desempates estáveis;
+    só corta quando o total agregado das variantes excede o teto (caso de
+    top_k elevado). Cada variante já foi limitada a candidate_limit em SQL.
+    """
+    if len(candidates) <= CANDIDATE_MAX:
+        return candidates
+    ordered = sorted(
+        candidates,
+        key=lambda candidate: (
+            -candidate.raw_score,
+            str(candidate.document_id),
+            candidate.chunk_index,
+            str(candidate.chunk_id),
+        ),
+    )
+    return ordered[:CANDIDATE_MAX]
 
 
 def _better_strategy(
@@ -169,9 +196,15 @@ class PostgresLexicalRetriever:
             for row in rows:
                 self._merge_candidate(candidates, row, variant.strategy)
 
+        # Teto global do candidate pool: cada variante já trouxe no máximo
+        # candidate_limit candidatos; a agregação de N variantes é limitada a
+        # CANDIDATE_MAX no total, deterministicamente, por melhor score FTS
+        # cru. Garante que o reranker nunca recebe um pool ilimitado.
+        pool = _apply_candidate_ceiling(list(candidates.values()))
+
         result = rerank(
             query,
-            list(candidates.values()),
+            pool,
             context.language,
             min_relevance_score=settings.retrieval_min_relevance_score,
         )
@@ -194,12 +227,13 @@ class PostgresLexicalRetriever:
         # conteúdo documental (ver secção 41 do Momento 4).
         logger.info(
             "Lexical retrieval: fts=%s variants=%d candidates=%d results=%d "
-            "thresholded=%d institution=%s language=%s",
+            "thresholded=%d dominated=%d institution=%s language=%s",
             fts_config.value,
             len(plan.variants),
             len(candidates),
             len(evidence),
             len(result.removed_by_threshold),
+            len(result.removed_by_dominance),
             context.institution_id,
             context.language,
         )
@@ -345,6 +379,19 @@ class PostgresLexicalRetriever:
             token.ordinal for token in representation.tokens if token.ordinal is not None
         )
         ranges = tuple(numeric_range.canonical for numeric_range in representation.ranges)
+        excluded: list[RankedResultTrace] = [
+            _ranked_to_trace(ranked, RemovalReason.DOMINATED.value)
+            for ranked in result.removed_by_dominance
+        ]
+        excluded += [
+            _ranked_to_trace(ranked, RemovalReason.BELOW_THRESHOLD.value)
+            for ranked in result.removed_by_threshold
+        ]
+        candidates_before_threshold = (
+            len(result.ranked)
+            + len(result.removed_by_threshold)
+            + len(result.removed_by_dominance)
+        )
         return LexicalRetrievalTrace(
             fts_config=fts_config,
             informative_terms=result.query_terms,
@@ -353,14 +400,13 @@ class PostgresLexicalRetriever:
             planned_variants=plan_variants,
             variant_candidate_counts=variant_traces,
             candidate_limit=candidate_limit,
+            candidate_ceiling=CANDIDATE_MAX,
             unique_candidate_count=unique_candidate_count,
-            candidates_before_threshold=len(result.ranked) + len(result.removed_by_threshold),
+            candidates_before_threshold=candidates_before_threshold,
             removed_by_threshold=len(result.removed_by_threshold),
+            removed_by_dominance=len(result.removed_by_dominance),
             results=tuple(_ranked_to_trace(ranked) for ranked in top_results),
-            excluded=tuple(
-                _ranked_to_trace(ranked)
-                for ranked in result.removed_by_threshold[:_MAX_EXCLUDED_IN_TRACE]
-            ),
+            excluded=tuple(excluded[:_MAX_EXCLUDED_IN_TRACE]),
         )
 
 
@@ -406,7 +452,9 @@ def _ranked_to_evidence(ranked: RankedCandidate) -> Evidence:
     )
 
 
-def _ranked_to_trace(ranked: RankedCandidate) -> RankedResultTrace:
+def _ranked_to_trace(
+    ranked: RankedCandidate, removal_reason: str | None = None
+) -> RankedResultTrace:
     candidate = ranked.candidate
     features = ranked.features
     return RankedResultTrace(
@@ -424,4 +472,5 @@ def _ranked_to_trace(ranked: RankedCandidate) -> RankedResultTrace:
         structure_type=candidate.structure_type,
         matched_terms=tuple(sorted(features.matched_terms)),
         reason=ranked.reason,
+        removal_reason=removal_reason,
     )
