@@ -241,15 +241,44 @@ def test_ambiguous_ocr_gets_no_invented_ordinal() -> None:
     assert features.coverage < 1.0
 
 
-# 22
-def test_candidate_below_threshold_is_removed() -> None:
+# 22a — dominância remove um subconjunto próprio (distinto do limiar)
+def test_dominated_subset_is_removed_by_dominance_not_threshold() -> None:
     strong = _cand("regime avaliacao exames finais")
+    subset = _cand("regime apenas mencionado aqui")  # cobre só "regime"
+    result = _rank("regime avaliacao exames", [strong, subset])
+    assert [rc.candidate for rc in result.ranked] == [strong]
+    assert subset in [rc.candidate for rc in result.removed_by_dominance]
+    assert subset not in [rc.candidate for rc in result.removed_by_threshold]
+
+
+# 22b — o limiar remove um candidato NÃO dominado (sem cobertura), sem que a
+# dominância intervenha: prova real de que o piso atua por si.
+def test_non_dominated_candidate_below_threshold_is_removed() -> None:
     weak = _cand("palavra totalmente diferente sem relacao")
-    result = _rank("regime avaliacao exames", [strong, weak])
-    kept = [rc.candidate for rc in result.ranked]
-    assert strong in kept
-    assert weak not in kept
+    result = _rank("regime avaliacao exames", [weak])
+    assert result.ranked == ()  # o melhor NÃO sobrevive automaticamente
     assert weak in [rc.candidate for rc in result.removed_by_threshold]
+    assert result.removed_by_dominance == ()
+
+
+# 22c — todos os candidatos abaixo do limiar produzem lista vazia (o
+# answering recai em insufficient_evidence, não gera sobre coincidência fraca).
+def test_all_candidates_below_threshold_yield_empty() -> None:
+    candidates = [
+        _cand("texto sem relacao alguma com a pergunta"),
+        _cand("outro conteudo completamente distinto aqui"),
+    ]
+    result = _rank("regime avaliacao exames", candidates)
+    assert result.ranked == ()
+    assert len(result.removed_by_threshold) == 2
+
+
+# 22d — uma correspondência de frase exata nunca é eliminada pelo limiar,
+# mesmo com um piso deliberadamente altíssimo.
+def test_exact_phrase_survives_high_threshold() -> None:
+    exact = _cand("o regime de avaliacao consta aqui")
+    result = _rank("regime avaliacao", [exact], min_relevance=0.99)
+    assert [rc.candidate for rc in result.ranked] == [exact]
 
 
 # 23
@@ -260,7 +289,24 @@ def test_single_term_query_keeps_candidates() -> None:
 
 
 # 24
-def test_no_candidates_yields_empty_but_candidates_do_not() -> None:
+def test_no_candidates_yields_empty_and_covered_candidate_is_kept() -> None:
     assert _rank("regime avaliacao", []).ranked == ()
-    non_empty = _rank("regime avaliacao", [_cand("regime avaliacao")]).ranked
+    non_empty = _rank("regime avaliacao", [_cand("regime avaliacao presente")]).ranked
     assert len(non_empty) == 1
+
+
+# --- Intervalos explícitos participam na cobertura (Momento 4, M4) -----------
+
+
+def test_range_marker_contributes_to_coverage() -> None:
+    candidate = _cand("exames de 1 a 12 de fevereiro")
+    features = _features("exames 1 a 12", candidate)
+    assert "rng:1-12" in features.matched_terms
+
+
+def test_range_zero_padding_is_equivalent_in_coverage() -> None:
+    # "01 a 12" (pergunta) cobre integralmente "1 a 12" (conteúdo): endpoints
+    # canonizados para inteiros e o mesmo marcador de intervalo.
+    features = _features("periodo 01 a 12", _cand("periodo de 1 a 12"))
+    assert features.coverage == 1.0
+    assert {"1", "12", "rng:1-12"} <= features.matched_terms

@@ -71,7 +71,7 @@ jobs:
         run: ruff check .
       - name: Type check
         working-directory: backend
-        run: mypy app tests
+        run: mypy app tests scripts
       - name: Verify migrations
         working-directory: backend
         run: |

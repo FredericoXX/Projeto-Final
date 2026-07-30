@@ -9,12 +9,18 @@ Sinais considerados (todos normalizados para ``[0, 1]``):
 
 - cobertura dos termos informativos da pergunta no conteúdo;
 - correspondência de frase exata (sequência informativa contígua);
-- ordem dos termos e proximidade entre eles;
+- ordem dos termos e proximidade entre eles (proximidade ``0`` sem
+  correspondência: nunca um bónus "de graça");
 - sobreposição com o título do documento e com o título da secção;
 - benefício condicionado para ``table_row`` (curta, coberta e próxima);
-- score FTS cru (``ts_rank_cd``) como sinal **auxiliar** e saturante;
 - qualidade da estratégia que recuperou o candidato (exact > and > or);
-- fator de comprimento (um parágrafo longo não vence por repetição).
+- um sinal auxiliar combinado ``ts_rank_cd × fator de comprimento``, com
+  peso pequeno: o comprimento amortece o FTS (um parágrafo longo não vence
+  por repetição) e nenhum destes dois sinais dá pontos independentes a
+  conteúdo sem correspondência real. É isto que dá "dentes" ao limiar
+  mínimo: um candidato sem cobertura, sem frase exata e sem título/secção
+  correspondentes fica abaixo do piso, em vez de o ultrapassar só por ser
+  curto ou por repetir um termo genérico.
 
 O score final é a soma ponderada destes sinais, com a cobertura
 dominante. Os pesos e limiares são constantes nomeadas (abaixo), cobertas
@@ -24,13 +30,12 @@ mesma ordenação e os mesmos scores.
 A comparação de cobertura usa formas canónicas (``lexical_normalization``:
 ordinais e intervalos), não stemming — o stemming linguístico do
 PostgreSQL governa a **recuperação** (Etapa A); a cobertura governa a
-**ordenação** (Etapa B). Um candidato recuperado só por stemming, sem
-qualquer termo de superfície coberto, é dominado por um candidato com
-cobertura real.
+**ordenação** (Etapa B).
 """
 
 from dataclasses import dataclass, field
 from datetime import date
+from enum import StrEnum
 from uuid import UUID
 
 from app.core.text_normalization import normalize_text
@@ -45,24 +50,31 @@ from app.retrieval.query_planning import (
 # A cobertura domina: uma table_row com todos os termos vence um parágrafo
 # genérico que só repete um termo. Quando dois candidatos têm cobertura
 # igual (ex.: uma linha curta e um parágrafo longo que ambos contêm
-# "regime" e "avaliação"), a decisão passa para proximidade, estrutura e
-# comprimento — nunca para a frequência: o score FTS é deliberadamente
-# auxiliar (peso pequeno e saturante), para que a repetição de um termo
-# genérico não ultrapasse a evidência direta.
-W_COVERAGE = 0.38
-W_EXACT_PHRASE = 0.15
+# "regime" e "avaliação"), a decisão passa para proximidade e estrutura —
+# nunca para a frequência.
+#
+# Deliberadamente, os sinais que NÃO dependem de correspondência real
+# (score FTS e comprimento) são auxiliares e combinados num único termo
+# pequeno (``fts_norm × length_factor``, peso W_FTS): o comprimento amortece
+# o FTS (um parágrafo longo não vence por repetição) sem dar pontos
+# independentes a conteúdo que nada corresponde. Assim, um candidato sem
+# cobertura, sem frase exata e sem título/secção correspondentes fica abaixo
+# do limiar mínimo, em vez de o ultrapassar só por ser curto ou por repetir
+# um termo genérico (ver ``rerank`` e o Momento 4, correção do limiar).
+W_COVERAGE = 0.40
+W_EXACT_PHRASE = 0.16
 W_PROXIMITY = 0.14
-W_ORDER = 0.07
-W_TITLE = 0.06
+W_ORDER = 0.08
+W_TITLE = 0.07
 W_STRUCTURE = 0.06
-W_LENGTH = 0.05
-W_SECTION = 0.04
-W_FTS = 0.03
+W_SECTION = 0.05
+W_FTS = 0.02
 W_STRATEGY = 0.02
 _WEIGHT_SUM = (
-    W_COVERAGE + W_EXACT_PHRASE + W_PROXIMITY + W_FTS + W_ORDER
-    + W_TITLE + W_SECTION + W_LENGTH + W_STRUCTURE + W_STRATEGY
+    W_COVERAGE + W_EXACT_PHRASE + W_PROXIMITY + W_ORDER
+    + W_TITLE + W_STRUCTURE + W_SECTION + W_FTS + W_STRATEGY
 )
+assert abs(_WEIGHT_SUM - 1.0) < 1e-9, "os pesos do ranking devem somar 1.0"
 
 # --- Constantes de calibração (nomeadas e comentadas) -----------------------
 # Saturação do score FTS cru: fts_norm = raw / (raw + FTS_SATURATION), o que
@@ -143,13 +155,28 @@ class RankedCandidate:
     reason: str
 
 
+class RemovalReason(StrEnum):
+    """Motivo estável pelo qual um candidato foi excluído do resultado."""
+
+    BELOW_THRESHOLD = "below_threshold"
+    DOMINATED = "dominated"
+
+
 @dataclass(frozen=True)
 class RerankResult:
-    """Resultado do reranking, com o que foi removido pelo limiar."""
+    """Resultado do reranking, distinguindo dominância de limiar.
+
+    ``removed_by_dominance`` reúne os candidatos redundantes (os seus termos
+    correspondidos são um subconjunto próprio dos de um candidato mantido);
+    ``removed_by_threshold`` reúne os candidatos cujo score composto ficou
+    abaixo do limiar mínimo. As duas causas são distintas e nunca se
+    confundem no trace nem no diagnóstico.
+    """
 
     query_terms: tuple[str, ...]
     ranked: tuple[RankedCandidate, ...]
     removed_by_threshold: tuple[RankedCandidate, ...] = field(default_factory=tuple)
+    removed_by_dominance: tuple[RankedCandidate, ...] = field(default_factory=tuple)
 
 
 def informative_query_terms(normalized_query: str, language: str) -> tuple[str, ...]:
@@ -175,6 +202,17 @@ def informative_query_terms(normalized_query: str, language: str) -> tuple[str, 
         terms.append(token.canonical)
         if len(terms) >= MAX_INFORMATIVE_TERMS:
             break
+    # Marcadores de intervalo explícito (ex.: "rng:1-12") também são termos
+    # de cobertura: um intervalo na pergunta deve casar o mesmo intervalo no
+    # conteúdo, seja qual for a sua forma textual ("01a12", "01-12", "1 a 12").
+    for numeric_range in representation.ranges:
+        marker = numeric_range.canonical
+        if marker in seen:
+            continue
+        if len(terms) >= MAX_INFORMATIVE_TERMS:
+            break
+        seen.add(marker)
+        terms.append(marker)
     return tuple(terms)
 
 
@@ -222,10 +260,19 @@ def _ordered_fraction(query_terms: tuple[str, ...], positions: dict[str, int]) -
 
 
 def _proximity(matched: frozenset[str], positions: dict[str, int]) -> float:
-    """Proximidade dos termos correspondentes: 1.0 quando adjacentes."""
-    if len(matched) < 2:
+    """Proximidade dos termos correspondentes: 1.0 quando adjacentes.
+
+    Considera apenas os termos com posição (palavras, números, ordinais,
+    endpoints de intervalo); marcadores abstratos como ``rng:1-12`` não têm
+    posição própria. Um candidato sem qualquer termo posicional correspondido
+    recebe **0.0** — nunca um bónus de proximidade "de graça". Um único termo
+    é trivialmente próximo de si mesmo (1.0), valor neutro.
+    """
+    matched_positions = sorted(positions[term] for term in matched if term in positions)
+    if len(matched_positions) == 0:
+        return 0.0
+    if len(matched_positions) == 1:
         return 1.0
-    matched_positions = sorted(positions[term] for term in matched)
     span = matched_positions[-1] - matched_positions[0] + 1
     return len(matched_positions) / span
 
@@ -298,17 +345,22 @@ def compute_features(
 
 
 def compute_score(features: LexicalFeatures) -> float:
-    """Score composto em [0, 1] a partir dos sinais (soma ponderada)."""
+    """Score composto em [0, 1] a partir dos sinais (soma ponderada).
+
+    O sinal auxiliar combina FTS e comprimento (``fts_norm × length_factor``,
+    peso ``W_FTS``): o comprimento amortece o FTS e nenhum destes sinais dá
+    pontos independentes a conteúdo sem correspondência real.
+    """
+    fts_component = features.fts_norm * features.length_factor
     score = (
         W_COVERAGE * features.coverage
         + W_EXACT_PHRASE * features.exact_phrase
         + W_PROXIMITY * features.proximity
-        + W_FTS * features.fts_norm
         + W_ORDER * features.ordered
         + W_TITLE * features.title_overlap
         + W_SECTION * features.section_overlap
         + W_STRUCTURE * features.table_row_bonus
-        + W_LENGTH * features.length_factor
+        + W_FTS * fts_component
         + W_STRATEGY * features.strategy_quality
     )
     # Defensivo: garante o intervalo mesmo perante erros de vírgula flutuante.
@@ -351,18 +403,25 @@ def rerank(
 ) -> RerankResult:
     """Reordena e filtra os candidatos de forma determinística.
 
-    Política do limiar:
+    Política do limiar (Momento 4, corrigida):
 
-    - consultas de um único termo informativo mantêm todos os candidatos
-      recuperados (o termo institucional casou por FTS) — nunca ficam
-      vazias por limiar;
-    - consultas multi-termo aplicam um piso de score mínimo (exceto para
-      correspondências de frase exata, nunca eliminadas) e uma regra de
-      dominância: um candidato cujos termos correspondidos são um
-      subconjunto próprio dos de um candidato melhor é removido como
-      redundante;
-    - o melhor candidato sobrevive sempre (nunca se devolve lista vazia
-      quando existem candidatos recuperados).
+    - **Consultas de um único termo informativo**: mantêm todos os
+      candidatos recuperados. Um termo institucional que casou por FTS
+      (incluindo por stemming, ex.: ``matrículas`` ⇄ ``matrícula``) é
+      relevante mesmo sem cobertura de superfície; esta política própria
+      evita perder recall em consultas curtas.
+
+    - **Consultas multi-termo**: o piso de score aplica-se a **todos** os
+      candidatos, incluindo o melhor — se todos ficarem abaixo do limiar, o
+      resultado é vazio (e o answering devolve ``insufficient_evidence`` em
+      vez de gerar sobre uma coincidência fraca). Uma correspondência de
+      frase exata nunca é eliminada pelo limiar. Em paralelo, a dominância
+      remove candidatos redundantes (termos correspondidos ⊊ os de um
+      candidato mantido). As duas causas são registadas em separado.
+
+    Como o sinal auxiliar (FTS × comprimento) tem peso pequeno, um candidato
+    sem cobertura, sem frase exata e sem título/secção correspondentes fica
+    abaixo do limiar padrão — é aí que o piso efetivamente atua.
     """
     query_terms = informative_query_terms(normalized_query, language)
     scored: list[RankedCandidate] = []
@@ -379,36 +438,30 @@ def rerank(
     scored.sort(key=_ranking_key)
 
     if not scored:
-        return RerankResult(query_terms=query_terms, ranked=(), removed_by_threshold=())
+        return RerankResult(query_terms=query_terms, ranked=())
 
-    # Consultas de um único termo: manter tudo (secção 25.1).
+    # Consultas de um único termo: política própria — manter tudo.
     if len(query_terms) <= 1:
         return RerankResult(query_terms=query_terms, ranked=tuple(scored))
 
     kept: list[RankedCandidate] = []
-    removed: list[RankedCandidate] = []
+    removed_threshold: list[RankedCandidate] = []
+    removed_dominance: list[RankedCandidate] = []
     kept_matched_sets: list[frozenset[str]] = []
-    for rank_index, ranked in enumerate(scored):
+    for ranked in scored:
         matched = ranked.features.matched_terms
-        is_best = rank_index == 0
         exact = ranked.features.exact_phrase >= 1.0
-        full_coverage = ranked.features.coverage >= 1.0
 
-        dominated = any(
-            existing > matched  # superconjunto próprio
-            for existing in kept_matched_sets
-        )
-        below_floor = ranked.score < min_relevance_score
-
-        if is_best:
-            kept.append(ranked)
-            kept_matched_sets.append(matched)
+        # Dominância: um candidato cujos termos são subconjunto próprio dos de
+        # um já mantido é redundante (a frase exata tem cobertura total, logo
+        # nunca é dominada).
+        if any(existing > matched for existing in kept_matched_sets):
+            removed_dominance.append(ranked)
             continue
-        if dominated and not exact and not full_coverage:
-            removed.append(ranked)
-            continue
-        if below_floor and not exact:
-            removed.append(ranked)
+        # Limiar: aplica-se a todos, incluindo o melhor; a frase exata é
+        # sempre preservada.
+        if ranked.score < min_relevance_score and not exact:
+            removed_threshold.append(ranked)
             continue
         kept.append(ranked)
         kept_matched_sets.append(matched)
@@ -416,5 +469,6 @@ def rerank(
     return RerankResult(
         query_terms=query_terms,
         ranked=tuple(kept),
-        removed_by_threshold=tuple(removed),
+        removed_by_threshold=tuple(removed_threshold),
+        removed_by_dominance=tuple(removed_dominance),
     )
