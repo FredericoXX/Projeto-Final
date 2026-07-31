@@ -10,9 +10,11 @@ alucinações — a validação desta etapa é determinística e estrutural, nã
 semântica.
 
 Continuam a **não** existir: embeddings, pesquisa semântica, pesquisa
-híbrida, reranking, validação por segundo LLM, confidence score final,
-memória/histórico no prompt, idempotência, persistência de prompts ou
-respostas brutas do fornecedor, feedback, escalonamento humano e frontend.
+híbrida, reranking por modelo, validação por segundo LLM, confidence score
+final, memória/histórico no prompt, idempotência, persistência de prompts ou
+respostas brutas do fornecedor, feedback, escalonamento humano e frontend. O
+reranking que existe é lexical e determinístico, na etapa de retrieval (ver
+[`docs/database.md`](database.md)).
 
 ## Fluxo
 
@@ -30,15 +32,28 @@ pergunta autenticada
 
 A recuperação de evidências beneficia automaticamente do retrieval lexical
 do `PostgresLexicalRetriever` através do contrato `Retriever` inalterado.
-A partir do Momento 4, esse retriever agrega as variantes da consulta
-(exact, reduced_and, reduced_or) e aplica um reranking lexical
-determinístico por cobertura/proximidade/estrutura (ver a secção de
-retrieval em [`docs/database.md`](database.md)). O answering usa apenas a
-**ordem** do ranking e o conteúdo das evidências, não o valor do `score`,
-pelo que a nova semântica do score composto não altera a seleção de
-contexto nem a política de evidência. A melhoria não elimina a limitação
-lexical de fundo: perguntas cujo vocabulário não partilha nenhum termo
-com os documentos continuam em `insufficient_evidence`.
+Esse retriever agrega as variantes da consulta (exact, reduced_and,
+canonical_relaxed_and, reduced_or) dentro de um orçamento global por quotas,
+decide **elegibilidade** antes de pontuar e só depois aplica o ranking
+lexical determinístico (ver a secção de retrieval em
+[`docs/database.md`](database.md)). O answering usa apenas a **ordem** do
+ranking e o conteúdo das evidências, não o valor do `score`, pelo que a
+semântica do score composto não altera a seleção de contexto nem a política
+de evidência.
+
+A **suficiência da evidência é decidida no retriever**, não no answering: o
+answering não faz uma segunda avaliação, não altera prompts e não conhece a
+política de cobertura. Quando o retrieval devolve zero evidências — porque
+não houve correspondência, porque a cobertura foi insuficiente (ex.: um
+único candidato que cobre 1 de 3 termos) ou porque todos os candidatos
+ficaram abaixo do limiar —, o answering devolve `insufficient_evidence`, com
+`sources` vazias, **sem chamar o gerador** e sem persistir qualquer
+`message_source`. Nenhuma resposta fundamentada é produzida sobre uma
+coincidência fraca.
+
+Isto não elimina a limitação lexical de fundo: perguntas cujo vocabulário
+não partilha termos suficientes com os documentos continuam em
+`insufficient_evidence`.
 
 ## Endpoint independente
 

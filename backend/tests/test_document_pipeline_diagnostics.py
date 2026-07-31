@@ -1569,8 +1569,8 @@ def test_real_retriever_populates_lexical_trace_in_report(
     client: TestClient, test_session_factory: sessionmaker[Session]
 ) -> None:
     """Com o PostgresLexicalRetriever, o relatório inclui o trace lexical
-    (config FTS, termos, variantes, candidate pool e componentes do score),
-    e o formato do relatório é a versão 3."""
+    (config FTS, termos, quotas por variante, orçamento global e motivos de
+    exclusão tipados), e o formato do relatório é a versão 4."""
     from app.retrieval.lexical import PostgresLexicalRetriever
 
     institution, _, document, _ = _persisted_graph(client)
@@ -1584,19 +1584,87 @@ def test_real_retriever_populates_lexical_trace_in_report(
             reference_date=date(2031, 3, 1),
             clock=lambda: datetime(2031, 3, 1, tzinfo=UTC),
         )
-    assert report.diagnostic_report_version == 3
+    assert report.diagnostic_report_version == 4
     trace = report.questions[0].lexical_trace
     assert trace is not None
     assert trace.fts_config == "portuguese"
-    assert "evento" in trace.informative_terms
+    # O relatório recebe a **contagem** de termos, nunca os termos.
+    assert trace.informative_term_count > 0
     assert trace.planned_variants  # pelo menos a variante exact
+    # Contagens matematicamente consistentes entre si.
+    assert trace.candidates_evaluated == trace.unique_after_dedup
+    assert trace.candidates_evaluated == (
+        trace.final_result_count
+        + trace.excluded_no_content_match
+        + trace.excluded_insufficient_coverage
+        + trace.excluded_below_threshold
+    )
+    assert sum(variant.quota for variant in trace.variants) <= trace.global_candidate_limit
 
     rendered = diagnostic.render_markdown(report)
     assert "#### Trace do retrieval lexical" in rendered
     assert "- Configuração FTS: portuguese" in rendered
+    assert "- Limite global de candidatos:" in rendered
+    assert "- Removidos por cobertura insuficiente:" in rendered
+    assert "- Resultados finais:" in rendered
+    # A dominância deixou de existir: nenhum vestígio no relatório.
+    assert "dominância" not in rendered
+    assert "candidate_ceiling" not in rendered
     # O trace também é serializável em JSON, sem conteúdo documental.
     payload = json.loads(diagnostic.render_json(report))
-    assert payload["questions"][0]["lexical_trace"]["fts_config"] == "portuguese"
+    trace_payload = payload["questions"][0]["lexical_trace"]
+    assert trace_payload["fts_config"] == "portuguese"
+    assert "global_candidate_limit" in trace_payload
+    # Privacidade: a secção do trace expõe contagens, não os termos derivados.
+    assert "informative_terms" not in trace_payload
+    assert "matched_terms" not in json.dumps(trace_payload)
+    assert trace_payload["informative_term_count"] > 0
+
+
+def test_lexical_trace_does_not_duplicate_question_terms(
+    client: TestClient, test_session_factory: sessionmaker[Session]
+) -> None:
+    """O trace lexical não acrescenta uma segunda cópia dos termos.
+
+    Âmbito exato desta garantia: o relatório **contém deliberadamente** a
+    pergunta e a resposta esperada (`QuestionDiagnostic.question`), que são
+    o input do próprio operador e existem desde a v1 — o artefacto traz
+    aviso de confidencialidade por isso mesmo. O que a secção do trace não
+    pode fazer é derivar e duplicar essa informação em formas canónicas
+    (`informative_terms`, `matched_terms`), que atravessariam para o
+    relatório sem que ninguém as tenha pedido. Essas passam a contagens.
+
+    A proibição literal de registar a pergunta aplica-se aos **logs**,
+    verificada em `test_retrieval_logs_only_controlled_metadata`.
+    """
+    from app.retrieval.lexical import PostgresLexicalRetriever
+
+    institution, _, document, _ = _persisted_graph(client)
+    question = _question()
+    with test_session_factory() as db:
+        report = diagnostic.run_diagnostic(
+            db,
+            PostgresLexicalRetriever(),
+            institution_id=UUID(institution["id"]),
+            questions=(question,),
+            document_id=UUID(document["id"]),
+            reference_date=date(2031, 3, 1),
+            clock=lambda: datetime(2031, 3, 1, tzinfo=UTC),
+        )
+    trace = report.questions[0].lexical_trace
+    assert trace is not None
+    rendered_trace: list[str] = []
+    diagnostic._add_lexical_trace(rendered_trace.append, trace)
+    trace_markdown = "\n".join(rendered_trace)
+    trace_json = json.dumps(diagnostic._to_jsonable(trace), ensure_ascii=False)
+
+    # Nenhum termo informativo da pergunta aparece na secção do trace.
+    for term in ("evento", "sintetico", "decorre", "quando"):
+        assert term not in trace_markdown.lower()
+        assert term not in trace_json.lower()
+    # Mas as contagens continuam lá, para o relatório continuar auditável.
+    assert "- Termos informativos: " in trace_markdown
+    assert "termos correspondidos" in trace_markdown
 
 
 def test_empty_retriever_leaves_lexical_trace_absent() -> None:
@@ -1604,7 +1672,7 @@ def test_empty_retriever_leaves_lexical_trace_absent() -> None:
     trace lexical a None (contrato Retriever permanece neutro)."""
     state = _classification_state()
     report = _minimal_report(
-        diagnostic_report_version=3,
+        diagnostic_report_version=4,
         questions=(
             diagnostic.QuestionDiagnostic(
                 question_id="q",

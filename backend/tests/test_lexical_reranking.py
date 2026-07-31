@@ -11,8 +11,10 @@ import math
 from uuid import UUID, uuid4
 
 from app.core.text_normalization import normalize_text
+from app.retrieval.eligibility import ExclusionReason
 from app.retrieval.query_planning import LexicalQueryStrategy
 from app.retrieval.reranking import (
+    _WEIGHT_SUM,
     LexicalCandidate,
     compute_features,
     compute_score,
@@ -184,6 +186,10 @@ def test_reduced_and_beats_reduced_or_in_equality() -> None:
     assert ranked[0].candidate is reduced_and
 
 
+def test_ranking_weights_sum_to_one() -> None:
+    assert math.isclose(_WEIGHT_SUM, 1.0, rel_tol=1e-9)
+
+
 # 14 & 15
 def test_score_is_finite_and_bounded() -> None:
     for content in ("regime avaliacao", "x", "regime " * 500, "sem termos aqui"):
@@ -241,44 +247,56 @@ def test_ambiguous_ocr_gets_no_invented_ordinal() -> None:
     assert features.coverage < 1.0
 
 
-# 22a — dominância remove um subconjunto próprio (distinto do limiar)
-def test_dominated_subset_is_removed_by_dominance_not_threshold() -> None:
-    strong = _cand("regime avaliacao exames finais")
-    subset = _cand("regime apenas mencionado aqui")  # cobre só "regime"
-    result = _rank("regime avaliacao exames", [strong, subset])
-    assert [rc.candidate for rc in result.ranked] == [strong]
-    assert subset in [rc.candidate for rc in result.removed_by_dominance]
-    assert subset not in [rc.candidate for rc in result.removed_by_threshold]
+# 22a — evidência complementar é preservada, não eliminada por subconjunto.
+def test_complementary_evidence_is_preserved_not_dominated() -> None:
+    """Dois chunks elegíveis em que os termos de um são subconjunto próprio
+    dos do outro: o mais fraco desce no ranking, mas continua a ser
+    evidência — a antiga dominância por subconjunto apagava-o."""
+    strong = _cand("regime avaliacao exames finais", document_id=UUID(int=1))
+    complementary = _cand("regime de avaliacao contínua", document_id=UUID(int=2))
+    result = _rank("regime avaliacao exames", [strong, complementary])
+    kept = [rc.candidate for rc in result.ranked]
+    assert kept == [strong, complementary]
+    assert result.excluded == ()
 
 
-# 22b — o limiar remove um candidato NÃO dominado (sem cobertura), sem que a
-# dominância intervenha: prova real de que o piso atua por si.
-def test_non_dominated_candidate_below_threshold_is_removed() -> None:
+# 22b — um candidato sem qualquer correspondência é excluído por ausência de
+# correspondência, não pelo limiar: as causas são distintas e tipadas.
+def test_candidate_without_content_match_is_excluded_before_scoring() -> None:
     weak = _cand("palavra totalmente diferente sem relacao")
     result = _rank("regime avaliacao exames", [weak])
     assert result.ranked == ()  # o melhor NÃO sobrevive automaticamente
-    assert weak in [rc.candidate for rc in result.removed_by_threshold]
-    assert result.removed_by_dominance == ()
+    assert [item.reason for item in result.excluded] == [
+        ExclusionReason.NO_CONTENT_MATCH
+    ]
+    # Excluído antes da pontuação: os sinais auxiliares nem existem.
+    assert result.excluded[0].score is None
 
 
-# 22c — todos os candidatos abaixo do limiar produzem lista vazia (o
-# answering recai em insufficient_evidence, não gera sobre coincidência fraca).
-def test_all_candidates_below_threshold_yield_empty() -> None:
+# 22c — todos os candidatos podem ser removidos (o answering recai em
+# insufficient_evidence, não gera sobre coincidência fraca).
+def test_all_candidates_can_be_removed() -> None:
     candidates = [
         _cand("texto sem relacao alguma com a pergunta"),
-        _cand("outro conteudo completamente distinto aqui"),
+        _cand("regime apenas mencionado uma vez aqui"),
     ]
     result = _rank("regime avaliacao exames", candidates)
     assert result.ranked == ()
-    assert len(result.removed_by_threshold) == 2
+    assert result.excluded_count(ExclusionReason.NO_CONTENT_MATCH) == 1
+    assert result.excluded_count(ExclusionReason.INSUFFICIENT_COVERAGE) == 1
 
 
-# 22d — uma correspondência de frase exata nunca é eliminada pelo limiar,
-# mesmo com um piso deliberadamente altíssimo.
-def test_exact_phrase_survives_high_threshold() -> None:
+# 22d — a frase exata deixa de ser imune ao limiar: o piso aplica-se a todos
+# os candidatos elegíveis, incluindo o melhor.
+def test_exact_phrase_is_not_exempt_from_threshold() -> None:
     exact = _cand("o regime de avaliacao consta aqui")
     result = _rank("regime avaliacao", [exact], min_relevance=0.99)
-    assert [rc.candidate for rc in result.ranked] == [exact]
+    assert result.ranked == ()
+    assert [item.reason for item in result.excluded] == [
+        ExclusionReason.BELOW_THRESHOLD
+    ]
+    # Excluído depois da pontuação: o score fica registado para auditoria.
+    assert result.excluded[0].score is not None
 
 
 # 23
@@ -305,8 +323,47 @@ def test_range_marker_contributes_to_coverage() -> None:
 
 
 def test_range_zero_padding_is_equivalent_in_coverage() -> None:
-    # "01 a 12" (pergunta) cobre integralmente "1 a 12" (conteúdo): endpoints
-    # canonizados para inteiros e o mesmo marcador de intervalo.
+    # "01 a 12" (pergunta) cobre integralmente "1 a 12" (conteúdo): o mesmo
+    # marcador de intervalo, seja qual for a forma textual.
     features = _features("periodo 01 a 12", _cand("periodo de 1 a 12"))
     assert features.coverage == 1.0
-    assert {"1", "12", "rng:1-12"} <= features.matched_terms
+    assert "rng:1-12" in features.matched_terms
+
+
+def test_compact_range_form_matches_spaced_content() -> None:
+    # "01a12" na pergunta ⇄ "1 a 12" no conteúdo.
+    features = _features("periodo inscricoes 01a12", _cand("periodo de inscricoes 1 a 12"))
+    assert features.coverage == 1.0
+    assert "rng:1-12" in features.matched_terms
+
+
+def test_range_participates_in_exact_phrase_and_order() -> None:
+    """O marcador é uma unidade posicional: "periodo 01a12" forma frase
+    exata dentro de "periodo de 1 a 12" e mantém a ordem."""
+    features = _features("periodo 01a12", _cand("periodo de 1 a 12"))
+    assert features.exact_phrase == 1.0
+    assert features.ordered == 1.0
+
+
+def test_range_marker_occupies_a_single_position_for_proximity() -> None:
+    """O intervalo conta como **um** termo adjacente ao anterior: se os
+    endpoints ocupassem posições próprias, o span seria maior e a
+    proximidade cairia."""
+    features = _features("periodo 01a12", _cand("periodo 1 a 12"))
+    assert features.proximity == 1.0
+    assert features.compactness == 1.0
+
+
+def test_correct_range_outranks_neighbouring_range() -> None:
+    correct = _cand("periodo de inscricoes 1 a 12", document_id=UUID(int=1))
+    neighbour = _cand("periodo de inscricoes 1 a 13", document_id=UUID(int=2))
+    ranked = _rank("periodo inscricoes 01a12", [neighbour, correct]).ranked
+    assert ranked[0].candidate is correct
+    assert "rng:1-12" in ranked[0].features.matched_terms
+
+
+def test_number_run_never_matches_a_range() -> None:
+    # "0509" continua ambíguo: nunca corresponde ao intervalo 5 a 9.
+    features = _features("semana 0509", _cand("semana de 5 a 9 de outubro"))
+    assert "rng:5-9" not in features.matched_terms
+    assert features.coverage < 1.0

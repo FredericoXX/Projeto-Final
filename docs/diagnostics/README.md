@@ -14,16 +14,71 @@ chunks que atravessam páginas e linhas de tabela divididas. Para cada pergunta,
 continua a indicar factos no mesmo chunk/contexto fragmentado e acrescenta se
 todos os factos esperados aparecem na mesma `table_row`.
 
-O formato de relatório **v3** (Momento 4) acrescenta, quando o retriever ativo
-o suporta, o **trace do retrieval lexical** por pergunta: a configuração FTS
-usada (`portuguese`/`english`/`simple`), os termos informativos e ordinais/
-intervalos canónicos da pergunta, as variantes planeadas e o número de
-candidatos por variante, o `candidate_limit`, os candidatos únicos, os removidos
-pelo limiar, e — por resultado — a estratégia, o `ts_rank_cd` cru, o score
-composto e os componentes do ranking (cobertura, frase exata, proximidade,
-título, secção, estrutura) com uma razão resumida. O trace contém apenas
-metadados e sinais de ranking: **nunca** conteúdo de chunks, títulos fornecidos,
-secções, URLs ou segredos. O retrieval corre uma única vez por pergunta.
+O formato de relatório **v4** acrescenta, quando o retriever ativo o suporta, o
+**trace do retrieval lexical** por pergunta:
+
+- a configuração FTS usada (`portuguese`/`english`/`simple`);
+- a **contagem** de termos informativos e os marcadores estruturais
+  (ordinais/intervalos) reconhecidos — nunca o texto dos termos;
+- as variantes planeadas (`exact`, `reduced_and`, `canonical_relaxed_and`,
+  `reduced_or`);
+- o **limite global de candidatos**, a **quota** de cada variante e quantas
+  linhas cada uma devolveu;
+- o total devolvido antes da deduplicação, os únicos após deduplicação e os
+  candidatos avaliados;
+- os removidos por **motivo tipado**: `no_content_match` (nenhuma
+  correspondência no conteúdo), `insufficient_coverage` (cobertura abaixo do
+  mínimo) e `below_threshold` (limiar de relevância);
+- o número de resultados finais;
+- por resultado: a estratégia, o `ts_rank_cd` cru, o score composto e os
+  componentes do ranking (cobertura, frase exata, ordem, proximidade, título,
+  secção, estrutura), com uma razão resumida que inclui a condição de
+  elegibilidade aplicada.
+
+As contagens são **matematicamente consistentes** entre si e verificadas por
+teste:
+
+```
+soma(quota)            <= limite global
+soma(devolvidos)       == total antes da deduplicação
+únicos após dedup      <= total antes da deduplicação
+candidatos avaliados   == únicos após deduplicação
+candidatos avaliados   == resultados finais
+                          + removidos por ausência de correspondência
+                          + removidos por cobertura insuficiente
+                          + removidos pelo limiar
+```
+
+O corte por `top_k` **não** conta como exclusão de relevância: os resultados
+finais são os candidatos que sobreviveram à elegibilidade e ao limiar. As linhas
+de detalhe são limitadas para não produzir relatórios enormes, mas as contagens
+abrangem sempre todos os candidatos.
+
+A **secção do trace** contém apenas metadados e sinais de ranking: **nunca**
+termos da pergunta, conteúdo de chunks, títulos fornecidos, secções, URLs,
+prompts, respostas ou segredos.
+
+Essa fronteira é explícita no código. O trace devolvido por `search_with_trace`
+é uma estrutura **interna**, em memória, que conhece as formas canónicas dos
+termos e serve a depuração e os testes; o relatório recebe uma projeção
+**redigida** (`redact_lexical_trace`), em que os termos informativos e os termos
+correspondidos passam a contagens. Como o Markdown e o JSON são ambos gerados a
+partir dessa projeção, nenhum deles recebe termos derivados — verificado por
+`test_lexical_trace_does_not_duplicate_question_terms`. Os ordinais e intervalos
+permanecem por serem marcadores estruturais exigidos pelo relatório, não
+conteúdo lexical.
+
+**Âmbito, para evitar leitura excessiva:** o relatório como um todo **contém
+deliberadamente** a pergunta e a resposta esperada de cada entrada
+(`QuestionDiagnostic.question` / `expected_answer`) — são o input do próprio
+operador, indispensáveis para interpretar o diagnóstico, e existem desde a v1. É
+por isso que o documento abre com um aviso de confidencialidade e não deve ser
+publicado sem revisão humana. A garantia acima é mais estreita e diz respeito ao
+trace: ele não deriva da pergunta um segundo conjunto de termos canónicos para
+arrastar até ao relatório. A proibição literal de registar a pergunta aplica-se
+aos **logs**, onde nunca aparece.
+
+O retrieval corre uma única vez por pergunta.
 
 `PAGE_SEPARATOR = "\f"` é tratado como fronteira válida, não como conteúdo
 perdido entre chunks. O diagnóstico apenas observa o texto e os metadados já

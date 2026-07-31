@@ -410,6 +410,39 @@ def test_insufficient_evidence_persists_two_messages_without_sources_or_provider
     assert _row_counts(test_session_factory) == (2, 0)
 
 
+def test_partial_term_match_persists_no_sources_and_never_calls_provider(
+    client: TestClient,
+    test_session_factory: sessionmaker[Session],
+    override_generator,
+) -> None:
+    """Contraexemplo real na conversa: existe um documento que corresponde
+    a 1 dos 3 termos. Nem esse candidato fraco chega ao answering — o turno
+    é persistido como insufficient_evidence, sem message_sources e sem
+    qualquer chamada ao fornecedor."""
+    _, headers, _, conversation = _setup_admin_conversation(client)
+    _create_searchable_document(
+        client,
+        headers,
+        "Regime institucional geral.",
+        title="Política Interna",
+        source_url="https://example.edu/politica",
+    )
+    generator = override_generator(
+        FakeAnswerGenerator(exception=AssertionError("provider must not be called"))
+    )
+
+    response = _ask(
+        client, conversation["id"], headers, query="regime avaliacao exames"
+    )
+    assert response.status_code == 201
+    body = response.json()
+    assert body["status"] == "insufficient_evidence"
+    assert body["assistant_message"]["sources"] == []
+    assert generator.calls == []
+    # Dois mensagens (pergunta + resposta de fallback), zero message_sources.
+    assert _row_counts(test_session_factory) == (2, 0)
+
+
 def test_ask_requires_authentication_and_rejects_invalid_payloads_without_writes(
     client: TestClient,
     test_session_factory: sessionmaker[Session],

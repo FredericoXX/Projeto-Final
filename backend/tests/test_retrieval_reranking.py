@@ -130,20 +130,46 @@ def test_ordinal_distinguishes_first_from_second_chamada(client: TestClient) -> 
     assert "Exames da 2.ª chamada" in second[0]["content"]
 
 
-def test_ordinal_only_query_generates_candidate_via_numeric_expansion(
+def test_ordinal_only_query_is_never_expanded_to_a_cardinal(
     client: TestClient,
 ) -> None:
-    """Sem a expansão numérica, "primeira" (só a forma escrita, um único
-    termo) nunca recuperaria conteúdo que usa "1.ª": a variante exata
-    procuraria literalmente "primeira". A expansão para "primeira OR 1" na
-    geração de candidatos torna o chunk recuperável; a cobertura ordena-o."""
+    """Regressão negativa: "primeira", sozinha, não pode ser expandida para
+    o dígito "1". Se fosse, recuperaria "Sala 1" — uma sala qualquer — como
+    se fosse a primeira chamada."""
+    _, headers, _ = _setup(client)
+    _create_searchable(client, headers, "Sala 1 disponível para reuniões.", title="Salas")
+    assert _search(client, headers, "primeira").json()["items"] == []
+
+
+def test_second_ordinal_only_query_does_not_match_room_two(
+    client: TestClient,
+) -> None:
+    _, headers, _ = _setup(client)
+    _create_searchable(client, headers, "Sala 2 disponível para reuniões.", title="Salas")
+    assert _search(client, headers, "segunda").json()["items"] == []
+
+
+def test_contextual_ordinal_query_still_retrieves_numeric_form(
+    client: TestClient,
+) -> None:
+    """Com contexto, a relaxação canónica recupera a forma numérica: a
+    pergunta usa "primeira", o documento usa "1.ª"."""
     _, headers, _ = _setup(client)
     _create_searchable(
-        client, headers, "Sessao 1.ª de janeiro de 2030 | detalhes", title="Sessao"
+        client, headers, "Exames da 1.ª chamada | 1 a 12 de fevereiro de 2031", title="Exames"
     )
-    items = _search(client, headers, "primeira").json()["items"]
+    items = _search(client, headers, "exames primeira chamada").json()["items"]
     assert items
     assert "1.ª" in items[0]["content"]
+
+
+def test_cardinal_twelve_never_matches_the_first_ordinal(client: TestClient) -> None:
+    _, headers, _ = _setup(client)
+    _create_searchable(client, headers, "Exames da 12 chamada | 3 de março", title="OCR")
+    # O contexto ("exames", "chamada") pode recuperar a linha, mas nunca
+    # porque "12" seria "primeira".
+    items = _search(client, headers, "primeira").json()["items"]
+    assert items == []
 
 
 # --- Trace, candidate pool e limiar (secções 19, 25, 30) ---------------------
@@ -173,7 +199,7 @@ def test_trace_reports_ranking_signals_for_change_question(
     assert {"regime", "avaliacao"} <= set(trace.results[0].matched_terms)
 
 
-def test_candidate_pool_is_limited_and_deduplicated(
+def test_candidate_pool_respects_the_global_budget(
     client: TestClient, test_session_factory: sessionmaker[Session]
 ) -> None:
     institution, headers, _ = _setup(client)
@@ -191,15 +217,167 @@ def test_candidate_pool_is_limited_and_deduplicated(
             top_k=5,
             official_only=True,
         )
-    # candidate_limit = min(MAX, max(20, 5*5)) = 25 (por variante).
-    assert trace.candidate_limit == 25
-    # Teto global do pool agregado.
-    assert trace.candidate_ceiling == CANDIDATE_MAX
-    assert trace.unique_candidate_count <= trace.candidate_ceiling
-    assert trace.unique_candidate_count <= 25
+    # Orçamento global = min(100, max(20, 5*5)) = 25, decidido antes das
+    # consultas e repartido pelas variantes ativas.
+    assert trace.global_candidate_limit == 25
+    assert trace.global_candidate_limit <= CANDIDATE_MAX
+    assert sum(variant.quota for variant in trace.variants) <= trace.global_candidate_limit
+    assert trace.unique_after_dedup <= trace.global_candidate_limit
 
 
-def test_threshold_removes_weak_partial_generic_match(
+def test_four_variants_share_the_global_budget(
+    client: TestClient, test_session_factory: sessionmaker[Session]
+) -> None:
+    """Uma pergunta com ordinal planeia as quatro variantes: a soma das
+    quotas — e das linhas devolvidas por SQL — nunca excede o orçamento."""
+    institution, headers, _ = _setup(client)
+    for index in range(40):
+        _create_searchable(
+            client, headers, f"Exames da 1.ª chamada numero {index} | detalhes"
+        )
+    from app.core.text_normalization import normalize_text
+
+    retriever = PostgresLexicalRetriever()
+    with test_session_factory() as db:
+        _evidence, trace = retriever.search_with_trace(
+            db,
+            normalize_text("Quando são os exames da primeira chamada?"),
+            _context(institution["id"]),
+            top_k=5,
+            official_only=True,
+        )
+    assert len(trace.planned_variants) == 4
+    assert "canonical_relaxed_and" in trace.planned_variants
+    quotas = [variant.quota for variant in trace.variants]
+    assert sum(quotas) <= trace.global_candidate_limit
+    assert all(quota > 0 for quota in quotas)
+    for variant in trace.variants:
+        assert variant.returned_count <= variant.quota
+    assert trace.total_returned_before_dedup == sum(
+        variant.returned_count for variant in trace.variants
+    )
+    assert trace.unique_after_dedup <= trace.global_candidate_limit
+
+
+def test_total_rows_fetched_never_exceed_the_global_budget(
+    client: TestClient, test_session_factory: sessionmaker[Session]
+) -> None:
+    """O orçamento é **global**, não por variante — a diferença observável.
+
+    Cenário: 30 documentos que correspondem às **quatro** variantes, pelo
+    que todas saturam a sua quota. Com `top_k=5` o orçamento global é 25 e
+    as quotas somam 25, logo o SQL nunca devolve mais do que 25 linhas no
+    total.
+
+    Na arquitetura anterior cada variante recebia o limite inteiro
+    (`candidate_limit = 25`), o que daria `4 × 25 = 100` linhas — abaixo do
+    antigo teto global de 100, pelo que nem sequer seria cortado. É esta
+    contagem, e não a presença de um candidato, que separa os dois desenhos.
+    """
+    institution, headers, _ = _setup(client)
+    # O texto usa a forma escrita ("primeira") para que a variante exact e a
+    # reduced_and também correspondam; sem isso só as relaxadas saturariam.
+    for index in range(30):
+        _create_searchable(
+            client,
+            headers,
+            f"Exames da primeira chamada numero {index} | detalhes",
+            title=f"Chamada {index}",
+        )
+    from app.core.text_normalization import normalize_text
+
+    retriever = PostgresLexicalRetriever()
+    with test_session_factory() as db:
+        # A pergunta evita stopwords acentuadas: normalize_text remove os
+        # acentos, e "são" deixa de casar a stopword portuguesa, passando a
+        # ser um termo obrigatório que nenhum documento contém — a variante
+        # exact não recuperaria nada e não saturaria a quota.
+        _evidence, trace = retriever.search_with_trace(
+            db,
+            normalize_text("exames da primeira chamada"),
+            _context(institution["id"]),
+            top_k=5,
+            official_only=True,
+        )
+    assert len(trace.variants) == 4
+    assert trace.global_candidate_limit == 25
+    # Todas as quotas ficam saturadas: os limites SQL estão mesmo a atuar.
+    for variant in trace.variants:
+        assert variant.returned_count == variant.quota, variant.strategy
+
+    # A asserção decisiva: o total agregado respeita o orçamento global.
+    assert trace.total_returned_before_dedup == 25
+    assert trace.total_returned_before_dedup <= trace.global_candidate_limit
+    # O desenho anterior teria trazido 4 × 25 = 100 linhas.
+    old_per_variant_total = len(trace.variants) * trace.global_candidate_limit
+    assert trace.total_returned_before_dedup < old_per_variant_total
+    # E nada se perde entre o SQL e a avaliação.
+    assert trace.candidates_evaluated == trace.unique_after_dedup
+
+
+def test_exact_variant_quota_is_reserved_against_higher_fts_candidates(
+    client: TestClient, test_session_factory: sessionmaker[Session]
+) -> None:
+    """A quota da variante exact é **reservada**: um candidato exact com
+    ts_rank_cd baixo não compete por espaço com candidatos de uma variante
+    menos prioritária, por muito mais alto que seja o FTS destes.
+
+    Antes, cada variante recebia o limite inteiro e o pool agregado era
+    depois cortado por FTS cru — era aí que um exact fraco podia perder o
+    lugar para um reduced_or forte.
+    """
+    institution, headers, _ = _setup(client)
+    # Alvo: único documento que contém "especial", logo o único recuperado
+    # pela variante exact. Conteúdo longo com uma só ocorrência de cada
+    # termo ⇒ ts_rank_cd baixo.
+    target, _ = _create_searchable(
+        client,
+        headers,
+        "O periodo de exames especial decorre em janeiro. "
+        + "Texto institucional de enchimento sem termos procurados. " * 40,
+        title="Exames Especial",
+    )
+    # Concorrentes: só correspondem à variante disjuntiva, mas repetem os
+    # termos em conteúdo curto ⇒ ts_rank_cd muito mais alto.
+    for index in range(30):
+        _create_searchable(
+            client,
+            headers,
+            f"periodo periodo exames exames periodo exames {index}",
+            title=f"Concorrente {index}",
+        )
+    from app.core.text_normalization import normalize_text
+
+    retriever = PostgresLexicalRetriever()
+    with test_session_factory() as db:
+        _evidence, trace = retriever.search_with_trace(
+            db,
+            normalize_text("periodo exames especial"),
+            _context(institution["id"]),
+            top_k=5,
+            official_only=True,
+        )
+    quotas = {variant.strategy: variant.quota for variant in trace.variants}
+    assert quotas["exact"] > 0
+
+    # O alvo foi avaliado e, com cobertura 3/3 contra 2/3, ficou em primeiro.
+    assert trace.results, "o candidato exact tem de chegar ao reranker"
+    assert trace.results[0].document_id == str(target["id"])
+    assert trace.results[0].coverage == 1.0
+
+    # E fê-lo apesar de ter o pior ts_rank_cd **entre os resultados
+    # devolvidos** — `trace.results` está limitado ao top_k, por isso a
+    # comparação não se estende a todos os avaliados. Basta para mostrar que
+    # não foi a força do FTS que o pôs em primeiro.
+    other_raw_scores = [result.raw_score for result in trace.results[1:]]
+    assert other_raw_scores, "o cenário precisa de concorrentes devolvidos"
+    assert trace.results[0].raw_score < min(other_raw_scores)
+
+    # Nada desaparece entre o SQL e a avaliação: não há corte pós-agregação.
+    assert trace.candidates_evaluated == trace.unique_after_dedup
+
+
+def test_partial_coverage_candidate_is_excluded_by_coverage_not_threshold(
     client: TestClient, test_session_factory: sessionmaker[Session]
 ) -> None:
     institution, headers, _ = _setup(client)
@@ -222,9 +400,63 @@ def test_threshold_removes_weak_partial_generic_match(
         )
     titles = [ev.document_title for ev in evidence]
     assert titles == ["Exames"]
-    # O documento de matrícula (só cobre "periodo", subconjunto de
-    # {periodo, exames}) é removido por DOMINÂNCIA, não pelo limiar.
-    assert trace.removed_by_dominance >= 1
+    # O documento de matrícula cobre 1 de 2 termos: é removido por cobertura
+    # insuficiente — uma causa tipada, distinta do limiar.
+    assert trace.excluded_insufficient_coverage >= 1
+    assert any(
+        excluded.reason == "insufficient_coverage" for excluded in trace.excluded
+    )
+
+
+def test_trace_counts_are_mathematically_consistent(
+    client: TestClient, test_session_factory: sessionmaker[Session]
+) -> None:
+    institution, headers = _setup_calendar(client)
+    from app.core.text_normalization import normalize_text
+
+    retriever = PostgresLexicalRetriever()
+    with test_session_factory() as db:
+        _evidence, trace = retriever.search_with_trace(
+            db,
+            normalize_text("Até quando posso mudar o regime de avaliação?"),
+            _context(institution["id"]),
+            top_k=5,
+            official_only=True,
+        )
+    assert sum(variant.quota for variant in trace.variants) <= trace.global_candidate_limit
+    assert trace.total_returned_before_dedup == sum(
+        variant.returned_count for variant in trace.variants
+    )
+    assert trace.unique_after_dedup <= trace.total_returned_before_dedup
+    assert trace.candidates_evaluated == trace.unique_after_dedup
+    assert trace.candidates_evaluated == (
+        trace.final_result_count
+        + trace.excluded_no_content_match
+        + trace.excluded_insufficient_coverage
+        + trace.excluded_below_threshold
+    )
+    # O top_k não é uma exclusão de relevância.
+    assert len(trace.results) <= trace.final_result_count
+
+
+def test_trace_never_contains_document_content(
+    client: TestClient, test_session_factory: sessionmaker[Session]
+) -> None:
+    institution, headers = _setup_calendar(client)
+    from app.core.text_normalization import normalize_text
+
+    retriever = PostgresLexicalRetriever()
+    with test_session_factory() as db:
+        _evidence, trace = retriever.search_with_trace(
+            db,
+            normalize_text("Até quando posso mudar o regime de avaliação?"),
+            _context(institution["id"]),
+            top_k=5,
+            official_only=True,
+        )
+    rendered = repr(trace)
+    for forbidden in ("Mudança do regime", "novembro", "Calendário Institucional"):
+        assert forbidden not in rendered
 
 
 # --- Benefício condicionado de table_row (secção 24) -------------------------
@@ -301,6 +533,63 @@ def test_ocr_number_run_is_not_split_into_range(
         )
     # "0509" não é reconhecido como intervalo em lado nenhum.
     assert trace.query_ranges == ()
+
+
+# --- Intervalos canónicos posicionais ----------------------------------------
+
+RANGE_DOC = "Período de inscrições | 1 a 12 de outubro de 2030"
+NEIGHBOUR_RANGE_DOC = "Período de inscrições | 1 a 13 de novembro de 2030"
+
+
+def test_compact_range_query_retrieves_spaced_content(client: TestClient) -> None:
+    """"01a12" na pergunta recupera "1 a 12" no conteúdo através do
+    contexto (relaxação canónica) e do marcador canónico."""
+    _, headers, _ = _setup(client)
+    _create_searchable(client, headers, RANGE_DOC, title="Inscrições")
+    items = _search(client, headers, "Qual é o período de inscrições de 01a12?").json()[
+        "items"
+    ]
+    assert items
+    assert "1 a 12" in items[0]["content"]
+
+
+def test_hyphen_range_query_retrieves_spaced_content(client: TestClient) -> None:
+    _, headers, _ = _setup(client)
+    _create_searchable(client, headers, RANGE_DOC, title="Inscrições")
+    items = _search(client, headers, "período de inscrições de 01-12").json()["items"]
+    assert items
+    assert "1 a 12" in items[0]["content"]
+
+
+def test_correct_range_outranks_neighbouring_range(client: TestClient) -> None:
+    _, headers, _ = _setup(client)
+    correct, _ = _create_searchable(client, headers, RANGE_DOC, title="Outubro")
+    _create_searchable(client, headers, NEIGHBOUR_RANGE_DOC, title="Novembro")
+    items = _search(client, headers, "período de inscrições de 01a12").json()["items"]
+    assert items[0]["document_id"] == correct["id"]
+
+
+def test_number_run_does_not_match_a_range_in_retrieval(
+    client: TestClient, test_session_factory: sessionmaker[Session]
+) -> None:
+    """"0509" continua ambíguo: nunca é lido como o intervalo 5 a 9."""
+    institution, headers, _ = _setup(client)
+    _create_searchable(
+        client, headers, "Semana institucional | 5 a 9 de outubro de 2030", title="Semana"
+    )
+    from app.core.text_normalization import normalize_text
+
+    retriever = PostgresLexicalRetriever()
+    with test_session_factory() as db:
+        _evidence, trace = retriever.search_with_trace(
+            db,
+            normalize_text("semana institucional 0509"),
+            _context(institution["id"]),
+            top_k=5,
+            official_only=True,
+        )
+    assert trace.query_ranges == ()
+    assert all("rng:5-9" not in result.matched_terms for result in trace.results)
 
 
 # --- Consulta de um único termo continua funcional (secção 25.1) -------------

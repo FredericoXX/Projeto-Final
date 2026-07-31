@@ -266,26 +266,54 @@ GIN `ix_document_chunks_search_vector` suporta `@@`.
 
 `PostgresLexicalRetriever` planeia variantes determinísticas da consulta
 (`app/retrieval/query_planning.py`) e executa-as **todas** contra o índice GIN,
-com a configuração FTS do idioma:
+com a configuração FTS do idioma. Por ordem de prioridade:
 
-1. **exact** — consulta normalizada tal como foi escrita;
-2. **reduced_and** — apenas os termos informativos, todos obrigatórios (palavras
-   funcionais removidas por pequenas listas conservadoras `pt`/`en`);
-3. **reduced_or** — os mesmos termos informativos, qualquer um suficiente; a
-   variante disjuntiva acrescenta a **forma numérica** dos ordinais reconhecidos
-   (`primeira` ⇒ `… OR 1`), para recuperar conteúdo que usa a forma numérica
-   (`1.ª`) quando a pergunta usa a forma escrita. A conjuntiva não exige o
-   dígito literal; a ordenação por cobertura (que canoniza ambos para `ord:1`)
-   faz o resto.
+| Estratégia | Uso | Prioridade | Segurança |
+| --- | --- | --- | --- |
+| `exact` | consulta normalizada tal como foi escrita | 4 | preserva integralmente a intenção; única variante permitida com sintaxe explícita |
+| `reduced_and` | termos informativos, todos obrigatórios | 3 | conjuntiva: só relaxa palavras funcionais |
+| `canonical_relaxed_and` | termos **contextuais** (sem ordinais/intervalos), todos obrigatórios | 2 | o ordinal/intervalo sai apenas da consulta FTS e continua obrigatório na elegibilidade |
+| `reduced_or` | termos informativos, qualquer um suficiente | 1 | máxima recuperação; a elegibilidade filtra o ruído |
 
-Ao contrário da baseline anterior (que parava na primeira variante com
-resultados), os candidatos de todas as variantes são **agregados**, deduplicados
-por `chunk_id` (preservando a melhor estratégia exact > reduced_and > reduced_or
-e o melhor `ts_rank_cd`) e limitados por dois tetos: cada variante devolve no
-máximo `candidate_limit = min(100, max(20, top_k × 5))` candidatos em SQL, e o
-pool agregado é depois limitado a um teto global `CANDIDATE_MAX = 100`
-(deterministicamente, por melhor `ts_rank_cd`). Assim o reranker nunca recebe um
-pool ilimitado nem todos os chunks da instituição. Uma única consulta traz
+A `canonical_relaxed_and` existe para o caso em que a pergunta e o documento
+escrevem a mesma coisa de formas diferentes: “exames da **primeira** chamada”
+⇄ “Exames da **1.ª** chamada”, ou “inscrições de **01a12**” ⇄ “inscrições
+**1 a 12**”. A consulta FTS passa a ser apenas `exames chamada` /
+`periodo inscricoes`; o marcador canónico (`ord:1`, `rng:1-12`) volta a ser
+exigido na fase de elegibilidade. **Nunca** se pesquisa pelo dígito do ordinal
+nem pelos endpoints do intervalo isolados: `primeira` jamais se torna
+`primeira OR 1` — se o fizesse, a pergunta “primeira” recuperaria “Sala 1”.
+Uma consulta composta apenas por ordinais/intervalos (“primeira”, “01a12”) não
+tem contexto que a ancore e planeia **só** a variante exact.
+
+Os candidatos de todas as variantes são **agregados** e deduplicados por
+`chunk_id`, preservando a melhor estratégia e o melhor `ts_rank_cd`. O teto do
+candidate pool é um **orçamento global decidido antes das consultas**:
+
+```
+global_candidate_limit = min(100, max(20, top_k × 5))
+```
+
+Esse orçamento é repartido por **quotas** entre as variantes ativas (divisão
+inteira, com o resto atribuído às variantes mais prioritárias), e cada consulta
+SQL usa a sua quota como `LIMIT`. Nenhuma consulta corre sem `LIMIT` e a soma das
+quotas nunca excede o orçamento.
+
+Daí decorrem duas garantias, que importa não confundir com uma terceira que
+**não** é oferecida:
+
+- **não existe corte global por `ts_rank_cd` cru depois da agregação** — tudo o
+  que as consultas devolvem é avaliado (`candidates_evaluated ==
+  unique_after_dedup` no trace);
+- a quota de cada variante é **reservada**: um candidato `exact` com FTS baixo
+  não compete por espaço com candidatos de variantes menos prioritárias, por
+  mais alto que seja o FTS destes;
+- o que **não** se garante: uma variante cujas correspondências excedam a sua
+  própria quota continua a ficar pelos melhores `ts_rank_cd` dessa variante. O
+  orçamento é finito por desenho, e um candidato pode ficar de fora se dezenas
+  de outros do mesmo tipo tiverem FTS superior.
+
+Uma única consulta traz
 também os metadados estruturais (`page_number`, `section_title`,
 `structure_type`) usados no ranking, sem N+1. Todas as variantes aplicam
 **exatamente** os mesmos filtros SQL: instituição, estado ativo, idioma,
@@ -298,58 +326,128 @@ seja relaxada (`matricula -propinas` nunca volta a procurar “propinas”). Uma
 consulta formada só por termos funcionais (“O que é?”) num idioma com lista
 conhecida não executa pesquisa alguma e devolve zero evidências.
 
-#### Etapa B — reranking lexical determinístico
+#### Etapa B — elegibilidade e ranking
 
-Os candidatos são reordenados por uma política explicável
-(`app/retrieval/reranking.py`), com pesos que são **constantes versionadas** no
-módulo (não configuráveis). O score final é uma soma ponderada de sinais, todos
-em `[0, 1]`, com a **cobertura** dominante:
+A etapa B tem **duas fases distintas**, e essa separação é deliberada: o score
+ordena candidatos, **não decide** o que é evidência.
 
-- cobertura dos termos informativos/canónicos no conteúdo;
-- frase exata (sequência informativa contígua) e ordem dos termos;
-- proximidade entre os termos correspondidos;
-- sobreposição com o título do documento e o título da secção;
-- benefício condicionado para `table_row` (curta, coberta e próxima);
-- qualidade da estratégia (exact > reduced_and > reduced_or);
-- um sinal **auxiliar** combinado `ts_rank_cd × fator de comprimento`, com peso
-  pequeno: o comprimento amortece o FTS (um parágrafo longo não vence só por
-  repetir um termo) e — por serem os únicos sinais que não dependem de
-  correspondência real — nenhum deles dá pontos independentes a conteúdo que
-  nada corresponde. A proximidade é `0` quando nenhum termo é correspondido (sem
-  bónus "de graça").
+**Fase 1 — elegibilidade** (`app/retrieval/eligibility.py`). Decisão pura sobre
+os sinais que dependem só do conteúdo (cobertura, frase exata, ordem,
+proximidade) e a estratégia que recuperou o candidato:
+
+- **consulta sem termos informativos** — nenhum candidato é elegível;
+- **consulta de um termo** — elegível quando há correspondência de superfície,
+  ou quando o candidato foi recuperado por stemming legítimo do PostgreSQL
+  (`matrículas` ⇄ `matrícula`), o que se verifica sempre que o índice GIN o
+  devolveu;
+- **consulta de dois ou mais termos** — é preciso pelo menos uma condição forte:
+  1. sintaxe websearch explícita (aspas, `OR`, `-termo`): o utilizador escreveu
+     os operadores e o sistema honra essa intenção sem a reavaliar por
+     cobertura;
+  2. frase exata no conteúdo;
+  3. estratégia conjuntiva (`exact` ou `reduced_and`);
+  4. `canonical_relaxed_and` com **todos** os termos contextuais correspondidos
+     e **pelo menos um** ordinal/intervalo canónico correspondido;
+  5. cobertura mínima: `required_matches = max(2, ceil(nº de termos × 0.5))`
+     termos correspondidos **e** cobertura ≥ `0.5`.
+
+A distinção entre (1) e (3) importa para a honestidade do trace. A estratégia
+`exact` é usada em dois papéis: numa consulta normal prova que a tsquery
+**conjuntiva** casou os termos exigidos; numa consulta com operadores explícitos
+a mesma estratégia pode ser deliberadamente **disjuntiva** (`aulas OR exames`
+casa um dos lados por desenho). Por isso a base registada é `explicit_syntax` e
+não `conjunctive_strategy` — classificar uma união como prova conjuntiva seria
+factualmente errado. Em qualquer dos casos, cobertura zero continua a excluir.
+O token `or` nunca conta como termo informativo: é sempre um operador para o
+PostgreSQL.
+
+Um candidato com **cobertura zero** numa consulta multi-termo nunca é elegível —
+mesmo que o título corresponda, a secção corresponda, o `ts_rank_cd` seja
+elevado, seja uma `table_row` ou seja muito curto. Uma correspondência de 1
+termo numa pergunta de 3 não é evidência: o retrieval devolve vazio e o
+answering responde `insufficient_evidence`.
+
+**Fase 2 — ranking** (`app/retrieval/reranking.py`), aplicado **apenas** aos
+elegíveis, com pesos que são **constantes versionadas** no módulo (não
+configuráveis). O score é uma soma ponderada de sinais em `[0, 1]`, com a
+cobertura dominante:
+
+| Sinal | Peso |
+| --- | --- |
+| cobertura dos termos canónicos no conteúdo | 0.40 |
+| frase exata (sequência informativa contígua) | 0.16 |
+| proximidade | 0.14 |
+| ordem dos termos | 0.08 |
+| sobreposição com o título do documento | 0.07 |
+| benefício condicionado de `table_row` | 0.06 |
+| sobreposição com o título da secção | 0.05 |
+| `ts_rank_cd` normalizado × fator de comprimento | 0.02 |
+| qualidade da estratégia | 0.02 |
+
+O título e a secção só são **calculados** depois da elegibilidade: por
+construção, não podem criar evidência, apenas desempatar entre candidatos que já
+correspondem no conteúdo.
+
+A proximidade combina quantos termos foram encontrados com quão juntos aparecem:
+
+```
+positional_coverage = posições correspondidas / termos da pergunta
+compactness         = posições correspondidas / span
+proximity           = positional_coverage × compactness
+```
+
+Sem correspondências vale `0`; numa consulta de um só termo vale `1.0`; numa
+consulta multi-termo, **uma única correspondência nunca chega a `1.0`** (fica em
+`1/n`). O benefício de `table_row` usa a *compacidade*, não a proximidade
+composta.
 
 A comparação de cobertura usa formas canónicas
 (`app/retrieval/lexical_normalization.py`): ordinais padrão (`1.ª`, `1º`, `1o`,
 `primeira`… ⇒ `ord:1`) e intervalos numéricos **explícitos** (`01 a 12`,
-`01-12`, `01a12` ⇒ endpoints inteiros `1`/`12` mais o marcador `rng:1-12`, todos
-participantes na cobertura). Cardinais isolados nunca viram ordinais
-(`12` ≠ `ord:1`); uma sequência sem separador nunca é dividida (`0509`,
-`20262027`). O OCR não é corrigido: `Ro` continua palavra, `12` continua
-cardinal.
+`01-12`, `01–12`, `01a12`, `1 a 12` ⇒ o mesmo `rng:1-12`). O intervalo é **uma
+unidade posicional única** do stream canónico, pelo que participa em cobertura,
+frase exata, ordem, proximidade e posições como qualquer outro termo; os
+endpoints continuam disponíveis numa representação auxiliar, ancorada na posição
+do marcador, sem quebrar a sua contiguidade. Cardinais isolados nunca viram
+ordinais (`12` ≠ `ord:1`; `22` ≠ `ord:2`); uma sequência sem separador nunca é
+dividida (`0509`, `2206`, `20262027`). O OCR não é corrigido: `Ro` continua
+palavra, `12` continua cardinal.
 
-Duas exclusões **distintas** removem candidatos, registadas em separado no
-trace (`removed_by_dominance` vs `removed_by_threshold`):
+Os candidatos removidos são classificados por **motivo tipado**, registado no
+trace: `no_content_match`, `insufficient_coverage` e `below_threshold`. O limiar
+(`RETRIEVAL_MIN_RELEVANCE_SCORE`, padrão `0.05`) aplica-se **depois** da
+elegibilidade e a **todos** os candidatos elegíveis, incluindo o melhor e
+incluindo correspondências de frase exata: se todos ficarem abaixo, o resultado
+é vazio. O limiar não substitui o gate de cobertura — é um piso residual sobre
+candidatos já elegíveis.
 
-- **dominância** — um candidato cujos termos correspondidos são um subconjunto
-  próprio dos de um candidato mantido é redundante;
-- **limiar** (`RETRIEVAL_MIN_RELEVANCE_SCORE`, padrão `0.05`) — aplica-se a
-  **todos** os candidatos multi-termo, incluindo o melhor: se todos ficarem
-  abaixo do limiar, o resultado é vazio (e o answering devolve
-  `insufficient_evidence` em vez de gerar sobre uma coincidência fraca). Uma
-  correspondência de frase exata nunca é eliminada pelo limiar.
+**Não existe dominância por subconjunto.** A deduplicação por `chunk_id` já
+elimina o mesmo chunk recuperado por várias variantes; chunks **diferentes**
+nunca são removidos por corresponderem a menos termos do que outro. Evidência
+complementar é preservada e simplesmente ordenada abaixo — quantos resultados
+usar é decisão do `top_k`, que não é uma exclusão por relevância.
 
-Consultas de um único termo informativo têm política própria (mantêm todos os
-candidatos recuperados, para não perder recall quando o termo casou por
-stemming). A ordenação final é totalmente determinística
-(score↓, cobertura↓, estratégia↓, `ts_rank_cd`↓, `document_id`↑, `chunk_index`↑,
-`chunk_id`↑).
+A ordenação final é totalmente determinística (score↓, cobertura↓, estratégia↓,
+`ts_rank_cd`↓, `document_id`↑, `chunk_index`↑, `chunk_id`↑).
 
 O `score` público de `Evidence` passa a representar esta **relevância lexical
 composta** em `[0, 1]`, não o valor cru de `ts_rank_cd` (que fica disponível só
 no trace interno de diagnóstico). Tudo permanece determinístico e local: sem
 embeddings, sem pesquisa vetorial/semântica, sem LLM e sem sinónimos no
-retrieval. A abordagem **não** compreende semanticamente as perguntas nem
-interpreta datas; o `score` não é uma probabilidade nem uma confiança factual.
+retrieval.
+
+Limites que a abordagem **não** ultrapassa, e que importa não confundir com
+capacidades:
+
+- o stemming do PostgreSQL atua apenas na **geração de candidatos**; o reranker
+  não faz lematização geral. `mudar` e `mudança` não são garantidamente
+  equivalentes, e o único motivo pelo qual a linha correta vence é cobrir
+  `regime` e `avaliação`;
+- não existem sinónimos, nem institucionais nem gerais;
+- não existe compreensão semântica das perguntas nem interpretação de datas;
+- o OCR não é corrigido nem adivinhado;
+- o `score` não é uma probabilidade nem uma confiança factual;
+- **o resultado pode ser vazio**, e essa é uma resposta legítima do sistema.
 
 O retrieval opera exclusivamente sobre chunks **já persistidos**: não depende do
 `UploadFile`, do armazenamento local, do nome do ficheiro nem da rota de upload.
@@ -440,8 +538,9 @@ multi-institucionais não eram aplicadas. Elas complementam a limitação por
 O projeto inclui um fluxo experimental completo de respostas fundamentadas por
 pesquisa lexical, com persistência transacional opcional nas conversas. A
 abordagem definitiva permanece em aberto: não há embeddings, pesquisa semântica
-ou híbrida, reranking, memória conversacional, agentes nem pontuação de
-confiança, e o sistema não está livre de alucinações. O pgvector permanece
+ou híbrida, reranking por modelo, memória conversacional, agentes nem pontuação
+de confiança, e o sistema não está livre de alucinações. O reranking existente é
+lexical e determinístico (ver a etapa B acima). O pgvector permanece
 apenas como infraestrutura. Consulte [`docs/answering.md`](answering.md) para o
 pipeline neutro em relação ao fornecedor, a semântica atómica dos turnos, os
 snapshots das fontes e as limitações atuais.

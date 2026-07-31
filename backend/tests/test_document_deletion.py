@@ -65,7 +65,9 @@ def _cite_document(
     client: TestClient,
     headers: dict[str, str],
     override,  # fixture installer
-    query: str = "Quando começam as aulas?",
+    # Dois termos informativos partilhados com o conteúdo de teste
+    # ("aulas", "setembro"): o suficiente para ser evidência (2 de 3).
+    query: str = "Quando começam as aulas de setembro?",
 ) -> None:
     """Faz uma pergunta que cita o documento, persistindo MessageSource."""
     conversation = _create_conversation(client, headers)
@@ -380,7 +382,7 @@ def test_concurrent_answering_first_makes_delete_409(
 
     def ask_worker() -> None:
         results["ask"] = _ask(
-            client, conversation["id"], headers, query="Quando começam as aulas?"
+            client, conversation["id"], headers, query="Quando começam as aulas de setembro?"
         ).status_code
 
     def delete_worker() -> None:
@@ -416,7 +418,7 @@ def test_concurrent_delete_first_leaves_no_partial_turn(
     document, _ = _create_searchable_document(
         client,
         headers,
-        "As aulas do segundo semestre iniciam-se em fevereiro de 2027.",
+        "As aulas do segundo semestre iniciam-se em setembro de 2027.",
         title="Corrida B",
         source_url="https://example.edu/cb",
     )
@@ -435,7 +437,7 @@ def test_concurrent_delete_first_leaves_no_partial_turn(
 
     def ask_worker() -> None:
         results["ask"] = _ask(
-            client, conversation["id"], headers, query="Quando começam as aulas?"
+            client, conversation["id"], headers, query="Quando começam as aulas de setembro?"
         ).status_code
 
     def delete_worker() -> None:

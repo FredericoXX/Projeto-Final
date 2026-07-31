@@ -11,18 +11,27 @@ Este módulo produz variantes ordenadas de uma consulta já normalizada
 
 1. exact — a consulta normalizada original, comportamento atual;
 2. reduced_and — apenas os termos informativos, todos obrigatórios;
-3. reduced_or — os mesmos termos informativos, qualquer um suficiente.
+3. canonical_relaxed_and — os termos contextuais **não canónicos**, todos
+   obrigatórios, com os ordinais/intervalos removidos apenas da consulta
+   FTS (continuam obrigatórios na elegibilidade e no ranking canónico);
+4. reduced_or — os termos informativos, qualquer um suficiente.
 
-A partir do Momento 4, o retriever executa **todas** as variantes
-permitidas, agrega os candidatos num pool limitado (deduplicado por
-chunk_id, preservando a melhor estratégia) e aplica um reranking lexical
-determinístico. A estratégia que recuperou cada candidato passa a ser um
-sinal explícito do ranking (exact > reduced_and > reduced_or), em vez de
-"a primeira variante com resultados vence".
+O retriever executa **todas** as variantes permitidas dentro de um
+orçamento global de candidatos distribuído por quotas (ver
+app.retrieval.lexical), agrega os candidatos, deduplica-os por chunk_id
+(preservando a melhor estratégia) e aplica elegibilidade + reranking
+determinístico. A estratégia que recuperou cada candidato é um sinal
+explícito, em vez de "a primeira variante com resultados vence".
 
 Regras deliberadas:
 - determinístico, local, sem LLM, sem embeddings, sem stemming próprio
   e sem sinónimos;
+- a relaxação canónica **nunca** expande um ordinal para o seu cardinal:
+  "primeira" jamais se torna "primeira OR 1", e "01a12" jamais se torna
+  uma pesquisa pelos endpoints "01"/"12" isolados — pesquisar por um
+  dígito solto recuperaria "Sala 1" para a pergunta "primeira";
+- uma consulta composta **apenas** por ordinais/intervalos não tem termo
+  contextual que a ancore: usa apenas a variante exact;
 - consultas com sintaxe websearch explícita (aspas, OR, termos
   negativos) usam apenas a variante exact — a relaxação nunca pode
   inverter uma intenção explícita (ex.: `matricula -propinas` nunca
@@ -41,14 +50,28 @@ import re
 from dataclasses import dataclass
 from enum import StrEnum
 
-from app.retrieval.lexical_normalization import build_lexical_representation
+from app.retrieval.lexical_normalization import (
+    CANONICAL_KINDS,
+    LexicalRepresentation,
+    build_lexical_representation,
+)
 
 # Uma pergunta pode ter até 1000 caracteres; a tsquery reduzida nunca
 # precisa de mais do que isto para uma baseline lexical.
 MAX_INFORMATIVE_TERMS = 12
 
+# Nº máximo de variantes de um plano (exact, reduced_and,
+# canonical_relaxed_and, reduced_or): fixo, sem explosão combinatória.
+MAX_QUERY_VARIANTS = 4
+
 # Tokens de palavra sem underscore; linear, sem backtracking aninhado.
 _TOKEN_RE = re.compile(r"[^\W_]+", re.UNICODE)
+
+# Operadores de websearch_to_tsquery em forma de palavra. Não são conteúdo em
+# nenhum idioma: `or` é sempre interpretado como operador pelo PostgreSQL, pelo
+# que nunca pode contar como termo informativo da pergunta (contá-lo baixaria
+# artificialmente a cobertura de "aulas OR exames" para 2/3).
+WEBSEARCH_OPERATORS = frozenset({"or"})
 
 # Listas pequenas e conservadoras de termos claramente funcionais
 # (artigos, preposições/contrações, interrogativos e auxiliares comuns),
@@ -85,7 +108,20 @@ _FUNCTIONAL_TERMS: dict[str, frozenset[str]] = {
 class LexicalQueryStrategy(StrEnum):
     EXACT = "exact"
     REDUCED_AND = "reduced_and"
+    CANONICAL_RELAXED_AND = "canonical_relaxed_and"
     REDUCED_OR = "reduced_or"
+
+
+# Prioridade única das estratégias (maior é melhor), partilhada por todo o
+# retrieval: ordem das variantes no plano, distribuição do resto das
+# quotas, escolha da melhor estratégia na deduplicação e o sinal
+# ``strategy_quality`` do ranking derivam todos daqui.
+STRATEGY_PRIORITY: dict[LexicalQueryStrategy, int] = {
+    LexicalQueryStrategy.EXACT: 4,
+    LexicalQueryStrategy.REDUCED_AND: 3,
+    LexicalQueryStrategy.CANONICAL_RELAXED_AND: 2,
+    LexicalQueryStrategy.REDUCED_OR: 1,
+}
 
 
 @dataclass(frozen=True)
@@ -125,13 +161,32 @@ def functional_terms_for(language: str) -> frozenset[str]:
     return _functional_terms_for(language) or frozenset()
 
 
-def _uses_advanced_syntax(normalized_query: str) -> bool:
+def is_informative_surface(surface: str, functional: frozenset[str]) -> bool:
+    """O token é informativo? (nem funcional, nem operador, nem letra isolada).
+
+    Regra única partilhada pelo planeador e pelo reranking, para que a
+    consulta e o conteúdo sejam filtrados exatamente da mesma forma.
+    """
+    if len(surface) == 1 and surface.isalpha():
+        return False
+    if surface in WEBSEARCH_OPERATORS:
+        return False
+    return surface not in functional
+
+
+def uses_advanced_syntax(normalized_query: str) -> bool:
     """Sintaxe websearch explícita: aspas, termos negativos ou o operador
-    OR (a normalização já converteu tudo para minúsculas)."""
+    OR (a normalização já converteu tudo para minúsculas).
+
+    Acessor público: além de restringir o plano à variante exact, a
+    elegibilidade precisa de saber que a consulta é explicitamente
+    operatória, porque nesse caso a conjunção FTS **não** é garantida (uma
+    união `a OR b` corresponde a apenas um dos lados por desenho).
+    """
     if '"' in normalized_query:
         return True
     for token in normalized_query.split(" "):
-        if token == "or":
+        if token in WEBSEARCH_OPERATORS:
             return True
         if token.startswith("-") and len(token) > 1:
             return True
@@ -154,9 +209,9 @@ def extract_informative_terms(normalized_query: str, language: str) -> tuple[str
     terms: list[str] = []
     seen: set[str] = set()
     for token in _raw_tokens(normalized_query):
-        if len(token) == 1 and token.isalpha():
+        if not is_informative_surface(token, functional):
             continue
-        if token in functional or token in seen:
+        if token in seen:
             continue
         seen.add(token)
         terms.append(token)
@@ -165,35 +220,41 @@ def extract_informative_terms(normalized_query: str, language: str) -> tuple[str
     return tuple(terms)
 
 
-def _ordinal_numeric_expansions(
-    normalized_query: str, language: str, existing: tuple[str, ...]
-) -> list[str]:
-    """Formas numéricas dos ordinais reconhecidos na pergunta, ainda ausentes.
+def contextual_terms(normalized_query: str, language: str) -> tuple[str, ...]:
+    """Termos informativos **não canónicos** da consulta, por ordem.
 
-    Um ordinal escrito ("primeira") ou com indicador ("1.ª") é expandido
-    para o seu dígito ("1") na variante disjuntiva, para que um chunk que
-    use a forma numérica (ex.: "Exames da 1.ª chamada", cujo vetor contém o
-    token "1") seja **recuperado** por uma pergunta que use a forma escrita.
-    A ordenação por cobertura (que canoniza ambos para ``ord:1``) continua a
-    tratar o ranking. Só se adicionam dígitos ainda não presentes, e apenas
-    à variante OR (nunca à conjuntiva, que exigiria o dígito literal).
+    Exclui ordinais e intervalos: são exatamente os termos que ancoram a
+    variante ``canonical_relaxed_and``. Para "exames da primeira chamada"
+    devolve ``("exames", "chamada")``; para "periodo de inscricoes de
+    01a12" devolve ``("periodo", "inscricoes")``. Uma consulta composta
+    apenas por ordinais/intervalos devolve uma tupla vazia — e nunca gera
+    consulta relaxada, porque procurar só pelo dígito ou pelos endpoints
+    seria uma expansão cardinal ampla.
     """
+    functional = _functional_terms_for(language) or frozenset()
     representation = build_lexical_representation(normalized_query, language)
-    seen = set(existing)
-    expansions: list[str] = []
+    terms: list[str] = []
+    seen: set[str] = set()
     for token in representation.tokens:
-        if token.ordinal is None:
+        if token.kind in CANONICAL_KINDS:
             continue
-        digit = str(token.ordinal)
-        if digit in seen:
+        if not is_informative_surface(token.surface, functional):
             continue
-        seen.add(digit)
-        expansions.append(digit)
-    return expansions
+        if token.surface in seen:
+            continue
+        seen.add(token.surface)
+        terms.append(token.surface)
+        if len(terms) >= MAX_INFORMATIVE_TERMS:
+            break
+    return tuple(terms)
+
+
+def _has_canonical_unit(representation: LexicalRepresentation) -> bool:
+    return any(token.kind in CANONICAL_KINDS for token in representation.tokens)
 
 
 def plan_lexical_query(normalized_query: str, language: str) -> LexicalQueryPlan:
-    """Produz variantes ordenadas para uma consulta normalizada.
+    """Produz variantes ordenadas por prioridade para uma consulta normalizada.
 
     Consultas simples sem termos informativos num idioma com lista própria
     produzem um plano vazio. Nos restantes casos, a variante exact preserva
@@ -202,7 +263,7 @@ def plan_lexical_query(normalized_query: str, language: str) -> LexicalQueryPlan
     """
     exact = LexicalQueryVariant(LexicalQueryStrategy.EXACT, normalized_query)
 
-    if _uses_advanced_syntax(normalized_query):
+    if uses_advanced_syntax(normalized_query):
         return LexicalQueryPlan((exact,))
     if _functional_terms_for(language) is None:
         return LexicalQueryPlan((exact,))
@@ -218,6 +279,13 @@ def plan_lexical_query(normalized_query: str, language: str) -> LexicalQueryPlan
         # a variante exact (ramo acima).
         return LexicalQueryPlan(())
 
+    contextual = contextual_terms(normalized_query, language)
+    if not contextual:
+        # Consulta composta apenas por ordinais/intervalos ("primeira",
+        # "01a12"): sem termo contextual que a ancore, qualquer relaxação
+        # degeneraria numa pesquisa cardinal ampla. Só a variante exact.
+        return LexicalQueryPlan((exact,))
+
     variants = [exact]
     # A exact já é conjuntiva sobre todos os tokens; reduced_and só vale
     # a pena se algum token foi de facto removido.
@@ -227,20 +295,23 @@ def plan_lexical_query(normalized_query: str, language: str) -> LexicalQueryPlan
                 LexicalQueryStrategy.REDUCED_AND, " ".join(informative)
             )
         )
-    # A variante disjuntiva usa os termos informativos mais as formas
-    # numéricas dos ordinais reconhecidos (ver _ordinal_numeric_expansions),
-    # para não perder a geração de candidatos quando a pergunta usa a forma
-    # escrita e o documento a forma numérica.
-    or_terms = list(informative) + _ordinal_numeric_expansions(
-        normalized_query, language, informative
-    )
-    # Com um único termo, OR e AND são a mesma consulta; a disjuntiva só
-    # acrescenta valor com dois ou mais termos (incluindo a expansão de
-    # ordinal, que permite uma variante OR mesmo para "a segunda").
-    if len(or_terms) >= 2:
+    # A relaxação canónica remove o ordinal/intervalo **apenas da consulta
+    # FTS**: um documento que escreva "1.ª" onde a pergunta diz "primeira"
+    # (ou "1 a 12" onde a pergunta diz "01a12") continua recuperável pelo
+    # contexto. O marcador canónico permanece obrigatório na elegibilidade
+    # e no ranking (ver app.retrieval.eligibility).
+    representation = build_lexical_representation(normalized_query, language)
+    if _has_canonical_unit(representation) and list(contextual) != list(informative):
         variants.append(
             LexicalQueryVariant(
-                LexicalQueryStrategy.REDUCED_OR, " OR ".join(or_terms)
+                LexicalQueryStrategy.CANONICAL_RELAXED_AND, " ".join(contextual)
+            )
+        )
+    # Com um único termo informativo, OR e AND são a mesma consulta.
+    if len(informative) >= 2:
+        variants.append(
+            LexicalQueryVariant(
+                LexicalQueryStrategy.REDUCED_OR, " OR ".join(informative)
             )
         )
     return LexicalQueryPlan(tuple(variants))

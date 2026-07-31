@@ -1,3 +1,4 @@
+import math
 from pathlib import Path
 
 from pydantic import model_validator
@@ -35,12 +36,13 @@ class Settings(BaseSettings):
     document_chunk_overlap_chars: int = 150
 
     # Limiar mínimo de relevância lexical composta (ver
-    # app.retrieval.reranking): candidatos multi-termo abaixo deste score
-    # são excluídos do top_k, exceto correspondências de frase exata. Os
-    # pesos do ranking não são configuráveis — são constantes versionadas
-    # no módulo; só este limiar operacional é ajustável. O score composto
-    # está em [0, 1]; um valor de 0.0 desativa o piso (a dominância
-    # continua a aplicar-se).
+    # app.retrieval.reranking). Aplica-se **depois** da elegibilidade e a
+    # todos os candidatos elegíveis, incluindo o melhor: não substitui o
+    # gate de cobertura (app.retrieval.eligibility), apenas remove
+    # candidatos já elegíveis cuja relevância composta é residual. Os pesos
+    # do ranking não são configuráveis — são constantes versionadas no
+    # módulo; só este limiar operacional é ajustável. O score composto está
+    # em [0, 1]; 0.0 desativa o piso sem afetar a elegibilidade.
     retrieval_min_relevance_score: float = 0.05
 
     # OCR local (Tesseract) para páginas de PDF sem texto pesquisável.
@@ -97,8 +99,8 @@ class Settings(BaseSettings):
     def check_retrieval_configuration(self) -> "Settings":
         score = self.retrieval_min_relevance_score
         # O score composto é finito e vive em [0, 1]; o limiar tem de o
-        # respeitar para ser comparável.
-        if not (score == score):  # NaN
+        # respeitar para ser comparável. isfinite rejeita NaN e ±infinito.
+        if not math.isfinite(score):
             msg = "RETRIEVAL_MIN_RELEVANCE_SCORE must be a finite number"
             raise ValueError(msg)
         if not (0.0 <= score <= 1.0):

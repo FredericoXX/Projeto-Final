@@ -15,9 +15,21 @@ A representação reconhece, de forma conservadora e determinística:
   ordinais escritos por idioma (``primeiro``..``decimo``, ``first``..
   ``tenth``), reduzidos a uma forma canónica ``ord:N`` interna;
 - intervalos numéricos **explícitos** (``01 a 12``, ``01-12``, ``01–12``,
-  ``01a12``), com um separador textual/hífen inequívoco.
+  ``01a12``), com um separador textual/hífen inequívoco, reduzidos a uma
+  forma canónica ``rng:N-M``.
 
-Regras deliberadamente restritivas (ver Momento 4, secções 15–16):
+Um intervalo é **uma única unidade posicional** do stream canónico: as
+formas ``01a12``, ``01 a 12``, ``01-12``, ``01–12`` e ``1 a 12`` produzem
+todas o mesmo token ``rng:1-12`` na mesma posição relativa. É isso que
+permite que o intervalo participe em cobertura, frase exata, ordem,
+proximidade e posições como qualquer outro termo. Os endpoints continuam
+disponíveis numa representação **auxiliar** (``canonical_set`` e
+``first_positions``, ancorados na posição do marcador), para não perder a
+correspondência de superfície de quem pergunte apenas por um dos números —
+mas nunca ocupam posições próprias, para não quebrar a contiguidade do
+marcador no ranking.
+
+Regras deliberadamente restritivas:
 
 - um cardinal isolado **nunca** é convertido em ordinal (``12`` não é
   ``ord:1``; ``22`` não é ``ord:2``);
@@ -33,6 +45,11 @@ construção: a mesma entrada produz sempre a mesma representação.
 import re
 from dataclasses import dataclass
 from enum import StrEnum
+
+# Prefixos das formas canónicas abstratas (ordinal e intervalo). São
+# marcadores internos do ranking, nunca texto pesquisado literalmente.
+ORDINAL_PREFIX = "ord:"
+RANGE_PREFIX = "rng:"
 
 # Ordinais escritos, na forma normalizada (sem acentos, minúsculas). As
 # listas são pequenas, explícitas e por idioma; cobrem primeiro..décimo e
@@ -76,19 +93,18 @@ class TokenKind(StrEnum):
     WORD = "word"
     NUMBER = "number"
     ORDINAL = "ordinal"
-    RANGE_ENDPOINT = "range_endpoint"
+    RANGE = "range"
 
 
-@dataclass(frozen=True)
-class CanonicalOrdinal:
-    """Ordinal reconhecido e a sua forma canónica interna ``ord:N``."""
+# Tipos de token cuja forma canónica é um marcador abstrato (``ord:``/
+# ``rng:``) em vez de uma forma de superfície. Usado pelo planeador para
+# distinguir os termos contextuais dos canónicos.
+CANONICAL_KINDS = frozenset({TokenKind.ORDINAL, TokenKind.RANGE})
 
-    value: int
-    position: int
 
-    @property
-    def canonical(self) -> str:
-        return f"ord:{self.value}"
+def is_canonical_marker(term: str) -> bool:
+    """O termo é um marcador abstrato (``ord:N`` ou ``rng:N-M``)?"""
+    return term.startswith((ORDINAL_PREFIX, RANGE_PREFIX))
 
 
 @dataclass(frozen=True)
@@ -97,12 +113,21 @@ class NumericRange:
 
     start: int
     end: int
-    position: int
 
     @property
     def canonical(self) -> str:
         low, high = sorted((self.start, self.end))
-        return f"rng:{low}-{high}"
+        return f"{RANGE_PREFIX}{low}-{high}"
+
+    @property
+    def endpoint_canonicals(self) -> tuple[str, str]:
+        """Endpoints como formas canónicas de superfície (sem zeros à esquerda).
+
+        Representação **auxiliar**: entra no conjunto canónico e no mapa de
+        posições (ancorada na posição do marcador), nunca no stream.
+        """
+        low, high = sorted((self.start, self.end))
+        return str(low), str(high)
 
 
 @dataclass(frozen=True)
@@ -111,10 +136,12 @@ class LexicalToken:
 
     - ``surface``: o token tal como aparece no texto normalizado;
     - ``canonical``: a forma usada na comparação de cobertura (igual ao
-      ``surface`` para palavras/números; ``ord:N`` para ordinais);
+      ``surface`` para palavras/números; ``ord:N`` para ordinais;
+      ``rng:N-M`` para intervalos);
     - ``position``: índice do token na sequência (0-based), para
       proximidade e ordem;
-    - ``ordinal``: valor do ordinal quando aplicável, senão ``None``.
+    - ``ordinal``: valor do ordinal quando aplicável, senão ``None``;
+    - ``numeric_range``: o intervalo reconhecido quando aplicável.
     """
 
     surface: str
@@ -122,31 +149,58 @@ class LexicalToken:
     position: int
     kind: TokenKind
     ordinal: int | None = None
+    numeric_range: NumericRange | None = None
 
 
 @dataclass(frozen=True)
 class LexicalRepresentation:
-    """Representação lexical completa de um texto normalizado."""
+    """Representação lexical completa de um texto normalizado.
+
+    ``tokens`` é o **stream canónico posicional**: cada intervalo ocupa
+    exatamente uma posição, tal como uma palavra. Tudo o que depende de
+    posição (frase exata, ordem, proximidade) usa este stream.
+    """
 
     tokens: tuple[LexicalToken, ...]
-    ranges: tuple[NumericRange, ...]
 
     @property
-    def canonical_tokens(self) -> tuple[str, ...]:
-        """Formas canónicas por ordem de ocorrência."""
+    def surface_tokens(self) -> tuple[str, ...]:
+        """Formas de superfície por ordem de ocorrência."""
+        return tuple(token.surface for token in self.tokens)
+
+    @property
+    def canonical_stream(self) -> tuple[str, ...]:
+        """Formas canónicas por ordem de ocorrência (uma por posição)."""
         return tuple(token.canonical for token in self.tokens)
 
+    @property
+    def ranges(self) -> tuple[NumericRange, ...]:
+        """Intervalos explícitos reconhecidos, por ordem de ocorrência."""
+        return tuple(
+            token.numeric_range for token in self.tokens if token.numeric_range is not None
+        )
+
     def canonical_set(self) -> frozenset[str]:
-        """Conjunto de formas canónicas, incluindo marcadores de intervalo."""
+        """Formas canónicas do stream mais os endpoints auxiliares."""
         values = {token.canonical for token in self.tokens}
-        values.update(numeric_range.canonical for numeric_range in self.ranges)
+        for token in self.tokens:
+            if token.numeric_range is not None:
+                values.update(token.numeric_range.endpoint_canonicals)
         return frozenset(values)
 
     def first_positions(self) -> dict[str, int]:
-        """Primeira posição de cada forma canónica (para proximidade/ordem)."""
+        """Primeira posição de cada forma canónica (para proximidade/ordem).
+
+        Os endpoints de um intervalo herdam a posição do marcador: não
+        acrescentam posições próprias, por isso nunca separam o marcador
+        dos termos vizinhos.
+        """
         positions: dict[str, int] = {}
         for token in self.tokens:
             positions.setdefault(token.canonical, token.position)
+            if token.numeric_range is not None:
+                for endpoint in token.numeric_range.endpoint_canonicals:
+                    positions.setdefault(endpoint, token.position)
         return positions
 
 
@@ -162,11 +216,6 @@ def _ordinal_family(language: str) -> str | None:
     if primary == "en":
         return "en"
     return None
-
-
-def _match_range(text: str, pos: int) -> re.Match[str] | None:
-    match = _RANGE_RE.match(text, pos)
-    return match if match is not None else None
 
 
 def _match_numeric_ordinal(
@@ -201,38 +250,33 @@ def build_lexical_representation(
         else {}
     )
     tokens: list[LexicalToken] = []
-    ranges: list[NumericRange] = []
     position = 0
     index = 0
     length = len(normalized_text)
     while index < length:
         char = normalized_text[index]
         # Salta separadores/pontuação até ao início do próximo token.
-        if not (char.isalnum()):
+        if not char.isalnum():
             index += 1
             continue
 
-        range_match = _match_range(normalized_text, index)
+        range_match = _RANGE_RE.match(normalized_text, index)
         if range_match is not None:
-            start_value = int(range_match.group(1))
-            end_value = int(range_match.group(2))
-            ranges.append(NumericRange(start_value, end_value, position))
-            # A forma canónica do endpoint é o inteiro (sem zeros à
-            # esquerda), para que "01 a 12" e "1 a 12" partilhem cobertura; a
-            # superfície original é preservada.
-            for endpoint, value in (
-                (range_match.group(1), start_value),
-                (range_match.group(2), end_value),
-            ):
-                tokens.append(
-                    LexicalToken(
-                        surface=endpoint,
-                        canonical=str(value),
-                        position=position,
-                        kind=TokenKind.RANGE_ENDPOINT,
-                    )
+            numeric_range = NumericRange(
+                int(range_match.group(1)), int(range_match.group(2))
+            )
+            # Uma única unidade posicional: o intervalo comporta-se como
+            # um termo, seja qual for a forma textual que o originou.
+            tokens.append(
+                LexicalToken(
+                    surface=range_match.group(0),
+                    canonical=numeric_range.canonical,
+                    position=position,
+                    kind=TokenKind.RANGE,
+                    numeric_range=numeric_range,
                 )
-                position += 1
+            )
+            position += 1
             index = range_match.end()
             continue
 
@@ -242,7 +286,7 @@ def build_lexical_representation(
             tokens.append(
                 LexicalToken(
                     surface=match.group(0),
-                    canonical=f"ord:{value}",
+                    canonical=f"{ORDINAL_PREFIX}{value}",
                     position=position,
                     kind=TokenKind.ORDINAL,
                     ordinal=value,
@@ -263,7 +307,7 @@ def build_lexical_representation(
             tokens.append(
                 LexicalToken(
                     surface=surface,
-                    canonical=f"ord:{value}",
+                    canonical=f"{ORDINAL_PREFIX}{value}",
                     position=position,
                     kind=TokenKind.ORDINAL,
                     ordinal=value,
@@ -289,4 +333,4 @@ def build_lexical_representation(
             )
         position += 1
 
-    return LexicalRepresentation(tokens=tuple(tokens), ranges=tuple(ranges))
+    return LexicalRepresentation(tokens=tuple(tokens))

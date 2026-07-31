@@ -1,49 +1,54 @@
-"""Reranking lexical determinístico dos candidatos recuperados.
+"""Fase 2 do retrieval lexical: **ranking** determinístico dos elegíveis.
 
-Etapa B do retrieval do Momento 4: recebe um conjunto **já limitado** de
-candidatos (gerados pela Etapa A com PostgreSQL FTS + índice GIN) e
-reordena-os por uma política lexical explicável, usando apenas informação
-já disponível — nunca embeddings, pesquisa semântica, LLM ou sinónimos.
+Recebe um conjunto **já limitado** de candidatos (gerados pela fase A com
+PostgreSQL FTS + índice GIN), decide a elegibilidade de cada um (ver
+app.retrieval.eligibility) e ordena **apenas os elegíveis** por uma
+política lexical explicável, usando informação já disponível — nunca
+embeddings, pesquisa semântica, LLM ou sinónimos.
 
-Sinais considerados (todos normalizados para ``[0, 1]``):
+A ordem das operações é significativa:
 
-- cobertura dos termos informativos da pergunta no conteúdo;
-- correspondência de frase exata (sequência informativa contígua);
-- ordem dos termos e proximidade entre eles (proximidade ``0`` sem
-  correspondência: nunca um bónus "de graça");
-- sobreposição com o título do documento e com o título da secção;
-- benefício condicionado para ``table_row`` (curta, coberta e próxima);
-- qualidade da estratégia que recuperou o candidato (exact > and > or);
-- um sinal auxiliar combinado ``ts_rank_cd × fator de comprimento``, com
-  peso pequeno: o comprimento amortece o FTS (um parágrafo longo não vence
-  por repetição) e nenhum destes dois sinais dá pontos independentes a
-  conteúdo sem correspondência real. É isto que dá "dentes" ao limiar
-  mínimo: um candidato sem cobertura, sem frase exata e sem título/secção
-  correspondentes fica abaixo do piso, em vez de o ultrapassar só por ser
-  curto ou por repetir um termo genérico.
+1. sinais de conteúdo (``ContentMatch``): cobertura, frase exata, ordem,
+   proximidade e compacidade — nada além do conteúdo do chunk;
+2. elegibilidade, a partir desses sinais e da estratégia;
+3. **só então** os sinais auxiliares (título, secção, ``table_row``,
+   comprimento, FTS cru, qualidade da estratégia) e o score composto;
+4. limiar mínimo de relevância, aplicado a todos os elegíveis — incluindo
+   o melhor e incluindo correspondências de frase exata.
 
-O score final é a soma ponderada destes sinais, com a cobertura
-dominante. Os pesos e limiares são constantes nomeadas (abaixo), cobertas
-por testes. O resultado é determinístico: a mesma entrada produz sempre a
-mesma ordenação e os mesmos scores.
+Assim, o título ou a secção nunca criam evidência: só desempatam entre
+candidatos que já correspondem no conteúdo. Um resultado vazio é um
+resultado legítimo.
 
 A comparação de cobertura usa formas canónicas (``lexical_normalization``:
 ordinais e intervalos), não stemming — o stemming linguístico do
-PostgreSQL governa a **recuperação** (Etapa A); a cobertura governa a
-**ordenação** (Etapa B).
+PostgreSQL governa a **recuperação** (fase A); a cobertura governa a
+**ordenação** (fase B). O score não é uma probabilidade.
 """
 
-from dataclasses import dataclass, field
+import math
+from dataclasses import dataclass
 from datetime import date
-from enum import StrEnum
 from uuid import UUID
 
 from app.core.text_normalization import normalize_text
-from app.retrieval.lexical_normalization import build_lexical_representation
+from app.retrieval.eligibility import (
+    ContentMatch,
+    EligibilityDecision,
+    ExclusionReason,
+    decide_eligibility,
+)
+from app.retrieval.lexical_normalization import (
+    LexicalRepresentation,
+    build_lexical_representation,
+)
 from app.retrieval.query_planning import (
     MAX_INFORMATIVE_TERMS,
+    STRATEGY_PRIORITY,
     LexicalQueryStrategy,
     functional_terms_for,
+    is_informative_surface,
+    uses_advanced_syntax,
 )
 
 # --- Pesos do score composto (somam 1.0; score final fica em [0, 1]) --------
@@ -53,14 +58,12 @@ from app.retrieval.query_planning import (
 # "regime" e "avaliação"), a decisão passa para proximidade e estrutura —
 # nunca para a frequência.
 #
-# Deliberadamente, os sinais que NÃO dependem de correspondência real
-# (score FTS e comprimento) são auxiliares e combinados num único termo
-# pequeno (``fts_norm × length_factor``, peso W_FTS): o comprimento amortece
-# o FTS (um parágrafo longo não vence por repetição) sem dar pontos
-# independentes a conteúdo que nada corresponde. Assim, um candidato sem
-# cobertura, sem frase exata e sem título/secção correspondentes fica abaixo
-# do limiar mínimo, em vez de o ultrapassar só por ser curto ou por repetir
-# um termo genérico (ver ``rerank`` e o Momento 4, correção do limiar).
+# Os sinais que NÃO dependem de correspondência real (score FTS e
+# comprimento) são auxiliares e combinados num único termo pequeno
+# (``fts_norm × length_factor``, peso ``W_FTS``): o comprimento amortece o
+# FTS (um parágrafo longo não vence por repetição) sem dar pontos
+# independentes a conteúdo que nada corresponde. Nenhum destes pesos pode
+# criar evidência: essa decisão pertence inteiramente à elegibilidade.
 W_COVERAGE = 0.40
 W_EXACT_PHRASE = 0.16
 W_PROXIMITY = 0.14
@@ -74,7 +77,9 @@ _WEIGHT_SUM = (
     W_COVERAGE + W_EXACT_PHRASE + W_PROXIMITY + W_ORDER
     + W_TITLE + W_STRUCTURE + W_SECTION + W_FTS + W_STRATEGY
 )
-assert abs(_WEIGHT_SUM - 1.0) < 1e-9, "os pesos do ranking devem somar 1.0"
+if not math.isclose(_WEIGHT_SUM, 1.0, rel_tol=1e-9):  # pragma: no cover - erro de programação
+    msg = "os pesos do ranking devem somar 1.0"
+    raise ValueError(msg)
 
 # --- Constantes de calibração (nomeadas e comentadas) -----------------------
 # Saturação do score FTS cru: fts_norm = raw / (raw + FTS_SATURATION), o que
@@ -84,17 +89,20 @@ FTS_SATURATION = 0.1
 # acima, o fator decresce (uma table_row curta nunca perde para um parágrafo
 # longo só por repetir termos).
 LENGTH_SOFT_CAP_CHARS = 400
-# Benefício de table_row só quando a cobertura e a proximidade são altas.
+# Benefício de table_row só quando a cobertura é alta e as correspondências
+# são compactas. Usa a **compacidade** (correspondências por span), não a
+# proximidade composta: a proximidade já penaliza os termos em falta, e
+# penalizá-los outra vez aqui esvaziaria o sinal estrutural.
 STRUCTURE_MIN_COVERAGE = 0.5
-STRUCTURE_MIN_PROXIMITY = 0.5
+STRUCTURE_MIN_COMPACTNESS = 0.5
 
-# Qualidade da estratégia que recuperou o candidato (sinal explícito):
-# exact > reduced_and > reduced_or. Usada como componente pequeno e como
-# desempate na ordenação final.
+# Qualidade da estratégia que recuperou o candidato: derivada da prioridade
+# única definida em query_planning, normalizada para [0, 1]. Componente
+# pequeno do score e desempate na ordenação final.
+_MAX_STRATEGY_PRIORITY = max(STRATEGY_PRIORITY.values())
 _STRATEGY_QUALITY: dict[LexicalQueryStrategy, float] = {
-    LexicalQueryStrategy.EXACT: 1.0,
-    LexicalQueryStrategy.REDUCED_AND: 0.7,
-    LexicalQueryStrategy.REDUCED_OR: 0.4,
+    strategy: priority / _MAX_STRATEGY_PRIORITY
+    for strategy, priority in STRATEGY_PRIORITY.items()
 }
 
 
@@ -130,13 +138,14 @@ class LexicalCandidate:
 
 @dataclass(frozen=True)
 class LexicalFeatures:
-    """Sinais lexicais calculados para um candidato (todos em [0, 1])."""
+    """Sinais lexicais completos de um candidato elegível (todos em [0, 1])."""
 
     coverage: float
     matched_terms: frozenset[str]
     exact_phrase: float
     ordered: float
     proximity: float
+    compactness: float
     title_overlap: float
     section_overlap: float
     table_row_bonus: float
@@ -155,28 +164,36 @@ class RankedCandidate:
     reason: str
 
 
-class RemovalReason(StrEnum):
-    """Motivo estável pelo qual um candidato foi excluído do resultado."""
+@dataclass(frozen=True)
+class ExcludedCandidate:
+    """Candidato removido, com o motivo tipado e os sinais de conteúdo.
 
-    BELOW_THRESHOLD = "below_threshold"
-    DOMINATED = "dominated"
+    ``score`` é ``None`` quando o candidato foi excluído **antes** de ser
+    pontuado (falhou a elegibilidade): nesse caso os sinais auxiliares nem
+    chegam a ser calculados.
+    """
+
+    candidate: LexicalCandidate
+    reason: ExclusionReason
+    match: ContentMatch
+    score: float | None = None
 
 
 @dataclass(frozen=True)
 class RerankResult:
-    """Resultado do reranking, distinguindo dominância de limiar.
+    """Resultado do reranking: os elegíveis ordenados e os excluídos.
 
-    ``removed_by_dominance`` reúne os candidatos redundantes (os seus termos
-    correspondidos são um subconjunto próprio dos de um candidato mantido);
-    ``removed_by_threshold`` reúne os candidatos cujo score composto ficou
-    abaixo do limiar mínimo. As duas causas são distintas e nunca se
-    confundem no trace nem no diagnóstico.
+    Os motivos de exclusão são tipados e mutuamente exclusivos, pelo que
+    ``len(ranked) + len(excluded)`` é sempre o número de candidatos
+    avaliados.
     """
 
     query_terms: tuple[str, ...]
     ranked: tuple[RankedCandidate, ...]
-    removed_by_threshold: tuple[RankedCandidate, ...] = field(default_factory=tuple)
-    removed_by_dominance: tuple[RankedCandidate, ...] = field(default_factory=tuple)
+    excluded: tuple[ExcludedCandidate, ...] = ()
+
+    def excluded_count(self, reason: ExclusionReason) -> int:
+        return sum(1 for item in self.excluded if item.reason is reason)
 
 
 def informative_query_terms(normalized_query: str, language: str) -> tuple[str, ...]:
@@ -184,54 +201,33 @@ def informative_query_terms(normalized_query: str, language: str) -> tuple[str, 
 
     Igual em espírito a ``query_planning.extract_informative_terms`` (remove
     termos funcionais e tokens de uma só letra, limita o número), mas opera
-    sobre formas **canónicas** para que ordinais como ``1.ª`` e ``primeira``
-    contribuam para a cobertura como o mesmo ``ord:1``.
+    sobre o **stream canónico** para que ``1.ª`` e ``primeira`` contribuam
+    como o mesmo ``ord:1``, e para que ``01a12``, ``01-12`` e ``1 a 12``
+    contribuam como o mesmo ``rng:1-12``, na posição correta.
     """
     representation = build_lexical_representation(normalized_query, language)
     functional = functional_terms_for(language)
     terms: list[str] = []
     seen: set[str] = set()
-    for token in representation.tokens:
-        if len(token.surface) == 1 and token.surface.isalpha():
+    for canonical in _informative_stream(representation, functional):
+        if canonical in seen:
             continue
-        if token.surface in functional:
-            continue
-        if token.canonical in seen:
-            continue
-        seen.add(token.canonical)
-        terms.append(token.canonical)
+        seen.add(canonical)
+        terms.append(canonical)
         if len(terms) >= MAX_INFORMATIVE_TERMS:
             break
-    # Marcadores de intervalo explícito (ex.: "rng:1-12") também são termos
-    # de cobertura: um intervalo na pergunta deve casar o mesmo intervalo no
-    # conteúdo, seja qual for a sua forma textual ("01a12", "01-12", "1 a 12").
-    for numeric_range in representation.ranges:
-        marker = numeric_range.canonical
-        if marker in seen:
-            continue
-        if len(terms) >= MAX_INFORMATIVE_TERMS:
-            break
-        seen.add(marker)
-        terms.append(marker)
     return tuple(terms)
 
 
-def _informative_stream(normalized_text: str, language: str) -> list[str]:
+def _informative_stream(
+    representation: LexicalRepresentation, functional: frozenset[str]
+) -> list[str]:
     """Sequência de formas canónicas informativas (funcionais removidos)."""
-    representation = build_lexical_representation(normalized_text, language)
-    functional = functional_terms_for(language)
-    stream: list[str] = []
-    for token in representation.tokens:
-        if len(token.surface) == 1 and token.surface.isalpha():
-            continue
-        if token.surface in functional:
-            continue
-        stream.append(token.canonical)
-    return stream
-
-
-def _canonical_set(normalized_text: str, language: str) -> frozenset[str]:
-    return build_lexical_representation(normalized_text, language).canonical_set()
+    return [
+        token.canonical
+        for token in representation.tokens
+        if is_informative_surface(token.surface, functional)
+    ]
 
 
 def _is_contiguous_sublist(needle: tuple[str, ...], haystack: list[str]) -> bool:
@@ -259,22 +255,40 @@ def _ordered_fraction(query_terms: tuple[str, ...], positions: dict[str, int]) -
     return in_order / total
 
 
-def _proximity(matched: frozenset[str], positions: dict[str, int]) -> float:
-    """Proximidade dos termos correspondentes: 1.0 quando adjacentes.
+def compute_proximity(
+    query_terms: tuple[str, ...],
+    matched: frozenset[str],
+    positions: dict[str, int],
+) -> tuple[float, float]:
+    """Proximidade composta e compacidade das correspondências.
 
-    Considera apenas os termos com posição (palavras, números, ordinais,
-    endpoints de intervalo); marcadores abstratos como ``rng:1-12`` não têm
-    posição própria. Um candidato sem qualquer termo posicional correspondido
-    recebe **0.0** — nunca um bónus de proximidade "de graça". Um único termo
-    é trivialmente próximo de si mesmo (1.0), valor neutro.
+    A proximidade combina **quantos** dos termos da pergunta foram
+    encontrados com **quão juntos** aparecem::
+
+        positional_coverage = posições correspondidas / termos da pergunta
+        compactness         = posições correspondidas / span
+        proximity           = positional_coverage × compactness
+
+    Consequências deliberadas: sem correspondências a proximidade é
+    ``0.0``; numa consulta de um só termo, esse termo é trivialmente
+    próximo de si mesmo (``1.0``); numa consulta multi-termo, uma única
+    correspondência **nunca** chega a ``1.0`` (fica em ``1/n``). Ambos os
+    valores ficam em ``[0, 1]``.
+
+    A compacidade é devolvida à parte porque é ela — e não a proximidade
+    composta — que descreve "as correspondências estão juntas", que é o
+    que o benefício de ``table_row`` precisa de saber.
     """
-    matched_positions = sorted(positions[term] for term in matched if term in positions)
-    if len(matched_positions) == 0:
-        return 0.0
+    total = len(query_terms)
+    matched_positions = sorted({positions[term] for term in matched if term in positions})
+    if total == 0 or not matched_positions:
+        return 0.0, 0.0
     if len(matched_positions) == 1:
-        return 1.0
+        return 1.0 / total, 1.0
     span = matched_positions[-1] - matched_positions[0] + 1
-    return len(matched_positions) / span
+    compactness = len(matched_positions) / span
+    positional_coverage = len(matched_positions) / total
+    return positional_coverage * compactness, compactness
 
 
 def _overlap(query_terms: tuple[str, ...], canonical: frozenset[str]) -> float:
@@ -284,12 +298,17 @@ def _overlap(query_terms: tuple[str, ...], canonical: frozenset[str]) -> float:
     return hits / len(query_terms)
 
 
-def compute_features(
-    query_terms: tuple[str, ...],
-    candidate: LexicalCandidate,
-) -> LexicalFeatures:
-    """Calcula os sinais lexicais de um candidato (função pura)."""
+def compute_content_match(
+    query_terms: tuple[str, ...], candidate: LexicalCandidate
+) -> ContentMatch:
+    """Sinais que dependem apenas do conteúdo (função pura, fase 1).
+
+    Nada aqui usa título, secção, estrutura, comprimento, estratégia ou
+    score FTS: são exatamente estes os sinais em que a elegibilidade pode
+    basear-se.
+    """
     language = candidate.language
+    functional = functional_terms_for(language)
     content = build_lexical_representation(candidate.normalized_content, language)
     content_set = content.canonical_set()
     positions = content.first_positions()
@@ -299,18 +318,42 @@ def compute_features(
     coverage = len(matched) / term_count if term_count else 0.0
 
     if term_count >= 2:
-        content_stream = _informative_stream(candidate.normalized_content, language)
-        exact_phrase = 1.0 if _is_contiguous_sublist(query_terms, content_stream) else 0.0
+        stream = _informative_stream(content, functional)
+        exact_phrase = 1.0 if _is_contiguous_sublist(query_terms, stream) else 0.0
     else:
         exact_phrase = 1.0 if coverage > 0 else 0.0
 
-    ordered = _ordered_fraction(query_terms, positions)
-    proximity = _proximity(matched, positions)
+    proximity, compactness = compute_proximity(query_terms, matched, positions)
+    return ContentMatch(
+        coverage=coverage,
+        matched_terms=matched,
+        exact_phrase=exact_phrase,
+        ordered=_ordered_fraction(query_terms, positions),
+        proximity=proximity,
+        compactness=compactness,
+    )
 
-    title_set = _canonical_set(normalize_text(candidate.document_title), language)
+
+def build_features(
+    query_terms: tuple[str, ...],
+    candidate: LexicalCandidate,
+    match: ContentMatch,
+) -> LexicalFeatures:
+    """Acrescenta os sinais auxiliares aos de conteúdo (função pura, fase 2).
+
+    Só é chamada para candidatos **já elegíveis**: o título e a secção não
+    chegam sequer a ser calculados para um candidato sem correspondência
+    suficiente no conteúdo.
+    """
+    language = candidate.language
+    title_set = build_lexical_representation(
+        normalize_text(candidate.document_title), language
+    ).canonical_set()
     title_overlap = _overlap(query_terms, title_set)
     if candidate.section_title:
-        section_set = _canonical_set(normalize_text(candidate.section_title), language)
+        section_set = build_lexical_representation(
+            normalize_text(candidate.section_title), language
+        ).canonical_set()
         section_overlap = _overlap(query_terms, section_set)
     else:
         section_overlap = 0.0
@@ -318,29 +361,37 @@ def compute_features(
     table_row_bonus = (
         1.0
         if candidate.structure_type == "table_row"
-        and coverage >= STRUCTURE_MIN_COVERAGE
-        and proximity >= STRUCTURE_MIN_PROXIMITY
+        and match.coverage >= STRUCTURE_MIN_COVERAGE
+        and match.compactness >= STRUCTURE_MIN_COMPACTNESS
         else 0.0
     )
 
     raw = max(candidate.raw_score, 0.0)
     fts_norm = raw / (raw + FTS_SATURATION) if raw > 0 else 0.0
-
     length_factor = LENGTH_SOFT_CAP_CHARS / max(len(candidate.content), LENGTH_SOFT_CAP_CHARS)
-    strategy_quality = _STRATEGY_QUALITY[candidate.strategy]
 
     return LexicalFeatures(
-        coverage=coverage,
-        matched_terms=matched,
-        exact_phrase=exact_phrase,
-        ordered=ordered,
-        proximity=proximity,
+        coverage=match.coverage,
+        matched_terms=match.matched_terms,
+        exact_phrase=match.exact_phrase,
+        ordered=match.ordered,
+        proximity=match.proximity,
+        compactness=match.compactness,
         title_overlap=title_overlap,
         section_overlap=section_overlap,
         table_row_bonus=table_row_bonus,
         fts_norm=fts_norm,
         length_factor=length_factor,
-        strategy_quality=strategy_quality,
+        strategy_quality=_STRATEGY_QUALITY[candidate.strategy],
+    )
+
+
+def compute_features(
+    query_terms: tuple[str, ...], candidate: LexicalCandidate
+) -> LexicalFeatures:
+    """Sinais completos de um candidato (conveniência: fase 1 + fase 2)."""
+    return build_features(
+        query_terms, candidate, compute_content_match(query_terms, candidate)
     )
 
 
@@ -349,7 +400,8 @@ def compute_score(features: LexicalFeatures) -> float:
 
     O sinal auxiliar combina FTS e comprimento (``fts_norm × length_factor``,
     peso ``W_FTS``): o comprimento amortece o FTS e nenhum destes sinais dá
-    pontos independentes a conteúdo sem correspondência real.
+    pontos independentes a conteúdo sem correspondência real. O resultado é
+    uma medida de relevância lexical, não uma probabilidade.
     """
     fts_component = features.fts_norm * features.length_factor
     score = (
@@ -368,7 +420,7 @@ def compute_score(features: LexicalFeatures) -> float:
 
 
 def _ranking_key(ranked: RankedCandidate) -> tuple:
-    """Chave de ordenação total e determinística (secção 26).
+    """Chave de ordenação total e determinística.
 
     score↓, cobertura↓, qualidade da estratégia↓, score FTS cru↓,
     document_id↑, chunk_index↑, chunk_id↑.
@@ -385,12 +437,18 @@ def _ranking_key(ranked: RankedCandidate) -> tuple:
     )
 
 
-def _reason(features: LexicalFeatures, candidate: LexicalCandidate) -> str:
+def _reason(
+    features: LexicalFeatures,
+    candidate: LexicalCandidate,
+    decision: EligibilityDecision,
+) -> str:
     """Razão resumida do ranking — apenas métricas, nunca conteúdo."""
+    basis = decision.basis.value if decision.basis is not None else "-"
     return (
         f"cov={features.coverage:.2f} exact={features.exact_phrase:.0f} "
         f"prox={features.proximity:.2f} fts={features.fts_norm:.2f} "
-        f"strat={candidate.strategy.value} struct={candidate.structure_type or '-'}"
+        f"strat={candidate.strategy.value} struct={candidate.structure_type or '-'} "
+        f"elig={basis}"
     )
 
 
@@ -401,74 +459,73 @@ def rerank(
     *,
     min_relevance_score: float,
 ) -> RerankResult:
-    """Reordena e filtra os candidatos de forma determinística.
+    """Aplica elegibilidade e ordena os candidatos elegíveis.
 
-    Política do limiar (Momento 4, corrigida):
+    A deduplicação por ``chunk_id`` já ocorreu na fase A, por isso o mesmo
+    chunk nunca chega aqui duas vezes. Candidatos **diferentes** nunca são
+    removidos por serem "redundantes": evidência complementar (um chunk que
+    corresponde a menos termos do que outro) é preservada e simplesmente
+    ordenada abaixo — a decisão de quantos usar é do ``top_k``.
 
-    - **Consultas de um único termo informativo**: mantêm todos os
-      candidatos recuperados. Um termo institucional que casou por FTS
-      (incluindo por stemming, ex.: ``matrículas`` ⇄ ``matrícula``) é
-      relevante mesmo sem cobertura de superfície; esta política própria
-      evita perder recall em consultas curtas.
-
-    - **Consultas multi-termo**: o piso de score aplica-se a **todos** os
-      candidatos, incluindo o melhor — se todos ficarem abaixo do limiar, o
-      resultado é vazio (e o answering devolve ``insufficient_evidence`` em
-      vez de gerar sobre uma coincidência fraca). Uma correspondência de
-      frase exata nunca é eliminada pelo limiar. Em paralelo, a dominância
-      remove candidatos redundantes (termos correspondidos ⊊ os de um
-      candidato mantido). As duas causas são registadas em separado.
-
-    Como o sinal auxiliar (FTS × comprimento) tem peso pequeno, um candidato
-    sem cobertura, sem frase exata e sem título/secção correspondentes fica
-    abaixo do limiar padrão — é aí que o piso efetivamente atua.
+    O limiar mínimo aplica-se a **todos** os elegíveis, incluindo o melhor
+    e incluindo correspondências de frase exata: se todos ficarem abaixo, o
+    resultado é vazio (e o answering devolve ``insufficient_evidence`` em
+    vez de gerar sobre uma coincidência fraca).
     """
     query_terms = informative_query_terms(normalized_query, language)
-    scored: list[RankedCandidate] = []
+    # Uma consulta com operadores explícitos pode ser disjuntiva por
+    # desenho; a elegibilidade precisa de o saber para não a classificar
+    # como prova conjuntiva (ver app.retrieval.eligibility).
+    explicit_syntax = uses_advanced_syntax(normalized_query)
+
+    scored: list[tuple[RankedCandidate, ContentMatch]] = []
+    excluded: list[ExcludedCandidate] = []
     for candidate in candidates:
-        features = compute_features(query_terms, candidate)
+        match = compute_content_match(query_terms, candidate)
+        decision = decide_eligibility(
+            query_terms, match, candidate.strategy, explicit_syntax=explicit_syntax
+        )
+        if not decision.eligible:
+            excluded.append(
+                ExcludedCandidate(
+                    candidate=candidate,
+                    # A política garante um motivo sempre que não é elegível;
+                    # o fallback mantém o tipo total sem ramos silenciosos.
+                    reason=decision.reason or ExclusionReason.NO_CONTENT_MATCH,
+                    match=match,
+                )
+            )
+            continue
+        features = build_features(query_terms, candidate, match)
         scored.append(
-            RankedCandidate(
-                candidate=candidate,
-                features=features,
-                score=compute_score(features),
-                reason=_reason(features, candidate),
+            (
+                RankedCandidate(
+                    candidate=candidate,
+                    features=features,
+                    score=compute_score(features),
+                    reason=_reason(features, candidate, decision),
+                ),
+                match,
             )
         )
-    scored.sort(key=_ranking_key)
-
-    if not scored:
-        return RerankResult(query_terms=query_terms, ranked=())
-
-    # Consultas de um único termo: política própria — manter tudo.
-    if len(query_terms) <= 1:
-        return RerankResult(query_terms=query_terms, ranked=tuple(scored))
+    scored.sort(key=lambda item: _ranking_key(item[0]))
 
     kept: list[RankedCandidate] = []
-    removed_threshold: list[RankedCandidate] = []
-    removed_dominance: list[RankedCandidate] = []
-    kept_matched_sets: list[frozenset[str]] = []
-    for ranked in scored:
-        matched = ranked.features.matched_terms
-        exact = ranked.features.exact_phrase >= 1.0
-
-        # Dominância: um candidato cujos termos são subconjunto próprio dos de
-        # um já mantido é redundante (a frase exata tem cobertura total, logo
-        # nunca é dominada).
-        if any(existing > matched for existing in kept_matched_sets):
-            removed_dominance.append(ranked)
-            continue
-        # Limiar: aplica-se a todos, incluindo o melhor; a frase exata é
-        # sempre preservada.
-        if ranked.score < min_relevance_score and not exact:
-            removed_threshold.append(ranked)
+    for ranked, match in scored:
+        if ranked.score < min_relevance_score:
+            excluded.append(
+                ExcludedCandidate(
+                    candidate=ranked.candidate,
+                    reason=ExclusionReason.BELOW_THRESHOLD,
+                    match=match,
+                    score=ranked.score,
+                )
+            )
             continue
         kept.append(ranked)
-        kept_matched_sets.append(matched)
 
     return RerankResult(
         query_terms=query_terms,
         ranked=tuple(kept),
-        removed_by_threshold=tuple(removed_threshold),
-        removed_by_dominance=tuple(removed_dominance),
+        excluded=tuple(excluded),
     )
