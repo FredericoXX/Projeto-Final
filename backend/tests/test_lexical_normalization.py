@@ -16,7 +16,11 @@ from app.retrieval.reranking import informative_query_terms
 
 
 def _canon(text: str, language: str = "pt") -> list[str]:
-    return list(build_lexical_representation(normalize_text(text), language).canonical_tokens)
+    return list(build_lexical_representation(normalize_text(text), language).canonical_stream)
+
+
+def _positions(text: str, language: str = "pt") -> dict[str, int]:
+    return build_lexical_representation(normalize_text(text), language).first_positions()
 
 
 def _ordinals(text: str, language: str = "pt") -> list[int]:
@@ -122,8 +126,8 @@ def test_english_numeric_ordinals() -> None:
 
 def test_ordinal_canonical_matches_across_variants() -> None:
     # "1.ª" e "primeira" produzem a mesma forma canónica.
-    numeric = build_lexical_representation(normalize_text("1.ª"), "pt").canonical_tokens
-    written = build_lexical_representation(normalize_text("primeira"), "pt").canonical_tokens
+    numeric = build_lexical_representation(normalize_text("1.ª"), "pt").canonical_stream
+    written = build_lexical_representation(normalize_text("primeira"), "pt").canonical_stream
     assert numeric == written == ("ord:1",)
 
 
@@ -165,8 +169,58 @@ def test_explicit_range_with_hyphen_and_dash() -> None:
 def test_number_run_without_separator_is_not_split() -> None:
     assert _ranges("0509") == []
     assert _canon("0509") == ["0509"]
+    assert _ranges("2206") == []
+    assert _canon("2206") == ["2206"]
     assert _ranges("20262027") == []
     assert _canon("20262027") == ["20262027"]
+
+
+# --- Intervalo como unidade posicional única ---------------------------------
+
+
+def test_range_is_a_single_unit_in_the_canonical_stream() -> None:
+    # O marcador substitui o intervalo no stream: "período | 1 a 12 |
+    # inscrições" tem exatamente três unidades informativas.
+    assert _canon("periodo 1 a 12 inscricoes") == [
+        "periodo",
+        "rng:1-12",
+        "inscricoes",
+    ]
+
+
+def test_all_range_forms_share_the_same_canonical_stream() -> None:
+    streams = {
+        tuple(_canon(f"periodo {form} inscricoes"))
+        for form in ("01a12", "01 a 12", "01-12", "01–12", "1 a 12")
+    }
+    assert streams == {("periodo", "rng:1-12", "inscricoes")}
+
+
+def test_range_marker_has_its_own_position() -> None:
+    positions = _positions("periodo 1 a 12 inscricoes")
+    assert positions["periodo"] == 0
+    assert positions["rng:1-12"] == 1
+    assert positions["inscricoes"] == 2
+
+
+def test_range_endpoints_stay_available_without_taking_positions() -> None:
+    """Os endpoints continuam a corresponder por superfície, mas herdam a
+    posição do marcador: nunca separam o intervalo dos termos vizinhos."""
+    representation = build_lexical_representation(
+        normalize_text("periodo 1 a 12 inscricoes"), "pt"
+    )
+    assert {"1", "12", "rng:1-12"} <= representation.canonical_set()
+    positions = representation.first_positions()
+    assert positions["1"] == positions["12"] == positions["rng:1-12"] == 1
+
+
+def test_range_zero_padding_does_not_change_equivalence() -> None:
+    assert _canon("01a12") == _canon("1 a 12") == ["rng:1-12"]
+
+
+def test_surface_tokens_preserve_the_original_form() -> None:
+    representation = build_lexical_representation(normalize_text("de 01a12"), "pt")
+    assert representation.surface_tokens == ("de", "01a12")
 
 
 def test_ocr_letters_are_not_numbers() -> None:
@@ -190,6 +244,8 @@ def test_empty_text_yields_no_tokens() -> None:
     representation = build_lexical_representation("", "pt")
     assert representation.tokens == ()
     assert representation.ranges == ()
+    assert representation.canonical_set() == frozenset()
+    assert representation.first_positions() == {}
 
 
 def test_whitespace_only_yields_no_tokens() -> None:
@@ -230,3 +286,19 @@ def test_informative_terms_written_and_numeric_ordinal_are_equal() -> None:
 def test_informative_terms_deduplicate_by_canonical() -> None:
     terms = informative_query_terms(normalize_text("regime regime avaliacao"), "pt")
     assert terms == ("regime", "avaliacao")
+
+
+def test_informative_terms_keep_range_marker_in_position() -> None:
+    # O intervalo é um termo como outro qualquer e ocupa o seu lugar na
+    # sequência — não é acrescentado no fim.
+    terms = informative_query_terms(
+        normalize_text("Qual é o período de inscrições de 01a12?"), "pt"
+    )
+    assert terms == ("periodo", "inscricoes", "rng:1-12")
+
+
+def test_informative_terms_range_forms_are_equal() -> None:
+    compact = informative_query_terms(normalize_text("periodo 01a12"), "pt")
+    spaced = informative_query_terms(normalize_text("periodo 1 a 12"), "pt")
+    hyphen = informative_query_terms(normalize_text("periodo 01-12"), "pt")
+    assert compact == spaced == hyphen == ("periodo", "rng:1-12")

@@ -3,20 +3,33 @@
 Duas etapas determinísticas e explicáveis:
 
 - **Etapa A — candidate generation.** Planeia variantes da consulta (ver
-  app.retrieval.query_planning), executa-as **todas** contra o índice GIN
-  com a configuração FTS por idioma (app.retrieval.fts_config) e recolhe um
-  conjunto limitado de candidatos elegíveis. Os filtros de segurança
-  (instituição, estado, idioma, validade, official_only, versão processed
-  mais recente) são idênticos em todas as variantes e aplicados no
-  PostgreSQL, antes do reranking. Nenhuma variante devolve imediatamente:
-  os candidatos de todas as variantes são agregados e deduplicados por
-  chunk_id, preservando a melhor estratégia e o melhor score FTS cru.
+  app.retrieval.query_planning) e calcula **antes de qualquer consulta**
+  um orçamento global de candidatos, distribuído por quotas entre as
+  variantes ativas por ordem de prioridade. Cada variante é executada
+  contra o índice GIN com a configuração FTS por idioma
+  (app.retrieval.fts_config), limitada em SQL à sua quota — nenhuma
+  consulta corre sem LIMIT. Os filtros de segurança (instituição, estado,
+  idioma, validade, official_only, versão processed mais recente) são
+  idênticos em todas as variantes e aplicados no PostgreSQL. Os candidatos
+  são agregados e deduplicados por chunk_id, preservando a melhor
+  estratégia e o melhor score FTS cru.
 
-- **Etapa B — reranking lexical determinístico.** Reordena os candidatos
-  por uma política de cobertura/proximidade/estrutura (app.retrieval.
-  reranking) e aplica um limiar mínimo de relevância. O score público da
-  Evidence passa a ser a relevância lexical composta em [0, 1]; o score
-  FTS cru fica disponível apenas no trace interno.
+  Como a soma das quotas nunca excede o orçamento, **não existe qualquer
+  corte global por FTS cru depois da agregação**: tudo o que as consultas
+  devolvem é avaliado. A única seleção por ``ts_rank_cd`` acontece dentro
+  da quota **reservada** de cada variante, entre candidatos dessa mesma
+  variante — um candidato ``exact`` nunca perde o lugar para candidatos de
+  variantes menos prioritárias, por mais alto que seja o FTS destes. Uma
+  variante cujas correspondências excedam a própria quota continua, essa
+  sim, a ficar pelos melhores ``ts_rank_cd``: o orçamento é finito por
+  desenho.
+
+- **Etapa B — elegibilidade e ranking.** Cada candidato passa primeiro
+  por uma decisão de elegibilidade (app.retrieval.eligibility) baseada só
+  no conteúdo, e só os elegíveis são pontuados e ordenados
+  (app.retrieval.reranking), com um limiar mínimo de relevância aplicado a
+  todos. O score público da Evidence é a relevância lexical composta em
+  [0, 1]; o score FTS cru fica disponível apenas no trace interno.
 
 Sem embeddings, sem pesquisa vetorial/semântica, sem LLM, sem sinónimos.
 Determinístico: a mesma entrada produz sempre a mesma ordenação.
@@ -33,51 +46,52 @@ from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
 from app.models.document_version import DocumentVersion
 from app.retrieval.base import Evidence, RetrievalContext
+from app.retrieval.eligibility import ExclusionReason
 from app.retrieval.fts_config import resolve_fts_config
 from app.retrieval.lexical_normalization import build_lexical_representation
 from app.retrieval.query_planning import (
+    STRATEGY_PRIORITY,
     LexicalQueryStrategy,
     LexicalQueryVariant,
     plan_lexical_query,
 )
 from app.retrieval.reranking import (
+    ExcludedCandidate,
     LexicalCandidate,
     RankedCandidate,
-    RemovalReason,
+    RerankResult,
     rerank,
 )
 
 logger = logging.getLogger(__name__)
 
-# --- Limites do candidate pool (constantes nomeadas, secção 19) -------------
-# candidate_limit = min(MAX, max(MIN, top_k * MULTIPLIER)). Proporcional a
-# top_k, com um mínimo razoável e um máximo absoluto: nunca uma consulta
-# ilimitada, nunca todos os chunks da instituição.
+# --- Orçamento global do candidate pool -------------------------------------
+# global_candidate_limit = min(MAX, max(MIN, top_k * MULTIPLIER)). Proporcional
+# a top_k, com um mínimo razoável e um máximo absoluto. É calculado **antes**
+# das consultas e repartido por quotas entre as variantes: nunca uma consulta
+# ilimitada, nunca todos os chunks da instituição, e nunca um corte a
+# posteriori que descarte candidatos já recuperados.
 CANDIDATE_MIN = 20
 CANDIDATE_MAX = 100
 CANDIDATE_MULTIPLIER = 5
 
-# Ordem de qualidade das estratégias, para escolher a melhor quando um chunk
-# é recuperado por várias variantes (exact > reduced_and > reduced_or).
-_STRATEGY_RANK: dict[LexicalQueryStrategy, int] = {
-    LexicalQueryStrategy.EXACT: 3,
-    LexicalQueryStrategy.REDUCED_AND: 2,
-    LexicalQueryStrategy.REDUCED_OR: 1,
-}
-
-# Nº máximo de candidatos excluídos a registar no trace (evita traces enormes).
-_MAX_EXCLUDED_IN_TRACE = 20
+# Nº máximo de linhas de detalhe a registar no trace (evita traces enormes).
+# As **contagens** do trace abrangem sempre todos os candidatos.
+MAX_TRACE_DETAIL_ROWS = 20
 
 
 @dataclass(frozen=True)
 class VariantTrace:
+    """Orçamento e resultado de uma variante do plano."""
+
     strategy: str
-    candidate_count: int
+    quota: int
+    returned_count: int
 
 
 @dataclass(frozen=True)
 class RankedResultTrace:
-    """Linha auditável do ranking — apenas métricas, nunca conteúdo."""
+    """Linha auditável de um resultado — apenas métricas, nunca conteúdo."""
 
     chunk_id: str
     document_id: str
@@ -87,15 +101,31 @@ class RankedResultTrace:
     score: float
     coverage: float
     exact_phrase: float
+    ordered: float
     proximity: float
     title_overlap: float
     section_overlap: float
     structure_type: str | None
     matched_terms: tuple[str, ...]
     reason: str
-    # Presente apenas nas linhas excluídas: motivo estável da remoção
-    # ("below_threshold" ou "dominated").
-    removal_reason: str | None = None
+
+
+@dataclass(frozen=True)
+class ExcludedCandidateTrace:
+    """Linha auditável de um candidato excluído, com motivo tipado.
+
+    ``score`` é ``None`` quando a exclusão ocorreu antes da pontuação
+    (falha de elegibilidade): os sinais auxiliares nem chegam a existir.
+    """
+
+    chunk_id: str
+    document_id: str
+    chunk_index: int
+    strategy: str
+    reason: str
+    coverage: float
+    matched_terms: tuple[str, ...]
+    score: float | None
 
 
 @dataclass(frozen=True)
@@ -105,6 +135,23 @@ class LexicalRetrievalTrace:
     Não altera o comportamento da pesquisa, não é endpoint público, não
     contém documentos completos nem segredos: só metadados de ranking e as
     formas canónicas dos termos da consulta.
+
+    Invariantes garantidas por construção::
+
+        sum(quota)                 <= global_candidate_limit
+        sum(returned_count)        == total_returned_before_dedup
+        unique_after_dedup         <= total_returned_before_dedup
+        unique_after_dedup         <= global_candidate_limit
+        candidates_evaluated       == unique_after_dedup
+        candidates_evaluated       == final_result_count
+                                      + excluded_no_content_match
+                                      + excluded_insufficient_coverage
+                                      + excluded_below_threshold
+
+    ``final_result_count`` conta os candidatos que sobreviveram à
+    elegibilidade e ao limiar, **antes** do corte por ``top_k``: o ``top_k``
+    é uma escolha de apresentação, nunca uma exclusão por relevância.
+    ``results`` detalha apenas os que foram efetivamente devolvidos.
     """
 
     fts_config: str
@@ -112,46 +159,45 @@ class LexicalRetrievalTrace:
     query_ordinals: tuple[int, ...]
     query_ranges: tuple[str, ...]
     planned_variants: tuple[str, ...]
-    variant_candidate_counts: tuple[VariantTrace, ...]
-    candidate_limit: int
-    candidate_ceiling: int
-    unique_candidate_count: int
-    candidates_before_threshold: int
-    removed_by_threshold: int
-    removed_by_dominance: int
+    global_candidate_limit: int
+    variants: tuple[VariantTrace, ...]
+    total_returned_before_dedup: int
+    unique_after_dedup: int
+    candidates_evaluated: int
+    excluded_no_content_match: int
+    excluded_insufficient_coverage: int
+    excluded_below_threshold: int
+    final_result_count: int
     results: tuple[RankedResultTrace, ...]
-    excluded: tuple[RankedResultTrace, ...]
+    excluded: tuple[ExcludedCandidateTrace, ...]
 
 
-def _candidate_limit(top_k: int) -> int:
+def global_candidate_limit(top_k: int) -> int:
+    """Orçamento total de candidatos para uma pesquisa (antes das consultas)."""
     return min(CANDIDATE_MAX, max(CANDIDATE_MIN, top_k * CANDIDATE_MULTIPLIER))
 
 
-def _apply_candidate_ceiling(candidates: list[LexicalCandidate]) -> list[LexicalCandidate]:
-    """Limita o pool agregado a CANDIDATE_MAX, deterministicamente.
+def distribute_quotas(limit: int, variant_count: int) -> tuple[int, ...]:
+    """Reparte o orçamento global pelas variantes, por ordem de prioridade.
 
-    A ordenação é por melhor score FTS cru (desc) e desempates estáveis;
-    só corta quando o total agregado das variantes excede o teto (caso de
-    top_k elevado). Cada variante já foi limitada a candidate_limit em SQL.
+    Divisão inteira com o resto distribuído um a um pelas variantes mais
+    prioritárias (as variantes já chegam ordenadas por
+    ``STRATEGY_PRIORITY``). A soma das quotas é exatamente ``min(limit,
+    ...)`` e nunca a excede; com o orçamento mínimo (20) e no máximo quatro
+    variantes, nenhuma variante válida recebe quota zero.
     """
-    if len(candidates) <= CANDIDATE_MAX:
-        return candidates
-    ordered = sorted(
-        candidates,
-        key=lambda candidate: (
-            -candidate.raw_score,
-            str(candidate.document_id),
-            candidate.chunk_index,
-            str(candidate.chunk_id),
-        ),
+    if variant_count <= 0 or limit <= 0:
+        return ()
+    quotient, remainder = divmod(limit, variant_count)
+    return tuple(
+        quotient + (1 if index < remainder else 0) for index in range(variant_count)
     )
-    return ordered[:CANDIDATE_MAX]
 
 
 def _better_strategy(
     left: LexicalQueryStrategy, right: LexicalQueryStrategy
 ) -> LexicalQueryStrategy:
-    return left if _STRATEGY_RANK[left] >= _STRATEGY_RANK[right] else right
+    return left if STRATEGY_PRIORITY[left] >= STRATEGY_PRIORITY[right] else right
 
 
 class PostgresLexicalRetriever:
@@ -184,27 +230,32 @@ class PostgresLexicalRetriever:
         """
         fts_config = resolve_fts_config(context.language)
         plan = plan_lexical_query(query, context.language)
-        candidate_limit = _candidate_limit(top_k)
+
+        # Orçamento decidido antes de qualquer consulta e repartido por
+        # quotas: o teto do pool é uma propriedade das consultas, não um
+        # corte posterior.
+        budget = global_candidate_limit(top_k)
+        quotas = distribute_quotas(budget, len(plan.variants))
 
         candidates: dict = {}
         variant_traces: list[VariantTrace] = []
-        for variant in plan.variants:
-            rows = self._execute_variant(
-                db, variant, context, candidate_limit, official_only, fts_config.value
+        total_returned = 0
+        for variant, quota in zip(plan.variants, quotas, strict=True):
+            rows = (
+                self._execute_variant(
+                    db, variant, context, quota, official_only, fts_config.value
+                )
+                if quota > 0
+                else []
             )
-            variant_traces.append(VariantTrace(variant.strategy.value, len(rows)))
+            variant_traces.append(VariantTrace(variant.strategy.value, quota, len(rows)))
+            total_returned += len(rows)
             for row in rows:
                 self._merge_candidate(candidates, row, variant.strategy)
 
-        # Teto global do candidate pool: cada variante já trouxe no máximo
-        # candidate_limit candidatos; a agregação de N variantes é limitada a
-        # CANDIDATE_MAX no total, deterministicamente, por melhor score FTS
-        # cru. Garante que o reranker nunca recebe um pool ilimitado.
-        pool = _apply_candidate_ceiling(list(candidates.values()))
-
         result = rerank(
             query,
-            pool,
+            list(candidates.values()),
             context.language,
             min_relevance_score=settings.retrieval_min_relevance_score,
         )
@@ -217,23 +268,26 @@ class PostgresLexicalRetriever:
             fts_config=fts_config.value,
             plan_variants=tuple(variant.strategy.value for variant in plan.variants),
             variant_traces=tuple(variant_traces),
-            candidate_limit=candidate_limit,
+            budget=budget,
+            total_returned=total_returned,
             unique_candidate_count=len(candidates),
             result=result,
             top_results=top_results,
         )
 
         # Apenas metadados operacionais: nunca a pergunta, os termos ou o
-        # conteúdo documental (ver secção 41 do Momento 4).
+        # conteúdo documental.
         logger.info(
-            "Lexical retrieval: fts=%s variants=%d candidates=%d results=%d "
-            "thresholded=%d dominated=%d institution=%s language=%s",
+            "Lexical retrieval: fts=%s variants=%d budget=%d unique=%d results=%d "
+            "no_match=%d low_coverage=%d below_threshold=%d institution=%s language=%s",
             fts_config.value,
             len(plan.variants),
+            budget,
             len(candidates),
             len(evidence),
-            len(result.removed_by_threshold),
-            len(result.removed_by_dominance),
+            trace.excluded_no_content_match,
+            trace.excluded_insufficient_coverage,
+            trace.excluded_below_threshold,
             context.institution_id,
             context.language,
         )
@@ -257,7 +311,7 @@ class PostgresLexicalRetriever:
         db: Session,
         variant: LexicalQueryVariant,
         context: RetrievalContext,
-        candidate_limit: int,
+        quota: int,
         official_only: bool,
         fts_config_name: str,
     ) -> list:
@@ -265,7 +319,7 @@ class PostgresLexicalRetriever:
         # (bind params) de websearch_to_tsquery, nunca SQL interpolado. O
         # nome da configuração provém de uma allowlist fechada.
         ts_query = func.websearch_to_tsquery(fts_config_name, variant.websearch_input)
-        statement = self._build_statement(ts_query, context, candidate_limit, official_only)
+        statement = self._build_statement(ts_query, context, quota, official_only)
         return list(db.execute(statement))
 
     def _latest_processed_subquery(self, context: RetrievalContext):
@@ -293,7 +347,7 @@ class PostgresLexicalRetriever:
         self,
         ts_query,
         context: RetrievalContext,
-        candidate_limit: int,
+        quota: int,
         official_only: bool,
     ) -> Select:
         """Seleção base partilhada por todas as variantes.
@@ -301,8 +355,8 @@ class PostgresLexicalRetriever:
         Traz numa única consulta (sem N+1) tudo o que o reranking e o
         diagnóstico precisam, incluindo os metadados estruturais usados só
         internamente. Os filtros são idênticos aos da baseline e aplicados
-        no PostgreSQL antes do reranking. O LIMIT é o candidate_limit, não
-        o top_k final.
+        no PostgreSQL antes do reranking. O LIMIT é a quota da variante,
+        não o top_k final.
         """
         latest_processed = self._latest_processed_subquery(context)
         score = func.ts_rank_cd(DocumentChunk.search_vector, ts_query).label("score")
@@ -347,15 +401,14 @@ class PostgresLexicalRetriever:
                 DocumentChunk.search_vector.op("@@")(ts_query),
             )
             # Ordenação apenas para escolher deterministicamente os
-            # candidate_limit candidatos por variante; a ordenação final é
-            # feita pelo reranker.
+            # candidatos dentro da quota; a ordenação final é do reranker.
             .order_by(
                 score.desc(),
                 Document.id.asc(),
                 DocumentChunk.chunk_index.asc(),
                 DocumentChunk.id.asc(),
             )
-            .limit(candidate_limit)
+            .limit(quota)
         )
         if official_only:
             statement = statement.where(Document.official_source.is_(True))
@@ -369,9 +422,10 @@ class PostgresLexicalRetriever:
         fts_config: str,
         plan_variants: tuple[str, ...],
         variant_traces: tuple[VariantTrace, ...],
-        candidate_limit: int,
+        budget: int,
+        total_returned: int,
         unique_candidate_count: int,
-        result,
+        result: RerankResult,
         top_results: tuple[RankedCandidate, ...],
     ) -> LexicalRetrievalTrace:
         representation = build_lexical_representation(query, language)
@@ -379,34 +433,32 @@ class PostgresLexicalRetriever:
             token.ordinal for token in representation.tokens if token.ordinal is not None
         )
         ranges = tuple(numeric_range.canonical for numeric_range in representation.ranges)
-        excluded: list[RankedResultTrace] = [
-            _ranked_to_trace(ranked, RemovalReason.DOMINATED.value)
-            for ranked in result.removed_by_dominance
-        ]
-        excluded += [
-            _ranked_to_trace(ranked, RemovalReason.BELOW_THRESHOLD.value)
-            for ranked in result.removed_by_threshold
-        ]
-        candidates_before_threshold = (
-            len(result.ranked)
-            + len(result.removed_by_threshold)
-            + len(result.removed_by_dominance)
-        )
         return LexicalRetrievalTrace(
             fts_config=fts_config,
             informative_terms=result.query_terms,
             query_ordinals=ordinals,
             query_ranges=ranges,
             planned_variants=plan_variants,
-            variant_candidate_counts=variant_traces,
-            candidate_limit=candidate_limit,
-            candidate_ceiling=CANDIDATE_MAX,
-            unique_candidate_count=unique_candidate_count,
-            candidates_before_threshold=candidates_before_threshold,
-            removed_by_threshold=len(result.removed_by_threshold),
-            removed_by_dominance=len(result.removed_by_dominance),
+            global_candidate_limit=budget,
+            variants=variant_traces,
+            total_returned_before_dedup=total_returned,
+            unique_after_dedup=unique_candidate_count,
+            candidates_evaluated=len(result.ranked) + len(result.excluded),
+            excluded_no_content_match=result.excluded_count(
+                ExclusionReason.NO_CONTENT_MATCH
+            ),
+            excluded_insufficient_coverage=result.excluded_count(
+                ExclusionReason.INSUFFICIENT_COVERAGE
+            ),
+            excluded_below_threshold=result.excluded_count(
+                ExclusionReason.BELOW_THRESHOLD
+            ),
+            final_result_count=len(result.ranked),
             results=tuple(_ranked_to_trace(ranked) for ranked in top_results),
-            excluded=tuple(excluded[:_MAX_EXCLUDED_IN_TRACE]),
+            excluded=tuple(
+                _excluded_to_trace(item)
+                for item in result.excluded[:MAX_TRACE_DETAIL_ROWS]
+            ),
         )
 
 
@@ -442,7 +494,7 @@ def _ranked_to_evidence(ranked: RankedCandidate) -> Evidence:
         document_title=candidate.document_title,
         chunk_index=candidate.chunk_index,
         content=candidate.content,
-        # Score público = relevância lexical composta em [0, 1] (secção 22).
+        # Score público = relevância lexical composta em [0, 1].
         score=ranked.score,
         language=candidate.language,
         official_source=candidate.official_source,
@@ -452,9 +504,7 @@ def _ranked_to_evidence(ranked: RankedCandidate) -> Evidence:
     )
 
 
-def _ranked_to_trace(
-    ranked: RankedCandidate, removal_reason: str | None = None
-) -> RankedResultTrace:
+def _ranked_to_trace(ranked: RankedCandidate) -> RankedResultTrace:
     candidate = ranked.candidate
     features = ranked.features
     return RankedResultTrace(
@@ -466,11 +516,25 @@ def _ranked_to_trace(
         score=ranked.score,
         coverage=features.coverage,
         exact_phrase=features.exact_phrase,
+        ordered=features.ordered,
         proximity=features.proximity,
         title_overlap=features.title_overlap,
         section_overlap=features.section_overlap,
         structure_type=candidate.structure_type,
         matched_terms=tuple(sorted(features.matched_terms)),
         reason=ranked.reason,
-        removal_reason=removal_reason,
+    )
+
+
+def _excluded_to_trace(item: ExcludedCandidate) -> ExcludedCandidateTrace:
+    candidate = item.candidate
+    return ExcludedCandidateTrace(
+        chunk_id=str(candidate.chunk_id),
+        document_id=str(candidate.document_id),
+        chunk_index=candidate.chunk_index,
+        strategy=candidate.strategy.value,
+        reason=item.reason.value,
+        coverage=item.match.coverage,
+        matched_terms=tuple(sorted(item.match.matched_terms)),
+        score=item.score,
     )

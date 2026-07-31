@@ -272,16 +272,29 @@ O Momento 4 reforça a recuperação sem sair do lexical, determinístico e loca
 A configuração Full-Text Search passa a ser **por idioma** (`portuguese`/
 `english`/`simple`, por allowlist), melhorando a recuperação por stemming. O
 retriever executa **todas** as variantes da consulta (exact, reduced_and,
-reduced_or), agrega-as num *candidate pool* limitado e aplica um **reranking
-lexical determinístico**: cobertura dos termos, frase exata, proximidade,
-título/secção, estrutura (`table_row`) e comprimento, com o `ts_rank_cd` como
-sinal apenas auxiliar. Ordinais padrão (`1.ª`/`primeira` ⇒ o mesmo) e
-intervalos numéricos explícitos são canonizados; o OCR não é corrigido nem
-adivinhado. Um limiar mínimo (`RETRIEVAL_MIN_RELEVANCE_SCORE`) e a dominância
-entre candidatos excluem coincidências fracas. O `score` de `Evidence` passa a
-ser a relevância lexical composta em `[0, 1]`. Operadores explícitos (aspas,
-`OR`, `-termo`) preservam a intenção; todos os filtros institucionais aplicam-se
-a todas as variantes. Sem embeddings, sem pesquisa semântica e sem LLM no
+canonical_relaxed_and, reduced_or) dentro de um **orçamento global de
+candidatos repartido por quotas antes das consultas**, e separa explicitamente
+duas fases:
+
+- **elegibilidade** — decide o que é evidência, só a partir do conteúdo. Uma
+  consulta multi-termo exige uma condição forte (frase exata, estratégia
+  conjuntiva, relaxação canónica com o ordinal/intervalo correspondido, ou
+  `max(2, ceil(nº termos × 0.5))` termos cobertos). **Título e secção nunca
+  criam elegibilidade**; cobertura zero nunca é evidência; uma correspondência
+  de 1 termo numa pergunta de 3 devolve vazio;
+- **ranking** — ordena apenas os elegíveis por cobertura, frase exata,
+  proximidade, ordem, título/secção, estrutura (`table_row`) e comprimento, com
+  o `ts_rank_cd` como sinal apenas auxiliar.
+
+Ordinais padrão (`1.ª`/`primeira` ⇒ o mesmo) e intervalos numéricos explícitos
+(`01a12`/`01-12`/`1 a 12` ⇒ `rng:1-12`, uma unidade posicional) são canonizados;
+uma pergunta com ordinal **nunca** é expandida para o cardinal (`primeira` não
+recupera “Sala 1”). O OCR não é corrigido nem adivinhado. O limiar mínimo
+(`RETRIEVAL_MIN_RELEVANCE_SCORE`) aplica-se **depois** da elegibilidade, a todos
+os candidatos elegíveis. O `score` de `Evidence` é a relevância lexical composta
+em `[0, 1]` — não uma probabilidade. Operadores explícitos (aspas, `OR`,
+`-termo`) preservam a intenção; todos os filtros institucionais aplicam-se a
+todas as variantes. Sem embeddings, sem pesquisa semântica e sem LLM no
 retrieval — consulte [`docs/database.md`](docs/database.md).
 
 O endpoint de recuperação devolve apenas evidências. O texto processado
@@ -342,8 +355,9 @@ inclusive as fechadas ou arquivadas, que permanecem finais; as listagens são
 ordenadas pela atividade mais recente (`updated_at`).
 
 A abordagem de geração é experimental e substituível, não uma decisão
-arquitetural definitiva, e o sistema **não** está livre de alucinações. Ainda
-não há embeddings, pesquisa semântica ou híbrida, reranking, uma segunda LLM
+arquitetural definitiva, e o sistema **não** está livre de alucinações. O
+reranking existente é **lexical e determinístico** (ver acima): não há
+embeddings, pesquisa semântica ou híbrida, reranking por modelo, uma segunda LLM
 de validação, pontuações de confiança, memória conversacional, idempotência,
 encaminhamento para atendimento humano nem feedback. Perguntas concorrentes são
 ordenadas pelo momento do commit, não pelo momento do envio.

@@ -51,10 +51,12 @@ from app.services.document_extraction_service import PAGE_SEPARATOR
 
 logger = logging.getLogger(__name__)
 
-# Versão 3: o relatório passa a incluir o trace interno do retriever lexical
-# (config FTS, termos informativos, ordinais/intervalos, variantes, candidate
-# pool, limiar e componentes do score), quando o retriever o suporta.
-DIAGNOSTIC_REPORT_VERSION = 3
+# Versão 4: o trace do retriever lexical passa a refletir o orçamento global
+# de candidatos com quotas por variante e a separação entre elegibilidade e
+# ranking — os candidatos removidos são classificados por motivo tipado
+# (ausência de correspondência, cobertura insuficiente, limiar) e as
+# contagens são matematicamente consistentes entre si.
+DIAGNOSTIC_REPORT_VERSION = 4
 
 # Limites deliberados: o relatório é evidência, não um dump do documento.
 MAX_OCCURRENCES_PER_FACT = 8
@@ -1354,6 +1356,155 @@ def analyze_question_retrieval(
 # ---------------------------------------------------------------------------
 
 
+# ---------------------------------------------------------------------------
+# Projeção redigida do trace do retriever
+# ---------------------------------------------------------------------------
+#
+# O trace devolvido por ``search_with_trace`` é uma estrutura **interna**: vive
+# em memória e inclui as formas canónicas dos termos da pergunta, úteis para
+# depuração e testes. Estas dataclasses são a fronteira entre esse trace e o
+# relatório: tudo o que atravessa são contagens, métricas, marcadores
+# estruturais e identificadores técnicos — nunca o texto dos termos.
+#
+# Âmbito exato desta redação: o relatório **contém deliberadamente** a pergunta
+# e a resposta esperada (ver ``QuestionDiagnostic``), que são o input do próprio
+# operador — daí o aviso de confidencialidade no topo do documento. O que não
+# faz sentido é o trace derivar dessa pergunta um segundo conjunto de termos
+# canónicos e arrastá-lo para o relatório sem que ninguém o tenha pedido: é
+# informação duplicada, de utilidade marginal fora da depuração, que aumenta
+# desnecessariamente a superfície do artefacto. A proibição literal de registar
+# a pergunta aplica-se aos **logs**, onde nunca aparece.
+#
+# Os ordinais e intervalos reconhecidos permanecem porque são marcadores
+# estruturais exigidos pelo relatório (``ord:1``, ``rng:1-12``) e não conteúdo
+# lexical da pergunta.
+
+
+@dataclass(frozen=True)
+class LexicalVariantReport:
+    strategy: str
+    quota: int
+    returned_count: int
+
+
+@dataclass(frozen=True)
+class LexicalResultReport:
+    """Linha de resultado no relatório — métricas, sem termos."""
+
+    chunk_id: str
+    document_id: str
+    chunk_index: int
+    strategy: str
+    raw_score: float
+    score: float
+    coverage: float
+    exact_phrase: float
+    ordered: float
+    proximity: float
+    title_overlap: float
+    section_overlap: float
+    structure_type: str | None
+    matched_term_count: int
+    reason: str
+
+
+@dataclass(frozen=True)
+class LexicalExclusionReport:
+    """Linha de exclusão no relatório — motivo tipado, sem termos."""
+
+    chunk_id: str
+    document_id: str
+    chunk_index: int
+    strategy: str
+    reason: str
+    coverage: float
+    matched_term_count: int
+    score: float | None
+
+
+@dataclass(frozen=True)
+class LexicalTraceReport:
+    """Trace do retriever lexical, redigido para o relatório."""
+
+    fts_config: str
+    informative_term_count: int
+    query_ordinals: tuple[int, ...]
+    query_ranges: tuple[str, ...]
+    planned_variants: tuple[str, ...]
+    global_candidate_limit: int
+    variants: tuple[LexicalVariantReport, ...]
+    total_returned_before_dedup: int
+    unique_after_dedup: int
+    candidates_evaluated: int
+    excluded_no_content_match: int
+    excluded_insufficient_coverage: int
+    excluded_below_threshold: int
+    final_result_count: int
+    results: tuple[LexicalResultReport, ...]
+    excluded: tuple[LexicalExclusionReport, ...]
+
+
+def redact_lexical_trace(trace: LexicalRetrievalTrace) -> LexicalTraceReport:
+    """Converte o trace interno na sua projeção redigida para o relatório.
+
+    Os termos informativos e os termos correspondidos passam a **contagens**:
+    o relatório continua a explicar quanta correspondência houve, sem nunca
+    revelar o que foi perguntado.
+    """
+    return LexicalTraceReport(
+        fts_config=trace.fts_config,
+        informative_term_count=len(trace.informative_terms),
+        query_ordinals=trace.query_ordinals,
+        query_ranges=trace.query_ranges,
+        planned_variants=trace.planned_variants,
+        global_candidate_limit=trace.global_candidate_limit,
+        variants=tuple(
+            LexicalVariantReport(variant.strategy, variant.quota, variant.returned_count)
+            for variant in trace.variants
+        ),
+        total_returned_before_dedup=trace.total_returned_before_dedup,
+        unique_after_dedup=trace.unique_after_dedup,
+        candidates_evaluated=trace.candidates_evaluated,
+        excluded_no_content_match=trace.excluded_no_content_match,
+        excluded_insufficient_coverage=trace.excluded_insufficient_coverage,
+        excluded_below_threshold=trace.excluded_below_threshold,
+        final_result_count=trace.final_result_count,
+        results=tuple(
+            LexicalResultReport(
+                chunk_id=result.chunk_id,
+                document_id=result.document_id,
+                chunk_index=result.chunk_index,
+                strategy=result.strategy,
+                raw_score=result.raw_score,
+                score=result.score,
+                coverage=result.coverage,
+                exact_phrase=result.exact_phrase,
+                ordered=result.ordered,
+                proximity=result.proximity,
+                title_overlap=result.title_overlap,
+                section_overlap=result.section_overlap,
+                structure_type=result.structure_type,
+                matched_term_count=len(result.matched_terms),
+                reason=result.reason,
+            )
+            for result in trace.results
+        ),
+        excluded=tuple(
+            LexicalExclusionReport(
+                chunk_id=excluded.chunk_id,
+                document_id=excluded.document_id,
+                chunk_index=excluded.chunk_index,
+                strategy=excluded.strategy,
+                reason=excluded.reason,
+                coverage=excluded.coverage,
+                matched_term_count=len(excluded.matched_terms),
+                score=excluded.score,
+            )
+            for excluded in trace.excluded
+        ),
+    )
+
+
 @dataclass(frozen=True)
 class QuestionDiagnostic:
     question_id: str
@@ -1369,9 +1520,9 @@ class QuestionDiagnostic:
     primary_conclusion: PrimaryConclusion
     findings: tuple[DiagnosticFinding, ...]
     evidence_summary: tuple[str, ...]
-    # Trace interno do retriever lexical (None quando o retriever ativo não
-    # o suporta, ex.: um retriever alternativo ou um duplo de teste).
-    lexical_trace: LexicalRetrievalTrace | None = None
+    # Trace do retriever lexical, já redigido (None quando o retriever ativo
+    # não o suporta, ex.: um retriever alternativo ou um duplo de teste).
+    lexical_trace: LexicalTraceReport | None = None
 
 
 def classify_question(
@@ -1855,9 +2006,12 @@ def run_diagnostic(
                 language=question.language,
                 reference_date=resolved_reference_date,
             )
-            results, lexical_trace = _search_with_optional_trace(
+            results, raw_trace = _search_with_optional_trace(
                 retriever, db, normalized_query, context, top_k, official_only
             )
+            # O trace atravessa para o relatório apenas na forma redigida: as
+            # formas canónicas derivadas da pergunta passam a contagens.
+            lexical_trace = redact_lexical_trace(raw_trace) if raw_trace is not None else None
             verify_results_institution(db, results, institution_id)
             retrieval = analyze_question_retrieval(
                 question,
@@ -2008,49 +2162,58 @@ def _md_bool(value: bool | None) -> str:
 
 
 def _add_lexical_trace(
-    add: Callable[[str], None], trace: LexicalRetrievalTrace
+    add: Callable[[str], None], trace: LexicalTraceReport
 ) -> None:
     """Renderiza o trace lexical: apenas metadados e componentes do score.
 
-    Nunca conteúdo dos chunks, títulos fornecidos, secções, URLs ou
-    segredos — só a config FTS, os termos informativos/ordinais/intervalos
-    canónicos da pergunta, contagens e os sinais do ranking.
+    Nunca a pergunta, os seus termos, o conteúdo dos chunks, títulos
+    fornecidos, secções, URLs ou segredos — só a config FTS, a **contagem**
+    de termos informativos, os marcadores estruturais (ordinais/intervalos),
+    as contagens do orçamento e os sinais do ranking.
     """
     add("")
     add("#### Trace do retrieval lexical")
     add("")
     add(f"- Configuração FTS: {trace.fts_config}")
-    add(f"- Termos informativos: {list(trace.informative_terms) or 'nenhum'}")
+    add(f"- Termos informativos: {trace.informative_term_count}")
     add(f"- Ordinais reconhecidos: {list(trace.query_ordinals) or 'nenhum'}")
     add(f"- Intervalos reconhecidos: {list(trace.query_ranges) or 'nenhum'}")
     add(f"- Variantes planeadas: {list(trace.planned_variants) or 'nenhuma'}")
-    for variant in trace.variant_candidate_counts:
-        add(f"  - {variant.strategy}: {variant.candidate_count} candidato(s)")
-    add(f"- candidate_limit (por variante): {trace.candidate_limit}")
-    add(f"- candidate_ceiling (teto global): {trace.candidate_ceiling}")
-    add(f"- Candidatos únicos: {trace.unique_candidate_count}")
-    add(f"- Candidatos antes da filtragem: {trace.candidates_before_threshold}")
-    add(f"- Removidos por dominância: {trace.removed_by_dominance}")
-    add(f"- Removidos pelo limiar: {trace.removed_by_threshold}")
+    add(f"- Limite global de candidatos: {trace.global_candidate_limit}")
+    for variant in trace.variants:
+        add(
+            f"  - {variant.strategy}: quota={variant.quota} "
+            f"devolvidos={variant.returned_count}"
+        )
+    add(f"- Total devolvido antes da deduplicação: {trace.total_returned_before_dedup}")
+    add(f"- Únicos após deduplicação: {trace.unique_after_dedup}")
+    add(f"- Candidatos avaliados: {trace.candidates_evaluated}")
+    add(f"- Removidos por ausência de correspondência: {trace.excluded_no_content_match}")
+    add(f"- Removidos por cobertura insuficiente: {trace.excluded_insufficient_coverage}")
+    add(f"- Removidos pelo limiar: {trace.excluded_below_threshold}")
+    add(f"- Resultados finais: {trace.final_result_count}")
     for result in trace.results:
         add(
             f"- chunk_id={result.chunk_id} estratégia={result.strategy} "
             f"raw_fts={result.raw_score:.6f} score={result.score:.6f} "
             f"cobertura={result.coverage:.2f} frase_exata={result.exact_phrase:.0f} "
-            f"proximidade={result.proximity:.2f} titulo={result.title_overlap:.2f} "
-            f"seccao={result.section_overlap:.2f} tipo={result.structure_type or '—'}"
+            f"ordem={result.ordered:.2f} proximidade={result.proximity:.2f} "
+            f"titulo={result.title_overlap:.2f} seccao={result.section_overlap:.2f} "
+            f"tipo={result.structure_type or '—'}"
         )
         add(
-            "  - termos correspondidos: "
-            f"{list(result.matched_terms) or 'nenhum'}; razão: {result.reason}"
+            f"  - termos correspondidos: {result.matched_term_count}; "
+            f"razão: {result.reason}"
         )
     if trace.excluded:
         add("- Excluídos:")
-        for result in trace.excluded:
+        for excluded in trace.excluded:
+            score = "—" if excluded.score is None else f"{excluded.score:.6f}"
             add(
-                f"  - chunk_id={result.chunk_id} motivo={result.removal_reason or '—'} "
-                f"score={result.score:.6f} cobertura={result.coverage:.2f} "
-                f"termos={list(result.matched_terms) or 'nenhum'}"
+                f"  - chunk_id={excluded.chunk_id} motivo={excluded.reason} "
+                f"estratégia={excluded.strategy} score={score} "
+                f"cobertura={excluded.coverage:.2f} "
+                f"termos correspondidos={excluded.matched_term_count}"
             )
 
 

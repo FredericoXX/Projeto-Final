@@ -29,8 +29,11 @@ from tests.test_conversation_answering import (
     override_generator,  # noqa: F401 - fixture reexportada para este módulo
 )
 
-NATURAL_QUESTION = "Quando começam as aulas?"
-EXPECTED_TITLE = "Quando começam as aulas"
+# A pergunta partilha dois termos informativos com o conteúdo ("aulas",
+# "setembro"), o suficiente para ser evidência (2 de 3); "começam" só
+# existe na pergunta, pelo que a variante exact continua a falhar.
+NATURAL_QUESTION = "Quando começam as aulas de setembro?"
+EXPECTED_TITLE = "Quando começam as aulas de setembro"
 CLASSES_CONTENT = "As aulas do primeiro semestre iniciam-se em 21 de setembro de 2026."
 
 

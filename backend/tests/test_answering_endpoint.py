@@ -262,6 +262,48 @@ def test_question_without_evidence_returns_insufficient_evidence(
     assert generator.calls == []
 
 
+def test_partial_term_match_is_not_enough_evidence(
+    client: TestClient, override_generator
+) -> None:
+    """Contraexemplo real: o único candidato corresponde apenas a "regime"
+    numa pergunta de três termos (cobertura 1/3). O retrieval devolve
+    vazio, o answering devolve insufficient_evidence e o gerador nunca é
+    chamado — nenhuma resposta "fundamentada" falsa é produzida."""
+    _, headers, _ = _setup(client)
+    _create_searchable_document(
+        client, headers, "Regime institucional geral.", title="Política Interna"
+    )
+    generator = override_generator(FakeAnswerGenerator())
+
+    response = _ask(client, headers, query="regime avaliacao exames")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "insufficient_evidence"
+    assert body["sources"] == []
+    assert generator.calls == []
+
+
+def test_matching_title_alone_produces_no_evidence(
+    client: TestClient, override_generator
+) -> None:
+    """O título corresponde integralmente à pergunta, o conteúdo não
+    corresponde a nada: o título não pode criar evidência."""
+    _, headers, _ = _setup(client)
+    _create_searchable_document(
+        client,
+        headers,
+        "Documento administrativo sobre procedimentos internos de arquivo.",
+        title="Regime Avaliação Exames",
+    )
+    generator = override_generator(FakeAnswerGenerator())
+
+    response = _ask(client, headers, query="regime avaliacao exames")
+    assert response.status_code == 200
+    assert response.json()["status"] == "insufficient_evidence"
+    assert response.json()["sources"] == []
+    assert generator.calls == []
+
+
 def test_answering_isolates_sources_between_institutions(
     client: TestClient, override_generator
 ) -> None:

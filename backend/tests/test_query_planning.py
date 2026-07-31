@@ -8,7 +8,10 @@ ordenadas sem executar SQL.
 from app.core.text_normalization import normalize_text
 from app.retrieval.query_planning import (
     MAX_INFORMATIVE_TERMS,
+    MAX_QUERY_VARIANTS,
+    STRATEGY_PRIORITY,
     LexicalQueryStrategy,
+    contextual_terms,
     extract_informative_terms,
     plan_lexical_query,
 )
@@ -221,39 +224,112 @@ def test_plan_is_deterministic() -> None:
     assert _plan(query) == _plan(query)
 
 
-# --- Expansão numérica de ordinais na geração de candidatos (Momento 4) -------
+# --- Relaxação canónica (ordinais e intervalos) ------------------------------
 
 
-def test_written_ordinal_adds_numeric_form_to_reduced_or() -> None:
-    # "segunda" é expandido para "2" na variante disjuntiva, para recuperar
-    # conteúdo que use a forma numérica ("2.ª").
-    or_variant = _variant(
-        "exames da segunda chamada", LexicalQueryStrategy.REDUCED_OR
-    ).split(" OR ")
-    assert "segunda" in or_variant
-    assert "2" in or_variant
-    # A conjuntiva NÃO exige o dígito literal.
-    assert "2" not in _variant(
-        "exames da segunda chamada", LexicalQueryStrategy.REDUCED_AND
+def test_written_ordinal_query_plans_canonical_relaxed_and() -> None:
+    # O ordinal é removido apenas da consulta FTS; sobra o contexto, que
+    # recupera "Exames da 1.ª chamada" para "exames da primeira chamada".
+    assert _strategies("exames da primeira chamada") == [
+        "exact",
+        "reduced_and",
+        "canonical_relaxed_and",
+        "reduced_or",
+    ]
+    assert _variant(
+        "exames da primeira chamada", LexicalQueryStrategy.CANONICAL_RELAXED_AND
+    ) == "exames chamada"
+
+
+def test_range_query_plans_canonical_relaxed_and() -> None:
+    assert _variant(
+        "período de inscrições de 01a12", LexicalQueryStrategy.CANONICAL_RELAXED_AND
+    ) == "periodo inscricoes"
+
+
+def test_canonical_relaxation_never_expands_ordinal_to_cardinal() -> None:
+    """"primeira" nunca se torna "primeira OR 1": pesquisar o dígito solto
+    recuperaria "Sala 1" para uma pergunta sobre a primeira chamada."""
+    for query in ("exames da primeira chamada", "exames da segunda chamada"):
+        for variant in _plan(query).variants:
+            terms = variant.websearch_input.replace(" OR ", " ").split(" ")
+            assert "1" not in terms
+            assert "2" not in terms
+
+
+def test_canonical_relaxation_never_searches_range_endpoints_alone() -> None:
+    relaxed = _variant(
+        "período de inscrições de 01a12", LexicalQueryStrategy.CANONICAL_RELAXED_AND
     ).split(" ")
+    assert "01" not in relaxed
+    assert "12" not in relaxed
+    assert relaxed  # nunca uma consulta vazia
 
 
-def test_single_ordinal_term_gains_reduced_or_variant() -> None:
-    # "a segunda" (um único termo informativo, ordinal) ganha uma variante OR
-    # "segunda OR 2" para poder recuperar o conteúdo numérico.
-    assert "reduced_or" in _strategies("a segunda")
-    assert set(_variant("a segunda", LexicalQueryStrategy.REDUCED_OR).split(" OR ")) == {
-        "segunda",
-        "2",
-    }
+def test_ordinal_only_query_plans_only_exact() -> None:
+    # Sem termo contextual que a ancore, qualquer relaxação degeneraria
+    # numa pesquisa cardinal ampla.
+    assert _strategies("primeira") == ["exact"]
+    assert _strategies("a segunda") == ["exact"]
 
 
-def test_numeric_ordinal_is_not_duplicated_in_reduced_or() -> None:
-    # "1.ª" já contribui com o token "1"; a expansão não o duplica.
-    terms = _variant("exames da 1.ª chamada", LexicalQueryStrategy.REDUCED_OR).split(" OR ")
-    assert terms.count("1") == 1
+def test_range_only_query_plans_only_exact() -> None:
+    assert _strategies("01a12") == ["exact"]
+    assert _strategies("de 01 a 12") == ["exact"]
 
 
-def test_non_ordinal_query_reduced_or_is_unchanged() -> None:
-    # Sem ordinais, a disjuntiva mantém-se exatamente como antes.
+def test_non_canonical_query_has_no_relaxed_variant() -> None:
+    assert "canonical_relaxed_and" not in _strategies("aulas setembro")
     assert _variant("aulas setembro", LexicalQueryStrategy.REDUCED_OR) == "aulas OR setembro"
+
+
+def test_plan_never_exceeds_the_variant_ceiling() -> None:
+    for query in (
+        "Quando são os exames da primeira chamada de 01a12 em 2030?",
+        "exames da primeira chamada",
+        "Quando começam as aulas?",
+        "aulas",
+    ):
+        assert len(_plan(query).variants) <= MAX_QUERY_VARIANTS
+
+
+def test_advanced_syntax_never_gains_relaxed_variant() -> None:
+    for query in ('"primeira chamada"', "primeira -chamada", "primeira OR chamada"):
+        assert _strategies(query) == ["exact"]
+
+
+# --- Termos contextuais -------------------------------------------------------
+
+
+def test_contextual_terms_drop_ordinals_and_ranges() -> None:
+    assert contextual_terms(normalize_text("exames da primeira chamada"), "pt") == (
+        "exames",
+        "chamada",
+    )
+    assert contextual_terms(normalize_text("periodo de 01 a 12"), "pt") == ("periodo",)
+    assert contextual_terms(normalize_text("primeira"), "pt") == ()
+    assert contextual_terms(normalize_text("01a12"), "pt") == ()
+
+
+def test_contextual_terms_respect_the_term_limit() -> None:
+    long_query = " ".join(f"termo{index}" for index in range(50))
+    assert len(contextual_terms(long_query, "pt")) == MAX_INFORMATIVE_TERMS
+
+
+# --- Prioridade única das estratégias ----------------------------------------
+
+
+def test_strategy_priority_is_total_and_ordered() -> None:
+    assert (
+        STRATEGY_PRIORITY[LexicalQueryStrategy.EXACT]
+        > STRATEGY_PRIORITY[LexicalQueryStrategy.REDUCED_AND]
+        > STRATEGY_PRIORITY[LexicalQueryStrategy.CANONICAL_RELAXED_AND]
+        > STRATEGY_PRIORITY[LexicalQueryStrategy.REDUCED_OR]
+    )
+    assert set(STRATEGY_PRIORITY) == set(LexicalQueryStrategy)
+
+
+def test_planned_variants_follow_the_priority_order() -> None:
+    plan = _plan("Quando são os exames da primeira chamada?")
+    priorities = [STRATEGY_PRIORITY[variant.strategy] for variant in plan.variants]
+    assert priorities == sorted(priorities, reverse=True)

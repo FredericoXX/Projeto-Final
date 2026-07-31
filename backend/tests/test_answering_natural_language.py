@@ -25,7 +25,11 @@ from tests.test_conversation_answering import (
     _row_counts,
 )
 
-NATURAL_QUESTION = "Quando começam as aulas?"
+# A pergunta natural partilha dois termos informativos com o conteúdo
+# ("aulas", "setembro") e um que só existe na pergunta ("começam"): a
+# variante exact falha, a evidência chega pela disjuntiva reduzida e a
+# cobertura (2/3) é suficiente para ser evidência.
+NATURAL_QUESTION = "Quando começam as aulas de setembro?"
 CLASSES_CONTENT = "As aulas do primeiro semestre iniciam-se em 21 de setembro de 2026."
 
 
@@ -205,7 +209,7 @@ def test_natural_question_conversation_is_isolated_between_institutions(
     )
     _, headers_b, _ = _setup(client)
     document_b = _create_searchable_document(
-        client, headers_b, "As aulas da instituição B decorrem em julho.", title="Doc B"
+        client, headers_b, "As aulas da instituição B decorrem em setembro.", title="Doc B"
     )
     override_generator(FakeAnswerGenerator())
 

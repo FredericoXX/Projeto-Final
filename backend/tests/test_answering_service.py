@@ -133,6 +133,14 @@ def _create_institution_and_admin(
     return session, user
 
 
+def _admin_headers(client: TestClient, user: User) -> dict[str, str]:
+    login = client.post(
+        "/api/v1/auth/login", json={"email": user.email, "password": _ADMIN_PASSWORD}
+    )
+    assert login.status_code == 200
+    return {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+
 def _request(**overrides: object) -> AnsweringRequest:
     payload: dict = {"query": "Qual é o prazo de matrícula?"}
     payload.update(overrides)
@@ -196,6 +204,59 @@ def test_fallback_uses_english_when_language_is_english(
         )
         assert response.language == "en"
         assert response.answer.startswith("I could not find sufficient")
+    finally:
+        session.close()
+
+
+def test_real_retriever_rejects_partial_match_without_calling_generator(
+    client: TestClient, test_session_factory: sessionmaker[Session]
+) -> None:
+    """Serviço com o retriever **real** sobre um documento sintético cujo
+    único candidato cobre 1 dos 3 termos: o retrieval devolve vazio, o
+    answering devolve insufficient_evidence e o gerador não é chamado."""
+    import io
+
+    from app.retrieval.lexical import PostgresLexicalRetriever
+
+    session, user = _create_institution_and_admin(client, test_session_factory)
+    try:
+        headers = _admin_headers(client, user)
+        document = client.post(
+            "/api/v1/documents",
+            json={
+                "title": "Política Interna",
+                "language": "pt",
+                "official_source": True,
+                "source_url": "https://example.edu/politica",
+            },
+            headers=headers,
+        )
+        assert document.status_code == 201
+        upload = client.post(
+            f"/api/v1/documents/{document.json()['id']}/versions",
+            files={
+                "file": (
+                    "politica.txt",
+                    io.BytesIO(b"Regime institucional geral."),
+                    "text/plain",
+                )
+            },
+            headers=headers,
+        )
+        assert upload.status_code == 201
+        assert upload.json()["processing_status"] == "processed"
+
+        generator = FakeAnswerGenerator()
+        response = answering_service.ask(
+            session,
+            user,
+            _request(query="regime avaliacao exames"),
+            PostgresLexicalRetriever(),
+            generator,
+        )
+        assert response.status == "insufficient_evidence"
+        assert response.sources == []
+        assert generator.calls == []
     finally:
         session.close()
 

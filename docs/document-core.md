@@ -361,22 +361,39 @@ gera uma resposta final.
 Perguntas naturais ("Quando começam as aulas?") são suportadas por
 variantes determinísticas (`app/retrieval/query_planning.py`): a consulta
 exata, os termos informativos (sem artigos, preposições, interrogativos e
-auxiliares comuns de PT/EN) com AND, e com OR. A partir do Momento 4, o
-retriever executa **todas** as variantes permitidas, agrega os candidatos
-num *candidate pool* limitado (deduplicado por `chunk_id`) e aplica um
-**reranking lexical determinístico** (`app/retrieval/reranking.py`):
-cobertura dos termos, frase exata, proximidade, ordem, título/secção,
-benefício condicionado de `table_row` e comprimento, com o `ts_rank_cd`
-apenas como sinal auxiliar. Ordinais padrão e intervalos numéricos
-explícitos são canonizados na comparação de cobertura
-(`app/retrieval/lexical_normalization.py`), sem corrigir OCR nem
-interpretar datas. Um limiar mínimo (`RETRIEVAL_MIN_RELEVANCE_SCORE`) e a
-dominância entre candidatos removem coincidências fracas; o `score` público
-passa a ser a relevância lexical composta em `[0, 1]`. Todos os filtros
-institucionais aplicam-se a todas as variantes; operadores explícitos
-(aspas, OR, `-termo`) usam apenas a tentativa exata, preservando a intenção.
-Uma pergunta composta apenas por termos funcionais ("O que é?") não pesquisa
-de todo e devolve zero evidências. Sem LLM, sem embeddings e sem sinónimos —
+auxiliares comuns de PT/EN) com AND, os termos **contextuais** com AND
+(`canonical_relaxed_and`, que retira o ordinal/intervalo apenas da consulta
+FTS), e os termos informativos com OR. O retriever executa **todas** as
+variantes permitidas dentro de um **orçamento global de candidatos
+repartido por quotas antes das consultas**, agrega e deduplica por
+`chunk_id`, e depois separa **elegibilidade** de **ranking**
+(`app/retrieval/eligibility.py` e `app/retrieval/reranking.py`).
+
+A elegibilidade decide o que é evidência a partir do conteúdo apenas: numa
+consulta multi-termo exige uma condição forte (frase exata, estratégia
+conjuntiva, relaxação canónica com o ordinal/intervalo correspondido, ou
+`max(2, ceil(nº termos × 0.5))` termos cobertos com cobertura ≥ 0.5). Um
+título ou uma secção que correspondam à pergunta **nunca** tornam elegível
+um chunk sem correspondência no conteúdo, e cobertura zero nunca é
+evidência. Só os elegíveis são pontuados por cobertura, frase exata,
+proximidade, ordem, título/secção, benefício condicionado de `table_row` e
+comprimento, com o `ts_rank_cd` apenas como sinal auxiliar.
+
+Ordinais padrão e intervalos numéricos explícitos são canonizados na
+comparação de cobertura (`app/retrieval/lexical_normalization.py`) — o
+intervalo é uma unidade posicional única (`rng:1-12`), pelo que participa
+também em frase exata, ordem e proximidade. Uma pergunta com ordinal nunca
+é expandida para o cardinal, sem corrigir OCR nem interpretar datas. O
+limiar mínimo (`RETRIEVAL_MIN_RELEVANCE_SCORE`) aplica-se **depois** da
+elegibilidade, a todos os candidatos elegíveis; o `score` público é a
+relevância lexical composta em `[0, 1]`, não uma probabilidade. Não existe
+dominância por subconjunto: evidência complementar é preservada e ordenada
+abaixo. Todos os filtros institucionais aplicam-se a todas as variantes;
+operadores explícitos (aspas, OR, `-termo`) usam apenas a tentativa exata,
+preservando a intenção. Uma pergunta composta apenas por termos funcionais
+("O que é?") não pesquisa de todo e devolve zero evidências — tal como uma
+pergunta cujo único candidato cobre um termo em três. Sem LLM, sem
+embeddings e sem sinónimos —
 a baseline continua lexical e experimental, sem compreensão semântica.
 
 Para dados anteriores ao chunking automático ou reconstrução
