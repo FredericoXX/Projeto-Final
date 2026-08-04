@@ -32,3 +32,6 @@ Thumbs.db
 # excertos institucionais e IDs reais; apenas exemplos sanitizados em
 # docs/diagnostics/examples/ são versionáveis)
 docs/diagnostics/generated/
+
+# Configuração local do Claude Code
+.claude/
