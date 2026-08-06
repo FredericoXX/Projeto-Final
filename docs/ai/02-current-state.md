@@ -1,7 +1,10 @@
 # Estado atual
 
-**Observação:** 2026-08-06 · commit `a21c471` · branch
-`docs/project-guidance-framework` · repositório `FredericoXX/Projeto-Final`
+**Observação:** 2026-08-06 · commit `776e31e` (`main`) · repositório
+`FredericoXX/Projeto-Final`
+
+Os factos abaixo descrevem o conteúdo de `776e31e`. Trabalho em curso em branches
+não fundidas não é estado deste SHA e, quando referido, é identificado como tal.
 
 Snapshot factual. Não contém regras: os princípios estão em
 [`01-project-constitution.md`](01-project-constitution.md), os critérios de
@@ -11,9 +14,12 @@ repositório, o repositório está certo e o documento está desatualizado.
 
 ## Momentos
 
-Momentos 1 a 4 concluídos. Momento 5 em preparação —
-[`moments/moment-05.md`](moments/moment-05.md). Momento 6 por iniciar. O mapa
-oficial dos temas está no [`README.md`](README.md#momentos).
+Momentos 1 a 4 concluídos. Momento 5 em preparação neste SHA —
+[`moments/moment-05.md`](moments/moment-05.md). Existe uma proposta de decisões
+de método (Fase 0) em revisão na branch `docs/moment-05-phase-0`, **ainda não
+fundida e por aprovar**: não é estado deste SHA e não autoriza implementação.
+Momento 6 por iniciar. O mapa oficial dos temas está no
+[`README.md`](README.md#momentos).
 
 ## Arquitetura
 
@@ -171,6 +177,15 @@ Estas divergências não foram corrigidas pela tarefa que criou esta diretoria.
 | Documento | Afirmação | O que o código faz |
 | --- | --- | --- |
 | [`docs/document-core.md`](../document-core.md), [`README.md`](../../README.md) | `mypy app tests` | a CI executa `mypy app tests scripts` |
+| [`docs/document-core.md`](../document-core.md) (linha 17, "Fora do âmbito desta fase") | OCR deliberadamente não implementado | OCR local implementado — `app/services/ocr_engine.py`, `ocr_line_reconstruction.py`, limites `DOCUMENT_OCR_*`; o próprio documento descreve-o na secção "Extração com OCR local" |
+| [`docs/document-core.md`](../document-core.md) (linha 580, "Riscos e limitações") | "sem OCR: PDFs digitalizados ficam `failed`" | PDFs que exigem OCR podem ser processados; ficam `failed` quando o OCR está desativado, indisponível ou termina numa das falhas controladas documentadas (limite de páginas, timeout, resultado vazio, dados de idioma ausentes ou erro do runtime) |
+| [`docs/document-core.md`](../document-core.md) (linha 581) | "sem DELETE" | `DELETE /api/v1/documents/{document_id}` existe — `app/api/routes/documents.py`, `delete_document` no service |
+
+As três divergências do [`docs/document-core.md`](../document-core.md) são
+contradições **internas** ao próprio documento: as secções históricas de âmbito e
+de riscos não acompanharam o trabalho posterior descrito no mesmo ficheiro.
+Ficam registadas aqui até serem corrigidas na fonte; a correção não pertence ao
+Momento 5.
 
 A divergência sobre o conteúdo dos logs do answering foi corrigida na fonte em
 [`docs/answering.md`](../answering.md): a descrição passou a ser específica do
