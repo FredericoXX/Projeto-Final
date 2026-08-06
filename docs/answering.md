@@ -145,8 +145,9 @@ detalhe da conversa e obtém-no do backend.
 - `app/answering/validation.py` — validação determinística: resposta não
   vazia, dentro de `ANSWERING_MAX_ANSWER_CHARS`, citações não vazias, sem
   duplicados e todas existentes no contexto. Violação → geração rejeitada
-  (nunca se adivinha a fonte). Logs recebem apenas reason codes estáveis e
-  contagens, nunca IDs ou texto devolvido pelo fornecedor.
+  (nunca se adivinha a fonte). Quando a validação rejeita a geração, o log
+  recebe apenas `institution_id`, um reason code estável e uma contagem;
+  nunca IDs nem texto devolvido pelo fornecedor.
 - `app/answering/fallback.py` — mensagens fixas por idioma (pt/en);
   idioma sem mensagem própria usa inglês (documentado), nunca erro 500.
 - `app/answering/providers/openai.py` — único módulo que conhece o SDK;
