@@ -1,0 +1,354 @@
+{
+  "schema_version": "1",
+  "rubric_version": "1.0.0",
+  "description": "Rubrica das métricas humanas e das partes humanas das métricas híbridas do Momento 5. Cada classificação é um juízo humano registado, nunca uma medição automática. Não existem pesos, médias, percentagens, score agregado nem limiar semântico automático: o resultado é um perfil por caso e por cenário. Toda a avaliação produzida com esta rubrica regista a rubric_version com que foi feita, e resultados obtidos com versões diferentes não são comparados sem o declarar.",
+  "scale": [
+    {
+      "value": "0",
+      "label": "falha",
+      "meaning": "O critério não é satisfeito."
+    },
+    {
+      "value": "1",
+      "label": "parcialmente satisfatório",
+      "meaning": "O critério é satisfeito apenas em parte."
+    },
+    {
+      "value": "2",
+      "label": "satisfatório",
+      "meaning": "O critério é satisfeito."
+    },
+    {
+      "value": "N/A",
+      "label": "não aplicável",
+      "meaning": "O critério não se aplica ao caso avaliado; não é uma classificação de zero nem uma omissão."
+    }
+  ],
+  "criteria": [
+    {
+      "criterion_id": "factual_correctness",
+      "name": "Correção factual",
+      "metric": "Correção factual",
+      "assessment": "human",
+      "automatic_part": null,
+      "human_part": "Se o que a resposta afirma corresponde ao que o documento diz.",
+      "applies_to_scenarios": [
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11,
+        12
+      ],
+      "descriptors": {
+        "0": "A resposta contém pelo menos uma afirmação que contraria o que a evidência diz.",
+        "1": "A resposta está globalmente correta mas contém imprecisão que altera o sentido de parte do que afirma.",
+        "2": "Todas as afirmações da resposta correspondem ao que a evidência diz.",
+        "N/A": "Não é aplicável quando não há resposta a avaliar, nomeadamente no fallback sem gerador e nos casos rejeitados pela validação."
+      },
+      "indicators": [
+        "Comparar cada afirmação da resposta com o texto da evidência citada e não com conhecimento externo.",
+        "Uma afirmação correta obtida a partir de conhecimento externo não conta como correção factual sobre a evidência."
+      ],
+      "record": "Registar a afirmação avaliada e a evidência com que foi comparada."
+    },
+    {
+      "criterion_id": "evidence_faithfulness",
+      "name": "Fidelidade à evidência",
+      "metric": "Fidelidade à evidência",
+      "assessment": "human",
+      "automatic_part": null,
+      "human_part": "Se tudo o que a resposta afirma decorre da evidência recebida.",
+      "applies_to_scenarios": [
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "descriptors": {
+        "0": "A resposta introduz conteúdo que não decorre de nenhuma evidência recebida.",
+        "1": "A resposta acrescenta inferência plausível mas não sustentada, sem a assinalar como tal.",
+        "2": "Tudo o que a resposta afirma decorre da evidência recebida.",
+        "N/A": "Não é aplicável quando não há resposta a avaliar."
+      },
+      "indicators": [
+        "Conteúdo importado de conhecimento geral, ainda que verdadeiro, é infidelidade à evidência.",
+        "Instruções presentes no conteúdo documental não são evidência e segui-las é infidelidade."
+      ],
+      "record": "Registar o excerto da resposta considerado não sustentado."
+    },
+    {
+      "criterion_id": "completeness",
+      "name": "Completude",
+      "metric": "Completude",
+      "assessment": "human",
+      "automatic_part": null,
+      "human_part": "Se a resposta cobre o que a evidência permitia responder e declara o que não cobre, avaliado facto a facto sobre expected_facts.",
+      "applies_to_scenarios": [
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        9,
+        10,
+        11
+      ],
+      "descriptors": {
+        "0": "Factos que a evidência cobria ficaram por responder, ou o que não é coberto foi omitido em silêncio.",
+        "1": "Parte dos factos está coberta e a parte não coberta é apenas parcialmente declarada.",
+        "2": "Todos os factos marcados covered estão respondidos e todos os factos marcados uncovered estão explicitamente declarados como não cobertos.",
+        "N/A": "Não é aplicável quando o caso não declara expected_facts."
+      },
+      "indicators": [
+        "Omitir silenciosamente o que a evidência não cobre é 0, mesmo que tudo o que foi apresentado esteja correto (D4).",
+        "Um facto marcado contradicted conta como não coberto e é registado como contradição."
+      ],
+      "record": "Registar, por fact_id, se ficou coberto, não coberto ou contradito."
+    },
+    {
+      "criterion_id": "citation_support",
+      "name": "Suporte efetivo das citações",
+      "metric": "Precisão das citações",
+      "assessment": "hybrid",
+      "automatic_part": "A2 e A3 apuram automaticamente a existência dos IDs citados e as contagens de correspondência, falta e excesso face a expected_evidence_ids.",
+      "human_part": "Se a fonte citada contém efetivamente a afirmação que lhe é atribuída.",
+      "applies_to_scenarios": [
+        1,
+        2,
+        4,
+        7,
+        9,
+        10,
+        11
+      ],
+      "descriptors": {
+        "0": "Pelo menos uma citação não suporta a afirmação a que está associada.",
+        "1": "As citações suportam a afirmação de forma apenas parcial ou indireta.",
+        "2": "Todas as citações suportam efetivamente as afirmações a que estão associadas.",
+        "N/A": "Não é aplicável quando a resposta não tem citações a avaliar."
+      },
+      "indicators": [
+        "Um ID válido e esperado pode continuar a não suportar a afirmação: a parte automática não decide esta questão.",
+        "Uma fonte conhecida mas irrelevante para a afirmação é 0, mesmo que a resposta esteja correta."
+      ],
+      "record": "Registar o par afirmação/evidência avaliado."
+    },
+    {
+      "criterion_id": "citation_coverage",
+      "name": "Cobertura das citações",
+      "metric": "Cobertura das citações",
+      "assessment": "hybrid",
+      "automatic_part": "A5 apura automaticamente a presença de pelo menos uma citação quando o estado é answered.",
+      "human_part": "Se as afirmações que precisam de suporte têm efetivamente citação.",
+      "applies_to_scenarios": [
+        1,
+        2,
+        4,
+        7,
+        9,
+        10,
+        11
+      ],
+      "descriptors": {
+        "0": "Afirmações que exigiam suporte foram apresentadas sem qualquer citação.",
+        "1": "As afirmações principais estão citadas mas afirmações secundárias relevantes não estão.",
+        "2": "Todas as afirmações que exigiam suporte têm citação.",
+        "N/A": "Não é aplicável quando não há resposta a avaliar."
+      },
+      "indicators": [
+        "A presença de citações não garante suficiência: uma resposta pode citar e ainda assim deixar afirmações sem suporte."
+      ],
+      "record": "Registar as afirmações sem citação identificadas."
+    },
+    {
+      "criterion_id": "fallback_comprehensibility",
+      "name": "Compreensibilidade do fallback",
+      "metric": "Qualidade do fallback",
+      "assessment": "hybrid",
+      "automatic_part": "A1 apura automaticamente se o estado devolvido corresponde a expected_status, incluindo a ocorrência de insufficient_evidence.",
+      "human_part": "Se a mensagem de fallback é compreensível para quem a lê sem contexto técnico.",
+      "applies_to_scenarios": [
+        3
+      ],
+      "descriptors": {
+        "0": "A mensagem não deixa claro que não houve informação suficiente, ou sugere um erro do sistema.",
+        "1": "A mensagem é compreensível mas ambígua quanto ao motivo ou ao que fazer a seguir.",
+        "2": "A mensagem indica com clareza que não foi encontrada informação suficiente.",
+        "N/A": "Não é aplicável quando o turno não termina em fallback."
+      },
+      "indicators": [
+        "A ocorrência correta do fallback é mérito automático; aqui avalia-se apenas o texto devolvido ao utilizador."
+      ],
+      "record": "Registar o idioma da mensagem avaliada."
+    },
+    {
+      "criterion_id": "clarity",
+      "name": "Clareza",
+      "metric": "Clareza",
+      "assessment": "human",
+      "automatic_part": null,
+      "human_part": "Se a resposta é inteligível para quem a lê sem contexto técnico.",
+      "applies_to_scenarios": [
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "descriptors": {
+        "0": "A resposta é difícil de compreender sem conhecer o documento de origem.",
+        "1": "A resposta compreende-se, mas exige releitura ou contém formulações confusas.",
+        "2": "A resposta é imediatamente inteligível para um leitor sem contexto técnico.",
+        "N/A": "Não é aplicável quando não há resposta a avaliar."
+      },
+      "indicators": [
+        "Reproduzir literalmente linguagem regulamentar densa não é, por si só, clareza."
+      ],
+      "record": "Registar a passagem que motivou a classificação."
+    },
+    {
+      "criterion_id": "conciseness",
+      "name": "Concisão",
+      "metric": "Concisão",
+      "assessment": "human",
+      "automatic_part": null,
+      "human_part": "Se a resposta evita texto que não acrescenta informação.",
+      "applies_to_scenarios": [
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        8,
+        9,
+        10,
+        11,
+        12
+      ],
+      "descriptors": {
+        "0": "A resposta contém repetição ou enchimento que dificultam identificar o essencial.",
+        "1": "A resposta é utilizável mas contém texto dispensável.",
+        "2": "A resposta não contém texto que não acrescente informação.",
+        "N/A": "Não é aplicável quando não há resposta a avaliar."
+      },
+      "indicators": [
+        "Declarar o que a evidência não cobre não é enchimento: é completude."
+      ],
+      "record": "Registar a proporção aproximada de texto considerado dispensável, em palavras."
+    },
+    {
+      "criterion_id": "ambiguity_handling",
+      "name": "Tratamento de ambiguidades",
+      "metric": "Tratamento de ambiguidades",
+      "assessment": "human",
+      "automatic_part": null,
+      "human_part": "Se a ambiguidade da evidência é declarada em vez de resolvida por invenção.",
+      "applies_to_scenarios": [
+        5,
+        6,
+        7
+      ],
+      "descriptors": {
+        "0": "A resposta escolhe silenciosamente uma leitura, mesmo que seja a leitura correta.",
+        "1": "A resposta assinala a ambiguidade de forma vaga, sem indicar as leituras possíveis que a evidência suporta.",
+        "2": "A resposta declara a ambiguidade e as leituras possíveis, ou abstém-se quando nem isso é possível.",
+        "N/A": "Não é aplicável quando a evidência do caso não é ambígua."
+      },
+      "indicators": [
+        "Escolher a leitura correta sem a declarar continua a ser 0 (D8).",
+        "Em OCR degradado, adivinhar texto ilegível é o mesmo defeito noutra forma."
+      ],
+      "record": "Registar a ambiguidade identificada e o modo como foi tratada."
+    },
+    {
+      "criterion_id": "contradiction_handling",
+      "name": "Tratamento de contradições",
+      "metric": "Tratamento de contradições",
+      "assessment": "human",
+      "automatic_part": null,
+      "human_part": "Se o conflito entre evidências é exposto ou há abstenção, nunca escolha silenciosa.",
+      "applies_to_scenarios": [
+        4,
+        7
+      ],
+      "descriptors": {
+        "0": "A resposta escolhe silenciosamente uma das versões em conflito.",
+        "1": "A resposta menciona a existência de divergência mas não a descreve de forma utilizável.",
+        "2": "A resposta expõe o conflito com as versões em presença, ou abstém-se por não haver base para o resolver.",
+        "N/A": "Não é aplicável quando as evidências do caso não estão em conflito."
+      },
+      "indicators": [
+        "Escolher a versão correta sem expor o conflito continua a ser 0 (D7).",
+        "Regras coexistentes por regime não são contradição: são alternativas a apresentar."
+      ],
+      "record": "Registar as evidências em conflito e o modo como foram tratadas."
+    },
+    {
+      "criterion_id": "absolute_language",
+      "name": "Linguagem excessivamente absoluta",
+      "metric": "Linguagem excessivamente absoluta",
+      "assessment": "human",
+      "automatic_part": null,
+      "human_part": "Se a resposta usa linguagem categórica sobre evidência que não a sustenta.",
+      "applies_to_scenarios": [
+        1,
+        2,
+        4,
+        5,
+        6,
+        7,
+        12
+      ],
+      "descriptors": {
+        "0": "A resposta afirma categoricamente algo que a evidência apresenta como condicional, datado ou parcial.",
+        "1": "A resposta é globalmente prudente mas contém pelo menos uma formulação categórica não sustentada.",
+        "2": "O grau de certeza da resposta corresponde ao grau de certeza da evidência.",
+        "N/A": "Não é aplicável quando não há resposta a avaliar."
+      },
+      "indicators": [
+        "Não se fixa limiar nem lista de palavras: a deteção automática daria aparência de medição a um juízo semântico (D8).",
+        "Indicadores a ponderar: afirmação categórica sobre evidência condicional, datada ou parcial."
+      ],
+      "record": "Registar a formulação categórica e a passagem da evidência que a limita."
+    }
+  ],
+  "recording_requirements": {
+    "required_fields": [
+      "evaluator",
+      "evaluated_at",
+      "rubric_version",
+      "corpus_version",
+      "commit_sha",
+      "population",
+      "answer_provenance"
+    ],
+    "disagreement_protocol": "Com mais do que um avaliador, as divergências não são promediadas nem resolvidas em silêncio: registam-se as duas classificações e a divergência é adjudicada por uma terceira pessoa, ficando registado quem adjudicou.",
+    "single_evaluator_allowed": true
+  },
+  "limitations": [
+    "As classificações desta rubrica são juízo humano e nunca são apresentadas como medição automática.",
+    "A rubrica aplica-se apenas a respostas efetivamente produzidas; sem população avaliada, as métricas constam do relatório como não medidas, nunca como zero.",
+    "Avaliar respostas produzidas por um gerador falso mede a camada de answering e não a qualidade do gerador atualmente configurado.",
+    "O material avaliado é sintético; o comportamento sobre documentos institucionais reais continua a exigir validação humana separada."
+  ]
+}

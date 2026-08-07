@@ -7,10 +7,11 @@ Especificação inicial, segundo [`04-moment-template.md`](../04-moment-template
 | Campo | Valor |
 | --- | --- |
 | Momento | 5 — Qualidade das respostas fundamentadas e das fontes |
-| Estado | Fase 0 **em proposta** enquanto esta alteração não estiver fundida na `main`; aprovada a partir do merge humano do respetivo Pull Request; Fases 1 a 3 por iniciar |
+| Estado | Fase 0 **aprovada**; Fase 1 **em curso**, não concluída enquanto o respetivo Pull Request não estiver fundido na `main`; Fases 2 e 3 por iniciar |
 | Commit base | `776e31e` (2026-08-06) |
 | Branch da Fase 0 | `docs/moment-05-phase-0` |
-| Aprovação da Fase 0 | condicionada ao merge humano do Pull Request que introduz esta versão — ver [Proveniência e aprovação](#proveniência-e-aprovação) |
+| Aprovação da Fase 0 | merge humano do Pull Request #29, integrado na `main` em `2b6247c` — ver [Proveniência e aprovação](#proveniência-e-aprovação) |
+| Branch da Fase 1 | `feat/moment-05-phase-1`, a partir de `2b6247c` |
 | Divisão em Pull Requests | quatro, um por fase — ver [D10](#d10--divisão-em-pull-requests) |
 
 ## Problema
@@ -111,10 +112,9 @@ tratada separadamente.
 
 ### Fase 0 — Decisões de avaliação
 
-**Em proposta enquanto o Pull Request desta versão não estiver fundido na
-`main`; aprovada a partir do merge humano.** O método está em
-[Decisões propostas na Fase 0](#decisões-propostas-na-fase-0). Cobre, antes de
-qualquer implementação:
+**Aprovada pelo merge humano do Pull Request #29, integrado na `main` em
+`2b6247c`.** O método está em [Decisões da Fase 0](#decisões-da-fase-0). Cobre,
+antes de qualquer implementação:
 
 - que métricas são apuradas automaticamente e quais dependem de revisão humana;
 - como tratar avaliações com fornecedor real (ver [Determinismo](#determinismo));
@@ -236,23 +236,22 @@ em [D1](#d1--métricas-automáticas). Que respostas cada família de métricas
 avalia — e o que fica por medir se não for executado — está em
 [D11](#d11--que-respostas-são-avaliadas).
 
-## Decisões propostas na Fase 0
+## Decisões da Fase 0
 
-**Estatuto condicional.** Redigidas sobre `776e31e`: são propostas enquanto o
-Pull Request desta versão não estiver fundido na `main` e passam a aprovadas a
-partir do merge humano, segundo
-[Proveniência e aprovação](#proveniência-e-aprovação). Nenhuma implementação
-começa antes de essa condição estar satisfeita.
+**Estatuto: aprovadas.** Redigidas sobre `776e31e` e aprovadas pelo merge humano
+do Pull Request #29, integrado na `main` em `2b6247c`, segundo
+[Proveniência e aprovação](#proveniência-e-aprovação).
 
 ### Proveniência e aprovação
 
 Uma decisão de método é uma decisão humana. Este documento pode redigi-la e
 fundamentá-la; não pode aprová-la.
 
-- A aprovação da Fase 0 é **condicional** ao merge deliberado, por uma pessoa
-  responsável, do Pull Request que introduz esta versão na `main`. Antes do
-  merge, tudo nesta secção é proposta; a partir do merge, as decisões passam a
-  aprovadas sem ser necessária uma alteração impossível "durante o merge".
+- A aprovação da Fase 0 resultou do merge deliberado, por uma pessoa
+  responsável, do Pull Request #29 na `main`, preservado no merge commit
+  `2b6247c`. O mecanismo era condicional por construção: antes do merge tudo
+  nesta secção era proposta; a partir do merge as decisões passaram a aprovadas,
+  sem ser necessária uma alteração impossível "durante o merge".
 - O próprio evento de merge preservado no GitHub é o registo: identifica a
   pessoa que realizou a aprovação, a data, o Pull Request e o conteúdo exato
   integrado. Um merge automático ou efetuado por uma identidade não humana não
@@ -672,15 +671,11 @@ impacto em clientes.
 
 ## Questões em aberto
 
-1. **Condição de aprovação da Fase 0** — enquanto o Pull Request desta versão
-   não estiver fundido na `main`, a proposta permanece aberta; o merge humano
-   satisfaz e encerra esta condição automaticamente
-   ([Proveniência e aprovação](#proveniência-e-aprovação)).
-2. Se e quando a issue #24 é implementada, e em quantos Pull Requests —
+1. Se e quando a issue #24 é implementada, e em quantos Pull Requests —
    independente deste momento; decisão fora do Momento 5, ver
    [`02-current-state.md`](../02-current-state.md).
 
-Endereçadas pela proposta da Fase 0 — **sujeitas à condição da questão 1**:
+Endereçadas e **aprovadas** pelas decisões da Fase 0:
 
 | Questão original | Proposta |
 | --- | --- |

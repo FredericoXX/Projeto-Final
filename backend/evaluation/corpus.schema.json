@@ -1,0 +1,405 @@
+{
+  "$defs": {
+    "CorpusCase": {
+      "additionalProperties": false,
+      "description": "Um caso sintético: entrada, saída controlada e expectativa.\n\n`human_review_required` indica **se existe uma resposta pública à\nqual a rubrica humana pode ser aplicada**: verdadeiro em `answered` e\nem `insufficient_evidence` — onde o fallback devolvido é ele próprio\nobjeto de juízo humano — e falso em `rejected`, porque uma rejeição\ntermina em erro e não devolve texto. Não significa que o caso ou o\ncorpus dispensem revisão ou aprovação humana: a revisão humana do\nconteúdo é critério de paragem da Fase 1 para todos os casos, sem\nexceção.",
+      "properties": {
+        "case_id": {
+          "pattern": "^C[0-9]{3}$",
+          "title": "Case Id",
+          "type": "string"
+        },
+        "evidence": {
+          "items": {
+            "$ref": "#/$defs/CorpusEvidence"
+          },
+          "title": "Evidence",
+          "type": "array"
+        },
+        "expected_evidence_ids": {
+          "items": {
+            "pattern": "^E[1-9][0-9]*$",
+            "type": "string"
+          },
+          "title": "Expected Evidence Ids",
+          "type": "array"
+        },
+        "expected_facts": {
+          "items": {
+            "$ref": "#/$defs/ExpectedFact"
+          },
+          "title": "Expected Facts",
+          "type": "array"
+        },
+        "expected_generator_called": {
+          "title": "Expected Generator Called",
+          "type": "boolean"
+        },
+        "expected_outcome": {
+          "$ref": "#/$defs/ExpectedOutcome"
+        },
+        "expected_reason_code": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ReasonCode"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "expected_status": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ExpectedStatus"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "forbidden_claims": {
+          "items": {
+            "maxLength": 200,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Forbidden Claims",
+          "type": "array"
+        },
+        "generator_output": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/GeneratorOutput"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "human_review_required": {
+          "title": "Human Review Required",
+          "type": "boolean"
+        },
+        "language": {
+          "$ref": "#/$defs/Language"
+        },
+        "question": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Question",
+          "type": "string"
+        },
+        "rationale": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Rationale",
+          "type": "string"
+        },
+        "scenario": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Scenario",
+          "type": "string"
+        },
+        "scenario_id": {
+          "maximum": 12,
+          "minimum": 1,
+          "title": "Scenario Id",
+          "type": "integer"
+        },
+        "schema_version": {
+          "const": "1",
+          "title": "Schema Version",
+          "type": "string"
+        }
+      },
+      "required": [
+        "schema_version",
+        "case_id",
+        "scenario_id",
+        "scenario",
+        "language",
+        "question",
+        "evidence",
+        "rationale",
+        "expected_outcome",
+        "expected_status",
+        "expected_evidence_ids",
+        "expected_facts",
+        "forbidden_claims",
+        "human_review_required",
+        "expected_generator_called",
+        "generator_output",
+        "expected_reason_code"
+      ],
+      "title": "CorpusCase",
+      "type": "object"
+    },
+    "CorpusEvidence": {
+      "additionalProperties": false,
+      "description": "Uma evidência sintética do contexto de um caso.\n\nNão contém UUID, institution ID, document ID nem caminhos de storage.\nOs identificadores técnicos exigidos por `app.retrieval.base.Evidence`\n— `chunk_id`, `document_id`, `document_version_id` — e ainda\n`chunk_index` e `score` são derivados deterministicamente na Fase 2 a\npartir de `case_id`, `document_ref` e da posição no array. O `score`\nfica fora do corpus porque o answering usa a **ordem** do ranking e\nnão o valor.",
+      "properties": {
+        "content": {
+          "maxLength": 4000,
+          "minLength": 1,
+          "title": "Content",
+          "type": "string"
+        },
+        "document_ref": {
+          "pattern": "^D[1-9][0-9]*$",
+          "title": "Document Ref",
+          "type": "string"
+        },
+        "document_title": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Document Title",
+          "type": "string"
+        },
+        "evidence_id": {
+          "pattern": "^E[1-9][0-9]*$",
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "language": {
+          "$ref": "#/$defs/Language"
+        },
+        "official_source": {
+          "title": "Official Source",
+          "type": "boolean"
+        },
+        "source_url": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "pattern": "^https://example\\.invalid/[^\\s]*$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Url"
+        },
+        "valid_from": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Valid From"
+        },
+        "valid_until": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Valid Until"
+        }
+      },
+      "required": [
+        "evidence_id",
+        "document_ref",
+        "document_title",
+        "content",
+        "language",
+        "official_source",
+        "source_url",
+        "valid_from",
+        "valid_until"
+      ],
+      "title": "CorpusEvidence",
+      "type": "object"
+    },
+    "ExecutionConfig": {
+      "additionalProperties": false,
+      "description": "Configuração que o avaliador tem de reproduzir.\n\nFixada no corpus para que a validação e a avaliação não dependam de\n`settings` nem de `.env`.",
+      "properties": {
+        "institution_name": {
+          "maxLength": 200,
+          "minLength": 1,
+          "title": "Institution Name",
+          "type": "string"
+        },
+        "max_answer_chars": {
+          "minimum": 1,
+          "title": "Max Answer Chars",
+          "type": "integer"
+        },
+        "max_context_chars": {
+          "minimum": 1,
+          "title": "Max Context Chars",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "max_answer_chars",
+        "max_context_chars",
+        "institution_name"
+      ],
+      "title": "ExecutionConfig",
+      "type": "object"
+    },
+    "ExpectedFact": {
+      "additionalProperties": false,
+      "description": "Um facto que a evidência permitia responder, avaliado facto a facto.\n\n`expected_coverage` declara a classificação esperada para o\n`generator_output` do caso:\n\n- `covered` — o facto é afirmado corretamente; `supported_by` indica\n  as evidências que o suportam;\n- `uncovered` — a evidência não suporta o facto e a resposta tem de o\n  declarar como não coberto; `supported_by` é vazio;\n- `contradicted` — a evidência contém o facto correto e a resposta\n  contradi-lo; `supported_by` indica onde o facto correto está.",
+      "properties": {
+        "expected_coverage": {
+          "$ref": "#/$defs/FactCoverage"
+        },
+        "fact_id": {
+          "pattern": "^F[1-9][0-9]*$",
+          "title": "Fact Id",
+          "type": "string"
+        },
+        "statement": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Statement",
+          "type": "string"
+        },
+        "supported_by": {
+          "items": {
+            "pattern": "^E[1-9][0-9]*$",
+            "type": "string"
+          },
+          "title": "Supported By",
+          "type": "array"
+        }
+      },
+      "required": [
+        "fact_id",
+        "statement",
+        "supported_by",
+        "expected_coverage"
+      ],
+      "title": "ExpectedFact",
+      "type": "object"
+    },
+    "ExpectedOutcome": {
+      "description": "Desfecho do turno, que nem sempre coincide com o estado devolvido.",
+      "enum": [
+        "answered",
+        "insufficient_evidence",
+        "rejected"
+      ],
+      "title": "ExpectedOutcome",
+      "type": "string"
+    },
+    "ExpectedStatus": {
+      "description": "Estado devolvido em `AnsweringResponse`; ausente numa rejeição.",
+      "enum": [
+        "answered",
+        "insufficient_evidence"
+      ],
+      "title": "ExpectedStatus",
+      "type": "string"
+    },
+    "FactCoverage": {
+      "description": "Classificação esperada de um facto, facto a facto (D4).",
+      "enum": [
+        "covered",
+        "uncovered",
+        "contradicted"
+      ],
+      "title": "FactCoverage",
+      "type": "string"
+    },
+    "GeneratorOutput": {
+      "additionalProperties": false,
+      "description": "O `GeneratedAnswer` controlado que o gerador falso devolve.\n\nÉ **entrada controlada**, não a resposta ideal: os campos `expected_*`\né que declaram a expectativa. Onde divergem, a divergência é\ndeliberada e está declarada no `rationale` do caso.",
+      "properties": {
+        "answer": {
+          "maxLength": 20000,
+          "title": "Answer",
+          "type": "string"
+        },
+        "cited_evidence_ids": {
+          "items": {
+            "pattern": "^E[1-9][0-9]*$",
+            "type": "string"
+          },
+          "title": "Cited Evidence Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "answer",
+        "cited_evidence_ids"
+      ],
+      "title": "GeneratorOutput",
+      "type": "object"
+    },
+    "Language": {
+      "enum": [
+        "pt",
+        "en"
+      ],
+      "title": "Language",
+      "type": "string"
+    },
+    "ReasonCode": {
+      "description": "Códigos estáveis de rejeição.\n\nCorrespondem exatamente às constantes `REASON_*` de\n`app/answering/validation.py`. São declarados aqui, e não importados,\npara manter este módulo livre do SDK do fornecedor e das Settings; a\nigualdade entre as duas listas é verificada por teste.",
+      "enum": [
+        "empty_answer",
+        "answer_too_long",
+        "missing_citations",
+        "duplicate_evidence_ids",
+        "unknown_evidence_ids"
+      ],
+      "title": "ReasonCode",
+      "type": "string"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Envelope do corpus sintético de avaliação.",
+  "properties": {
+    "cases": {
+      "items": {
+        "$ref": "#/$defs/CorpusCase"
+      },
+      "minItems": 1,
+      "title": "Cases",
+      "type": "array"
+    },
+    "corpus_version": {
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "title": "Corpus Version",
+      "type": "string"
+    },
+    "description": {
+      "maxLength": 2000,
+      "minLength": 1,
+      "title": "Description",
+      "type": "string"
+    },
+    "execution_config": {
+      "$ref": "#/$defs/ExecutionConfig"
+    },
+    "schema_version": {
+      "const": "1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "corpus_version",
+    "description",
+    "execution_config",
+    "cases"
+  ],
+  "title": "Corpus",
+  "type": "object"
+}
