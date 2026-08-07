@@ -1,0 +1,262 @@
+{
+  "$defs": {
+    "AssessmentKind": {
+      "enum": [
+        "human",
+        "hybrid"
+      ],
+      "title": "AssessmentKind",
+      "type": "string"
+    },
+    "RubricCriterion": {
+      "additionalProperties": false,
+      "properties": {
+        "applies_to_scenarios": {
+          "items": {
+            "maximum": 12,
+            "minimum": 1,
+            "type": "integer"
+          },
+          "minItems": 1,
+          "title": "Applies To Scenarios",
+          "type": "array"
+        },
+        "assessment": {
+          "$ref": "#/$defs/AssessmentKind"
+        },
+        "automatic_part": {
+          "anyOf": [
+            {
+              "maxLength": 500,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Automatic Part"
+        },
+        "criterion_id": {
+          "pattern": "^[a-z][a-z0-9_]*$",
+          "title": "Criterion Id",
+          "type": "string"
+        },
+        "descriptors": {
+          "$ref": "#/$defs/RubricDescriptors"
+        },
+        "human_part": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Human Part",
+          "type": "string"
+        },
+        "indicators": {
+          "items": {
+            "maxLength": 300,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Indicators",
+          "type": "array"
+        },
+        "metric": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Metric",
+          "type": "string"
+        },
+        "name": {
+          "maxLength": 120,
+          "minLength": 1,
+          "title": "Name",
+          "type": "string"
+        },
+        "record": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Record",
+          "type": "string"
+        }
+      },
+      "required": [
+        "criterion_id",
+        "name",
+        "metric",
+        "assessment",
+        "automatic_part",
+        "human_part",
+        "applies_to_scenarios",
+        "descriptors",
+        "indicators",
+        "record"
+      ],
+      "title": "RubricCriterion",
+      "type": "object"
+    },
+    "RubricDescriptors": {
+      "additionalProperties": false,
+      "description": "Descritores por nível. As chaves JSON são \"0\", \"1\", \"2\" e \"N/A\".",
+      "properties": {
+        "0": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "0",
+          "type": "string"
+        },
+        "1": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "1",
+          "type": "string"
+        },
+        "2": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "2",
+          "type": "string"
+        },
+        "N/A": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "N/A",
+          "type": "string"
+        }
+      },
+      "required": [
+        "0",
+        "1",
+        "2",
+        "N/A"
+      ],
+      "title": "RubricDescriptors",
+      "type": "object"
+    },
+    "RubricRecordingRequirements": {
+      "additionalProperties": false,
+      "properties": {
+        "disagreement_protocol": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Disagreement Protocol",
+          "type": "string"
+        },
+        "required_fields": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Required Fields",
+          "type": "array"
+        },
+        "single_evaluator_allowed": {
+          "title": "Single Evaluator Allowed",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "required_fields",
+        "disagreement_protocol",
+        "single_evaluator_allowed"
+      ],
+      "title": "RubricRecordingRequirements",
+      "type": "object"
+    },
+    "RubricScaleLevel": {
+      "additionalProperties": false,
+      "properties": {
+        "label": {
+          "maxLength": 100,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "meaning": {
+          "maxLength": 500,
+          "minLength": 1,
+          "title": "Meaning",
+          "type": "string"
+        },
+        "value": {
+          "enum": [
+            "0",
+            "1",
+            "2",
+            "N/A"
+          ],
+          "title": "Value",
+          "type": "string"
+        }
+      },
+      "required": [
+        "value",
+        "label",
+        "meaning"
+      ],
+      "title": "RubricScaleLevel",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "description": "Rubrica de avaliação humana.\n\nNão tem — nem pode ter, por `extra=\"forbid\"` — pesos, médias,\npercentagens, score agregado ou limiar semântico automático.",
+  "properties": {
+    "criteria": {
+      "items": {
+        "$ref": "#/$defs/RubricCriterion"
+      },
+      "minItems": 1,
+      "title": "Criteria",
+      "type": "array"
+    },
+    "description": {
+      "maxLength": 2000,
+      "minLength": 1,
+      "title": "Description",
+      "type": "string"
+    },
+    "limitations": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "title": "Limitations",
+      "type": "array"
+    },
+    "recording_requirements": {
+      "$ref": "#/$defs/RubricRecordingRequirements"
+    },
+    "rubric_version": {
+      "pattern": "^[0-9]+\\.[0-9]+\\.[0-9]+$",
+      "title": "Rubric Version",
+      "type": "string"
+    },
+    "scale": {
+      "items": {
+        "$ref": "#/$defs/RubricScaleLevel"
+      },
+      "maxItems": 4,
+      "minItems": 4,
+      "title": "Scale",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "1",
+      "title": "Schema Version",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "rubric_version",
+    "description",
+    "scale",
+    "criteria",
+    "recording_requirements",
+    "limitations"
+  ],
+  "title": "Rubric",
+  "type": "object"
+}

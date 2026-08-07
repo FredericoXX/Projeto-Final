@@ -1,9 +1,9 @@
 # Estado atual
 
-**Observação:** 2026-08-06 · commit `776e31e` (`main`) · repositório
+**Observação:** 2026-08-07 · commit `2b6247c` (`main`) · repositório
 `FredericoXX/Projeto-Final`
 
-Os factos abaixo descrevem o conteúdo de `776e31e`. Trabalho em curso em branches
+Os factos abaixo descrevem o conteúdo de `2b6247c`. Trabalho em curso em branches
 não fundidas não é estado deste SHA e, quando referido, é identificado como tal.
 
 Snapshot factual. Não contém regras: os princípios estão em
@@ -14,12 +14,12 @@ repositório, o repositório está certo e o documento está desatualizado.
 
 ## Momentos
 
-Momentos 1 a 4 concluídos. Momento 5 em preparação neste SHA —
-[`moments/moment-05.md`](moments/moment-05.md). Existe uma proposta de decisões
-de método (Fase 0) em revisão na branch `docs/moment-05-phase-0`, **ainda não
-fundida e por aprovar**: não é estado deste SHA e não autoriza implementação.
-Momento 6 por iniciar. O mapa oficial dos temas está no
-[`README.md`](README.md#momentos).
+Momentos 1 a 4 concluídos. Momento 5 em curso —
+[`moments/moment-05.md`](moments/moment-05.md). As decisões de método (Fase 0)
+foram **aprovadas pelo merge humano do Pull Request #29**, integrado na `main`
+em `2b6247c`. A Fase 1 — corpus sintético e rubrica — está em curso numa branch
+própria: **não é estado deste SHA e não está concluída**. Momento 6 por iniciar.
+O mapa oficial dos temas está no [`README.md`](README.md#momentos).
 
 ## Arquitetura
 
