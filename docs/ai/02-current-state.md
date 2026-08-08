@@ -1,10 +1,11 @@
 # Estado atual
 
-**Observação:** 2026-08-08 · commit `aa72fcd` (`main`) · repositório
+**Observação:** 2026-08-08 · commit `0ed640cb` (`main`) · repositório
 `FredericoXX/Projeto-Final`
 
-Os factos abaixo descrevem o conteúdo de `aa72fcd`. Trabalho em curso em branches
-não fundidas não é estado deste SHA e, quando referido, é identificado como tal.
+Os factos abaixo descrevem o conteúdo de `0ed640cb`, o merge do Pull Request #32
+que integrou a Fase 3 do Momento 5. Trabalho em curso em branches não fundidas
+não é estado deste SHA e, quando referido, é identificado como tal.
 
 Snapshot factual. Não contém regras: os princípios estão em
 [`01-project-constitution.md`](01-project-constitution.md), os critérios de
@@ -20,9 +21,11 @@ foram aprovadas pelo merge humano do Pull Request #29 (`2b6247c`), e o corpus
 sintético com a rubrica (Fase 1) pelo merge humano do **Pull Request #30**,
 integrado na `main` em `7846f08`. O mecanismo de avaliação offline (Fase 2) foi
 aprovado pelo merge humano do **Pull Request #31**, integrado na `main` em
-`aa72fcd`. A Fase 3 — baseline e relatório — está em curso numa branch própria:
-**não é estado deste SHA e não está concluída**. Momento 6 por iniciar. O mapa
-oficial dos temas está no [`README.md`](README.md#momentos).
+`aa72fcd`, e a baseline (Fase 3) pelo merge humano do **Pull Request #32**,
+integrado na `main` em `0ed640cb`. As quatro fases previstas foram executadas; o
+momento está **em fecho**, à espera de integrar uma correção de tooling da Fase 3
+que não altera a baseline. Momento 6 por iniciar. O mapa oficial dos temas está
+no [`README.md`](README.md#momentos).
 
 ## Arquitetura
 
@@ -54,7 +57,8 @@ Módulos do backend, em [`backend/app/`](../../backend/app/):
 | `core/` | configuração, segurança, normalização de texto, idioma, erros |
 
 `scripts/` contém `seed_demo_institution`, `rebuild_document_chunks`,
-`diagnose_document_pipeline` e `evaluate_answering_offline`.
+`diagnose_document_pipeline`, `evaluate_answering_offline` (avaliação offline
+determinística) e `build_moment05_baseline` (composição da baseline).
 
 ## Superfície da API
 
@@ -118,8 +122,8 @@ Precisões factuais, verificadas neste SHA:
 
 ## Testes e verificações
 
-Contagens estruturais medidas neste SHA: 44 ficheiros `test_*.py` no backend
-(em 47 módulos de [`backend/tests/`](../../backend/tests/), incluindo
+Contagens estruturais medidas neste SHA: 45 ficheiros `test_*.py` no backend
+(em 48 módulos de [`backend/tests/`](../../backend/tests/), incluindo
 `conftest.py` e utilitários) e 9 ficheiros de teste no frontend. Os testes do
 backend usam PostgreSQL real numa base dedicada; os do frontend usam MSW, sem
 rede nem backend.
@@ -128,6 +132,15 @@ Não há contagem de testes executados registada para este SHA. A última
 validação completa registada consta de
 [`docs/relatorios/correcao-final-retrieval-lexical.md`](../relatorios/correcao-final-retrieval-lexical.md),
 de 2026-07-30, e diz respeito a outro commit — não é o estado atual.
+
+Existe uma **baseline estrutural offline** das respostas fundamentadas,
+produzida pelo Momento 5 e versionada em
+[`docs/relatorios/moment-05-baseline-p1.json`](../relatorios/moment-05-baseline-p1.json),
+com a verificação correspondente em
+[`moment-05-verification.md`](../relatorios/moment-05-verification.md). Mede a
+população P1 sobre 19 casos sintéticos, é reproduzível (mesmo `results` e mesmo
+`result_digest` entre execuções) e não observou qualquer defeito comportamental.
+O seu alcance e os seus limites estão em [Limitações conhecidas](#limitações-conhecidas).
 
 Workflows em vigor:
 [`backend-checks.yml`](../../.github/workflows/backend-checks.yml) (sem filtro
@@ -146,8 +159,12 @@ para `frontend/**`), este com Node.js 22. Os comandos correspondentes estão em
 - Processamento síncrono: documentos grandes atrasam a resposta do upload.
 - Armazenamento local único, sem réplicas nem backup automático.
 - OCR não corrige nem adivinha texto.
-- Não existe medição reprodutível da qualidade das respostas — é o problema do
-  Momento 5.
+- A medição reprodutível da qualidade das respostas cobre **apenas a população
+  P1** — estrutural, offline, sobre corpus sintético e respostas controladas de
+  um gerador falso. **P2 e P3 não foram medidas**, pelo que as métricas humanas
+  e as partes humanas das métricas híbridas constam da baseline como não
+  medidas. Não existe, por isso, **medição semântica do fornecedor real**, e a
+  baseline **não demonstra ausência de alucinações**.
 
 Limitações detalhadas por área nos documentos canónicos correspondentes.
 

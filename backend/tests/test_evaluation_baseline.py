@@ -29,7 +29,9 @@ from app.evaluation.baseline import (
     classify_metric_failures,
 )
 from app.evaluation.results import EvaluationReport, compute_result_digest
+from scripts import build_moment05_baseline as build_module
 from scripts.build_moment05_baseline import (
+    EXIT_NOT_REPRODUCIBLE,
     EXIT_OK,
     EXIT_OUTPUT_EXISTS,
     EXIT_USAGE,
@@ -439,3 +441,118 @@ def test_cli_output_records_a_repository_relative_path(tmp_path: Path) -> None:
     recorded = payload["report"]["execution_metadata"]["output_path"]
     assert not WINDOWS_PATH_PATTERN.search(recorded)
     assert recorded == "baseline.json"
+
+
+# --- R1 bloqueia a publicação --------------------------------------------------
+
+
+def _fake_phase_two(payloads: list[dict[str, Any]]) -> Any:
+    """Substitui o entrypoint da Fase 2 por escritas controladas.
+
+    Permite forçar divergência entre as duas execuções sem tocar no
+    avaliador nem nos seus resultados.
+    """
+    calls = {"count": 0}
+
+    def _fake(
+        argv: list[str],
+        *,
+        repository_root: Path | None = None,
+        clock: Any = None,
+    ) -> int:
+        destination = Path(argv[argv.index("--output") + 1])
+        destination.write_text(
+            json.dumps(payloads[calls["count"]], ensure_ascii=False), encoding="utf-8"
+        )
+        calls["count"] += 1
+        return EXIT_OK
+
+    return _fake
+
+
+def _divergent_payloads(tmp_path: Path, *, differ: str) -> list[dict[str, Any]]:
+    source = json.loads(
+        (tmp_path / "source.json").read_text(encoding="utf-8")
+        if (tmp_path / "source.json").exists()
+        else "{}"
+    )
+    if not source:
+        _phase2_report(tmp_path, "source.json")
+        source = json.loads((tmp_path / "source.json").read_text(encoding="utf-8"))
+    first = json.loads(json.dumps(source))
+    second = json.loads(json.dumps(source))
+    if differ == "results":
+        # `results` diferente, digest deixado igual: isola results_identical.
+        second["results"]["cases"][0]["metrics"]["A1"]["status"] = "fail"
+    else:
+        # `results` igual, digest diferente: isola digest_identical.
+        second["result_digest"] = "0" * 64
+    return [first, second]
+
+
+@pytest.mark.parametrize("differ", ["results", "digest"])
+def test_non_reproducible_runs_do_not_publish_a_baseline(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, differ: str
+) -> None:
+    payloads = _divergent_payloads(tmp_path, differ=differ)
+    monkeypatch.setattr(build_module, "evaluate_offline", _fake_phase_two(payloads))
+
+    output = tmp_path / "baseline.json"
+    exit_code = main(
+        ["--output", str(output), "--commit-sha", VALID_SHA],
+        repository_root=REPOSITORY_ROOT,
+    )
+    assert exit_code == EXIT_NOT_REPRODUCIBLE
+    assert not output.exists()
+
+
+@pytest.mark.parametrize("differ", ["results", "digest"])
+def test_non_reproducible_runs_never_replace_an_existing_baseline(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, differ: str
+) -> None:
+    payloads = _divergent_payloads(tmp_path, differ=differ)
+    monkeypatch.setattr(build_module, "evaluate_offline", _fake_phase_two(payloads))
+
+    output = tmp_path / "baseline.json"
+    output.write_text("baseline anterior válida", encoding="utf-8")
+    exit_code = main(
+        ["--output", str(output), "--commit-sha", VALID_SHA, "--overwrite"],
+        repository_root=REPOSITORY_ROOT,
+    )
+    assert exit_code == EXIT_NOT_REPRODUCIBLE
+    assert output.read_text(encoding="utf-8") == "baseline anterior válida"
+    assert sorted(path.name for path in tmp_path.iterdir() if path.suffix == ".json") == [
+        "baseline.json",
+        "source.json",
+    ]
+
+
+def test_identical_runs_still_publish(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> None:
+    """O caminho feliz mantém-se: duas execuções iguais publicam."""
+    _phase2_report(tmp_path, "source.json")
+    source = json.loads((tmp_path / "source.json").read_text(encoding="utf-8"))
+    monkeypatch.setattr(build_module, "evaluate_offline", _fake_phase_two([source, source]))
+
+    output = tmp_path / "baseline.json"
+    assert (
+        main(
+            ["--output", str(output), "--commit-sha", VALID_SHA],
+            repository_root=REPOSITORY_ROOT,
+        )
+        == EXIT_OK
+    )
+    payload = json.loads(output.read_text(encoding="utf-8"))
+    assert payload["reproducibility"]["results_identical"] is True
+    assert payload["reproducibility"]["digest_identical"] is True
+    assert payload["report"]["result_digest"] == source["result_digest"]
+
+
+def test_the_versioned_baseline_is_still_reproducible(
+    versioned_payload: dict[str, Any], tmp_path: Path
+) -> None:
+    """A baseline oficial continua a reproduzir-se com o mesmo digest."""
+    fresh = _phase2_report(tmp_path, "fresh.json")
+    assert versioned_payload["report"]["results"] == fresh.results.model_dump(mode="json")
+    assert versioned_payload["report"]["result_digest"] == fresh.result_digest
+    assert versioned_payload["reproducibility"]["results_identical"] is True
+    assert versioned_payload["reproducibility"]["digest_identical"] is True
