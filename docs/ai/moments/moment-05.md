@@ -7,13 +7,15 @@ Especificação inicial, segundo [`04-moment-template.md`](../04-moment-template
 | Campo | Valor |
 | --- | --- |
 | Momento | 5 — Qualidade das respostas fundamentadas e das fontes |
-| Estado | Fases 0 e 1 **aprovadas**; Fase 2 **em curso**, não concluída enquanto o respetivo Pull Request não estiver fundido na `main`; Fase 3 por iniciar |
+| Estado | Fases 0, 1 e 2 **aprovadas**; Fase 3 **em curso**, não concluída enquanto o respetivo Pull Request não estiver fundido na `main` |
 | Commit base | `776e31e` (2026-08-06) |
 | Branch da Fase 0 | `docs/moment-05-phase-0` |
 | Aprovação da Fase 0 | merge humano do Pull Request #29, integrado na `main` em `2b6247c` — ver [Proveniência e aprovação](#proveniência-e-aprovação) |
 | Branch da Fase 1 | `feat/moment-05-phase-1`, a partir de `2b6247c` |
 | Aprovação da Fase 1 | merge humano do Pull Request #30, integrado na `main` em `7846f08` |
 | Branch da Fase 2 | `feat/moment-05-phase-2`, a partir de `7846f08` |
+| Aprovação da Fase 2 | merge humano do Pull Request #31, integrado na `main` em `aa72fcd` |
+| Branch da Fase 3 | `feat/moment-05-phase-3`, a partir de `aa72fcd` |
 | Divisão em Pull Requests | quatro, um por fase — ver [D10](#d10--divisão-em-pull-requests) |
 
 ## Problema
@@ -154,8 +156,8 @@ presente.
 
 ### Fase 2 — Avaliação offline determinística
 
-**Em curso na branch `feat/moment-05-phase-2`; não concluída enquanto o
-respetivo Pull Request não estiver fundido na `main`.**
+**Aprovada pelo merge humano do Pull Request #31, integrado na `main` em
+`aa72fcd`.**
 
 Apenas o mecanismo offline, executável com fixtures, fakes ou respostas
 gravadas e sanitizadas.
@@ -166,6 +168,12 @@ dessa comparação; sem rede; sem chamada real ao fornecedor; métricas automát
 reproduzíveis.
 
 ### Fase 3 — Baseline
+
+**Em curso na branch `feat/moment-05-phase-3`; não concluída enquanto o
+respetivo Pull Request não estiver fundido na `main`.** A baseline produzida é
+[`docs/relatorios/moment-05-baseline-p1.json`](../../relatorios/moment-05-baseline-p1.json),
+fonte primária única; a verificação desta fase está em
+[`moment-05-verification.md`](../../relatorios/moment-05-verification.md).
 
 Executar a avaliação e produzir o relatório de baseline. "Baseline" não é uma
 coisa só: são três populações distintas, com estatuto distinto — ver

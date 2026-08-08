@@ -250,3 +250,27 @@ Cada pergunta continua independente: mensagens anteriores nunca entram no
 prompt. Não há idempotency key nem garantia de ordem de submissão para
 perguntas concorrentes na mesma conversa; o histórico reflete a ordem dos
 commits.
+
+## Medição da qualidade
+
+Existe uma baseline **estrutural offline** desta camada, registada em
+[`docs/relatorios/moment-05-baseline-p1.json`](relatorios/moment-05-baseline-p1.json),
+que é a sua fonte primária única. O método, os
+cenários e as métricas estão especificados em
+[`docs/ai/moments/moment-05.md`](ai/moments/moment-05.md) e não são repetidos
+aqui.
+
+Alcance, para que a leitura não infira mais do que foi medido:
+
+- mede o comportamento observável do turno sobre um corpus **sintético** e
+  respostas controladas de um gerador falso — **não** mede a qualidade do
+  fornecedor atualmente configurado;
+- as métricas apuradas são estruturais e determinísticas: estado devolvido,
+  citações válidas, esperadas, duplicadas ou desconhecidas, limites de
+  resposta, invocação do gerador, desfecho e ausência literal de afirmações
+  proibidas;
+- as métricas semânticas — correção factual, fidelidade à evidência,
+  completude, clareza, concisão — dependem de avaliação humana e constam da
+  baseline como **não medidas**, nunca como zero;
+- nada nesta baseline torna o sistema livre de alucinações, e a validação
+  desta etapa continua estrutural, não semântica.

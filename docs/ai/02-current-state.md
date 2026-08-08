@@ -1,9 +1,9 @@
 # Estado atual
 
-**Observação:** 2026-08-07 · commit `7846f08` (`main`) · repositório
+**Observação:** 2026-08-08 · commit `aa72fcd` (`main`) · repositório
 `FredericoXX/Projeto-Final`
 
-Os factos abaixo descrevem o conteúdo de `7846f08`. Trabalho em curso em branches
+Os factos abaixo descrevem o conteúdo de `aa72fcd`. Trabalho em curso em branches
 não fundidas não é estado deste SHA e, quando referido, é identificado como tal.
 
 Snapshot factual. Não contém regras: os princípios estão em
@@ -18,10 +18,11 @@ Momentos 1 a 4 concluídos. Momento 5 em curso —
 [`moments/moment-05.md`](moments/moment-05.md). As decisões de método (Fase 0)
 foram aprovadas pelo merge humano do Pull Request #29 (`2b6247c`), e o corpus
 sintético com a rubrica (Fase 1) pelo merge humano do **Pull Request #30**,
-integrado na `main` em `7846f08`. A Fase 2 — mecanismo de avaliação offline —
-está em curso numa branch própria: **não é estado deste SHA e não está
-concluída**. Fase 3 por iniciar. Momento 6 por iniciar. O mapa oficial dos temas
-está no [`README.md`](README.md#momentos).
+integrado na `main` em `7846f08`. O mecanismo de avaliação offline (Fase 2) foi
+aprovado pelo merge humano do **Pull Request #31**, integrado na `main` em
+`aa72fcd`. A Fase 3 — baseline e relatório — está em curso numa branch própria:
+**não é estado deste SHA e não está concluída**. Momento 6 por iniciar. O mapa
+oficial dos temas está no [`README.md`](README.md#momentos).
 
 ## Arquitetura
 
@@ -52,8 +53,8 @@ Módulos do backend, em [`backend/app/`](../../backend/app/):
 | `diagnostics/` | ferramenta interna de observação do pipeline documental |
 | `core/` | configuração, segurança, normalização de texto, idioma, erros |
 
-`scripts/` contém `seed_demo_institution`, `rebuild_document_chunks` e
-`diagnose_document_pipeline`.
+`scripts/` contém `seed_demo_institution`, `rebuild_document_chunks`,
+`diagnose_document_pipeline` e `evaluate_answering_offline`.
 
 ## Superfície da API
 
@@ -117,8 +118,8 @@ Precisões factuais, verificadas neste SHA:
 
 ## Testes e verificações
 
-Contagens estruturais medidas neste SHA: 42 ficheiros `test_*.py` no backend
-(em 45 módulos de [`backend/tests/`](../../backend/tests/), incluindo
+Contagens estruturais medidas neste SHA: 44 ficheiros `test_*.py` no backend
+(em 47 módulos de [`backend/tests/`](../../backend/tests/), incluindo
 `conftest.py` e utilitários) e 9 ficheiros de teste no frontend. Os testes do
 backend usam PostgreSQL real numa base dedicada; os do frontend usam MSW, sem
 rede nem backend.
