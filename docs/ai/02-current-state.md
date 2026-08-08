@@ -1,9 +1,9 @@
 # Estado atual
 
-**Observação:** 2026-08-07 · commit `2b6247c` (`main`) · repositório
+**Observação:** 2026-08-07 · commit `7846f08` (`main`) · repositório
 `FredericoXX/Projeto-Final`
 
-Os factos abaixo descrevem o conteúdo de `2b6247c`. Trabalho em curso em branches
+Os factos abaixo descrevem o conteúdo de `7846f08`. Trabalho em curso em branches
 não fundidas não é estado deste SHA e, quando referido, é identificado como tal.
 
 Snapshot factual. Não contém regras: os princípios estão em
@@ -16,10 +16,12 @@ repositório, o repositório está certo e o documento está desatualizado.
 
 Momentos 1 a 4 concluídos. Momento 5 em curso —
 [`moments/moment-05.md`](moments/moment-05.md). As decisões de método (Fase 0)
-foram **aprovadas pelo merge humano do Pull Request #29**, integrado na `main`
-em `2b6247c`. A Fase 1 — corpus sintético e rubrica — está em curso numa branch
-própria: **não é estado deste SHA e não está concluída**. Momento 6 por iniciar.
-O mapa oficial dos temas está no [`README.md`](README.md#momentos).
+foram aprovadas pelo merge humano do Pull Request #29 (`2b6247c`), e o corpus
+sintético com a rubrica (Fase 1) pelo merge humano do **Pull Request #30**,
+integrado na `main` em `7846f08`. A Fase 2 — mecanismo de avaliação offline —
+está em curso numa branch própria: **não é estado deste SHA e não está
+concluída**. Fase 3 por iniciar. Momento 6 por iniciar. O mapa oficial dos temas
+está no [`README.md`](README.md#momentos).
 
 ## Arquitetura
 
@@ -46,6 +48,7 @@ Módulos do backend, em [`backend/app/`](../../backend/app/):
 | `storage/` | abstração de armazenamento (`Protocol` + implementação local) |
 | `retrieval/` | planeamento de consulta, elegibilidade lexical, ranking, configuração FTS |
 | `answering/` | contratos neutros, contexto, prompts, validação e adaptador de fornecedor |
+| `evaluation/` | contratos e artefactos da avaliação offline do Momento 5; não é importado pela aplicação |
 | `diagnostics/` | ferramenta interna de observação do pipeline documental |
 | `core/` | configuração, segurança, normalização de texto, idioma, erros |
 
@@ -114,8 +117,8 @@ Precisões factuais, verificadas neste SHA:
 
 ## Testes e verificações
 
-Contagens estruturais medidas neste SHA: 41 ficheiros `test_*.py` no backend
-(em 44 módulos de [`backend/tests/`](../../backend/tests/), incluindo
+Contagens estruturais medidas neste SHA: 42 ficheiros `test_*.py` no backend
+(em 45 módulos de [`backend/tests/`](../../backend/tests/), incluindo
 `conftest.py` e utilitários) e 9 ficheiros de teste no frontend. Os testes do
 backend usam PostgreSQL real numa base dedicada; os do frontend usam MSW, sem
 rede nem backend.
