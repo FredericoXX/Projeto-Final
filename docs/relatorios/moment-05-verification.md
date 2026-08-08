@@ -24,16 +24,17 @@ reproduzível. Existe um achado menor, já resolvido nesta fase (A1), e um achad
 que permanece por pertencer ao fecho do momento (A2). Nenhuma correção
 comportamental foi implementada, conforme o âmbito.
 
-A Fase 3 e o Momento 5 **não estão concluídos**: passam a estar apenas com o
-merge humano do Pull Request desta branch. Após esse merge, resta o Momento 6 —
-UX e experiência operacional.
+A Fase 3 foi aprovada pelo merge humano do Pull Request #32, integrado na
+`main` em `0ed640cb`, e o momento ficou formalmente encerrado com o merge do
+Pull Request #33 em `0069809ba3c4acd506990242af13edcb6bda57d4`. Após esse merge,
+resta o Momento 6 — UX e experiência operacional.
 
 > **Atualização de fecho (2026-08-08).** A Fase 3 foi aprovada pelo merge humano
-> do Pull Request #32, integrado na `main` em `0ed640cb`. Uma verificação
-> posterior encontrou o achado A3 abaixo, corrigido na branch
-> `fix/moment-05-closeout`: R1 passou a ser condição de publicação da baseline.
-> Os resultados históricos desta verificação não foram alterados — a baseline
-> continua a mesma e o `result_digest` é o mesmo.
+do Pull Request #32, integrado na `main` em `0ed640cb`. Uma verificação
+posterior encontrou o achado A3 abaixo, corrigido na branch
+`fix/moment-05-closeout`: R1 passou a ser condição de publicação da baseline.
+Os resultados históricos desta verificação não foram alterados — a baseline
+continua a mesma e o `result_digest` é o mesmo.
 
 ## Estado inicial
 
@@ -83,8 +84,8 @@ declarações que o critério de paragem da Fase 3 exige.
 
 | Ficheiro | Alterado ou novo | Razão |
 | --- | --- | --- |
-| `backend/app/evaluation/baseline.py` | novo | composição pura: recebe dois relatórios já produzidos e acrescenta o estatuto das populações, as métricas humanas não medidas derivadas da rubrica, o registo de R1 e a classificação das células `fail`. Não executa avaliação, não constrói relatórios e não calcula métricas nem digests — não importa `compute_result_digest` |
-| `backend/scripts/build_moment05_baseline.py` | novo | entrypoint fino; invoca o entrypoint da Fase 2 duas vezes para uma diretoria temporária, lê os dois relatórios e compõe a baseline. Reutiliza a política de caminhos, a resolução do `commit_sha` e a neutralização do fornecedor da Fase 2 em vez de as duplicar |
+| `backend/app/evaluation/baseline.py` | novo | composição pura: recebe dois relatórios já produzidos e acrescenta o estatuto das populações, as métricas humanas não medidas derivadas da r[...]
+| `backend/scripts/build_moment05_baseline.py` | novo | entrypoint fino; invoca o entrypoint da Fase 2 duas vezes para uma diretoria temporária, lê os dois relatórios e compõe a baseline. Reut[...]
 | `backend/tests/test_evaluation_baseline.py` | novo | testes da composição, das declarações e do artefacto versionado |
 | [`moment-05-baseline-p1.json`](moment-05-baseline-p1.json) | novo | a baseline; fonte primária única |
 | [`02-current-state.md`](../ai/02-current-state.md) | alterado | snapshot em `aa72fcd`; Fase 2 aprovada pelo PR #31; Fase 3 em curso |
@@ -173,9 +174,9 @@ camada de origem a classificar, e
 
 | # | Severidade | Achado | Evidência | Estado |
 | --- | --- | --- | --- | --- |
-| A1 | Baixa | O relatório de execução da Fase 2 grava `output_path` como caminho absoluto da máquina. Aceitável num ficheiro temporário, inaceitável num artefacto versionado, que o gate de documentação proíbe | O CLI da Fase 2 gravou `C:/…/scratchpad/r1.json` nas execuções de verificação | resolvido — o compositor grava o caminho relativo ao repositório, fixado por teste. O CLI da Fase 2 não foi alterado |
-| A2 | Baixa | [`02-current-state.md`](../ai/02-current-state.md) mantém "não existe medição reprodutível da qualidade das respostas", verdadeiro em `aa72fcd` e inexato depois do merge desta fase | Secção *Limitações conhecidas* do snapshot | resolvido no fecho — o snapshot passou a `0ed640cb` e a limitação foi substituída pelo alcance real da baseline (só P1; P2/P3 não medidas) |
-| A3 | Média | `build_moment05_baseline` registava `results_identical` e `digest_identical` mas publicava a baseline mesmo quando qualquer um era `false`; uma execução não reproduzível podia substituir uma baseline válida | Encontrado por verificação posterior ao merge do PR #32 | resolvido em `fix/moment-05-closeout` — R1 é verificado antes de qualquer escrita e uma execução não reproduzível termina com código 5 sem publicar |
+| A1 | Baixa | O relatório de execução da Fase 2 grava `output_path` como caminho absoluto da máquina. Aceitável num ficheiro temporário, inaceitável num artefacto versionado, que o gate d[...]
+| A2 | Baixa | [`02-current-state.md`](../ai/02-current-state.md) mantém "não existe medição reprodutível da qualidade das respostas", verdadeiro em `aa72fcd` e inexato depois do merge desta[...]
+| A3 | Média | `build_moment05_baseline` registava `results_identical` e `digest_identical` mas publicava a baseline mesmo quando qualquer um era `false`; uma execução não reproduzível podia[...]
 
 Nenhum dos achados exige alteração de comportamento da aplicação.
 
