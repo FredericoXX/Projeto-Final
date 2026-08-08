@@ -1,0 +1,1271 @@
+{
+  "baseline_schema_version": "1",
+  "findings": {
+    "behavioural_corrections_applied": false,
+    "behavioural_defects": [],
+    "classification_rule": "Uma célula fail só é considerada esperada quando existe correspondência exata entre caso, métrica e motivo aprovado na matriz versionada da Fase 3, que corresponde ao corpus 1.0.0 aprovado na Fase 1. A classificação é fail-closed: qualquer outra célula, qualquer célula num caso cujo A7 tenha falhado, e qualquer célula produzida sobre outra versão do corpus são classificadas como 'unexplained' e entram em behavioural_defects. Não há regra genérica por desfecho ou por métrica, porque uma regra dessas classificaria como esperada uma falha nova que surgisse no mesmo caso.",
+    "layers_with_defects": [],
+    "metric_failures": [
+      {
+        "case_id": "C012",
+        "classification": "declared_source_divergence",
+        "expected_outcome": "answered",
+        "metric": "A3",
+        "observed_outcome": "answered",
+        "outcome_matches_expectation": true
+      },
+      {
+        "case_id": "C013",
+        "classification": "declared_source_divergence",
+        "expected_outcome": "answered",
+        "metric": "A3",
+        "observed_outcome": "answered",
+        "outcome_matches_expectation": true
+      },
+      {
+        "case_id": "C015",
+        "classification": "expected_rejection",
+        "expected_outcome": "rejected",
+        "metric": "A5",
+        "observed_outcome": "rejected",
+        "outcome_matches_expectation": true
+      },
+      {
+        "case_id": "C016",
+        "classification": "expected_rejection",
+        "expected_outcome": "rejected",
+        "metric": "A5",
+        "observed_outcome": "rejected",
+        "outcome_matches_expectation": true
+      },
+      {
+        "case_id": "C017",
+        "classification": "expected_rejection",
+        "expected_outcome": "rejected",
+        "metric": "A3",
+        "observed_outcome": "rejected",
+        "outcome_matches_expectation": true
+      },
+      {
+        "case_id": "C017",
+        "classification": "expected_rejection",
+        "expected_outcome": "rejected",
+        "metric": "A5",
+        "observed_outcome": "rejected",
+        "outcome_matches_expectation": true
+      },
+      {
+        "case_id": "C018",
+        "classification": "expected_rejection",
+        "expected_outcome": "rejected",
+        "metric": "A4",
+        "observed_outcome": "rejected",
+        "outcome_matches_expectation": true
+      },
+      {
+        "case_id": "C019",
+        "classification": "expected_rejection",
+        "expected_outcome": "rejected",
+        "metric": "A2",
+        "observed_outcome": "rejected",
+        "outcome_matches_expectation": true
+      }
+    ]
+  },
+  "human_metrics": [
+    {
+      "assessment": "human",
+      "automatic_part_measured": null,
+      "criterion_id": "factual_correctness",
+      "metric": "Correção factual",
+      "name": "Correção factual",
+      "required_population": "P2",
+      "status": "not_measured"
+    },
+    {
+      "assessment": "human",
+      "automatic_part_measured": null,
+      "criterion_id": "evidence_faithfulness",
+      "metric": "Fidelidade à evidência",
+      "name": "Fidelidade à evidência",
+      "required_population": "P2",
+      "status": "not_measured"
+    },
+    {
+      "assessment": "human",
+      "automatic_part_measured": null,
+      "criterion_id": "completeness",
+      "metric": "Completude",
+      "name": "Completude",
+      "required_population": "P2",
+      "status": "not_measured"
+    },
+    {
+      "assessment": "hybrid",
+      "automatic_part_measured": "A2 e A3 apuram automaticamente a existência dos IDs citados e as contagens de correspondência, falta e excesso face a expected_evidence_ids.",
+      "criterion_id": "citation_support",
+      "metric": "Precisão das citações",
+      "name": "Suporte efetivo das citações",
+      "required_population": "P2",
+      "status": "not_measured"
+    },
+    {
+      "assessment": "hybrid",
+      "automatic_part_measured": "A5 apura automaticamente a presença de pelo menos uma citação quando o estado é answered.",
+      "criterion_id": "citation_coverage",
+      "metric": "Cobertura das citações",
+      "name": "Cobertura das citações",
+      "required_population": "P2",
+      "status": "not_measured"
+    },
+    {
+      "assessment": "hybrid",
+      "automatic_part_measured": "A1 apura automaticamente se o estado devolvido corresponde a expected_status, incluindo a ocorrência de insufficient_evidence.",
+      "criterion_id": "fallback_comprehensibility",
+      "metric": "Qualidade do fallback",
+      "name": "Compreensibilidade do fallback",
+      "required_population": "P2",
+      "status": "not_measured"
+    },
+    {
+      "assessment": "human",
+      "automatic_part_measured": null,
+      "criterion_id": "clarity",
+      "metric": "Clareza",
+      "name": "Clareza",
+      "required_population": "P2",
+      "status": "not_measured"
+    },
+    {
+      "assessment": "human",
+      "automatic_part_measured": null,
+      "criterion_id": "conciseness",
+      "metric": "Concisão",
+      "name": "Concisão",
+      "required_population": "P2",
+      "status": "not_measured"
+    },
+    {
+      "assessment": "human",
+      "automatic_part_measured": null,
+      "criterion_id": "ambiguity_handling",
+      "metric": "Tratamento de ambiguidades",
+      "name": "Tratamento de ambiguidades",
+      "required_population": "P2",
+      "status": "not_measured"
+    },
+    {
+      "assessment": "human",
+      "automatic_part_measured": null,
+      "criterion_id": "contradiction_handling",
+      "metric": "Tratamento de contradições",
+      "name": "Tratamento de contradições",
+      "required_population": "P2",
+      "status": "not_measured"
+    },
+    {
+      "assessment": "human",
+      "automatic_part_measured": null,
+      "criterion_id": "absolute_language",
+      "metric": "Linguagem excessivamente absoluta",
+      "name": "Linguagem excessivamente absoluta",
+      "required_population": "P2",
+      "status": "not_measured"
+    }
+  ],
+  "limitations": [
+    "A baseline mede comportamento sobre material exclusivamente sintético; o comportamento sobre documentos institucionais reais continua a exigir validação humana.",
+    "Avaliar respostas produzidas por um gerador falso mede a camada de answering e o mecanismo de avaliação — não mede a qualidade do gerador atualmente configurado.",
+    "Sem as populações P2 e P3, este momento não produz medição semântica: correção factual, fidelidade, completude, clareza, concisão e as restantes métricas humanas ficam não medidas.",
+    "As métricas automáticas são estruturais e determinísticas; nenhuma delas mede correção semântica, e nada nesta baseline torna o sistema livre de alucinações.",
+    "Não existem pesos nem score agregado: o resultado é um perfil por caso e por cenário, não um número único comparável.",
+    "A baseline fica comparável entre momentos, mas não foi criado gate automático de comparação."
+  ],
+  "moment": "5",
+  "populations": [
+    {
+      "answer_provenance": "gerador falso que devolve o generator_output declarado no corpus sintético",
+      "automatic_metrics": [
+        "A1",
+        "A2",
+        "A3",
+        "A4",
+        "A5",
+        "A6",
+        "A7",
+        "A8",
+        "R1"
+      ],
+      "description": "Baseline estrutural offline: a camada de answering executada sobre o generator_output declarado no corpus.",
+      "note": "População obrigatória; é a baseline reproduzível.",
+      "population": "P1",
+      "status": "measured"
+    },
+    {
+      "answer_provenance": null,
+      "automatic_metrics": [],
+      "description": "Respostas gravadas e sanitizadas, com proveniência declarada, submetidas a juízo humano segundo a rubrica aprovada.",
+      "note": "Opcional segundo D11 e não executada nesta fase. As métricas humanas ficam não medidas — nunca zero e nunca omitidas.",
+      "population": "P2",
+      "status": "not_measured"
+    },
+    {
+      "answer_provenance": null,
+      "automatic_metrics": [],
+      "description": "Observação do comportamento do fornecedor atualmente configurado, fora da CI e não determinística.",
+      "note": "Opcional segundo D5 e D11 e não executada nesta fase. Nenhum resultado obtido sobre o gerador falso é apresentado como qualidade do gerador real.",
+      "population": "P3",
+      "status": "not_measured"
+    }
+  ],
+  "report": {
+    "execution_metadata": {
+      "commit_sha": "aa72fcd5f0bb2fd5ed7ebc637a39f1e0c69235ec",
+      "digest_algorithm": "sha256",
+      "executed_at": "2026-08-08T04:18:24.925212+00:00",
+      "output_path": "docs/relatorios/moment-05-baseline-p1.json"
+    },
+    "report_schema_version": "1",
+    "result_digest": "75d936182d9b8a675b43da208f04e1e7168c439c1fdbace04a865283731dd345",
+    "results": {
+      "case_count": 19,
+      "cases": [
+        {
+          "case_id": "C001",
+          "context_evidence_ids": [
+            "E1"
+          ],
+          "emitted_evidence_ids": [
+            "E1"
+          ],
+          "expected_outcome": "answered",
+          "generator_call_count": 1,
+          "language": "pt",
+          "metrics": {
+            "A1": {
+              "status": "pass"
+            },
+            "A2": {
+              "status": "pass",
+              "unknown_count": 0
+            },
+            "A3": {
+              "excess_count": 0,
+              "matched_count": 1,
+              "missing_count": 0,
+              "status": "pass"
+            },
+            "A4": {
+              "duplicate_count": 0,
+              "status": "pass"
+            },
+            "A5": {
+              "answer_non_empty": "pass",
+              "answer_within_limit": "pass",
+              "citations_present": "pass",
+              "status": "pass"
+            },
+            "A6": {
+              "status": "pass"
+            },
+            "A7": {
+              "status": "pass"
+            },
+            "A8": {
+              "status": "not_applicable",
+              "violation_count": 0
+            }
+          },
+          "observed_outcome": "answered",
+          "observed_reason_code": null,
+          "observed_status": "answered",
+          "response_evidence_ids": [
+            "E1"
+          ],
+          "scenario_id": 1
+        },
+        {
+          "case_id": "C002",
+          "context_evidence_ids": [
+            "E1",
+            "E2"
+          ],
+          "emitted_evidence_ids": [
+            "E1",
+            "E2"
+          ],
+          "expected_outcome": "answered",
+          "generator_call_count": 1,
+          "language": "en",
+          "metrics": {
+            "A1": {
+              "status": "pass"
+            },
+            "A2": {
+              "status": "pass",
+              "unknown_count": 0
+            },
+            "A3": {
+              "excess_count": 0,
+              "matched_count": 2,
+              "missing_count": 0,
+              "status": "pass"
+            },
+            "A4": {
+              "duplicate_count": 0,
+              "status": "pass"
+            },
+            "A5": {
+              "answer_non_empty": "pass",
+              "answer_within_limit": "pass",
+              "citations_present": "pass",
+              "status": "pass"
+            },
+            "A6": {
+              "status": "pass"
+            },
+            "A7": {
+              "status": "pass"
+            },
+            "A8": {
+              "status": "not_applicable",
+              "violation_count": 0
+            }
+          },
+          "observed_outcome": "answered",
+          "observed_reason_code": null,
+          "observed_status": "answered",
+          "response_evidence_ids": [
+            "E1",
+            "E2"
+          ],
+          "scenario_id": 1
+        },
+        {
+          "case_id": "C003",
+          "context_evidence_ids": [
+            "E1"
+          ],
+          "emitted_evidence_ids": [
+            "E1"
+          ],
+          "expected_outcome": "answered",
+          "generator_call_count": 1,
+          "language": "pt",
+          "metrics": {
+            "A1": {
+              "status": "pass"
+            },
+            "A2": {
+              "status": "pass",
+              "unknown_count": 0
+            },
+            "A3": {
+              "excess_count": 0,
+              "matched_count": 1,
+              "missing_count": 0,
+              "status": "pass"
+            },
+            "A4": {
+              "duplicate_count": 0,
+              "status": "pass"
+            },
+            "A5": {
+              "answer_non_empty": "pass",
+              "answer_within_limit": "pass",
+              "citations_present": "pass",
+              "status": "pass"
+            },
+            "A6": {
+              "status": "pass"
+            },
+            "A7": {
+              "status": "pass"
+            },
+            "A8": {
+              "status": "not_applicable",
+              "violation_count": 0
+            }
+          },
+          "observed_outcome": "answered",
+          "observed_reason_code": null,
+          "observed_status": "answered",
+          "response_evidence_ids": [
+            "E1"
+          ],
+          "scenario_id": 2
+        },
+        {
+          "case_id": "C004",
+          "context_evidence_ids": [],
+          "emitted_evidence_ids": [],
+          "expected_outcome": "insufficient_evidence",
+          "generator_call_count": 0,
+          "language": "pt",
+          "metrics": {
+            "A1": {
+              "status": "pass"
+            },
+            "A2": {
+              "status": "not_applicable",
+              "unknown_count": 0
+            },
+            "A3": {
+              "excess_count": 0,
+              "matched_count": 0,
+              "missing_count": 0,
+              "status": "not_applicable"
+            },
+            "A4": {
+              "duplicate_count": 0,
+              "status": "not_applicable"
+            },
+            "A5": {
+              "answer_non_empty": "pass",
+              "answer_within_limit": "pass",
+              "citations_present": "not_applicable",
+              "status": "pass"
+            },
+            "A6": {
+              "status": "pass"
+            },
+            "A7": {
+              "status": "pass"
+            },
+            "A8": {
+              "status": "not_applicable",
+              "violation_count": 0
+            }
+          },
+          "observed_outcome": "insufficient_evidence",
+          "observed_reason_code": null,
+          "observed_status": "insufficient_evidence",
+          "response_evidence_ids": [],
+          "scenario_id": 3
+        },
+        {
+          "case_id": "C005",
+          "context_evidence_ids": [],
+          "emitted_evidence_ids": [],
+          "expected_outcome": "insufficient_evidence",
+          "generator_call_count": 0,
+          "language": "en",
+          "metrics": {
+            "A1": {
+              "status": "pass"
+            },
+            "A2": {
+              "status": "not_applicable",
+              "unknown_count": 0
+            },
+            "A3": {
+              "excess_count": 0,
+              "matched_count": 0,
+              "missing_count": 0,
+              "status": "not_applicable"
+            },
+            "A4": {
+              "duplicate_count": 0,
+              "status": "not_applicable"
+            },
+            "A5": {
+              "answer_non_empty": "pass",
+              "answer_within_limit": "pass",
+              "citations_present": "not_applicable",
+              "status": "pass"
+            },
+            "A6": {
+              "status": "pass"
+            },
+            "A7": {
+              "status": "pass"
+            },
+            "A8": {
+              "status": "not_applicable",
+              "violation_count": 0
+            }
+          },
+          "observed_outcome": "insufficient_evidence",
+          "observed_reason_code": null,
+          "observed_status": "insufficient_evidence",
+          "response_evidence_ids": [],
+          "scenario_id": 3
+        },
+        {
+          "case_id": "C006",
+          "context_evidence_ids": [
+            "E1",
+            "E2"
+          ],
+          "emitted_evidence_ids": [
+            "E1",
+            "E2"
+          ],
+          "expected_outcome": "answered",
+          "generator_call_count": 1,
+          "language": "pt",
+          "metrics": {
+            "A1": {
+              "status": "pass"
+            },
+            "A2": {
+              "status": "pass",
+              "unknown_count": 0
+            },
+            "A3": {
+              "excess_count": 0,
+              "matched_count": 2,
+              "missing_count": 0,
+              "status": "pass"
+            },
+            "A4": {
+              "duplicate_count": 0,
+              "status": "pass"
+            },
+            "A5": {
+              "answer_non_empty": "pass",
+              "answer_within_limit": "pass",
+              "citations_present": "pass",
+              "status": "pass"
+            },
+            "A6": {
+              "status": "pass"
+            },
+            "A7": {
+              "status": "pass"
+            },
+            "A8": {
+              "status": "pass",
+              "violation_count": 0
+            }
+          },
+          "observed_outcome": "answered",
+          "observed_reason_code": null,
+          "observed_status": "answered",
+          "response_evidence_ids": [
+            "E1",
+            "E2"
+          ],
+          "scenario_id": 4
+        },
+        {
+          "case_id": "C007",
+          "context_evidence_ids": [
+            "E1"
+          ],
+          "emitted_evidence_ids": [
+            "E1"
+          ],
+          "expected_outcome": "answered",
+          "generator_call_count": 1,
+          "language": "pt",
+          "metrics": {
+            "A1": {
+              "status": "pass"
+            },
+            "A2": {
+              "status": "pass",
+              "unknown_count": 0
+            },
+            "A3": {
+              "excess_count": 0,
+              "matched_count": 1,
+              "missing_count": 0,
+              "status": "pass"
+            },
+            "A4": {
+              "duplicate_count": 0,
+              "status": "pass"
+            },
+            "A5": {
+              "answer_non_empty": "pass",
+              "answer_within_limit": "pass",
+              "citations_present": "pass",
+              "status": "pass"
+            },
+            "A6": {
+              "status": "pass"
+            },
+            "A7": {
+              "status": "pass"
+            },
+            "A8": {
+              "status": "not_applicable",
+              "violation_count": 0
+            }
+          },
+          "observed_outcome": "answered",
+          "observed_reason_code": null,
+          "observed_status": "answered",
+          "response_evidence_ids": [
+            "E1"
+          ],
+          "scenario_id": 5
+        },
+        {
+          "case_id": "C008",
+          "context_evidence_ids": [
+            "E1"
+          ],
+          "emitted_evidence_ids": [
+            "E1"
+          ],
+          "expected_outcome": "answered",
+          "generator_call_count": 1,
+          "language": "pt",
+          "metrics": {
+            "A1": {
+              "status": "pass"
+            },
+            "A2": {
+              "status": "pass",
+              "unknown_count": 0
+            },
+            "A3": {
+              "excess_count": 0,
+              "matched_count": 1,
+              "missing_count": 0,
+              "status": "pass"
+            },
+            "A4": {
+              "duplicate_count": 0,
+              "status": "pass"
+            },
+            "A5": {
+              "answer_non_empty": "pass",
+              "answer_within_limit": "pass",
+              "citations_present": "pass",
+              "status": "pass"
+            },
+            "A6": {
+              "status": "pass"
+            },
+            "A7": {
+              "status": "pass"
+            },
+            "A8": {
+              "status": "not_applicable",
+              "violation_count": 0
+            }
+          },
+          "observed_outcome": "answered",
+          "observed_reason_code": null,
+          "observed_status": "answered",
+          "response_evidence_ids": [
+            "E1"
+          ],
+          "scenario_id": 6
+        },
+        {
+          "case_id": "C009",
+          "context_evidence_ids": [
+            "E1",
+            "E2"
+          ],
+          "emitted_evidence_ids": [
+            "E1",
+            "E2"
+          ],
+          "expected_outcome": "answered",
+          "generator_call_count": 1,
+          "language": "pt",
+          "metrics": {
+            "A1": {
+              "status": "pass"
+            },
+            "A2": {
+              "status": "pass",
+              "unknown_count": 0
+            },
+            "A3": {
+              "excess_count": 0,
+              "matched_count": 2,
+              "missing_count": 0,
+              "status": "pass"
+            },
+            "A4": {
+              "duplicate_count": 0,
+              "status": "pass"
+            },
+            "A5": {
+              "answer_non_empty": "pass",
+              "answer_within_limit": "pass",
+              "citations_present": "pass",
+              "status": "pass"
+            },
+            "A6": {
+              "status": "pass"
+            },
+            "A7": {
+              "status": "pass"
+            },
+            "A8": {
+              "status": "pass",
+              "violation_count": 0
+            }
+          },
+          "observed_outcome": "answered",
+          "observed_reason_code": null,
+          "observed_status": "answered",
+          "response_evidence_ids": [
+            "E1",
+            "E2"
+          ],
+          "scenario_id": 7
+        },
+        {
+          "case_id": "C010",
+          "context_evidence_ids": [
+            "E1",
+            "E2"
+          ],
+          "emitted_evidence_ids": [
+            "E1"
+          ],
+          "expected_outcome": "answered",
+          "generator_call_count": 1,
+          "language": "pt",
+          "metrics": {
+            "A1": {
+              "status": "pass"
+            },
+            "A2": {
+              "status": "pass",
+              "unknown_count": 0
+            },
+            "A3": {
+              "excess_count": 0,
+              "matched_count": 1,
+              "missing_count": 0,
+              "status": "pass"
+            },
+            "A4": {
+              "duplicate_count": 0,
+              "status": "pass"
+            },
+            "A5": {
+              "answer_non_empty": "pass",
+              "answer_within_limit": "pass",
+              "citations_present": "pass",
+              "status": "pass"
+            },
+            "A6": {
+              "status": "pass"
+            },
+            "A7": {
+              "status": "pass"
+            },
+            "A8": {
+              "status": "pass",
+              "violation_count": 0
+            }
+          },
+          "observed_outcome": "answered",
+          "observed_reason_code": null,
+          "observed_status": "answered",
+          "response_evidence_ids": [
+            "E1"
+          ],
+          "scenario_id": 8
+        },
+        {
+          "case_id": "C011",
+          "context_evidence_ids": [
+            "E1"
+          ],
+          "emitted_evidence_ids": [
+            "E1"
+          ],
+          "expected_outcome": "answered",
+          "generator_call_count": 1,
+          "language": "en",
+          "metrics": {
+            "A1": {
+              "status": "pass"
+            },
+            "A2": {
+              "status": "pass",
+              "unknown_count": 0
+            },
+            "A3": {
+              "excess_count": 0,
+              "matched_count": 1,
+              "missing_count": 0,
+              "status": "pass"
+            },
+            "A4": {
+              "duplicate_count": 0,
+              "status": "pass"
+            },
+            "A5": {
+              "answer_non_empty": "pass",
+              "answer_within_limit": "pass",
+              "citations_present": "pass",
+              "status": "pass"
+            },
+            "A6": {
+              "status": "pass"
+            },
+            "A7": {
+              "status": "pass"
+            },
+            "A8": {
+              "status": "not_applicable",
+              "violation_count": 0
+            }
+          },
+          "observed_outcome": "answered",
+          "observed_reason_code": null,
+          "observed_status": "answered",
+          "response_evidence_ids": [
+            "E1"
+          ],
+          "scenario_id": 9
+        },
+        {
+          "case_id": "C012",
+          "context_evidence_ids": [
+            "E1",
+            "E2"
+          ],
+          "emitted_evidence_ids": [
+            "E1",
+            "E2"
+          ],
+          "expected_outcome": "answered",
+          "generator_call_count": 1,
+          "language": "pt",
+          "metrics": {
+            "A1": {
+              "status": "pass"
+            },
+            "A2": {
+              "status": "pass",
+              "unknown_count": 0
+            },
+            "A3": {
+              "excess_count": 1,
+              "matched_count": 1,
+              "missing_count": 0,
+              "status": "fail"
+            },
+            "A4": {
+              "duplicate_count": 0,
+              "status": "pass"
+            },
+            "A5": {
+              "answer_non_empty": "pass",
+              "answer_within_limit": "pass",
+              "citations_present": "pass",
+              "status": "pass"
+            },
+            "A6": {
+              "status": "pass"
+            },
+            "A7": {
+              "status": "pass"
+            },
+            "A8": {
+              "status": "not_applicable",
+              "violation_count": 0
+            }
+          },
+          "observed_outcome": "answered",
+          "observed_reason_code": null,
+          "observed_status": "answered",
+          "response_evidence_ids": [
+            "E1",
+            "E2"
+          ],
+          "scenario_id": 10
+        },
+        {
+          "case_id": "C013",
+          "context_evidence_ids": [
+            "E1",
+            "E2"
+          ],
+          "emitted_evidence_ids": [
+            "E1"
+          ],
+          "expected_outcome": "answered",
+          "generator_call_count": 1,
+          "language": "pt",
+          "metrics": {
+            "A1": {
+              "status": "pass"
+            },
+            "A2": {
+              "status": "pass",
+              "unknown_count": 0
+            },
+            "A3": {
+              "excess_count": 0,
+              "matched_count": 1,
+              "missing_count": 1,
+              "status": "fail"
+            },
+            "A4": {
+              "duplicate_count": 0,
+              "status": "pass"
+            },
+            "A5": {
+              "answer_non_empty": "pass",
+              "answer_within_limit": "pass",
+              "citations_present": "pass",
+              "status": "pass"
+            },
+            "A6": {
+              "status": "pass"
+            },
+            "A7": {
+              "status": "pass"
+            },
+            "A8": {
+              "status": "not_applicable",
+              "violation_count": 0
+            }
+          },
+          "observed_outcome": "answered",
+          "observed_reason_code": null,
+          "observed_status": "answered",
+          "response_evidence_ids": [
+            "E1"
+          ],
+          "scenario_id": 11
+        },
+        {
+          "case_id": "C014",
+          "context_evidence_ids": [
+            "E1"
+          ],
+          "emitted_evidence_ids": [
+            "E1"
+          ],
+          "expected_outcome": "answered",
+          "generator_call_count": 1,
+          "language": "pt",
+          "metrics": {
+            "A1": {
+              "status": "pass"
+            },
+            "A2": {
+              "status": "pass",
+              "unknown_count": 0
+            },
+            "A3": {
+              "excess_count": 0,
+              "matched_count": 1,
+              "missing_count": 0,
+              "status": "pass"
+            },
+            "A4": {
+              "duplicate_count": 0,
+              "status": "pass"
+            },
+            "A5": {
+              "answer_non_empty": "pass",
+              "answer_within_limit": "pass",
+              "citations_present": "pass",
+              "status": "pass"
+            },
+            "A6": {
+              "status": "pass"
+            },
+            "A7": {
+              "status": "pass"
+            },
+            "A8": {
+              "status": "not_applicable",
+              "violation_count": 0
+            }
+          },
+          "observed_outcome": "answered",
+          "observed_reason_code": null,
+          "observed_status": "answered",
+          "response_evidence_ids": [
+            "E1"
+          ],
+          "scenario_id": 12
+        },
+        {
+          "case_id": "C015",
+          "context_evidence_ids": [
+            "E1"
+          ],
+          "emitted_evidence_ids": [
+            "E1"
+          ],
+          "expected_outcome": "rejected",
+          "generator_call_count": 1,
+          "language": "pt",
+          "metrics": {
+            "A1": {
+              "status": "not_applicable"
+            },
+            "A2": {
+              "status": "pass",
+              "unknown_count": 0
+            },
+            "A3": {
+              "excess_count": 0,
+              "matched_count": 1,
+              "missing_count": 0,
+              "status": "pass"
+            },
+            "A4": {
+              "duplicate_count": 0,
+              "status": "pass"
+            },
+            "A5": {
+              "answer_non_empty": "fail",
+              "answer_within_limit": "pass",
+              "citations_present": "pass",
+              "status": "fail"
+            },
+            "A6": {
+              "status": "pass"
+            },
+            "A7": {
+              "status": "pass"
+            },
+            "A8": {
+              "status": "not_applicable",
+              "violation_count": 0
+            }
+          },
+          "observed_outcome": "rejected",
+          "observed_reason_code": "empty_answer",
+          "observed_status": null,
+          "response_evidence_ids": [],
+          "scenario_id": 1
+        },
+        {
+          "case_id": "C016",
+          "context_evidence_ids": [
+            "E1"
+          ],
+          "emitted_evidence_ids": [
+            "E1"
+          ],
+          "expected_outcome": "rejected",
+          "generator_call_count": 1,
+          "language": "pt",
+          "metrics": {
+            "A1": {
+              "status": "not_applicable"
+            },
+            "A2": {
+              "status": "pass",
+              "unknown_count": 0
+            },
+            "A3": {
+              "excess_count": 0,
+              "matched_count": 1,
+              "missing_count": 0,
+              "status": "pass"
+            },
+            "A4": {
+              "duplicate_count": 0,
+              "status": "pass"
+            },
+            "A5": {
+              "answer_non_empty": "pass",
+              "answer_within_limit": "fail",
+              "citations_present": "pass",
+              "status": "fail"
+            },
+            "A6": {
+              "status": "pass"
+            },
+            "A7": {
+              "status": "pass"
+            },
+            "A8": {
+              "status": "not_applicable",
+              "violation_count": 0
+            }
+          },
+          "observed_outcome": "rejected",
+          "observed_reason_code": "answer_too_long",
+          "observed_status": null,
+          "response_evidence_ids": [],
+          "scenario_id": 2
+        },
+        {
+          "case_id": "C017",
+          "context_evidence_ids": [
+            "E1"
+          ],
+          "emitted_evidence_ids": [],
+          "expected_outcome": "rejected",
+          "generator_call_count": 1,
+          "language": "en",
+          "metrics": {
+            "A1": {
+              "status": "not_applicable"
+            },
+            "A2": {
+              "status": "pass",
+              "unknown_count": 0
+            },
+            "A3": {
+              "excess_count": 0,
+              "matched_count": 0,
+              "missing_count": 1,
+              "status": "fail"
+            },
+            "A4": {
+              "duplicate_count": 0,
+              "status": "pass"
+            },
+            "A5": {
+              "answer_non_empty": "pass",
+              "answer_within_limit": "pass",
+              "citations_present": "fail",
+              "status": "fail"
+            },
+            "A6": {
+              "status": "pass"
+            },
+            "A7": {
+              "status": "pass"
+            },
+            "A8": {
+              "status": "not_applicable",
+              "violation_count": 0
+            }
+          },
+          "observed_outcome": "rejected",
+          "observed_reason_code": "missing_citations",
+          "observed_status": null,
+          "response_evidence_ids": [],
+          "scenario_id": 11
+        },
+        {
+          "case_id": "C018",
+          "context_evidence_ids": [
+            "E1",
+            "E2"
+          ],
+          "emitted_evidence_ids": [
+            "E1",
+            "E1"
+          ],
+          "expected_outcome": "rejected",
+          "generator_call_count": 1,
+          "language": "pt",
+          "metrics": {
+            "A1": {
+              "status": "not_applicable"
+            },
+            "A2": {
+              "status": "pass",
+              "unknown_count": 0
+            },
+            "A3": {
+              "excess_count": 0,
+              "matched_count": 1,
+              "missing_count": 0,
+              "status": "pass"
+            },
+            "A4": {
+              "duplicate_count": 1,
+              "status": "fail"
+            },
+            "A5": {
+              "answer_non_empty": "pass",
+              "answer_within_limit": "pass",
+              "citations_present": "pass",
+              "status": "pass"
+            },
+            "A6": {
+              "status": "pass"
+            },
+            "A7": {
+              "status": "pass"
+            },
+            "A8": {
+              "status": "not_applicable",
+              "violation_count": 0
+            }
+          },
+          "observed_outcome": "rejected",
+          "observed_reason_code": "duplicate_evidence_ids",
+          "observed_status": null,
+          "response_evidence_ids": [],
+          "scenario_id": 9
+        },
+        {
+          "case_id": "C019",
+          "context_evidence_ids": [
+            "E1",
+            "E2"
+          ],
+          "emitted_evidence_ids": [
+            "E1",
+            "E9"
+          ],
+          "expected_outcome": "rejected",
+          "generator_call_count": 1,
+          "language": "en",
+          "metrics": {
+            "A1": {
+              "status": "not_applicable"
+            },
+            "A2": {
+              "status": "fail",
+              "unknown_count": 1
+            },
+            "A3": {
+              "excess_count": 0,
+              "matched_count": 1,
+              "missing_count": 0,
+              "status": "pass"
+            },
+            "A4": {
+              "duplicate_count": 0,
+              "status": "pass"
+            },
+            "A5": {
+              "answer_non_empty": "pass",
+              "answer_within_limit": "pass",
+              "citations_present": "pass",
+              "status": "pass"
+            },
+            "A6": {
+              "status": "pass"
+            },
+            "A7": {
+              "status": "pass"
+            },
+            "A8": {
+              "status": "not_applicable",
+              "violation_count": 0
+            }
+          },
+          "observed_outcome": "rejected",
+          "observed_reason_code": "unknown_evidence_ids",
+          "observed_status": null,
+          "response_evidence_ids": [],
+          "scenario_id": 8
+        }
+      ],
+      "corpus_version": "1.0.0",
+      "execution_config": {
+        "institution_name": "Instituição Sintética de Avaliação",
+        "max_answer_chars": 4000,
+        "max_context_chars": 12000
+      },
+      "population": "P1",
+      "rubric_version": "1.0.0"
+    }
+  },
+  "reproducibility": {
+    "digest_identical": true,
+    "metric": "R1",
+    "result_digest": "75d936182d9b8a675b43da208f04e1e7168c439c1fdbace04a865283731dd345",
+    "results_identical": true,
+    "runs": 2
+  }
+}
