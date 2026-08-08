@@ -7,7 +7,7 @@ Especificação inicial, segundo [`04-moment-template.md`](../04-moment-template
 | Campo | Valor |
 | --- | --- |
 | Momento | 5 — Qualidade das respostas fundamentadas e das fontes |
-| Estado | Fases 0, 1, 2 e 3 **aprovadas** — as quatro fases previstas foram executadas. O momento está **em fecho**: falta apenas integrar uma correção de tooling da Fase 3 (R1 passou a bloquear a publicação da baseline) |
+| Estado | Fases 0, 1, 2 e 3 **aprovadas** — as quatro fases previstas foram executadas. O Momento 5 está **concluído**; o fecho corretivo foi integrado pelo Pull Request #33, merge `0069809ba3c4acd506990242af13edcb6bda57d4` (ajuste de tooling da Fase 3, sem alterar a baseline) |
 | Commit base | `776e31e` (2026-08-06) |
 | Branch da Fase 0 | `docs/moment-05-phase-0` |
 | Aprovação da Fase 0 | merge humano do Pull Request #29, integrado na `main` em `2b6247c` — ver [Proveniência e aprovação](#proveniência-e-aprovação) |
@@ -183,9 +183,10 @@ métricas híbridas; **nenhum defeito comportamental real foi observado em P1** 
 as oito células `fail` correspondem a expectativas declaradas no corpus e
 nenhuma ficou por explicar. Nenhuma correção comportamental foi implementada.
 
-Correção posterior ao merge, sem alterar a baseline: a confirmação de R1 passou
-a ser **condição de publicação** do artefacto e não apenas um campo do
-relatório. É a única razão pela qual o momento continua em fecho.
+Fecho corretivo posterior ao merge da Fase 3, sem alterar a baseline: a
+confirmação de R1 passou a ser **condição de publicação** do artefacto e não
+apenas um campo do relatório. Esta correção foi integrada pelo Pull Request
+#33, merge `0069809ba3c4acd506990242af13edcb6bda57d4`, concluindo o Momento 5.
 
 Executar a avaliação e produzir o relatório de baseline. "Baseline" não é uma
 coisa só: são três populações distintas, com estatuto distinto — ver
