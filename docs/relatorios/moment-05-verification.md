@@ -28,6 +28,13 @@ A Fase 3 e o Momento 5 **não estão concluídos**: passam a estar apenas com o
 merge humano do Pull Request desta branch. Após esse merge, resta o Momento 6 —
 UX e experiência operacional.
 
+> **Atualização de fecho (2026-08-08).** A Fase 3 foi aprovada pelo merge humano
+> do Pull Request #32, integrado na `main` em `0ed640cb`. Uma verificação
+> posterior encontrou o achado A3 abaixo, corrigido na branch
+> `fix/moment-05-closeout`: R1 passou a ser condição de publicação da baseline.
+> Os resultados históricos desta verificação não foram alterados — a baseline
+> continua a mesma e o `result_digest` é o mesmo.
+
 ## Estado inicial
 
 | Item | Valor |
@@ -167,7 +174,8 @@ camada de origem a classificar, e
 | # | Severidade | Achado | Evidência | Estado |
 | --- | --- | --- | --- | --- |
 | A1 | Baixa | O relatório de execução da Fase 2 grava `output_path` como caminho absoluto da máquina. Aceitável num ficheiro temporário, inaceitável num artefacto versionado, que o gate de documentação proíbe | O CLI da Fase 2 gravou `C:/…/scratchpad/r1.json` nas execuções de verificação | resolvido — o compositor grava o caminho relativo ao repositório, fixado por teste. O CLI da Fase 2 não foi alterado |
-| A2 | Baixa | [`02-current-state.md`](../ai/02-current-state.md) mantém "não existe medição reprodutível da qualidade das respostas", verdadeiro em `aa72fcd` e inexato depois do merge desta fase | Secção *Limitações conhecidas* do snapshot | permanece — o snapshot descreve `aa72fcd`, onde a baseline não existe; o ajuste pertence ao fecho do momento |
+| A2 | Baixa | [`02-current-state.md`](../ai/02-current-state.md) mantém "não existe medição reprodutível da qualidade das respostas", verdadeiro em `aa72fcd` e inexato depois do merge desta fase | Secção *Limitações conhecidas* do snapshot | resolvido no fecho — o snapshot passou a `0ed640cb` e a limitação foi substituída pelo alcance real da baseline (só P1; P2/P3 não medidas) |
+| A3 | Média | `build_moment05_baseline` registava `results_identical` e `digest_identical` mas publicava a baseline mesmo quando qualquer um era `false`; uma execução não reproduzível podia substituir uma baseline válida | Encontrado por verificação posterior ao merge do PR #32 | resolvido em `fix/moment-05-closeout` — R1 é verificado antes de qualquer escrita e uma execução não reproduzível termina com código 5 sem publicar |
 
 Nenhum dos achados exige alteração de comportamento da aplicação.
 

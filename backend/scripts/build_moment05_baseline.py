@@ -12,6 +12,11 @@ a baseline em torno de um deles. Nada aqui reexecuta a avaliação nem
 recalcula o `result_digest`: a Fase 3 consome a saída da Fase 2 tal como
 ela a produz, e o código da Fase 2 fica intacto.
 
+R1 é **condição de publicação**, não apenas um campo do relatório: se os
+dois `results` ou os dois `result_digest` divergirem, nada é escrito e o
+comando termina com erro. Uma baseline não reproduzível não é baseline, e
+uma anterior nunca é substituída por ela.
+
 O JSON é a **única fonte primária** da baseline. D9 torna o resumo em
 Markdown opcional e ele não é produzido.
 
@@ -19,7 +24,8 @@ A política de caminhos, a resolução do `commit_sha` e a neutralização do
 fornecedor são as do entrypoint da Fase 2, reutilizadas em vez de
 duplicadas: duas cópias da mesma política acabariam por divergir.
 
-Códigos de saída: os mesmos da Fase 2 — 0, 2, 3, 4, 8 e 9.
+Códigos de saída: os da Fase 2 — 0, 2, 3, 4, 8 e 9 — mais o 5, exclusivo
+desta fase, para execução não reproduzível.
 """
 
 import argparse
@@ -44,6 +50,10 @@ from scripts.evaluate_answering_offline import (
 from scripts.evaluate_answering_offline import main as evaluate_offline
 
 REPRODUCIBILITY_RUNS = 2
+
+# Código próprio da Fase 3: a Fase 2 não tem este modo de falha, porque R1
+# só é observável comparando duas execuções completas.
+EXIT_NOT_REPRODUCIBLE = 5
 
 
 def _default_repository_root() -> Path:
@@ -122,6 +132,19 @@ def main(
             )
 
     baseline = build_baseline(reports[0], reports[1], output_path=relative_output)
+    reproducibility = baseline.reproducibility
+    if not (reproducibility.results_identical and reproducibility.digest_identical):
+        # Verificado **antes** de qualquer escrita: sem isto, uma execução
+        # não reproduzível publicaria uma baseline e poderia substituir a
+        # anterior, que era válida.
+        _error(
+            "the two evaluation runs did not reproduce each other "
+            f"(results_identical={str(reproducibility.results_identical).lower()}, "
+            f"digest_identical={str(reproducibility.digest_identical).lower()}); "
+            "no baseline was written"
+        )
+        return EXIT_NOT_REPRODUCIBLE
+
     payload = baseline.model_dump(mode="json")
     try:
         atomic_write_text(json_path, report_file_text(payload), overwrite=args.overwrite)
@@ -132,7 +155,6 @@ def main(
         _error("failed to write the baseline file")
         return EXIT_WRITE_FAILED
 
-    reproducibility = baseline.reproducibility
     print(f"baseline built: population={baseline.report.results.population}")
     print(f"cases={baseline.report.results.case_count}")
     print(f"result_digest={baseline.report.result_digest}")

@@ -7,7 +7,7 @@ Especificação inicial, segundo [`04-moment-template.md`](../04-moment-template
 | Campo | Valor |
 | --- | --- |
 | Momento | 5 — Qualidade das respostas fundamentadas e das fontes |
-| Estado | Fases 0, 1 e 2 **aprovadas**; Fase 3 **em curso**, não concluída enquanto o respetivo Pull Request não estiver fundido na `main` |
+| Estado | Fases 0, 1, 2 e 3 **aprovadas** — as quatro fases previstas foram executadas. O momento está **em fecho**: falta apenas integrar uma correção de tooling da Fase 3 (R1 passou a bloquear a publicação da baseline) |
 | Commit base | `776e31e` (2026-08-06) |
 | Branch da Fase 0 | `docs/moment-05-phase-0` |
 | Aprovação da Fase 0 | merge humano do Pull Request #29, integrado na `main` em `2b6247c` — ver [Proveniência e aprovação](#proveniência-e-aprovação) |
@@ -16,6 +16,7 @@ Especificação inicial, segundo [`04-moment-template.md`](../04-moment-template
 | Branch da Fase 2 | `feat/moment-05-phase-2`, a partir de `7846f08` |
 | Aprovação da Fase 2 | merge humano do Pull Request #31, integrado na `main` em `aa72fcd` |
 | Branch da Fase 3 | `feat/moment-05-phase-3`, a partir de `aa72fcd` |
+| Aprovação da Fase 3 | merge humano do Pull Request #32, integrado na `main` em `0ed640cb` |
 | Divisão em Pull Requests | quatro, um por fase — ver [D10](#d10--divisão-em-pull-requests) |
 
 ## Problema
@@ -169,11 +170,22 @@ reproduzíveis.
 
 ### Fase 3 — Baseline
 
-**Em curso na branch `feat/moment-05-phase-3`; não concluída enquanto o
-respetivo Pull Request não estiver fundido na `main`.** A baseline produzida é
+**Aprovada pelo merge humano do Pull Request #32, integrado na `main` em
+`0ed640cb`.** A baseline produzida é
 [`docs/relatorios/moment-05-baseline-p1.json`](../../relatorios/moment-05-baseline-p1.json),
 fonte primária única; a verificação desta fase está em
 [`moment-05-verification.md`](../../relatorios/moment-05-verification.md).
+
+O que a execução produziu, tal como consta desse artefacto: a população **P1**
+foi medida sobre os 19 casos do corpus aprovado; **P2 e P3 ficaram
+`not_measured`**, e com elas todas as métricas humanas e as partes humanas das
+métricas híbridas; **nenhum defeito comportamental real foi observado em P1** —
+as oito células `fail` correspondem a expectativas declaradas no corpus e
+nenhuma ficou por explicar. Nenhuma correção comportamental foi implementada.
+
+Correção posterior ao merge, sem alterar a baseline: a confirmação de R1 passou
+a ser **condição de publicação** do artefacto e não apenas um campo do
+relatório. É a única razão pela qual o momento continua em fecho.
 
 Executar a avaliação e produzir o relatório de baseline. "Baseline" não é uma
 coisa só: são três populações distintas, com estatuto distinto — ver
