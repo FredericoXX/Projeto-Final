@@ -17,8 +17,8 @@ repositório, o repositório está certo e o documento está desatualizado.
 
 ## Momentos
 
-Momentos 1 a 4 concluídos. Momento 5 em curso —
-[`moments/moment-05.md`](moments/moment-05.md). As decisões de método (Fase 0)
+Momentos 1 a 5 concluídos — [`moments/moment-05.md`](moments/moment-05.md). As
+decisões de método (Fase 0)
 foram aprovadas pelo merge humano do Pull Request #29 (`2b6247c`), e o corpus
 sintético com a rubrica (Fase 1) pelo merge humano do **Pull Request #30**,
 integrado na `main` em `7846f08`. O mecanismo de avaliação offline (Fase 2) foi
