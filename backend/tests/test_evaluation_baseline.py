@@ -521,7 +521,7 @@ def test_non_reproducible_runs_never_replace_an_existing_baseline(
     )
     assert exit_code == EXIT_NOT_REPRODUCIBLE
     assert output.read_text(encoding="utf-8") == "baseline anterior válida"
-    assert [path.name for path in tmp_path.iterdir() if path.suffix == ".json"] == [
+    assert sorted(path.name for path in tmp_path.iterdir() if path.suffix == ".json") == [
         "baseline.json",
         "source.json",
     ]
