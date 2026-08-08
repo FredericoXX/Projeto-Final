@@ -1,11 +1,13 @@
 # Estado atual
 
-**Observação:** 2026-08-08 · commit `0ed640cb` (`main`) · repositório
+**Observação:** 2026-08-08 · commit `0069809ba3c4acd506990242af13edcb6bda57d4` (`main`) · repositório
 `FredericoXX/Projeto-Final`
 
-Os factos abaixo descrevem o conteúdo de `0ed640cb`, o merge do Pull Request #32
-que integrou a Fase 3 do Momento 5. Trabalho em curso em branches não fundidas
-não é estado deste SHA e, quando referido, é identificado como tal.
+Os factos abaixo descrevem o conteúdo de
+`0069809ba3c4acd506990242af13edcb6bda57d4`, o merge do Pull Request #33 que
+fechou de forma corretiva o Momento 5 após a integração da Fase 3. Trabalho em
+curso em branches não fundidas não é estado deste SHA e, quando referido, é
+identificado como tal.
 
 Snapshot factual. Não contém regras: os princípios estão em
 [`01-project-constitution.md`](01-project-constitution.md), os critérios de
@@ -15,17 +17,18 @@ repositório, o repositório está certo e o documento está desatualizado.
 
 ## Momentos
 
-Momentos 1 a 4 concluídos. Momento 5 em curso —
-[`moments/moment-05.md`](moments/moment-05.md). As decisões de método (Fase 0)
+Momentos 1 a 5 concluídos — [`moments/moment-05.md`](moments/moment-05.md). As
+decisões de método (Fase 0)
 foram aprovadas pelo merge humano do Pull Request #29 (`2b6247c`), e o corpus
 sintético com a rubrica (Fase 1) pelo merge humano do **Pull Request #30**,
 integrado na `main` em `7846f08`. O mecanismo de avaliação offline (Fase 2) foi
 aprovado pelo merge humano do **Pull Request #31**, integrado na `main` em
 `aa72fcd`, e a baseline (Fase 3) pelo merge humano do **Pull Request #32**,
-integrado na `main` em `0ed640cb`. As quatro fases previstas foram executadas; o
-momento está **em fecho**, à espera de integrar uma correção de tooling da Fase 3
-que não altera a baseline. Momento 6 por iniciar. O mapa oficial dos temas está
-no [`README.md`](README.md#momentos).
+integrado na `main` em `0ed640cb`. O fecho corretivo foi integrado pelo
+**Pull Request #33**, merge `0069809ba3c4acd506990242af13edcb6bda57d4`, sem
+alterar a baseline. Com este merge, o Momento 5 está concluído e o Momento 6 é
+o próximo a iniciar. O mapa oficial dos temas está no
+[`README.md`](README.md#momentos).
 
 ## Arquitetura
 
