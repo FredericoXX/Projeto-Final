@@ -148,8 +148,15 @@ class AssessmentKind(StrEnum):
     HYBRID = "hybrid"
 
 
-def _normalized(text: str) -> str:
-    """Normalização usada na comparação literal de `forbidden_claims`."""
+def normalize_literal_text(text: str) -> str:
+    """Normalização única da comparação literal de `forbidden_claims`.
+
+    Colapsa espaços e ignora maiúsculas. É deliberadamente literal: a
+    métrica A8 apura-se **apenas** por correspondência normalizada, nunca
+    por semântica, aproximação ou modelo. Usada pela regra cruzada do
+    corpus (Fase 1) e pela métrica A8 (Fase 2), para que exista uma só
+    implementação.
+    """
     return " ".join(text.split()).casefold()
 
 
@@ -456,9 +463,9 @@ class CorpusCase(EvaluationModel):
             raise ValueError(msg)
         if self.generator_output is None:
             return
-        answer = _normalized(self.generator_output.answer)
+        answer = normalize_literal_text(self.generator_output.answer)
         for claim in self.forbidden_claims:
-            if _normalized(claim) in answer:
+            if normalize_literal_text(claim) in answer:
                 msg = (
                     f"{self.case_id}: o generator_output declarado contém uma forbidden_claim; "
                     "o corpus não pode violar por construção a sua própria expectativa"
