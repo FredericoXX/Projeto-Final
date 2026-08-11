@@ -8,11 +8,13 @@ Duas etapas determinísticas e explicáveis:
   variantes ativas por ordem de prioridade. Cada variante é executada
   contra o índice GIN com a configuração FTS por idioma
   (app.retrieval.fts_config), limitada em SQL à sua quota — nenhuma
-  consulta corre sem LIMIT. Os filtros de segurança (instituição, estado,
-  idioma, validade, official_only, versão processed mais recente) são
-  idênticos em todas as variantes e aplicados no PostgreSQL. Os candidatos
-  são agregados e deduplicados por chunk_id, preservando a melhor
-  estratégia e o melhor score FTS cru.
+  consulta corre sem LIMIT. A admissibilidade documental (instituição,
+  estado, idioma, validade, official_only, versão processed mais recente)
+  **não é definida aqui**: vem de ``RetrievalEligibility``, em
+  app.documents.retrievability, é idêntica em todas as variantes e
+  continua aplicada no PostgreSQL. Os candidatos são agregados e
+  deduplicados por chunk_id, preservando a melhor estratégia e o melhor
+  score FTS cru.
 
   Como a soma das quotas nunca excede o orçamento, **não existe qualquer
   corte global por FTS cru depois da agregação**: tudo o que as consultas
@@ -42,6 +44,11 @@ from sqlalchemy import Select, func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
+from app.documents.retrievability import (
+    RetrievabilityContext,
+    RetrievalEligibility,
+    latest_processed_version_subquery,
+)
 from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
 from app.models.document_version import DocumentVersion
@@ -322,25 +329,21 @@ class PostgresLexicalRetriever:
         statement = self._build_statement(ts_query, context, quota, official_only)
         return list(db.execute(statement))
 
-    def _latest_processed_subquery(self, context: RetrievalContext):
-        """Window restrita à instituição e a versões processed: rn=1 é a
-        maior version_number processada por documento."""
-        return (
-            select(
-                DocumentVersion.id.label("version_id"),
-                DocumentVersion.document_id.label("document_id"),
-                func.row_number()
-                .over(
-                    partition_by=DocumentVersion.document_id,
-                    order_by=DocumentVersion.version_number.desc(),
-                )
-                .label("rn"),
-            )
-            .where(
-                DocumentVersion.institution_id == context.institution_id,
-                DocumentVersion.processing_status == "processed",
-            )
-            .subquery("latest_processed_versions")
+    def _retrievability_context(
+        self, context: RetrievalContext, official_only: bool
+    ) -> RetrievabilityContext:
+        """Traduz o contexto de recuperação no contexto documental.
+
+        Não acrescenta configuração nenhuma: os quatro valores já existem
+        na chamada. ``official_only`` é parâmetro da pesquisa e não do
+        ``RetrievalContext``, que descreve apenas quem pergunta, em que
+        idioma e a que data.
+        """
+        return RetrievabilityContext(
+            institution_id=context.institution_id,
+            language=context.language,
+            reference_date=context.reference_date,
+            official_only=official_only,
         )
 
     def _build_statement(
@@ -354,11 +357,22 @@ class PostgresLexicalRetriever:
 
         Traz numa única consulta (sem N+1) tudo o que o reranking e o
         diagnóstico precisam, incluindo os metadados estruturais usados só
-        internamente. Os filtros são idênticos aos da baseline e aplicados
-        no PostgreSQL antes do reranking. O LIMIT é a quota da variante,
-        não o top_k final.
+        internamente. O LIMIT é a quota da variante, não o top_k final.
+
+        A admissibilidade documental vem inteira de ``RetrievalEligibility``
+        e continua a executar no PostgreSQL: C1–C4 e C6–C11 como predicados
+        do ``WHERE``, C5 pela subquery canónica. O que fica aqui é o
+        mecanismo de pesquisa — a correspondência lexical, a ordenação de
+        desempate e a quota.
+
+        O join a ``DocumentVersion`` existe porque a política referencia as
+        colunas da versão (C3 e C4); é sobre a chave primária, pelo que não
+        altera a cardinalidade. C3 e C4 já eram implicadas pela subquery de
+        C5, que só considera versões ``processed`` da instituição: aplicá-las
+        explicitamente não muda o conjunto devolvido.
         """
-        latest_processed = self._latest_processed_subquery(context)
+        retrievability = self._retrievability_context(context, official_only)
+        latest_processed = latest_processed_version_subquery(retrievability)
         score = func.ts_rank_cd(DocumentChunk.search_vector, ts_query).label("score")
 
         statement = (
@@ -383,21 +397,17 @@ class PostgresLexicalRetriever:
             )
             .join(Document, Document.id == DocumentChunk.document_id)
             .join(
+                DocumentVersion,
+                DocumentVersion.id == DocumentChunk.document_version_id,
+            )
+            .join(
                 latest_processed,
                 (latest_processed.c.version_id == DocumentChunk.document_version_id)
                 & (latest_processed.c.document_id == DocumentChunk.document_id),
             )
             .where(
+                *RetrievalEligibility.as_sql_filters(retrievability),
                 latest_processed.c.rn == 1,
-                DocumentChunk.institution_id == context.institution_id,
-                Document.institution_id == context.institution_id,
-                Document.is_active.is_(True),
-                Document.language == context.language,
-                DocumentChunk.language == context.language,
-                (Document.valid_from.is_(None))
-                | (Document.valid_from <= context.reference_date),
-                (Document.valid_until.is_(None))
-                | (Document.valid_until >= context.reference_date),
                 DocumentChunk.search_vector.op("@@")(ts_query),
             )
             # Ordenação apenas para escolher deterministicamente os
@@ -410,8 +420,6 @@ class PostgresLexicalRetriever:
             )
             .limit(quota)
         )
-        if official_only:
-            statement = statement.where(Document.official_source.is_(True))
         return statement
 
     def _build_trace(
