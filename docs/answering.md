@@ -178,13 +178,26 @@ Os locks ficam retidos até ao commit, portanto uma desativação ou perda de
 privilégio concorrente não pode atravessar a janela entre autorização e
 persistência.
 
-A revalidação confirma tenant, IDs, estado `processed`, documento ativo,
-idioma, validade e `official_only`, além dos metadados recuperados. Um SHA-256
-é calculado internamente sobre o conteúdo devolvido pelo Retriever — e fica
-ausente de JSON, schema e OpenAPI —, depois comparado com o valor bloqueado e
-com um hash recalculado sobre `content`;
-também se verificam `normalized_content` e o trecho correspondente de
-`extracted_text`. Uma alteração concorrente responde 409 e nada é persistido.
+A **admissibilidade documental** desta revalidação — estado `processed`,
+documento ativo, idioma do documento e do chunk, validade e `official_only` —
+não é definida pelo service: é decidida por `CitationPersistenceEligibility`, de
+`app.documents.retrievability`. Essa política partilha C1–C4 e C6–C11 com o
+retrieval, mas **deliberadamente não exige C5** (ser a versão `processed` mais
+recente): uma versão N usada para gerar a resposta continua a ser a fonte
+correta se N+1 for processada antes da persistência. Registar N+1 seria
+factualmente falso, e recusar por conflito descartaria uma resposta legítima por
+causa de um carregamento concorrente que nada tem que ver com ela.
+
+As restantes verificações continuam a ser responsabilidade do service, e **não**
+fazem parte da política: a consistência dos identificadores (`identifiers_match`,
+defesa em profundidade sobre a FK composta) e a integridade do snapshot. Um
+SHA-256 é calculado internamente sobre o conteúdo devolvido pelo Retriever — e
+fica ausente de JSON, schema e OpenAPI —, depois comparado com o valor bloqueado
+e com um hash recalculado sobre `content`; também se verificam os metadados
+recuperados (`metadata_unchanged`), o `normalized_content` e o trecho
+correspondente de `extracted_text`. Uma alteração concorrente responde 409, com
+mensagem genérica que nunca revela a condição concreta que falhou, e nada é
+persistido.
 
 Só depois são inseridas, nesta ordem, a mensagem user, a assistant e as
 `message_sources`; existe um único commit. Qualquer erro de flush, constraint

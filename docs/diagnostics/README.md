@@ -92,9 +92,28 @@ que o retrieval lexical aplica no PostgreSQL. Duas consequências observáveis:
 - passa a constar `chunk_language_compatible` — a condição sobre o idioma do
   **chunk**, que a ferramenta não avaliava. Era a divergência D2 caracterizada
   no Momento 6: perante um chunk cujo idioma diverge do documento, o retrieval
-  excluía a linha e o diagnóstico continuava a declará-la elegível. É a única
-  mudança de veredicto desta migração, e corrige o diagnóstico — o retrieval já
-  aplicava a condição.
+  excluía a linha e o diagnóstico continuava a declará-la elegível. A correção
+  é no diagnóstico — o retrieval já aplicava a condição.
+
+D2/C8 é a mudança deliberada relativa a **dados com chunks divergentes**, mas
+não é a única mudança possível de veredicto. Como a política avalia candidatos
+e não versões, o v5 passou a raciocinar sobre os chunks da versão, e daí resulta
+um segundo caso: uma versão `processed` **sem qualquer chunk** não fornece
+candidato algum ao retrieval, pelo que deixa de ser reportada como recuperável
+apenas pelos seus metadados. Não é uma condição nova da política — não existe
+nenhuma condição «a versão tem chunks» — é a ausência de sujeitos para avaliar,
+e a agregação devolve «não elegível» sem qualquer caso especial. Nessa situação
+o relatório não lista condição alguma, exatamente porque não houve nada para
+avaliar. Ambos os casos estão fixados por teste em
+`test_diagnostics_uses_retrieval_eligibility.py`.
+
+Quando a versão tem vários chunks, a agregação é **existencial**: a versão
+oferece evidência se pelo menos um dos seus chunks for admissível, que é a
+mesma pergunta que o retrieval responde. Uma versão com chunks de idiomas
+mistos continua, por isso, elegível — mas a divergência não fica escondida: o
+detalhe da condição declara quantos chunks a satisfazem (`N of M chunks satisfy
+it`). As condições que não dependem do chunk valem o mesmo para todos e não
+trazem contagem.
 
 Os nomes históricos das restantes condições mantêm-se. As condições de
 isolamento institucional que a política também avalia não são expostas: as

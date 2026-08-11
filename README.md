@@ -111,10 +111,13 @@ verificações usadas pela integração contínua:
 ```powershell
 pytest -q
 ruff check .
-mypy app tests
+mypy app tests scripts
 alembic upgrade head
 alembic check
 ```
+
+O gate completo, incluindo `docker compose config --quiet` e o smoke test de
+importação, está em [`docs/ai/03-quality-gates.md`](docs/ai/03-quality-gates.md).
 
 ## Inicialização de uma instituição
 
