@@ -320,6 +320,13 @@ também os metadados estruturais (`page_number`, `section_title`,
 validade, `official_only`, versão `processed` mais recente. O reranker nunca
 recebe chunks de outra instituição.
 
+Esses filtros **não são definidos pelo retriever**. São a política
+`RetrievalEligibility` de `app/documents/retrievability.py`, aplicada por
+`_build_statement` através de `as_sql_filters`, com a versão `processed`
+efetiva pela subquery canónica do mesmo módulo. Continuam a executar no
+PostgreSQL; o que pertence ao retrieval lexical é o mecanismo de pesquisa —
+correspondência FTS, quotas, ordenação e `LIMIT`.
+
 Consultas com sintaxe `websearch` explícita — frases entre aspas, `OR` ou
 `-termos` negados — planeiam apenas a variante exata, para que a intenção nunca
 seja relaxada (`matricula -propinas` nunca volta a procurar “propinas”). Uma
