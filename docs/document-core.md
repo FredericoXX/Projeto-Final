@@ -12,12 +12,17 @@ A etapa seguinte desta fase acrescentou a segmentação do texto extraído
 em *chunks* internos (tabela `document_chunks`, sem endpoint público) —
 ver a secção "Segmentos de documentos" em [`docs/database.md`](database.md).
 
-**Fora do âmbito desta fase** (deliberadamente não implementado):
-embeddings, pgvector no domínio documental, pesquisa semântica ou híbrida,
-RAG completo, integração com LLM, agentes, OCR, importação
-de páginas web, filas/workers, S3 e interface frontend. A abordagem de
-recuperação de informação continua a ser uma questão em aberto para a
+**Fora do âmbito da entrega inicial desta fase** (deliberadamente não
+implementado *então*): embeddings, pgvector no domínio documental, pesquisa
+semântica ou híbrida, RAG completo, integração com LLM, agentes, OCR,
+importação de páginas web, filas/workers, S3 e interface frontend. A abordagem
+de recuperação de informação continua a ser uma questão em aberto para a
 revisão da literatura.
+
+Nem tudo nesta lista continua por implementar: **o OCR foi implementado
+posteriormente**, como extração local e offline, e está descrito abaixo em
+["Extração com OCR local"](#extração-com-ocr-local-pdfs-digitalizados). A lista
+regista o âmbito da primeira entrega, não o estado atual do projeto.
 
 ## Modelo de dados
 
@@ -35,12 +40,21 @@ original vive no armazenamento local e a base guarda apenas os
 metadados, o caminho relativo (`storage_path`) e o texto extraído
 (`extracted_text`).
 
-O isolamento multi-institucional é garantido em duas camadas, como no
-resto do projeto: filtros por `institution_id` nos services e foreign
-keys compostas no PostgreSQL (`documents.created_by_user_id`,
-`document_versions.document_id` e
-`document_versions.uploaded_by_user_id` têm de pertencer à mesma
-instituição da própria linha). Ver
+O isolamento multi-institucional resulta de duas camadas com papéis
+**distintos**, como no resto do projeto — e a distinção importa, porque uma
+garantia sobredeclarada é pior do que nenhuma:
+
+- os **filtros por `institution_id` nos services** são o que efetivamente
+  decide o isolamento de leitura e escrita. Uma consulta escrita sem esse filtro
+  **não** é bloqueada pela base de dados;
+- as **foreign keys compostas no PostgreSQL** (`documents.created_by_user_id`,
+  `document_versions.document_id` e `document_versions.uploaded_by_user_id` têm
+  de pertencer à mesma instituição da própria linha) garantem **integridade
+  relacional**: impedem que linhas de instituições diferentes fiquem
+  relacionadas entre si. Não impedem uma `SELECT` sem filtro institucional de ler
+  linhas de outra instituição.
+
+**Não existe Row-Level Security** nem mecanismo equivalente. Ver
 [`docs/database.md`](database.md) para o esquema completo.
 
 ## Permissões
@@ -564,10 +578,13 @@ A partir de `backend/` (venv ativo, base de dados Docker em execução):
 ```powershell
 pytest -q
 ruff check .
-mypy app tests
+mypy app tests scripts
 alembic upgrade head
 alembic check
 ```
+
+O âmbito do `mypy` é o que a CI executa; o gate completo está em
+[`docs/ai/03-quality-gates.md`](ai/03-quality-gates.md).
 
 Os testes documentais usam PostgreSQL real e um diretório temporário
 por teste para o armazenamento (nunca escrevem no storage de
@@ -577,8 +594,15 @@ desenvolvimento). A fixture de PDF é gerada deterministicamente em
 ## Riscos e limitações do protótipo
 
 - processamento síncrono: um PDF grande atrasa a resposta do upload;
-- sem OCR: PDFs digitalizados ficam `failed`;
-- sem DELETE nem retenção/limpeza de ficheiros de versões antigas;
+- PDFs digitalizados são processados por OCR local, mas a versão fica `failed`
+  quando o OCR está desativado (`DOCUMENT_OCR_ENABLED=false`) ou o runtime está
+  indisponível, e nas falhas controladas descritas acima: timeout, limite de
+  páginas excedido, resultado vazio numa página necessária ou dados de idioma em
+  falta. Uma versão `failed` pode ser reprocessada depois de instalar/ativar o
+  OCR;
+- existe `DELETE` documental controlado
+  (`DELETE /api/v1/documents/{document_id}`); o que **não** existe é uma política
+  automática de retenção ou limpeza de ficheiros de versões antigas;
 - armazenamento local único (sem réplicas nem backup automático);
 - o texto extraído fica integralmente no PostgreSQL — adequado ao
   volume de um protótipo, a rever quando a camada de retrieval for

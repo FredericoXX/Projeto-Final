@@ -63,6 +63,16 @@ from tests.moment06_support import (
 
 CONTENT = "erasmus campus provedor alfa institucional"
 
+#: Acima do ``document_chunk_size_chars`` (1200) para a versão ficar com mais do
+#: que um chunk — condição sem a qual o cenário de idiomas mistos não existe. O
+#: termo repetido é invariante entre as configurações FTS 'portuguese' e
+#: 'english', para que a exclusão observada seja de política e não de stemming.
+LONG_CONTENT = "\n\n".join(
+    f"O campus {index} do provedor institucional alfa mantem o horario alargado "
+    "durante o periodo letivo e assegura atendimento presencial aos estudantes."
+    for index in range(14)
+)
+
 
 class _PolicySpy:
     """Delega na política real e regista o que lhe foi pedido."""
@@ -414,6 +424,124 @@ def test_c12_stays_outside_the_policy(
     assert "processed_version_exists" not in RetrievalEligibility.condition_names
     assert eligibility.eligible is False
     # Mesmo sem política avaliada, o relatório diz a que pergunta responde.
+    assert eligibility.policy == RetrievalEligibility.name
+
+
+# --- Agregação sobre os chunks da versão ---------------------------------------
+#
+# Estes dois testes **caracterizam** a semântica já integrada pelo PR #40; não
+# introduzem política nova. Fecham as duas recomendações não bloqueantes da
+# auditoria desse PR, que notou que nenhum teste fixava a agregação existencial
+# nem o caso de uma versão ``processed`` sem chunks.
+
+
+def test_a_version_with_mixed_chunk_languages_stays_eligible_and_shows_the_divergence(
+    client: TestClient, test_session_factory: sessionmaker[Session]
+) -> None:
+    """Agregação existencial: basta um chunk admissível para haver evidência.
+
+    É a mesma pergunta que o retrieval responde — o chunk divergente é excluído,
+    os outros continuam a ser devolvidos —, pelo que declarar a versão inteira
+    inelegível por causa de um chunk contradiria o comportamento real.
+
+    O que não pode acontecer é a divergência ficar escondida atrás dos chunks
+    sãos: a condição agregada vem satisfeita, mas o detalhe declara quantos
+    chunks a satisfazem, e é isso que torna o problema visível no relatório.
+    """
+    _, headers, _ = setup_institution_with_admin(client)
+    document, version = create_searchable_document(client, headers, LONG_CONTENT)
+    document_id = uuid.UUID(document["id"])
+    version_id = uuid.UUID(version["id"])
+
+    with test_session_factory() as db:
+        institution_id = db.get(Document, document_id).institution_id  # type: ignore[union-attr]
+        effective = db.get(DocumentVersion, version_id)
+        assert effective is not None
+        chunks = load_version_chunks(db, effective)
+        # O cenário só existe se a versão tiver mesmo mais do que um chunk.
+        assert len(chunks) >= 2, f"esperados >= 2 chunks, obtidos {len(chunks)}"
+
+        # Contorna deliberadamente a invariante mantida pelos services (o chunk
+        # herda o idioma do documento na segmentação): é a única forma de
+        # produzir uma versão com chunks de idiomas mistos. Nenhuma constraint
+        # é violada.
+        chunks[0].language = "en"
+        db.commit()
+
+        selection = select_by_document_id(
+            db, institution_id=institution_id, document_id=document_id
+        )
+        eligibility = evaluate_eligibility(
+            selection,
+            effective,
+            question_language="pt",
+            reference_date=datetime.now(UTC).date(),
+            official_only=True,
+            chunks=load_version_chunks(db, effective),
+        )
+
+    # O documento continua em 'pt' e restam chunks admissíveis: há evidência.
+    assert eligibility.eligible is True
+    chunk_language = next(
+        condition
+        for condition in eligibility.conditions
+        if condition.name == "chunk_language_compatible"
+    )
+    assert chunk_language.satisfied is True
+    # E a divergência não fica escondida: o detalhe conta quem a satisfaz.
+    assert f"{len(chunks) - 1} of {len(chunks)} chunks satisfy it" in chunk_language.detail
+
+    # As condições que não dependem do chunk continuam sem contagem, porque
+    # todos os chunks concordam nelas.
+    document_active = next(
+        condition
+        for condition in eligibility.conditions
+        if condition.name == "document_active"
+    )
+    assert document_active.satisfied is True
+    assert "chunks satisfy it" not in document_active.detail
+
+
+def test_a_processed_version_without_chunks_offers_no_retrievable_candidate(
+    client: TestClient, test_session_factory: sessionmaker[Session]
+) -> None:
+    """Sem chunks não há candidato — e sem candidato não há evidência.
+
+    Não é uma condição nova da política: é a ausência de sujeitos para avaliar.
+    A agregação existencial devolve falso sem qualquer caso especial, tal como
+    o retrieval nada devolveria de uma versão sem chunks. É por isso que D2 não
+    é a única mudança de veredicto do formato v5 — esta é a outra, e a
+    documentação do diagnóstico declara ambas.
+    """
+    _, headers, _ = setup_institution_with_admin(client)
+    document, version = create_searchable_document(client, headers, CONTENT)
+    document_id = uuid.UUID(document["id"])
+
+    with test_session_factory() as db:
+        institution_id = db.get(Document, document_id).institution_id  # type: ignore[union-attr]
+        effective = db.get(DocumentVersion, uuid.UUID(version["id"]))
+        assert effective is not None
+        # A versão está mesmo ``processed``: o que falta são candidatos, não
+        # estado de processamento.
+        assert effective.processing_status == "processed"
+        selection = select_by_document_id(
+            db, institution_id=institution_id, document_id=document_id
+        )
+        eligibility = evaluate_eligibility(
+            selection,
+            effective,
+            question_language="pt",
+            reference_date=datetime.now(UTC).date(),
+            official_only=True,
+            chunks=(),
+        )
+
+    assert eligibility.eligible is False
+    # Nenhuma condição é relatada: não houve sujeito para avaliar. Em
+    # particular, não foi inventada uma condição "a versão tem chunks".
+    assert eligibility.conditions == ()
+    assert eligibility.version_id == uuid.UUID(version["id"])
+    assert eligibility.processing_status == "processed"
     assert eligibility.policy == RetrievalEligibility.name
 
 

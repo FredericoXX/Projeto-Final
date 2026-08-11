@@ -1,12 +1,16 @@
 # Estado atual
 
-**Observação:** 2026-08-10 · commit `a87cd8b14c464953a5fb3114b62e3588d39ccb3b` (`main`) · repositório
+**Observação:** 2026-08-11 · commit `f4c850ebf5101c9c04c4b5f65ba446480bc15139` (`main`) · repositório
 `FredericoXX/Projeto-Final`
 
 Os factos abaixo descrevem o conteúdo de
-`a87cd8b14c464953a5fb3114b62e3588d39ccb3b`, o merge do Pull Request #35 que
-integrou a caracterização do Momento 6. Trabalho em curso em branches não
-fundidas não é estado deste SHA e, quando referido, é identificado como tal.
+`f4c850ebf5101c9c04c4b5f65ba446480bc15139`, o merge do Pull Request #40 que
+integrou a Fase 4 da issue #24. Trabalho em curso em branches não fundidas não
+é estado deste SHA e, quando referido, é identificado como tal.
+
+O snapshot técnico aqui descrito é o da `main` em `f4c850eb`; a branch que
+reconcilia esta documentação com esse estado não acrescenta comportamento e o
+seu merge não é pressuposto por nenhuma afirmação deste documento.
 
 Snapshot factual. Não contém regras: os princípios estão em
 [`01-project-constitution.md`](01-project-constitution.md), os critérios de
@@ -33,9 +37,10 @@ O **Momento 6** — caracterização do protótipo antes da evolução dos contr
 foi aprovado pelo merge humano do **Pull Request #35**, commit da implementação
 `c885ddf`, merge `a87cd8b14c464953a5fb3114b62e3588d39ccb3b`. É um momento
 puramente aditivo: acrescentou testes de caracterização e documentação, **sem
-alterar código de produção**. Com ele, a **Fase 0 da issue #24 está satisfeita**
-e a próxima alteração permitida é a **Fase 1** dessa issue. O mapa oficial dos
-temas está no [`README.md`](README.md#momentos).
+alterar código de produção**. Satisfez a **Fase 0 da issue #24**, cujas Fases 1
+a 4 foram integradas depois dele (ver
+[Política de admissibilidade da evidência](#política-de-admissibilidade-da-evidência)).
+O mapa oficial dos temas está no [`README.md`](README.md#momentos).
 
 ## Arquitetura
 
@@ -60,6 +65,7 @@ Módulos do backend, em [`backend/app/`](../../backend/app/):
 | `services/` | regras de negócio, transações e concorrência |
 | `models/`, `schemas/` | entidades ORM e contratos de pedido/resposta |
 | `storage/` | abstração de armazenamento (`Protocol` + implementação local) |
+| `documents/` | domínio documental partilhado, incluindo a política canónica de admissibilidade da evidência e as composições `RetrievalEligibility` / `CitationPersistenceEligibility` |
 | `retrieval/` | planeamento de consulta, elegibilidade lexical, ranking, configuração FTS |
 | `answering/` | contratos neutros, contexto, prompts, validação e adaptador de fornecedor |
 | `evaluation/` | contratos e artefactos da avaliação offline do Momento 5; não é importado pela aplicação |
@@ -132,18 +138,19 @@ Precisões factuais, verificadas neste SHA:
 
 ## Testes e verificações
 
-Contagens estruturais medidas neste SHA: 48 ficheiros `test_*.py` no backend
-(em 52 módulos de [`backend/tests/`](../../backend/tests/), incluindo
+Contagens estruturais medidas em 2026-08-11: 53 ficheiros `test_*.py` no backend
+(em 57 módulos de [`backend/tests/`](../../backend/tests/), incluindo
 `conftest.py` e utilitários) e 9 ficheiros de teste no frontend. Os testes do
 backend usam PostgreSQL real numa base dedicada; os do frontend usam MSW, sem
 rede nem backend.
 
-Contagem de execução registada para o conteúdo deste SHA: **1143 passed, 1
-warning, 236.84 s** (`python -m pytest -q`, 2026-08-10, sobre `c885ddf`, o
-commit de implementação integrado por este merge). O warning é o
-`StarletteDeprecationWarning` pré-existente de `fastapi/testclient.py`.
-Registo completo em
-[`moment-06-prototype-characterisation.md`](../relatorios/moment-06-prototype-characterisation.md).
+Contagem de execução: **1227 passed, 1 warning, 236.67 s** (`python -m pytest
+-q`, 2026-08-11). O warning é o `StarletteDeprecationWarning` pré-existente de
+`fastapi/testclient.py`. `mypy app tests scripts` reporta 162 source files.
+
+Esta medição foi feita na branch de fecho documental, que acrescenta dois testes
+de caracterização do diagnóstico e não altera produção; sobre a `main` em
+`f4c850eb` a mesma suite reporta **1225 passed**, registado no Pull Request #40.
 
 Existe uma **baseline estrutural offline** das respostas fundamentadas,
 produzida pelo Momento 5 e versionada em
@@ -180,56 +187,110 @@ para `frontend/**`), este com Node.js 22. Os comandos correspondentes estão em
 
 Limitações detalhadas por área nos documentos canónicos correspondentes.
 
-## Trabalho arquitetural em aberto
+## Política de admissibilidade da evidência
 
 **Issue #24 — "Política de elegibilidade da evidência: uma base partilhada,
-finalidades distintas"** (`FredericoXX/Projeto-Final`, aberta, etiqueta
-`ready-for-agent`).
+finalidades distintas"**: **implementação concluída**. A regra que decide se um
+segmento documental pode ser usado como evidência estava escrita em três sítios
+e em três formas — filtros SQL na recuperação lexical, expressão booleana na
+revalidação de fontes citadas e lista de condições nomeadas no diagnóstico —
+sem nada que verificasse a coerência entre elas. Existe agora uma única
+definição semântica, com as diferenças declaradas.
 
-A regra que decide se um segmento documental pode ser usado como evidência está
-escrita em três sítios e em três formas — filtros SQL na recuperação lexical,
-expressão booleana na revalidação de fontes citadas, e lista de condições
-nomeadas no diagnóstico. Nada verifica que as três se mantêm coerentes. A issue
-propõe extrair as invariantes comuns e declarar as diferenças intencionais, sem
-alterar comportamento funcional.
+| Fase | Pull Request | Resultado |
+| --- | --- | --- |
+| Fase 0 | #35 | caracterização do comportamento existente, sem alterar produção |
+| Fase 1 | #37 | `app/documents/retrievability.py` com as condições nomeadas e as duas composições, sem alterar consumidores |
+| Fase 2 | #38 | retrieval lexical passa a consumir `RetrievalEligibility` |
+| Fase 3 | #39 | revalidação de citações passa a consumir `CitationPersistenceEligibility` |
+| Fase 4 | #40 | diagnóstico passa a consumir `RetrievalEligibility`; D2 resolvida |
 
-É uma **refatoração arquitetural independente**. A sua **Fase 0** — testes de
-caracterização, sem qualquer alteração de produção — foi executada pelo
-Momento 6 e integrada pelo Pull Request #35. Não deve ser repetida: o trabalho
-seguinte começa diretamente na **Fase 1** (módulo novo com a política base e as
-duas políticas derivadas, sem alterar consumidores). As Fases 1 a 4 não estão
-implementadas.
+Arquitetura resultante:
 
-A distinção de domínio entre "recuperável agora" e "legitimamente citado então"
-(Decisão 7 da issue) continua **pendente de formalização** no código, mas o
-comportamento que a sustenta está agora fixado por testes: a revalidação de
-fontes aceita uma citação sobre versão superada, e o teste de proveniência
-N → N+1 confirma que a versão N deixa de ser recuperável sem deixar de ser a
-fonte histórica persistida e legível. O repositório não tem `docs/adr/` nem
-`CONTEXT.md`, e não existe decisão tomada sobre criá-los.
+```
+app.documents.retrievability
+        │
+        ├── RetrievalEligibility            (condições base + C5)
+        │       ├── PostgresLexicalRetriever
+        │       └── diagnóstico documental
+        │
+        └── CitationPersistenceEligibility  (condições base, sem C5)
+                └── revalidação/persistência de citações
+```
 
-A divergência **D2** — o diagnóstico não avalia o idioma do chunk — está
-confirmada por teste e registada como **comportamento conhecido**, não como
-requisito. A sua correção pertence à Fase 4 da issue #24.
+A distinção de domínio (Decisão 7 da issue) está **formalizada no código**, e
+são três situações que não devem ser confundidas:
+
+- **`RetrievalEligibility`** responde a "este chunk pode fundamentar uma
+  resposta **agora**". Inclui C5 — a versão tem de ser a `processed` mais
+  recente do documento;
+- **`CitationPersistenceEligibility`** responde a "esta evidência foi
+  legitimamente usada para gerar **esta** resposta". **Não** inclui C5: se a
+  versão N foi usada na geração e N+1 for processada antes da persistência, N
+  continua a ser a fonte correta. O teste de proveniência N → N+1 confirma que N
+  deixa de ser recuperável sem deixar de ser a fonte histórica persistida;
+- **`MessageSource`**, depois de persistido, é um **snapshot histórico**: a
+  leitura devolve-o tal como foi gravado e **nunca** é reavaliado por política
+  nenhuma.
+
+A divergência **D2** — o diagnóstico não avaliava o idioma do chunk — foi
+**resolvida na Fase 4 / PR #40**: o diagnóstico passou a avaliar
+`chunk_language_compatible` através de `RetrievalEligibility` e declara
+explicitamente a política que aplicou. O retrieval **não** mudou nesta fase: já
+aplicava C8; o que estava incompleto era o diagnóstico. C12 ("existe alguma
+versão `processed`?") permanece deliberadamente fora da política, na camada de
+seleção do diagnóstico, por ser uma propriedade do conjunto de versões e não de
+uma linha.
+
+A elegibilidade **lexical** (`app/retrieval/eligibility.py`, se o conteúdo de um
+candidato corresponde à pergunta) continua um conceito distinto da
+admissibilidade **documental** descrita aqui, e não foi fundida com ela.
+
+O repositório não tem `docs/adr/` nem `CONTEXT.md`, e não existe decisão tomada
+sobre criá-los.
+
+## Trabalho arquitetural em aberto
+
+Nenhuma refatoração arquitetural está em curso ou aprovada neste SHA. A issue
+#24 era a única em execução e a sua implementação está concluída.
+
+A evolução seguinte — nomeadamente a formalização de contratos de domínio para a
+decisão de resposta, e qualquer mudança na abordagem de recuperação — **não está
+decidida** e será objeto de decisão separada. Nada disso existe no código: este
+documento não deve ser lido como anúncio de trabalho iniciado.
 
 ## Divergências documentais conhecidas
 
 Afirmações da documentação canónica que não correspondem ao código neste SHA.
-Estas divergências não foram corrigidas pela tarefa que criou esta diretoria.
 
-| Documento | Afirmação | O que o código faz |
-| --- | --- | --- |
-| [`docs/document-core.md`](../document-core.md), [`README.md`](../../README.md) | `mypy app tests` | a CI executa `mypy app tests scripts` |
-| [`docs/document-core.md`](../document-core.md) (linha 17, "Fora do âmbito desta fase") | OCR deliberadamente não implementado | OCR local implementado — `app/services/ocr_engine.py`, `ocr_line_reconstruction.py`, limites `DOCUMENT_OCR_*`; o próprio documento descreve-o na secção "Extração com OCR local" |
-| [`docs/document-core.md`](../document-core.md) (linha 580, "Riscos e limitações") | "sem OCR: PDFs digitalizados ficam `failed`" | PDFs que exigem OCR podem ser processados; ficam `failed` quando o OCR está desativado, indisponível ou termina numa das falhas controladas documentadas (limite de páginas, timeout, resultado vazio, dados de idioma ausentes ou erro do runtime) |
-| [`docs/document-core.md`](../document-core.md) (linha 581) | "sem DELETE" | `DELETE /api/v1/documents/{document_id}` existe — `app/api/routes/documents.py`, `delete_document` no service |
+**Nenhuma divergência documental canónica conhecida no snapshot observado.**
 
-As três divergências do [`docs/document-core.md`](../document-core.md) são
-contradições **internas** ao próprio documento: as secções históricas de âmbito e
-de riscos não acompanharam o trabalho posterior descrito no mesmo ficheiro.
-Ficam registadas aqui até serem corrigidas na fonte; a correção não pertence ao
-Momento 5.
+As divergências anteriormente registadas aqui foram corrigidas **na fonte**:
 
-A divergência sobre o conteúdo dos logs do answering foi corrigida na fonte em
+- o âmbito do `mypy` em [`docs/document-core.md`](../document-core.md) e
+  [`README.md`](../../README.md) passou a `mypy app tests scripts`, que é o que a
+  CI executa;
+- a lista "fora do âmbito" de [`docs/document-core.md`](../document-core.md)
+  passou a declarar-se como âmbito da entrega inicial e a remeter para a secção
+  que descreve o OCR local, entretanto implementado;
+- o risco "sem OCR" passou a descrever as falhas controladas reais (OCR
+  desativado ou runtime indisponível, timeout, limite de páginas, resultado vazio
+  numa página necessária, dados de idioma em falta);
+- o risco "sem DELETE" passou a distinguir o `DELETE` documental existente da
+  ausência de política automática de retenção/limpeza;
+- a afirmação de que o isolamento multi-institucional é "garantido em duas
+  camadas" passou a separar os papéis: os filtros da aplicação decidem o
+  isolamento das queries, as foreign keys compostas garantem integridade
+  relacional, e não existe Row-Level Security;
+- [`docs/diagnostics/README.md`](../diagnostics/README.md) deixou de descrever
+  D2 como a única mudança possível de veredicto do formato v5.
+
+A divergência sobre o conteúdo dos logs do answering tinha já sido corrigida em
 [`docs/answering.md`](../answering.md): a descrição passou a ser específica do
 log de rejeição da validação e inclui `institution_id`.
+
+Documentos **históricos** — [`moments/moment-06.md`](moments/moment-06.md),
+[`docs/relatorios/`](../relatorios/) e
+[`ConfigInicial.md`](../../ConfigInicial.md) — registam o estado do momento em
+que foram escritos e **não** são divergências: não devem ser atualizados para
+descrever o presente.
