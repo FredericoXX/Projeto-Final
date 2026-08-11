@@ -7,6 +7,25 @@ FTS cru) podem ajudar a **ordenar** candidatos elegíveis, mas nunca podem,
 isoladamente, transformar um candidato sem correspondência suficiente no
 conteúdo em evidência.
 
+Colisão de vocabulário — leia antes de usar
+-------------------------------------------
+
+Existe também :mod:`app.documents.retrievability`, com ``RetrievalEligibility``
+e ``CitationPersistenceEligibility``. Apesar do nome parecido, trata de um
+conceito **diferente**: a admissibilidade documental de um ``DocumentChunk``
+num dado contexto — instituição, idioma, data de referência e restrição a
+fontes oficiais. Não olha para a pergunta.
+
+Este módulo decide o oposto: dado que o chunk é admissível, se o seu
+**conteúdo** corresponde suficientemente à pergunta para constituir evidência.
+Não olha para instituição, idioma, validade nem estado do documento.
+
+As duas decisões são independentes e ambas têm de se verificar. Nenhum dos
+nomes deste módulo — ``decide_eligibility``, ``EligibilityDecision``,
+``EligibilityBasis``, ``ExclusionReason`` — é alterado por essa política, e o
+módulo novo nunca deve ser importado aqui com um alias chamado apenas
+``eligibility``.
+
 A decisão é pura, determinística e testável sem PostgreSQL: recebe os
 termos canónicos da pergunta, os sinais que dependem **só do conteúdo**
 (``ContentMatch``) e a estratégia que recuperou o candidato.
