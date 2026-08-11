@@ -5,10 +5,19 @@
 | Campo | Valor |
 | --- | --- |
 | Momento | 6 — Caracterização do protótipo antes da evolução dos contratos |
-| Estado | Em execução na branch; sem aprovação humana ou integração na `main` |
+| Estado | **Concluído** — integrado na `main` pelo merge humano do Pull Request #35 |
 | Commit base | `6e2d09cfd3348fbc9fbe842a53953a767ecd3be4` |
 | Branch | `test/prototype-characterisation` |
-| Divisão em Pull Requests | um Pull Request exclusivamente de caracterização |
+| Commit da implementação | `c885ddf24f4f0ef27f451942d3b7ca52ab8000f1` |
+| Merge na `main` | `a87cd8b14c464953a5fb3114b62e3588d39ccb3b`, a 2026-08-10 |
+| Divisão em Pull Requests | um Pull Request exclusivamente de caracterização — [#35](https://github.com/FredericoXX/Projeto-Final/pull/35) |
+
+O Pull Request #35 alterou seis ficheiros, com 1628 linhas acrescentadas e
+nenhuma removida: quatro de testes (`backend/tests/moment06_support.py` e os
+três `test_moment06_*`) e dois de documentação (este documento e o relatório).
+Não tocou em `backend/app/`, `backend/alembic/`, `backend/scripts/`,
+`frontend/`, `.github/` nem nos artefactos do Momento 5. O workflow
+**Backend checks** concluiu com sucesso em `c885ddf`.
 
 ## Problema
 
@@ -147,9 +156,22 @@ trabalho posterior e respetiva aprovação. Nenhuma é antecipada aqui.
 
 ## Documentação a atualizar
 
-- criar o relatório `docs/relatorios/moment-06-prototype-characterisation.md`;
+- criar o relatório `docs/relatorios/moment-06-prototype-characterisation.md`
+  — feito, integrado pelo Pull Request #35;
 - atualizar `02-current-state.md` apenas depois de integração humana, nunca a
-  partir desta branch não fundida.
+  partir desta branch não fundida — a condição verificou-se com o merge
+  `a87cd8b`, e a atualização foi feita nesse momento, não antes.
+
+## Fecho
+
+A Fase 0 da issue #24 fica satisfeita por este momento: os testes de
+caracterização da elegibilidade da evidência, a divergência conhecida D2 e o
+teste de proveniência histórica N → N+1 estão versionados na `main`. Não devem
+ser reescritos quando a issue #24 avançar.
+
+O próximo trabalho permitido é a **Fase 1 da issue #24** — o módulo novo com a
+política base e as duas políticas derivadas, sem alterar consumidores. Não deve
+ser iniciado automaticamente.
 
 ## Plano de verificação
 
