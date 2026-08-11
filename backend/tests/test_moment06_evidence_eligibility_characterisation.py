@@ -35,6 +35,12 @@ do relatório do Momento 6):
 As lacunas que este ficheiro fecha são **C8** (idioma do chunk, que nenhum teste
 isolava de C7) e a **ausência de C5 na persistência de citações** (D1 /
 Decisão 7), além da divergência **D2** no diagnóstico.
+
+Nota sobre D2: o teste que a caracterizava foi atualizado na Fase 4 da issue
+#24, que a resolveu ao fazer o diagnóstico delegar em ``RetrievalEligibility``.
+O cenário permanece; passou a provar a coincidência entre diagnóstico e
+política, em vez da divergência. As restantes caracterizações deste ficheiro
+descrevem comportamento que se mantém.
 """
 
 import uuid
@@ -48,7 +54,11 @@ from sqlalchemy.orm import Session, sessionmaker
 from app.answering.base import AnsweringContext
 from app.answering.dependencies import get_answer_generator
 from app.core.exceptions import ConflictError
-from app.diagnostics.document_pipeline import evaluate_eligibility, select_by_document_id
+from app.diagnostics.document_pipeline import (
+    evaluate_eligibility,
+    load_version_chunks,
+    select_by_document_id,
+)
 from app.main import app
 from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
@@ -65,14 +75,20 @@ from tests.moment06_support import (
     upload_version,
 )
 
-# Nomes das condições que o diagnóstico avalia hoje. Reproduzidos aqui a partir
-# do código real (app/diagnostics/document_pipeline.py) para que uma alteração
-# ao relatório tenha de passar por este teste.
+# Nomes das condições que o diagnóstico expõe. Reproduzidos aqui a partir do
+# código real (app/diagnostics/document_pipeline.py) para que uma alteração ao
+# relatório tenha de passar por este teste.
+#
+# ``chunk_language_compatible`` entrou na Fase 4 da issue #24, quando o
+# diagnóstico passou a delegar em ``RetrievalEligibility``: é a condição C8,
+# cuja ausência era a divergência D2 caracterizada neste ficheiro. As restantes
+# mantêm o nome histórico — a política adotou-os deliberadamente na Fase 1.
 DIAGNOSTIC_CONDITION_NAMES = (
     "version_processed",
     "version_is_highest_processed",
     "document_active",
     "language_compatible",
+    "chunk_language_compatible",
     "valid_from_compatible",
     "valid_until_compatible",
     "official_source_compatible",
@@ -242,43 +258,59 @@ def test_c8_chunk_language_divergent_is_rejected_by_citation_revalidation(
             )
 
 
-def test_d2_diagnostic_does_not_evaluate_chunk_language(
+def test_d2_diagnostic_now_evaluates_chunk_language_like_retrieval(
     client: TestClient, test_session_factory: sessionmaker[Session]
 ) -> None:
-    """D2 — divergência conhecida: o diagnóstico não avalia C8.
+    """D2 — divergência **resolvida** na Fase 4 da issue #24.
 
-    Comportamento **atual**, não requisito normativo. Perante a mesma linha que
-    o retrieval e a revalidação de fontes recusam, o diagnóstico continua a
-    declarar a versão elegível, porque a sua lista de condições nomeadas não
-    inclui nenhuma sobre o idioma do chunk. Registado no relatório do Momento 6
-    como divergência conhecida; a correção pertence à Fase 4 da issue #24.
+    O Momento 6 caracterizou aqui o comportamento histórico: perante a mesma
+    linha que o retrieval e a revalidação de fontes recusavam, o diagnóstico
+    declarava a versão elegível, porque a sua lista de condições nomeadas não
+    incluía nenhuma sobre o idioma do chunk. Esse comportamento foi registado
+    como divergência conhecida, nunca como requisito — e a Fase 4 da issue #24
+    é exatamente a fase que o corrige, ao fazer o diagnóstico delegar em
+    ``RetrievalEligibility`` em vez de manter uma lista própria.
+
+    O cenário mantém-se intacto; o que muda é a expectativa. O teste passa a
+    provar a tese da Fase 4: perante a mesma linha, o diagnóstico e a política
+    dizem agora o mesmo, e C8 aparece com nome próprio no relatório.
     """
     _, headers, _ = setup_institution_with_admin(client)
     document, version = create_searchable_document(client, headers, DIVERGENT_CONTENT)
     document_id = uuid.UUID(document["id"])
+    version_id = uuid.UUID(version["id"])
 
     with test_session_factory() as db:
         institution_id = db.get(Document, document_id).institution_id  # type: ignore[union-attr]
-        _force_chunk_language(db, version_id=uuid.UUID(version["id"]), language="en")
+        _force_chunk_language(db, version_id=version_id, language="en")
 
         selection = select_by_document_id(
             db, institution_id=institution_id, document_id=document_id
         )
+        effective = selection.effective_retrieval_version
+        assert effective is not None
         eligibility = evaluate_eligibility(
             selection,
-            selection.effective_retrieval_version,
+            effective,
             question_language="pt",
             reference_date=datetime.now(UTC).date(),
             official_only=True,
+            chunks=load_version_chunks(db, effective),
         )
 
     names = tuple(condition.name for condition in eligibility.conditions)
     assert names == DIAGNOSTIC_CONDITION_NAMES
-    # Nenhuma condição avalia o idioma do chunk.
-    assert not any("chunk" in name for name in names)
-    # E o veredicto é "elegível", apesar de o retrieval não devolver a linha.
-    assert eligibility.eligible is True
-    assert all(condition.satisfied for condition in eligibility.conditions)
+    # C8 passou a ter nome próprio no relatório, e é a única que falha: o
+    # documento continua em 'pt', logo C7 mantém-se satisfeita.
+    assert "chunk_language_compatible" in names
+    failed = tuple(
+        condition.name for condition in eligibility.conditions if not condition.satisfied
+    )
+    assert failed == ("chunk_language_compatible",)
+    # E o veredicto deixou de divergir do retrieval.
+    assert eligibility.eligible is False
+    # O relatório declara qual política produziu este veredicto.
+    assert eligibility.policy == "RetrievalEligibility"
 
     after = search(client, headers, INVARIANT_TERM)
     assert after.json()["items"] == []
@@ -314,6 +346,7 @@ def test_c12_absence_of_processed_version_is_reported_as_its_own_condition(
             question_language="pt",
             reference_date=datetime.now(UTC).date(),
             official_only=True,
+            chunks=(),
         )
 
     assert [condition.name for condition in eligibility.conditions] == [

@@ -78,6 +78,29 @@ trace: ele não deriva da pergunta um segundo conjunto de termos canónicos para
 arrastar até ao relatório. A proibição literal de registar a pergunta aplica-se
 aos **logs**, onde nunca aparece.
 
+O formato de relatório **v5** muda o bloco de elegibilidade. A admissibilidade
+documental deixou de ser reproduzida pela ferramenta e passa a vir da política
+partilhada `RetrievalEligibility` (`app/documents/retrievability.py`), a mesma
+que o retrieval lexical aplica no PostgreSQL. Duas consequências observáveis:
+
+- o relatório **declara a política avaliada** (campo `policy`, e a linha
+  «Política avaliada» no Markdown). Isto existe para que «não elegível» nunca
+  seja lido como um juízo sobre citações já persistidas: essas respondem a
+  `CitationPersistenceEligibility`, que deliberadamente não exige que a versão
+  continue a ser a `processed` mais recente, e um `MessageSource` gravado nunca
+  é reavaliado por política nenhuma;
+- passa a constar `chunk_language_compatible` — a condição sobre o idioma do
+  **chunk**, que a ferramenta não avaliava. Era a divergência D2 caracterizada
+  no Momento 6: perante um chunk cujo idioma diverge do documento, o retrieval
+  excluía a linha e o diagnóstico continuava a declará-la elegível. É a única
+  mudança de veredicto desta migração, e corrige o diagnóstico — o retrieval já
+  aplicava a condição.
+
+Os nomes históricos das restantes condições mantêm-se. As condições de
+isolamento institucional que a política também avalia não são expostas: as
+consultas da ferramenta já restringem `institution_id` no PostgreSQL, e
+mostrá-las alargaria o relatório sem acrescentar informação.
+
 O retrieval corre uma única vez por pergunta.
 
 `PAGE_SEPARATOR = "\f"` é tratado como fronteira válida, não como conteúdo

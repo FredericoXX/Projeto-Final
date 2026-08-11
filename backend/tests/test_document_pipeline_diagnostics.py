@@ -1172,6 +1172,7 @@ def test_51_inactive_document_is_not_eligible() -> None:
         question_language="pt",
         reference_date=date(2031, 3, 1),
         official_only=True,
+        chunks=[_chunk(document, version, "Evento sintético em 10 de março de 2031.")],
     )
     assert not result.eligible
     assert not next(c for c in result.conditions if c.name == "document_active").satisfied
@@ -1188,6 +1189,7 @@ def test_52_non_official_document_is_filtered_by_default() -> None:
         question_language="pt",
         reference_date=date(2031, 3, 1),
         official_only=True,
+        chunks=[_chunk(document, version, "Evento sintético em 10 de março de 2031.")],
     )
     assert not result.eligible
 
@@ -1203,6 +1205,7 @@ def test_53_document_outside_validity_is_not_eligible() -> None:
         question_language="pt",
         reference_date=date(2031, 3, 1),
         official_only=True,
+        chunks=[_chunk(document, version, "Evento sintético em 10 de março de 2031.")],
     )
     assert not result.eligible
 
@@ -1221,6 +1224,7 @@ def test_54_failed_selected_version_can_differ_from_processed_effective() -> Non
         question_language="pt",
         reference_date=date(2031, 3, 1),
         official_only=True,
+        chunks=[_chunk(document, selected, "Evento sintético em 10 de março de 2031.")],
     )
     assert not result.eligible and selection.effective_retrieval_version is effective
 
@@ -1252,6 +1256,7 @@ def test_56_absence_of_effective_retrieval_version_is_reportable() -> None:
         question_language="pt",
         reference_date=date(2031, 3, 1),
         official_only=True,
+        chunks=(),
     )
     assert not result.eligible and result.version_id is None
 
@@ -1570,7 +1575,11 @@ def test_real_retriever_populates_lexical_trace_in_report(
 ) -> None:
     """Com o PostgresLexicalRetriever, o relatório inclui o trace lexical
     (config FTS, termos, quotas por variante, orçamento global e motivos de
-    exclusão tipados), e o formato do relatório é a versão 4."""
+    exclusão tipados), e o formato do relatório é a versão 5.
+
+    A versão subiu de 4 para 5 na Fase 4 da issue #24: o bloco de
+    elegibilidade passou a declarar a política avaliada e a incluir C8.
+    """
     from app.retrieval.lexical import PostgresLexicalRetriever
 
     institution, _, document, _ = _persisted_graph(client)
@@ -1584,7 +1593,7 @@ def test_real_retriever_populates_lexical_trace_in_report(
             reference_date=date(2031, 3, 1),
             clock=lambda: datetime(2031, 3, 1, tzinfo=UTC),
         )
-    assert report.diagnostic_report_version == 4
+    assert report.diagnostic_report_version == 5
     trace = report.questions[0].lexical_trace
     assert trace is not None
     assert trace.fts_config == "portuguese"

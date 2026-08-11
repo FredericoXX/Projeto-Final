@@ -16,6 +16,11 @@ Regras estruturais deste módulo:
 - todas as consultas próprias aplicam institution_id no próprio SQL;
 - o retrieval reutiliza o retriever existente (contrato Retriever) sem
   duplicar a sua SQL nem alterar a pergunta;
+- a admissibilidade documental não é definida aqui: vem de
+  ``RetrievalEligibility`` (app.documents.retrievability), a mesma política
+  que o retrieval aplica. O relatório declara-a explicitamente, para que
+  "não recuperável agora" nunca seja lido como um juízo sobre citações
+  históricas já persistidas;
 - o answering pipeline e o cliente OpenAI nunca são chamados nem
   importados;
 - a comparação de termos reutiliza normalize_text — nunca uma segunda
@@ -27,7 +32,7 @@ import logging
 import re
 import unicodedata
 from collections import Counter
-from collections.abc import Callable
+from collections.abc import Callable, Sequence
 from dataclasses import dataclass, fields, is_dataclass
 from datetime import UTC, date, datetime
 from enum import StrEnum
@@ -41,6 +46,13 @@ from sqlalchemy.orm import Session
 from app.core.config import settings
 from app.core.language import normalize_language_code
 from app.core.text_normalization import normalize_text
+from app.documents.retrievability import (
+    ConditionOutcome,
+    RetrievabilityContext,
+    RetrievabilitySubject,
+    RetrievabilityVerdict,
+    RetrievalEligibility,
+)
 from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
 from app.models.document_version import DocumentVersion
@@ -51,12 +63,18 @@ from app.services.document_extraction_service import PAGE_SEPARATOR
 
 logger = logging.getLogger(__name__)
 
+# Versão 5 (Fase 4 da issue #24): a elegibilidade deixa de ser reproduzida
+# aqui e passa a vir de ``RetrievalEligibility``. O bloco de elegibilidade do
+# relatório muda em duas coisas observáveis: identifica a política avaliada
+# (campo ``policy``) e passa a incluir ``chunk_language_compatible`` — a
+# condição C8, que o diagnóstico não avaliava (divergência D2 do Momento 6).
+#
 # Versão 4: o trace do retriever lexical passa a refletir o orçamento global
 # de candidatos com quotas por variante e a separação entre elegibilidade e
 # ranking — os candidatos removidos são classificados por motivo tipado
 # (ausência de correspondência, cobertura insuficiente, limiar) e as
 # contagens são matematicamente consistentes entre si.
-DIAGNOSTIC_REPORT_VERSION = 4
+DIAGNOSTIC_REPORT_VERSION = 5
 
 # Limites deliberados: o relatório é evidência, não um dump do documento.
 MAX_OCCURRENCES_PER_FACT = 8
@@ -1071,11 +1089,30 @@ def analyze_question_chunks(
 
 # ---------------------------------------------------------------------------
 # Elegibilidade para o retrieval
+#
+# A admissibilidade documental **não é definida aqui**: vem inteira de
+# ``RetrievalEligibility``, em app.documents.retrievability — a mesma política
+# que o retrieval lexical aplica no PostgreSQL. O diagnóstico pergunta "esta
+# versão seria recuperável **agora**", pelo que a política correta é a que
+# inclui C5, e não ``CitationPersistenceEligibility``, que responde a uma
+# pergunta diferente (ver a nota de proveniência histórica no módulo da
+# política).
+#
+# O que permanece deste lado é a camada de seleção e de apresentação: C12
+# ("existe alguma versão processed?") não é condição sobre uma linha mas sobre
+# o conjunto de versões, e por isso continua fora da política; e as dataclasses
+# abaixo continuam a ser o DTO do relatório, alimentadas pelo veredicto.
 # ---------------------------------------------------------------------------
 
 
 @dataclass(frozen=True)
 class EligibilityCondition:
+    """Condição no relatório — projeção de um ``ConditionOutcome`` da política.
+
+    Continua a existir como forma de apresentação; deixou de ser onde a
+    condição é **decidida**.
+    """
+
     name: str
     satisfied: bool
     detail: str
@@ -1083,11 +1120,86 @@ class EligibilityCondition:
 
 @dataclass(frozen=True)
 class VersionEligibility:
+    """Elegibilidade de uma versão, com a política que a decidiu declarada.
+
+    ``policy`` existe para que o relatório não seja lido como uma afirmação
+    sobre citações históricas: "não recuperável agora" é um veredicto de
+    ``RetrievalEligibility`` e nada diz sobre a legitimidade de um
+    ``MessageSource`` já persistido, que nunca é reavaliado por política
+    nenhuma.
+    """
+
     version_id: UUID | None
     version_number: int | None
     processing_status: str | None
     conditions: tuple[EligibilityCondition, ...]
     eligible: bool
+    policy: str = RetrievalEligibility.name
+
+
+#: Condições expostas no relatório, na ordem histórica, com C8 no lugar que lhe
+#: corresponde. Os nomes são os da política: a Fase 1 adotou deliberadamente os
+#: nomes que o diagnóstico já usava, para que esta fase fosse delegação e não
+#: renomeação.
+#:
+#: C1–C3 (isolamento institucional) são avaliadas pela política mas **não** são
+#: expostas: o diagnóstico nunca as mostrou, porque as suas próprias consultas
+#: já restringem ``institution_id`` no PostgreSQL. Acrescentá-las aqui alargaria
+#: a superfície do relatório sem acrescentar informação.
+REPORTED_CONDITION_NAMES: tuple[str, ...] = (
+    "version_processed",
+    "version_is_highest_processed",
+    "document_active",
+    "language_compatible",
+    "chunk_language_compatible",
+    "valid_from_compatible",
+    "valid_until_compatible",
+    "official_source_compatible",
+)
+
+
+def _report_conditions(
+    verdicts: Sequence[RetrievabilityVerdict],
+) -> tuple[EligibilityCondition, ...]:
+    """Projeta os veredictos por chunk nas condições do relatório.
+
+    A composição é **existencial**, porque é essa a pergunta do retrieval: uma
+    versão contribui evidência se **algum** dos seus chunks é admissível. Só
+    C1 e C8 dependem do chunk; as restantes condições valem o mesmo para todos
+    os chunks da versão, pelo que para elas o ``any`` devolve simplesmente esse
+    valor comum.
+
+    Quando os chunks divergem numa condição — o caso real de D2 —, a contagem
+    entra no detalhe, para que um chunk problemático não fique escondido atrás
+    dos que estão bem. Quando todos concordam, o detalhe é exatamente o da
+    política, e o texto histórico do relatório não se altera.
+    """
+    if not verdicts:
+        return ()
+    outcomes_by_name: dict[str, list[ConditionOutcome]] = {}
+    for verdict in verdicts:
+        for outcome in verdict.conditions:
+            outcomes_by_name.setdefault(outcome.name, []).append(outcome)
+
+    conditions: list[EligibilityCondition] = []
+    for name in REPORTED_CONDITION_NAMES:
+        outcomes = outcomes_by_name.get(name)
+        if not outcomes:
+            continue
+        satisfied = any(outcome.satisfied for outcome in outcomes)
+        # Representante coerente com o valor composto: perante divergência,
+        # o detalhe mostrado é o de um chunk que justifica esse valor.
+        representative = next(
+            outcome for outcome in outcomes if outcome.satisfied == satisfied
+        )
+        detail = representative.detail
+        matching = sum(outcome.satisfied for outcome in outcomes)
+        if matching != len(outcomes):
+            detail = f"{detail} ({matching} of {len(outcomes)} chunks satisfy it)."
+        conditions.append(
+            EligibilityCondition(name=name, satisfied=satisfied, detail=detail)
+        )
+    return tuple(conditions)
 
 
 def evaluate_eligibility(
@@ -1097,13 +1209,27 @@ def evaluate_eligibility(
     question_language: str,
     reference_date: date,
     official_only: bool,
+    chunks: Sequence[DocumentChunk],
 ) -> VersionEligibility:
-    """Reproduz, apenas para relato, as condições que o retriever aplica.
+    """Relata a recuperabilidade da versão segundo ``RetrievalEligibility``.
 
-    A ferramenta nunca altera nenhuma destas condições.
+    A política é a fonte de verdade: nenhuma condição é decidida aqui. O que
+    este nível faz é o que a política não pode fazer — resolver C12 (existe
+    versão ``processed``?), que é uma propriedade do conjunto de versões e não
+    de uma linha, e projetar o veredicto na superfície do relatório.
+
+    ``chunks`` são os chunks **desta** versão. São obrigatórios porque a
+    política avalia candidatos, não versões: C8 (idioma do chunk) só existe
+    sobre um chunk concreto. Uma versão sem chunks não tem candidato algum e
+    portanto não tem evidência recuperável — o ``any`` devolve falso sem
+    qualquer caso especial, tal como o retrieval não devolveria nada dela.
+
+    A ferramenta nunca altera nenhuma destas condições, e nunca escreve.
     """
     document = selection.document
     if version is None:
+        # C12 — ausência de linhas, não condição sobre uma linha. Fica fora da
+        # política deliberadamente: não há sujeito para avaliar.
         return VersionEligibility(
             version_id=None,
             version_number=None,
@@ -1116,60 +1242,43 @@ def evaluate_eligibility(
                 ),
             ),
             eligible=False,
+            policy=RetrievalEligibility.name,
         )
+
     effective = selection.effective_retrieval_version
-    conditions = [
-        EligibilityCondition(
-            name="version_processed",
-            satisfied=version.processing_status == "processed",
-            detail=f"processing_status is '{version.processing_status}'.",
-        ),
-        EligibilityCondition(
-            name="version_is_highest_processed",
-            satisfied=effective is not None and effective.id == version.id,
-            detail=(
-                "The retriever only considers the highest-numbered processed "
-                "version of the document."
+    context = RetrievabilityContext(
+        institution_id=document.institution_id,
+        language=question_language,
+        reference_date=reference_date,
+        official_only=official_only,
+    )
+    # C5 vem da mesma resolução de versão efetiva que a seleção já fez
+    # (_effective_retrieval_version): uma única definição de "versão efetiva",
+    # não uma segunda implementação de "latest processed".
+    effective_version_id = effective.id if effective is not None else None
+    verdicts = [
+        RetrievalEligibility.explain(
+            RetrievabilitySubject.from_entities(
+                chunk=chunk,
+                document=document,
+                version=version,
+                effective_version_id=effective_version_id,
             ),
-        ),
-        EligibilityCondition(
-            name="document_active",
-            satisfied=document.is_active,
-            detail=f"is_active is {document.is_active}.",
-        ),
-        EligibilityCondition(
-            name="language_compatible",
-            satisfied=document.language == question_language,
-            detail=(
-                f"document language '{document.language}' vs question "
-                f"language '{question_language}'."
-            ),
-        ),
-        EligibilityCondition(
-            name="valid_from_compatible",
-            satisfied=document.valid_from is None or document.valid_from <= reference_date,
-            detail=f"valid_from={document.valid_from} reference_date={reference_date}.",
-        ),
-        EligibilityCondition(
-            name="valid_until_compatible",
-            satisfied=document.valid_until is None or document.valid_until >= reference_date,
-            detail=f"valid_until={document.valid_until} reference_date={reference_date}.",
-        ),
-        EligibilityCondition(
-            name="official_source_compatible",
-            satisfied=not official_only or document.official_source,
-            detail=(
-                f"official_only={official_only} document.official_source="
-                f"{document.official_source}."
-            ),
-        ),
+            context,
+        )
+        for chunk in chunks
     ]
     return VersionEligibility(
         version_id=version.id,
         version_number=version.version_number,
         processing_status=version.processing_status,
-        conditions=tuple(conditions),
-        eligible=all(condition.satisfied for condition in conditions),
+        conditions=_report_conditions(verdicts),
+        # O veredicto da política decide, não as condições projetadas: C1–C3
+        # não são expostas, e se alguma delas falhasse o relatório falharia
+        # para o lado seguro em vez de declarar elegível o que a política
+        # recusa.
+        eligible=any(verdict.eligible for verdict in verdicts),
+        policy=RetrievalEligibility.name,
     )
 
 
@@ -1961,6 +2070,18 @@ def run_diagnostic(
         integrity = analyze_chunk_integrity(chunks, extracted_text)
         text_index = build_normalized_index(extracted_text)
 
+        # A elegibilidade é avaliada sobre os chunks **da versão em causa**: a
+        # versão efetiva do retrieval pode não ser a selecionada, e avaliar C8
+        # com os chunks da outra responderia à pergunta errada. Leitura única,
+        # fora do ciclo das perguntas, porque não depende da pergunta.
+        effective_version = selection.effective_retrieval_version
+        if effective_version is None:
+            effective_chunks: list[DocumentChunk] = []
+        elif effective_version.id == selected.id:
+            effective_chunks = chunks
+        else:
+            effective_chunks = load_version_chunks(db, effective_version)
+
         question_reports: list[QuestionDiagnostic] = []
         for question in questions:
             extraction = tuple(
@@ -1988,13 +2109,15 @@ def run_diagnostic(
                 question_language=question.language,
                 reference_date=resolved_reference_date,
                 official_only=official_only,
+                chunks=chunks,
             )
             effective_eligibility = evaluate_eligibility(
                 selection,
-                selection.effective_retrieval_version,
+                effective_version,
                 question_language=question.language,
                 reference_date=resolved_reference_date,
                 official_only=official_only,
+                chunks=effective_chunks,
             )
             # O retrieval corre exatamente uma vez por pergunta, com o
             # contrato real: pergunta normalizada, contexto e filtros atuais.
@@ -2475,6 +2598,13 @@ def render_markdown(report: DiagnosticReport) -> str:
         add("")
         add("#### Elegibilidade")
         add("")
+        # Qual pergunta está a ser respondida. Sem isto, "não elegível" podia
+        # ser lido como um juízo sobre citações já persistidas, que nenhuma
+        # política reavalia.
+        add(
+            f"- Política avaliada: {question.effective_version_eligibility.policy} "
+            "(recuperabilidade atual)"
+        )
         for label, eligibility in (
             ("Versão selecionada", question.selected_version_eligibility),
             ("Versão efetiva do retrieval", question.effective_version_eligibility),
