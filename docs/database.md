@@ -217,6 +217,20 @@ A integridade é aplicada no PostgreSQL, não apenas nos serviços:
 - índices de consulta cobrem instituição, chunk, documento e versão. Os índices
   UNIQUE já cobrem o acesso por mensagem/citação, evitando duplicados.
 
+A **admissibilidade documental** avaliada na revalidação não é definida pelo
+service. É a política `CitationPersistenceEligibility` de
+`app/documents/retrievability.py`, aplicada por `revalidate_and_lock_sources`
+através de `explain`, sobre as linhas já bloqueadas. Essa política partilha as
+condições base com `RetrievalEligibility` mas **não** inclui a da versão
+`processed` mais recente: uma versão superada por N+1 durante a geração
+continua a ser a fonte real da resposta e continua admissível aqui. O service
+nunca resolve a versão efetiva. O que permanece do lado do service é matéria
+distinta — consistência dos identificadores (defesa em profundidade sobre a FK
+composta), deteção de metadados alterados durante a geração e integridade do
+snapshot (checksums, normalização, coerência com `extracted_text`). Depois de
+persistida, a linha é histórica: a leitura devolve o snapshot tal como foi
+gravado, sem reavaliar política alguma.
+
 Os metadados do documento são copiados de linhas bloqueadas imediatamente
 antes da inserção do turno. Edições posteriores não alteram citações históricas.
 A FK do chunk sem cascata impede a eliminação ou reassociação de um chunk
