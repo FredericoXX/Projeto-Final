@@ -1,13 +1,12 @@
 # Estado atual
 
-**Observação:** 2026-08-08 · commit `0069809ba3c4acd506990242af13edcb6bda57d4` (`main`) · repositório
+**Observação:** 2026-08-10 · commit `a87cd8b14c464953a5fb3114b62e3588d39ccb3b` (`main`) · repositório
 `FredericoXX/Projeto-Final`
 
 Os factos abaixo descrevem o conteúdo de
-`0069809ba3c4acd506990242af13edcb6bda57d4`, o merge do Pull Request #33 que
-fechou de forma corretiva o Momento 5 após a integração da Fase 3. Trabalho em
-curso em branches não fundidas não é estado deste SHA e, quando referido, é
-identificado como tal.
+`a87cd8b14c464953a5fb3114b62e3588d39ccb3b`, o merge do Pull Request #35 que
+integrou a caracterização do Momento 6. Trabalho em curso em branches não
+fundidas não é estado deste SHA e, quando referido, é identificado como tal.
 
 Snapshot factual. Não contém regras: os princípios estão em
 [`01-project-constitution.md`](01-project-constitution.md), os critérios de
@@ -17,8 +16,10 @@ repositório, o repositório está certo e o documento está desatualizado.
 
 ## Momentos
 
-Momentos 1 a 5 concluídos — [`moments/moment-05.md`](moments/moment-05.md). As
-decisões de método (Fase 0)
+Momentos 1 a 6 concluídos — [`moments/moment-05.md`](moments/moment-05.md) e
+[`moments/moment-06.md`](moments/moment-06.md).
+
+No Momento 5, as decisões de método (Fase 0)
 foram aprovadas pelo merge humano do Pull Request #29 (`2b6247c`), e o corpus
 sintético com a rubrica (Fase 1) pelo merge humano do **Pull Request #30**,
 integrado na `main` em `7846f08`. O mecanismo de avaliação offline (Fase 2) foi
@@ -26,9 +27,15 @@ aprovado pelo merge humano do **Pull Request #31**, integrado na `main` em
 `aa72fcd`, e a baseline (Fase 3) pelo merge humano do **Pull Request #32**,
 integrado na `main` em `0ed640cb`. O fecho corretivo foi integrado pelo
 **Pull Request #33**, merge `0069809ba3c4acd506990242af13edcb6bda57d4`, sem
-alterar a baseline. Com este merge, o Momento 5 está concluído e o Momento 6 é
-o próximo a iniciar. O mapa oficial dos temas está no
-[`README.md`](README.md#momentos).
+alterar a baseline.
+
+O **Momento 6** — caracterização do protótipo antes da evolução dos contratos —
+foi aprovado pelo merge humano do **Pull Request #35**, commit da implementação
+`c885ddf`, merge `a87cd8b14c464953a5fb3114b62e3588d39ccb3b`. É um momento
+puramente aditivo: acrescentou testes de caracterização e documentação, **sem
+alterar código de produção**. Com ele, a **Fase 0 da issue #24 está satisfeita**
+e a próxima alteração permitida é a **Fase 1** dessa issue. O mapa oficial dos
+temas está no [`README.md`](README.md#momentos).
 
 ## Arquitetura
 
@@ -125,16 +132,18 @@ Precisões factuais, verificadas neste SHA:
 
 ## Testes e verificações
 
-Contagens estruturais medidas neste SHA: 45 ficheiros `test_*.py` no backend
-(em 48 módulos de [`backend/tests/`](../../backend/tests/), incluindo
+Contagens estruturais medidas neste SHA: 48 ficheiros `test_*.py` no backend
+(em 52 módulos de [`backend/tests/`](../../backend/tests/), incluindo
 `conftest.py` e utilitários) e 9 ficheiros de teste no frontend. Os testes do
 backend usam PostgreSQL real numa base dedicada; os do frontend usam MSW, sem
 rede nem backend.
 
-Não há contagem de testes executados registada para este SHA. A última
-validação completa registada consta de
-[`docs/relatorios/correcao-final-retrieval-lexical.md`](../relatorios/correcao-final-retrieval-lexical.md),
-de 2026-07-30, e diz respeito a outro commit — não é o estado atual.
+Contagem de execução registada para o conteúdo deste SHA: **1143 passed, 1
+warning, 236.84 s** (`python -m pytest -q`, 2026-08-10, sobre `c885ddf`, o
+commit de implementação integrado por este merge). O warning é o
+`StarletteDeprecationWarning` pré-existente de `fastapi/testclient.py`.
+Registo completo em
+[`moment-06-prototype-characterisation.md`](../relatorios/moment-06-prototype-characterisation.md).
 
 Existe uma **baseline estrutural offline** das respostas fundamentadas,
 produzida pelo Momento 5 e versionada em
@@ -184,14 +193,24 @@ nomeadas no diagnóstico. Nada verifica que as três se mantêm coerentes. A iss
 propõe extrair as invariantes comuns e declarar as diferenças intencionais, sem
 alterar comportamento funcional.
 
-É uma **refatoração arquitetural independente**. Não está implementada, não faz
-parte do Momento 5, e a sua divisão em um ou vários Pull Requests está por
-decidir.
+É uma **refatoração arquitetural independente**. A sua **Fase 0** — testes de
+caracterização, sem qualquer alteração de produção — foi executada pelo
+Momento 6 e integrada pelo Pull Request #35. Não deve ser repetida: o trabalho
+seguinte começa diretamente na **Fase 1** (módulo novo com a política base e as
+duas políticas derivadas, sem alterar consumidores). As Fases 1 a 4 não estão
+implementadas.
 
 A distinção de domínio entre "recuperável agora" e "legitimamente citado então"
-(Decisão 7 da issue) é uma decisão de domínio **pendente de formalização** e
-possível fonte de decisão arquitetural futura. O repositório não tem `docs/adr/`
-nem `CONTEXT.md`, e não existe decisão tomada sobre criá-los.
+(Decisão 7 da issue) continua **pendente de formalização** no código, mas o
+comportamento que a sustenta está agora fixado por testes: a revalidação de
+fontes aceita uma citação sobre versão superada, e o teste de proveniência
+N → N+1 confirma que a versão N deixa de ser recuperável sem deixar de ser a
+fonte histórica persistida e legível. O repositório não tem `docs/adr/` nem
+`CONTEXT.md`, e não existe decisão tomada sobre criá-los.
+
+A divergência **D2** — o diagnóstico não avalia o idioma do chunk — está
+confirmada por teste e registada como **comportamento conhecido**, não como
+requisito. A sua correção pertence à Fase 4 da issue #24.
 
 ## Divergências documentais conhecidas
 

@@ -21,6 +21,10 @@ satisfeita, as mutações de sensibilidade foram restauradas e o estado final n�
 altera código de produção. A integração e a aprovação humana ainda não
 ocorreram.
 
+> A frase anterior descreve o estado no momento da verificação e é mantida como
+> registo histórico. A integração ocorreu depois: ver
+> [Integração e fecho](#integração-e-fecho).
+
 ## Estado inicial
 
 | Item | Valor |
@@ -299,7 +303,48 @@ futuras da issue #24.
 | Artefactos do Momento 5 alterados | não |
 | Ficheiros fora do âmbito autorizado | não |
 
+As linhas acima descrevem o estado **no momento em que a verificação foi
+executada** e não são reescritas retroativamente. A integração posterior está
+registada na secção seguinte.
+
+## Integração e fecho
+
+Verificação executada **antes da integração**, sobre a baseline
+`6e2d09cfd3348fbc9fbe842a53953a767ecd3be4`. A implementação foi posteriormente
+versionada no commit `c885ddf24f4f0ef27f451942d3b7ca52ab8000f1` e integrada na
+`main` pelo merge humano do **Pull Request #35**, merge
+`a87cd8b14c464953a5fb3114b62e3588d39ccb3b`, a 2026-08-10. O workflow
+**Backend checks** do Pull Request concluiu com sucesso em `c885ddf`.
+
+| Item | Valor |
+| --- | --- |
+| Pull Request | [#35](https://github.com/FredericoXX/Projeto-Final/pull/35) — `test/prototype-characterisation` → `main` |
+| Commit da implementação | `c885ddf24f4f0ef27f451942d3b7ca52ab8000f1` |
+| Merge na `main` | `a87cd8b14c464953a5fb3114b62e3588d39ccb3b` |
+| Diff integrado | 6 ficheiros, 1628 linhas acrescentadas, 0 removidas |
+| Código de produção alterado | não — nenhum ficheiro em `backend/app/`, `backend/alembic/`, `backend/scripts/`, `frontend/` ou `.github/` |
+| Artefactos do Momento 5 | intactos |
+| CI do Pull Request | **Backend checks: success** |
+
+Documentação alinhada com o fecho, em trabalho documental subsequente:
+[`moment-06.md`](../ai/moments/moment-06.md) passou a **Concluído** e
+[`02-current-state.md`](../ai/02-current-state.md) passou a descrever o
+snapshot `a87cd8b`.
+
+Uma cautela deliberada, para que a leitura futura não a infira como garantia: o
+teste que obriga `Evidence` e `RetrievalEvidenceRead` a declararem exatamente os
+mesmos campos caracteriza o **acoplamento atual**, e não uma invariante
+arquitetural. Quando um campo como `score_kind` for acrescentado, a decisão de
+o tornar interno ou público tem de ser tomada conscientemente; alterar esse
+teste nessa altura é evolução deliberada do contrato, não contorno de uma
+verificação.
+
+As cinco mutações dos testes de sensibilidade foram temporárias e revertidas,
+pelo que não são verificáveis retroativamente pelo histórico Git — consequência
+natural da técnica, e não uma omissão. O que é verificável é que o diff
+integrado não as contém e que o CI ficou verde.
+
 ## Próximo passo
 
-O próximo trabalho permitido é a Fase 1 da issue #24. Não iniciar
+O próximo trabalho permitido é a **Fase 1 da issue #24**. Não iniciar
 automaticamente.
