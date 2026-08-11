@@ -10,6 +10,11 @@ from sqlalchemy.orm import Session
 
 from app.core.exceptions import ConflictError
 from app.core.text_normalization import normalize_text
+from app.documents.retrievability import (
+    CitationPersistenceEligibility,
+    RetrievabilityContext,
+    RetrievabilitySubject,
+)
 from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
 from app.models.document_version import DocumentVersion
@@ -63,6 +68,20 @@ def revalidate_and_lock_sources(
     determinística. Todos os snapshots são derivados das linhas atuais da
     base; os metadados do DTO servem apenas para detetar mudanças ocorridas
     durante a geração.
+
+    A **admissibilidade documental** não é definida aqui: vem inteira de
+    ``CitationPersistenceEligibility``, em ``app.documents.retrievability``.
+    Essa política responde a "esta evidência foi legitimamente usada para
+    gerar **esta** resposta", e por isso **não** inclui C5: uma versão
+    ``processed`` entretanto superada por N+1 continua a ser a fonte real da
+    resposta já gerada, e continua admissível aqui. Este service nunca
+    resolve a versão efetiva nem consulta a política de recuperação.
+
+    O que permanece deste lado é matéria distinta, e assim deve continuar:
+    a consistência dos identificadores (defesa em profundidade sobre a FK
+    composta), a deteção de metadados alterados durante a geração e a
+    integridade do snapshot — checksums, normalização e coerência com o
+    ``extracted_text`` da versão.
     """
     if not cited_sources:
         raise _source_conflict()
@@ -122,6 +141,15 @@ def revalidate_and_lock_sources(
     chunks_by_id = {chunk.id: chunk for chunk in chunks}
     snapshots: list[SourceSnapshot] = []
 
+    # Os mesmos quatro valores que o pedido de persistência já recebe: não se
+    # introduz configuração nova, apenas se traduz o contexto.
+    retrievability = RetrievabilityContext(
+        institution_id=institution_id,
+        language=language,
+        reference_date=reference_date,
+        official_only=official_only,
+    )
+
     for citation_index, source in enumerate(cited_sources):
         version = versions_by_id.get(source.document_version_id)
         document = documents_by_id.get(source.document_id)
@@ -129,6 +157,8 @@ def revalidate_and_lock_sources(
         if version is None or document is None or chunk is None:
             raise _source_conflict()
 
+        # Defesa em profundidade sobre a foreign key composta, e não
+        # admissibilidade documental: sobrepõe-se deliberadamente a C1–C3.
         identifiers_match = (
             version.document_id == source.document_id
             and version.institution_id == institution_id
@@ -136,14 +166,16 @@ def revalidate_and_lock_sources(
             and chunk.document_id == source.document_id
             and chunk.institution_id == institution_id
         )
-        eligible = (
-            version.processing_status == "processed"
-            and document.is_active
-            and document.language == language
-            and chunk.language == language
-            and (document.valid_from is None or document.valid_from <= reference_date)
-            and (document.valid_until is None or document.valid_until >= reference_date)
-            and (not official_only or document.official_source)
+        # ``effective_version_id`` fica por resolver de propósito: C5 não faz
+        # parte desta política, e resolvê-la aqui reintroduziria a pergunta do
+        # retrieval ("é recuperável agora") onde a pergunta é outra.
+        verdict = CitationPersistenceEligibility.explain(
+            RetrievabilitySubject.from_entities(
+                chunk=chunk,
+                document=document,
+                version=version,
+            ),
+            retrievability,
         )
         metadata_unchanged = (
             source.document_title == document.title
@@ -170,7 +202,14 @@ def revalidate_and_lock_sources(
             and chunk.normalized_content == normalize_text(chunk.content)
             and content_matches_version
         )
-        if not identifiers_match or not eligible or not metadata_unchanged or not snapshot_valid:
+        # Erro único e genérico: a condição concreta que falhou nunca chega ao
+        # cliente, nem sequer o nome da condição do veredicto.
+        if (
+            not identifiers_match
+            or not verdict.eligible
+            or not metadata_unchanged
+            or not snapshot_valid
+        ):
             raise _source_conflict()
 
         snapshots.append(
