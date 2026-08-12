@@ -1,18 +1,18 @@
 # Estado atual
 
-**Observação:** 2026-08-12 · commit `e3f43f4359cc0f71c7e7fc3638dbef13048ada87` (`main`) · repositório
+**Observação:** 2026-08-12 · commit `d6dd75bd8aa6a802d6850018803eb4c91ec92f97` (`main`) · repositório
 `FredericoXX/Projeto-Final`
 
 Os factos abaixo descrevem o conteúdo de
-`e3f43f4359cc0f71c7e7fc3638dbef13048ada87`, o merge do Pull Request #42 que
-integrou os contratos provisórios de decisão (A2.1). Trabalho em curso em
+`d6dd75bd8aa6a802d6850018803eb4c91ec92f97`, o merge do Pull Request #43 que
+integrou o contrato de resultado do retrieval (A3/A4.1). Trabalho em curso em
 branches não fundidas não é estado deste SHA e, quando referido, é identificado
 como tal.
 
-O snapshot técnico aqui descrito é o da `main` em `e3f43f4`. A branch que
-acrescenta o contrato de resultado do retrieval (A3/A4.1 — `RetrievalResult`,
-trace no contrato e semântica explícita do score) **não está integrada** e
-nada neste documento a pressupõe; o seu merge será registado quando ocorrer.
+O snapshot técnico aqui descrito é o da `main` em `d6dd75b`. O contrato de
+resultado do retrieval — `RetrievalResult`, trace obrigatório no contrato e
+semântica explícita do score — **está integrado** desde esse merge; ver
+[Contrato de resultado do retrieval](#contrato-de-resultado-do-retrieval).
 
 Snapshot factual. Não contém regras: os princípios estão em
 [`01-project-constitution.md`](01-project-constitution.md), os critérios de
@@ -45,8 +45,9 @@ a 4 foram integradas depois dele (ver
 O mapa oficial dos temas está no [`README.md`](README.md#momentos).
 
 Depois do Momento 6, e fora da numeração dos momentos, foram integrados o
-**Pull Request #41** (fecho documental da issue #24, merge `2b3c91e`) e o
-**Pull Request #42** (contratos provisórios de decisão, merge `e3f43f4`) — ver
+**Pull Request #41** (fecho documental da issue #24, merge `2b3c91e`), o
+**Pull Request #42** (contratos provisórios de decisão, merge `e3f43f4`) e o
+**Pull Request #43** (contrato de resultado do retrieval, merge `d6dd75b`) — ver
 [Trabalho arquitetural em aberto](#trabalho-arquitetural-em-aberto).
 
 ## Arquitetura
@@ -74,7 +75,7 @@ Módulos do backend, em [`backend/app/`](../../backend/app/):
 | `storage/` | abstração de armazenamento (`Protocol` + implementação local) |
 | `documents/` | domínio documental partilhado, incluindo a política canónica de admissibilidade da evidência e as composições `RetrievalEligibility` / `CitationPersistenceEligibility` |
 | `decision/` | contratos provisórios de domínio da decisão agêntica (A2.1): tipos puros, **sem consumidores** |
-| `retrieval/` | planeamento de consulta, elegibilidade lexical, ranking, configuração FTS |
+| `retrieval/` | contrato de resultado (`RetrievalResult`), planeamento de consulta, elegibilidade lexical, ranking, configuração FTS |
 | `answering/` | contratos neutros, contexto, prompts, validação e adaptador de fornecedor |
 | `evaluation/` | contratos e artefactos da avaliação offline do Momento 5; não é importado pela aplicação |
 | `diagnostics/` | ferramenta interna de observação do pipeline documental |
@@ -144,22 +145,59 @@ Precisões factuais, verificadas neste SHA:
   documental, prompts, respostas brutas do fornecedor nem credenciais. A
   formulação "apenas reason codes e contagens" seria inexata.
 
+## Contrato de resultado do retrieval
+
+Integrado pelo **Pull Request #43** (merge `d6dd75b`), sem alterar comportamento
+público. `Retriever.search(...)` devolve um resultado estruturado em vez de uma
+lista:
+
+```
+Retriever.search(db, query, context, top_k, official_only)
+        │
+        └── RetrievalResult
+                ├── evidence         tuple[Evidence, ...] pela ordem do ranking
+                ├── trace            RetrievalTrace (obrigatório)
+                └── score_semantics  ScoreSemantics
+```
+
+- **`trace`** é obrigatório para qualquer implementação e transporta contagens
+  neutras (`candidates_evaluated`, `result_count_before_limit`). O retriever
+  lexical devolve a subclasse `LexicalRetrievalTrace`, com variantes de
+  consulta, quotas, motivos de exclusão e componentes de ranking. O trace
+  deixou de ser uma capacidade descoberta por introspeção: `search_with_trace`
+  e o acesso por `getattr` no diagnóstico foram removidos, e o consumidor
+  estreita o tipo por `isinstance`.
+- **`score_semantics`** declara como interpretar `Evidence.score`: no retriever
+  lexical, `ScoreKind.LEXICAL_RELEVANCE`, versão `lexical_composite_v1`, e
+  `comparable_across_queries=False`. O score é **relevância lexical composta** —
+  não é confidence, não é probabilidade, e não é semanticamente comparável entre
+  consultas diferentes, porque a cobertura é a fração dos termos daquela
+  pergunta.
+- **`Evidence` não mudou** e os schemas e payloads HTTP também não: a semântica
+  do score vive no resultado, não em cada evidência.
+
+Não existe `RetrievalOutcome`: o resultado não classifica a suficiência da
+evidência. Interpretar contagens ou motivos de exclusão seria decidir
+answerability, que não pertence a esta camada.
+
 ## Testes e verificações
 
-Contagens estruturais medidas em 2026-08-11: 53 ficheiros `test_*.py` no backend
-(em 57 módulos de [`backend/tests/`](../../backend/tests/), incluindo
-`conftest.py` e utilitários) e 9 ficheiros de teste no frontend. Os testes do
-backend usam PostgreSQL real numa base dedicada; os do frontend usam MSW, sem
-rede nem backend.
+Contagens estruturais medidas em 2026-08-12 sobre `d6dd75b`: 55 ficheiros
+`test_*.py` no backend (em 59 módulos de
+[`backend/tests/`](../../backend/tests/), incluindo `conftest.py` e utilitários)
+e 9 ficheiros de teste no frontend. Os testes do backend usam PostgreSQL real
+numa base dedicada; os do frontend usam MSW, sem rede nem backend.
 
-Contagem de execução sobre a `main` em `e3f43f4`: **1263 passed, 1 warning,
-243.44 s** (`python -m pytest -q`, 2026-08-12). O warning é o
-`StarletteDeprecationWarning` pré-existente de `fastapi/testclient.py`.
-`mypy app tests scripts` reporta 165 source files.
+Contagem de execução **medida sobre este SHA**, em 2026-08-12: **1280 passed,
+1 warning, 304.87 s** (`python -m pytest -q`). O warning é o
+`StarletteDeprecationWarning` pré-existente de `fastapi/testclient.py`. Na mesma
+data e sobre o mesmo SHA, `mypy app tests scripts` reporta **166 source files**
+sem erros e `ruff check .` passa.
 
-As contagens estruturais acima (53 ficheiros `test_*.py`) foram medidas em
-2026-08-11, antes do Pull Request #42, e não incluem
-`tests/test_decision_contracts.py`.
+Proveniência histórica, para leitura das diferenças: a execução sobre `e3f43f4`
+(antes do Pull Request #43) deu **1263 passed**. A diferença de 17 testes é
+`tests/test_retrieval_contract.py`, acrescentado por esse PR. O tempo de
+execução varia entre corridas e não deve ser lido como medida de desempenho.
 
 Existe uma **baseline estrutural offline** das respostas fundamentadas,
 produzida pelo Momento 5 e versionada em
@@ -270,6 +308,14 @@ sem consumidores**: nenhum módulo os importa, e apagá-los não alteraria o
 comportamento do sistema. Não existe `DecisionPolicy`, não existe qualquer
 mapeamento entre eles, e as questões de investigação que os governam continuam
 em aberto.
+
+O Pull Request #43 formalizou o resultado do retrieval (ver
+[Contrato de resultado do retrieval](#contrato-de-resultado-do-retrieval)) mas
+**não** consumiu nada disso numa decisão: o answering continua a tratar zero
+evidências como fallback determinístico e ignora deliberadamente o trace.
+Situações causalmente distintas que produzem zero evidências — corpus não
+admissível, ausência de correspondência lexical, cobertura insuficiente, limiar
+de relevância — continuam a colapsar no mesmo estado `insufficient_evidence`.
 
 Continua **não decidida** qualquer mudança na abordagem de recuperação — dense,
 híbrida, embeddings ou reranking por modelo. Este documento não deve ser lido
