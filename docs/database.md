@@ -457,6 +457,43 @@ no trace interno de diagnóstico). Tudo permanece determinístico e local: sem
 embeddings, sem pesquisa vetorial/semântica, sem LLM e sem sinónimos no
 retrieval.
 
+### Contrato de resultado do retrieval
+
+`Retriever.search` devolve um `RetrievalResult` (`app/retrieval/base.py`), não
+uma lista de evidências:
+
+| Campo | Semântica |
+| --- | --- |
+| `evidence` | tupla imutável, pela ordem do ranking, já cortada por `top_k` |
+| `trace` | `RetrievalTrace` — `candidates_evaluated` e `result_count_before_limit` |
+| `score_semantics` | `ScoreSemantics` — como interpretar `Evidence.score` |
+
+O trace genérico é **sempre** produzido e atravessa o contrato. O retriever
+lexical devolve `LexicalRetrievalTrace`, uma subclasse que acrescenta variantes,
+quotas, `ts_rank_cd` cru, sinais de ranking e os motivos de exclusão
+(`no_content_match`, `insufficient_coverage`, `below_threshold`). Esses motivos
+são conceitos lexicais — "cobertura" é uma fração de termos correspondidos — e
+por isso ficam na subclasse: o contrato neutro tem de continuar válido para uma
+estratégia que não tenha termos.
+
+As duas contagens neutras são o que separa "não havia candidatos" de "havia
+candidatos e nenhum sobreviveu", e a diferença entre `result_count_before_limit`
+e `len(evidence)` diz se o `top_k` truncou. **Não existe** um valor agregado que
+resuma o resultado: um estado como "suficiente" afirmaria que a evidência chega
+para responder, o que o retrieval não sabe — é uma propriedade da relação entre
+o pedido e a evidência, não da pesquisa.
+
+`ScoreSemantics` declara `kind` (`lexical_relevance`), `version` (a identidade da
+configuração de pesos e limiar, em `app/retrieval/reranking.py`) e
+`comparable_across_queries`, que é **`False`** para o score lexical. Isso deriva
+do algoritmo e não de prudência: `coverage` é uma fração do número de termos
+*daquela* pergunta, e `exact_phrase`, `ordered` e `proximity` valem `1.0` por
+construção numa pergunta de um só termo. Comparar scores entre perguntas
+diferentes compara sobretudo o comprimento das perguntas.
+
+Nada disto entra na API pública: o payload de `POST /api/v1/retrieval/search`
+mantém exatamente os mesmos campos por item.
+
 Limites que a abordagem **não** ultrapassa, e que importa não confundir com
 capacidades:
 

@@ -72,10 +72,16 @@ def ask(
         language=language,
         reference_date=datetime.now(UTC).date(),
     )
-    evidence = retriever.search(db, normalized_query, context, top_k, payload.official_only)
+    retrieval_result = retriever.search(
+        db, normalized_query, context, top_k, payload.official_only
+    )
+    evidence = retrieval_result.evidence
 
     # Política de evidência desta etapa: zero evidências → fallback
-    # determinístico, sem chamar o gerador; nunca há resposta livre.
+    # determinístico, sem chamar o gerador; nunca há resposta livre. O trace do
+    # retrieval está disponível em `retrieval_result` e é deliberadamente
+    # ignorado aqui: interpretar contagens ou motivos de exclusão seria decidir
+    # answerability, que não pertence a esta etapa.
     if not evidence:
         logger.info(
             "Answering sem evidências (instituição %s): fallback devolvido",

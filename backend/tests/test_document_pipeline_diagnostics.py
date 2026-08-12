@@ -31,20 +31,41 @@ from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
 from app.models.document_version import DocumentVersion
 from app.models.institution import Institution
-from app.retrieval.base import Evidence
+from app.retrieval.base import (
+    Evidence,
+    RetrievalResult,
+    RetrievalTrace,
+    ScoreKind,
+    ScoreSemantics,
+)
 
 BOOTSTRAP_HEADERS = {"X-Bootstrap-Token": settings.bootstrap_token or ""}
 
 
 class EmptyRetriever:
+    """Retriever sem resultados e **sem** trace lexical.
+
+    Cumpre o contrato: devolve sempre um ``RetrievalTrace`` genérico. O que não
+    produz é o detalhe lexical, porque não faz correspondência lexical nenhuma
+    — é exatamente a situação de um retriever de outra estratégia.
+    """
+
     def __init__(self) -> None:
         self.calls: list[tuple[str, Any, int, bool]] = []
 
     def search(
         self, db: Session, query: str, context: Any, top_k: int, official_only: bool
-    ) -> list[Evidence]:
+    ) -> RetrievalResult:
         self.calls.append((query, context, top_k, official_only))
-        return []
+        return RetrievalResult(
+            evidence=(),
+            trace=RetrievalTrace(candidates_evaluated=0, result_count_before_limit=0),
+            score_semantics=ScoreSemantics(
+                kind=ScoreKind.SYNTHETIC,
+                version="test_fake_v1",
+                comparable_across_queries=False,
+            ),
+        )
 
 
 def _question() -> diagnostic.DiagnosticQuestion:
@@ -1677,8 +1698,11 @@ def test_lexical_trace_does_not_duplicate_question_terms(
 
 
 def test_empty_retriever_leaves_lexical_trace_absent() -> None:
-    """Um retriever sem search_with_trace mantém o relatório válido, com o
-    trace lexical a None (contrato Retriever permanece neutro)."""
+    """Um retriever que não produz detalhe lexical mantém o relatório válido.
+
+    O trace genérico é sempre obrigatório pelo contrato; o que é opcional é a
+    subclasse lexical. Sem ela, a secção lexical do relatório fica ausente — é
+    a leitura correta, não uma degradação."""
     state = _classification_state()
     report = _minimal_report(
         diagnostic_report_version=4,

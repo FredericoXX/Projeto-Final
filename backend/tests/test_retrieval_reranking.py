@@ -16,13 +16,39 @@ from datetime import UTC, datetime
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.retrieval.base import RetrievalContext
-from app.retrieval.lexical import CANDIDATE_MAX, PostgresLexicalRetriever
+from app.retrieval.base import Evidence, RetrievalContext
+from app.retrieval.lexical import (
+    CANDIDATE_MAX,
+    LexicalRetrievalTrace,
+    PostgresLexicalRetriever,
+)
 from tests.test_retrieval import (
     _create_searchable,
     _search,
     _setup,
 )
+
+
+def _search_traced(
+    retriever: PostgresLexicalRetriever,
+    db: Session,
+    query: str,
+    context: RetrievalContext,
+    *,
+    top_k: int,
+    official_only: bool,
+) -> tuple[tuple[Evidence, ...], LexicalRetrievalTrace]:
+    """Executa a pesquisa e estreita o trace do contrato ao detalhe lexical.
+
+    O trace deixou de ser obtido por um método próprio (``search_with_trace``):
+    atravessa agora o contrato ``Retriever`` dentro de ``RetrievalResult``. O
+    ``isinstance`` é a asserção que torna a subclasse lexical parte do que estes
+    testes verificam — se o retriever passasse a devolver só o trace genérico,
+    estes testes falhariam em vez de silenciarem.
+    """
+    result = retriever.search(db, query, context, top_k, official_only)
+    assert isinstance(result.trace, LexicalRetrievalTrace)
+    return result.evidence, result.trace
 
 # --- Documentos sintéticos ---------------------------------------------------
 
@@ -183,7 +209,8 @@ def test_trace_reports_ranking_signals_for_change_question(
 
     retriever = PostgresLexicalRetriever()
     with test_session_factory() as db:
-        evidence, trace = retriever.search_with_trace(
+        evidence, trace = _search_traced(
+            retriever,
             db,
             normalize_text("Até quando posso mudar o regime de avaliação?"),
             _context(institution["id"]),
@@ -210,7 +237,8 @@ def test_candidate_pool_respects_the_global_budget(
 
     retriever = PostgresLexicalRetriever()
     with test_session_factory() as db:
-        _evidence, trace = retriever.search_with_trace(
+        _evidence, trace = _search_traced(
+            retriever,
             db,
             normalize_text("avaliacao"),
             _context(institution["id"]),
@@ -239,7 +267,8 @@ def test_four_variants_share_the_global_budget(
 
     retriever = PostgresLexicalRetriever()
     with test_session_factory() as db:
-        _evidence, trace = retriever.search_with_trace(
+        _evidence, trace = _search_traced(
+            retriever,
             db,
             normalize_text("Quando são os exames da primeira chamada?"),
             _context(institution["id"]),
@@ -292,7 +321,8 @@ def test_total_rows_fetched_never_exceed_the_global_budget(
         # acentos, e "são" deixa de casar a stopword portuguesa, passando a
         # ser um termo obrigatório que nenhum documento contém — a variante
         # exact não recuperaria nada e não saturaria a quota.
-        _evidence, trace = retriever.search_with_trace(
+        _evidence, trace = _search_traced(
+            retriever,
             db,
             normalize_text("exames da primeira chamada"),
             _context(institution["id"]),
@@ -350,7 +380,8 @@ def test_exact_variant_quota_is_reserved_against_higher_fts_candidates(
 
     retriever = PostgresLexicalRetriever()
     with test_session_factory() as db:
-        _evidence, trace = retriever.search_with_trace(
+        _evidence, trace = _search_traced(
+            retriever,
             db,
             normalize_text("periodo exames especial"),
             _context(institution["id"]),
@@ -391,7 +422,8 @@ def test_partial_coverage_candidate_is_excluded_by_coverage_not_threshold(
 
     retriever = PostgresLexicalRetriever()
     with test_session_factory() as db:
-        evidence, trace = retriever.search_with_trace(
+        evidence, trace = _search_traced(
+            retriever,
             db,
             normalize_text("Qual é o período dos exames?"),
             _context(institution["id"]),
@@ -416,7 +448,8 @@ def test_trace_counts_are_mathematically_consistent(
 
     retriever = PostgresLexicalRetriever()
     with test_session_factory() as db:
-        _evidence, trace = retriever.search_with_trace(
+        _evidence, trace = _search_traced(
+            retriever,
             db,
             normalize_text("Até quando posso mudar o regime de avaliação?"),
             _context(institution["id"]),
@@ -430,13 +463,13 @@ def test_trace_counts_are_mathematically_consistent(
     assert trace.unique_after_dedup <= trace.total_returned_before_dedup
     assert trace.candidates_evaluated == trace.unique_after_dedup
     assert trace.candidates_evaluated == (
-        trace.final_result_count
+        trace.result_count_before_limit
         + trace.excluded_no_content_match
         + trace.excluded_insufficient_coverage
         + trace.excluded_below_threshold
     )
     # O top_k não é uma exclusão de relevância.
-    assert len(trace.results) <= trace.final_result_count
+    assert len(trace.results) <= trace.result_count_before_limit
 
 
 def test_trace_never_contains_document_content(
@@ -447,7 +480,8 @@ def test_trace_never_contains_document_content(
 
     retriever = PostgresLexicalRetriever()
     with test_session_factory() as db:
-        _evidence, trace = retriever.search_with_trace(
+        _evidence, trace = _search_traced(
+            retriever,
             db,
             normalize_text("Até quando posso mudar o regime de avaliação?"),
             _context(institution["id"]),
@@ -497,7 +531,8 @@ def test_ocr_cardinal_is_not_treated_as_ordinal(
 
     retriever = PostgresLexicalRetriever()
     with test_session_factory() as db:
-        evidence, trace = retriever.search_with_trace(
+        evidence, trace = _search_traced(
+            retriever,
             db,
             normalize_text("exames da primeira chamada"),
             _context(institution["id"]),
@@ -524,7 +559,8 @@ def test_ocr_number_run_is_not_split_into_range(
 
     retriever = PostgresLexicalRetriever()
     with test_session_factory() as db:
-        _evidence, trace = retriever.search_with_trace(
+        _evidence, trace = _search_traced(
+            retriever,
             db,
             normalize_text("semana institucional 0509"),
             _context(institution["id"]),
@@ -581,7 +617,8 @@ def test_number_run_does_not_match_a_range_in_retrieval(
 
     retriever = PostgresLexicalRetriever()
     with test_session_factory() as db:
-        _evidence, trace = retriever.search_with_trace(
+        _evidence, trace = _search_traced(
+            retriever,
             db,
             normalize_text("semana institucional 0509"),
             _context(institution["id"]),
@@ -682,7 +719,8 @@ def test_retrieval_logs_only_controlled_metadata(
     try:
         retriever = PostgresLexicalRetriever()
         with test_session_factory() as db:
-            retriever.search_with_trace(
+            _search_traced(
+                retriever,
                 db,
                 normalize_text("Até quando posso mudar o regime de avaliação?"),
                 _context(institution["id"]),

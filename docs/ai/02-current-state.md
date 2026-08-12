@@ -1,16 +1,18 @@
 # Estado atual
 
-**Observação:** 2026-08-11 · commit `f4c850ebf5101c9c04c4b5f65ba446480bc15139` (`main`) · repositório
+**Observação:** 2026-08-12 · commit `e3f43f4359cc0f71c7e7fc3638dbef13048ada87` (`main`) · repositório
 `FredericoXX/Projeto-Final`
 
 Os factos abaixo descrevem o conteúdo de
-`f4c850ebf5101c9c04c4b5f65ba446480bc15139`, o merge do Pull Request #40 que
-integrou a Fase 4 da issue #24. Trabalho em curso em branches não fundidas não
-é estado deste SHA e, quando referido, é identificado como tal.
+`e3f43f4359cc0f71c7e7fc3638dbef13048ada87`, o merge do Pull Request #42 que
+integrou os contratos provisórios de decisão (A2.1). Trabalho em curso em
+branches não fundidas não é estado deste SHA e, quando referido, é identificado
+como tal.
 
-O snapshot técnico aqui descrito é o da `main` em `f4c850eb`; a branch que
-reconcilia esta documentação com esse estado não acrescenta comportamento e o
-seu merge não é pressuposto por nenhuma afirmação deste documento.
+O snapshot técnico aqui descrito é o da `main` em `e3f43f4`. A branch que
+acrescenta o contrato de resultado do retrieval (A3/A4.1 — `RetrievalResult`,
+trace no contrato e semântica explícita do score) **não está integrada** e
+nada neste documento a pressupõe; o seu merge será registado quando ocorrer.
 
 Snapshot factual. Não contém regras: os princípios estão em
 [`01-project-constitution.md`](01-project-constitution.md), os critérios de
@@ -42,6 +44,11 @@ a 4 foram integradas depois dele (ver
 [Política de admissibilidade da evidência](#política-de-admissibilidade-da-evidência)).
 O mapa oficial dos temas está no [`README.md`](README.md#momentos).
 
+Depois do Momento 6, e fora da numeração dos momentos, foram integrados o
+**Pull Request #41** (fecho documental da issue #24, merge `2b3c91e`) e o
+**Pull Request #42** (contratos provisórios de decisão, merge `e3f43f4`) — ver
+[Trabalho arquitetural em aberto](#trabalho-arquitetural-em-aberto).
+
 ## Arquitetura
 
 Monorepo com três peças:
@@ -66,6 +73,7 @@ Módulos do backend, em [`backend/app/`](../../backend/app/):
 | `models/`, `schemas/` | entidades ORM e contratos de pedido/resposta |
 | `storage/` | abstração de armazenamento (`Protocol` + implementação local) |
 | `documents/` | domínio documental partilhado, incluindo a política canónica de admissibilidade da evidência e as composições `RetrievalEligibility` / `CitationPersistenceEligibility` |
+| `decision/` | contratos provisórios de domínio da decisão agêntica (A2.1): tipos puros, **sem consumidores** |
 | `retrieval/` | planeamento de consulta, elegibilidade lexical, ranking, configuração FTS |
 | `answering/` | contratos neutros, contexto, prompts, validação e adaptador de fornecedor |
 | `evaluation/` | contratos e artefactos da avaliação offline do Momento 5; não é importado pela aplicação |
@@ -144,13 +152,14 @@ Contagens estruturais medidas em 2026-08-11: 53 ficheiros `test_*.py` no backend
 backend usam PostgreSQL real numa base dedicada; os do frontend usam MSW, sem
 rede nem backend.
 
-Contagem de execução: **1227 passed, 1 warning, 236.67 s** (`python -m pytest
--q`, 2026-08-11). O warning é o `StarletteDeprecationWarning` pré-existente de
-`fastapi/testclient.py`. `mypy app tests scripts` reporta 162 source files.
+Contagem de execução sobre a `main` em `e3f43f4`: **1263 passed, 1 warning,
+243.44 s** (`python -m pytest -q`, 2026-08-12). O warning é o
+`StarletteDeprecationWarning` pré-existente de `fastapi/testclient.py`.
+`mypy app tests scripts` reporta 165 source files.
 
-Esta medição foi feita na branch de fecho documental, que acrescenta dois testes
-de caracterização do diagnóstico e não altera produção; sobre a `main` em
-`f4c850eb` a mesma suite reporta **1225 passed**, registado no Pull Request #40.
+As contagens estruturais acima (53 ficheiros `test_*.py`) foram medidas em
+2026-08-11, antes do Pull Request #42, e não incluem
+`tests/test_decision_contracts.py`.
 
 Existe uma **baseline estrutural offline** das respostas fundamentadas,
 produzida pelo Momento 5 e versionada em
@@ -251,13 +260,20 @@ sobre criá-los.
 
 ## Trabalho arquitetural em aberto
 
-Nenhuma refatoração arquitetural está em curso ou aprovada neste SHA. A issue
-#24 era a única em execução e a sua implementação está concluída.
+A issue #24 está **encerrada** (`CLOSED`/`completed`) e a sua implementação
+concluída.
 
-A evolução seguinte — nomeadamente a formalização de contratos de domínio para a
-decisão de resposta, e qualquer mudança na abordagem de recuperação — **não está
-decidida** e será objeto de decisão separada. Nada disso existe no código: este
-documento não deve ser lido como anúncio de trabalho iniciado.
+O Pull Request #42 introduziu, em `app/decision/contracts.py`, quatro contratos
+provisórios de domínio para a decisão de resposta — `ScopeClass`,
+`RequestConstraint`, `AnswerabilityClass` e `DecisionOutcome`. São **tipos puros
+sem consumidores**: nenhum módulo os importa, e apagá-los não alteraria o
+comportamento do sistema. Não existe `DecisionPolicy`, não existe qualquer
+mapeamento entre eles, e as questões de investigação que os governam continuam
+em aberto.
+
+Continua **não decidida** qualquer mudança na abordagem de recuperação — dense,
+híbrida, embeddings ou reranking por modelo. Este documento não deve ser lido
+como anúncio de trabalho iniciado nessa direção.
 
 ## Divergências documentais conhecidas
 

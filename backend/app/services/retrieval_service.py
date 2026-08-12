@@ -41,15 +41,19 @@ def search_evidence(
         # a data local do servidor podia divergir até um dia perto da meia-noite.
         reference_date=datetime.now(UTC).date(),
     )
-    evidence = retriever.search(
+    result = retriever.search(
         db,
         normalized_query,
         context,
         payload.top_k,
         payload.official_only,
     )
+    # Só a evidência atravessa para HTTP. O trace e a semântica do score são
+    # domínio interno: `asdict` sobre `Evidence` continua a ser a única fonte
+    # dos campos públicos, e o Momento 6 fixa que esse conjunto é exatamente o
+    # de `RetrievalEvidenceRead`.
     return RetrievalSearchResponse(
         query=payload.query,
         language=language,
-        items=[RetrievalEvidenceRead(**asdict(item)) for item in evidence],
+        items=[RetrievalEvidenceRead(**asdict(item)) for item in result.evidence],
     )

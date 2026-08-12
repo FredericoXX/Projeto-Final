@@ -58,12 +58,21 @@ A **secção do trace** contém apenas metadados e sinais de ranking: **nunca**
 termos da pergunta, conteúdo de chunks, títulos fornecidos, secções, URLs,
 prompts, respostas ou segredos.
 
-Essa fronteira é explícita no código. O trace devolvido por `search_with_trace`
-é uma estrutura **interna**, em memória, que conhece as formas canónicas dos
-termos e serve a depuração e os testes; o relatório recebe uma projeção
-**redigida** (`redact_lexical_trace`), em que os termos informativos e os termos
-correspondidos passam a contagens. Como o Markdown e o JSON são ambos gerados a
-partir dessa projeção, nenhum deles recebe termos derivados — verificado por
+Essa fronteira é explícita no código. O retrieval devolve o resultado e o
+respetivo trace através do contrato comum `RetrievalResult`. O campo
+`RetrievalResult.trace` contém a informação de observabilidade obrigatória para
+qualquer implementação de `Retriever`; quando o retriever utilizado é lexical,
+esse trace é especializado por `LexicalRetrievalTrace`, que acrescenta detalhes
+como variantes da consulta, contagens de candidatos, motivos de exclusão e
+métricas de ranking. O diagnóstico consome este trace diretamente através do
+contrato `Retriever`, sem introspeção ou métodos opcionais como
+`search_with_trace`.
+
+Esse trace é uma estrutura **interna**, em memória, que conhece as formas
+canónicas dos termos e serve a depuração e os testes; o relatório recebe uma
+projeção **redigida** (`redact_lexical_trace`), em que os termos informativos e
+os termos correspondidos passam a contagens. Como o Markdown e o JSON são ambos
+gerados a partir dessa projeção, nenhum deles recebe termos derivados — verificado por
 `test_lexical_trace_does_not_duplicate_question_terms`. Os ordinais e intervalos
 permanecem por serem marcadores estruturais exigidos pelo relatório, não
 conteúdo lexical.

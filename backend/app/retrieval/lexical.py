@@ -52,7 +52,14 @@ from app.documents.retrievability import (
 from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
 from app.models.document_version import DocumentVersion
-from app.retrieval.base import Evidence, RetrievalContext
+from app.retrieval.base import (
+    Evidence,
+    RetrievalContext,
+    RetrievalResult,
+    RetrievalTrace,
+    ScoreKind,
+    ScoreSemantics,
+)
 from app.retrieval.eligibility import ExclusionReason
 from app.retrieval.fts_config import resolve_fts_config
 from app.retrieval.lexical_normalization import build_lexical_representation
@@ -63,6 +70,7 @@ from app.retrieval.query_planning import (
     plan_lexical_query,
 )
 from app.retrieval.reranking import (
+    SCORING_VERSION,
     ExcludedCandidate,
     LexicalCandidate,
     RankedCandidate,
@@ -71,6 +79,16 @@ from app.retrieval.reranking import (
 )
 
 logger = logging.getLogger(__name__)
+
+# Semântica do score devolvido por este retriever. Constante: não depende da
+# pergunta nem do resultado, só da política de scoring do módulo de reranking.
+# `comparable_across_queries` é False por derivação do algoritmo, não por
+# prudência — ver ScoreSemantics em app.retrieval.base.
+LEXICAL_SCORE_SEMANTICS = ScoreSemantics(
+    kind=ScoreKind.LEXICAL_RELEVANCE,
+    version=SCORING_VERSION,
+    comparable_across_queries=False,
+)
 
 # --- Orçamento global do candidate pool -------------------------------------
 # global_candidate_limit = min(MAX, max(MIN, top_k * MULTIPLIER)). Proporcional
@@ -136,8 +154,8 @@ class ExcludedCandidateTrace:
 
 
 @dataclass(frozen=True)
-class LexicalRetrievalTrace:
-    """Trace interno do retrieval lexical (diagnóstico e testes).
+class LexicalRetrievalTrace(RetrievalTrace):
+    """Trace do retrieval lexical: a base neutra mais o detalhe da estratégia.
 
     Não altera o comportamento da pesquisa, não é endpoint público, não
     contém documentos completos nem segredos: só metadados de ranking e as
@@ -150,15 +168,22 @@ class LexicalRetrievalTrace:
         unique_after_dedup         <= total_returned_before_dedup
         unique_after_dedup         <= global_candidate_limit
         candidates_evaluated       == unique_after_dedup
-        candidates_evaluated       == final_result_count
+        candidates_evaluated       == result_count_before_limit
                                       + excluded_no_content_match
                                       + excluded_insufficient_coverage
                                       + excluded_below_threshold
 
-    ``final_result_count`` conta os candidatos que sobreviveram à
-    elegibilidade e ao limiar, **antes** do corte por ``top_k``: o ``top_k``
-    é uma escolha de apresentação, nunca uma exclusão por relevância.
-    ``results`` detalha apenas os que foram efetivamente devolvidos.
+    ``candidates_evaluated`` e ``result_count_before_limit`` são herdados de
+    :class:`~app.retrieval.base.RetrievalTrace` — é por eles que este trace
+    satisfaz o contrato neutro. ``result_count_before_limit`` conta os
+    candidatos que sobreviveram à elegibilidade e ao limiar, **antes** do corte
+    por ``top_k``: o ``top_k`` é uma escolha de apresentação, nunca uma exclusão
+    por relevância. ``results`` detalha apenas os que foram efetivamente
+    devolvidos.
+
+    Os campos abaixo são específicos da estratégia lexical e por isso vivem
+    aqui, e não na base: um retriever denso não tem variantes de tsquery nem
+    cobertura de termos.
     """
 
     fts_config: str
@@ -170,11 +195,9 @@ class LexicalRetrievalTrace:
     variants: tuple[VariantTrace, ...]
     total_returned_before_dedup: int
     unique_after_dedup: int
-    candidates_evaluated: int
     excluded_no_content_match: int
     excluded_insufficient_coverage: int
     excluded_below_threshold: int
-    final_result_count: int
     results: tuple[RankedResultTrace, ...]
     excluded: tuple[ExcludedCandidateTrace, ...]
 
@@ -217,23 +240,14 @@ class PostgresLexicalRetriever:
         context: RetrievalContext,
         top_k: int,
         official_only: bool,
-    ) -> list[Evidence]:
-        evidence, _trace = self.search_with_trace(db, query, context, top_k, official_only)
-        return evidence
+    ) -> RetrievalResult:
+        """Executa a pesquisa uma única vez e devolve evidência **e** trace.
 
-    def search_with_trace(
-        self,
-        db: Session,
-        query: str,
-        context: RetrievalContext,
-        top_k: int,
-        official_only: bool,
-    ) -> tuple[list[Evidence], LexicalRetrievalTrace]:
-        """Como ``search``, mas devolve também o trace interno auditável.
-
-        Executa a pesquisa exatamente uma vez; o trace é um subproduto, não
-        uma segunda pesquisa. O ``Retriever`` genérico não depende deste
-        método (o diagnóstico usa-o opcionalmente por introspeção).
+        O trace é um subproduto desta mesma execução, nunca uma segunda
+        pesquisa. Antes existia um ``search_with_trace`` separado e ``search``
+        descartava o trace que ele produzia; o resultado era que o único
+        consumidor do trace tinha de o descobrir por introspeção. Agora
+        atravessa o contrato.
         """
         fts_config = resolve_fts_config(context.language)
         plan = plan_lexical_query(query, context.language)
@@ -267,7 +281,7 @@ class PostgresLexicalRetriever:
             min_relevance_score=settings.retrieval_min_relevance_score,
         )
         top_results = result.ranked[:top_k]
-        evidence = [_ranked_to_evidence(ranked) for ranked in top_results]
+        evidence = tuple(_ranked_to_evidence(ranked) for ranked in top_results)
 
         trace = self._build_trace(
             query=query,
@@ -298,7 +312,11 @@ class PostgresLexicalRetriever:
             context.institution_id,
             context.language,
         )
-        return evidence, trace
+        return RetrievalResult(
+            evidence=evidence,
+            trace=trace,
+            score_semantics=LEXICAL_SCORE_SEMANTICS,
+        )
 
     def _merge_candidate(
         self, candidates: dict, row, strategy: LexicalQueryStrategy
@@ -461,7 +479,7 @@ class PostgresLexicalRetriever:
             excluded_below_threshold=result.excluded_count(
                 ExclusionReason.BELOW_THRESHOLD
             ),
-            final_result_count=len(result.ranked),
+            result_count_before_limit=len(result.ranked),
             results=tuple(_ranked_to_trace(ranked) for ranked in top_results),
             excluded=tuple(
                 _excluded_to_trace(item)

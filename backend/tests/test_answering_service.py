@@ -21,7 +21,14 @@ from app.answering.base import (
 from app.core.config import settings
 from app.core.exceptions import ValidationError
 from app.models.user import User
-from app.retrieval.base import Evidence, RetrievalContext
+from app.retrieval.base import (
+    Evidence,
+    RetrievalContext,
+    RetrievalResult,
+    RetrievalTrace,
+    ScoreKind,
+    ScoreSemantics,
+)
 from app.schemas.answering import AnsweringRequest
 from app.services import answering_service
 
@@ -43,7 +50,7 @@ class FakeRetriever:
         context: RetrievalContext,
         top_k: int,
         official_only: bool,
-    ) -> list[Evidence]:
+    ) -> RetrievalResult:
         self.calls.append(
             {
                 "query": query,
@@ -52,7 +59,21 @@ class FakeRetriever:
                 "official_only": official_only,
             }
         )
-        return list(self.evidence)
+        # Trace factual sobre este duplo: as evidências fixas são as únicas
+        # candidatas e nenhuma é excluída. Semântica sintética — o número em
+        # `Evidence.score` não é relevância de coisa nenhuma.
+        return RetrievalResult(
+            evidence=tuple(self.evidence),
+            trace=RetrievalTrace(
+                candidates_evaluated=len(self.evidence),
+                result_count_before_limit=len(self.evidence),
+            ),
+            score_semantics=ScoreSemantics(
+                kind=ScoreKind.SYNTHETIC,
+                version="test_fake_v1",
+                comparable_across_queries=False,
+            ),
+        )
 
 
 class FakeAnswerGenerator:
