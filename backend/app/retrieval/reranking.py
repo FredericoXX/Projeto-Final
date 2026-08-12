@@ -64,6 +64,13 @@ from app.retrieval.query_planning import (
 # FTS (um parágrafo longo não vence por repetição) sem dar pontos
 # independentes a conteúdo que nada corresponde. Nenhum destes pesos pode
 # criar evidência: essa decisão pertence inteiramente à elegibilidade.
+# Identidade da configuração de scoring: pesos acima + limiar mínimo aplicado
+# em ``rerank``. Alterar qualquer um deles muda o significado quantitativo de
+# **todos** os scores, pelo que a versão tem de subir junto — é o que torna a
+# incomparabilidade entre execuções declarável em vez de silenciosa. Viaja no
+# contrato em ``ScoreSemantics.version`` (app.retrieval.base).
+SCORING_VERSION = "lexical_composite_v1"
+
 W_COVERAGE = 0.40
 W_EXACT_PHRASE = 0.16
 W_PROXIMITY = 0.14

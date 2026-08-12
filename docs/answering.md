@@ -231,6 +231,14 @@ ordenável, mas **não** é uma probabilidade nem uma medida universal de
 confiança factual; o `ts_rank_cd` cru é apenas um dos seus sinais
 auxiliares e não é exposto pelo answering.
 
+O retriever devolve um `RetrievalResult` — evidência, trace e semântica do
+score (ver [`docs/database.md`](database.md)). O answering usa **apenas**
+`result.evidence`, e continua a decidir pela política acima: zero evidências
+→ fallback. O trace e as suas contagens estão disponíveis e são
+deliberadamente ignorados aqui — interpretá-los para decidir seria avaliar
+se a evidência *chega* para responder, o que é outra etapa e não existe
+nesta fase.
+
 ## Configuração
 
 Ver `.env.example`:

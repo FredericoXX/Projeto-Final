@@ -57,7 +57,7 @@ from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
 from app.models.document_version import DocumentVersion
 from app.models.institution import Institution
-from app.retrieval.base import Evidence, RetrievalContext, Retriever
+from app.retrieval.base import Evidence, RetrievalContext, RetrievalResult, Retriever
 from app.retrieval.lexical import LexicalRetrievalTrace
 from app.services.document_extraction_service import PAGE_SEPARATOR
 
@@ -1469,8 +1469,8 @@ def analyze_question_retrieval(
 # Projeção redigida do trace do retriever
 # ---------------------------------------------------------------------------
 #
-# O trace devolvido por ``search_with_trace`` é uma estrutura **interna**: vive
-# em memória e inclui as formas canónicas dos termos da pergunta, úteis para
+# O trace que chega em ``RetrievalResult.trace`` é uma estrutura **interna**:
+# vive em memória e inclui as formas canónicas dos termos da pergunta, úteis para
 # depuração e testes. Estas dataclasses são a fronteira entre esse trace e o
 # relatório: tudo o que atravessa são contagens, métricas, marcadores
 # estruturais e identificadores técnicos — nunca o texto dos termos.
@@ -1577,7 +1577,9 @@ def redact_lexical_trace(trace: LexicalRetrievalTrace) -> LexicalTraceReport:
         excluded_no_content_match=trace.excluded_no_content_match,
         excluded_insufficient_coverage=trace.excluded_insufficient_coverage,
         excluded_below_threshold=trace.excluded_below_threshold,
-        final_result_count=trace.final_result_count,
+        # O campo do relatório mantém o nome histórico; a fonte passou a ser o
+        # nome neutro do contrato (`RetrievalTrace`). O formato v5 não muda.
+        final_result_count=trace.result_count_before_limit,
         results=tuple(
             LexicalResultReport(
                 chunk_id=result.chunk_id,
@@ -1994,25 +1996,23 @@ def _build_global_conclusion(
     )
 
 
-def _search_with_optional_trace(
-    retriever: Retriever,
-    db: Session,
-    normalized_query: str,
-    context: RetrievalContext,
-    top_k: int,
-    official_only: bool,
-) -> tuple[list[Evidence], LexicalRetrievalTrace | None]:
-    """Executa a pesquisa uma única vez, capturando o trace se existir.
+def _lexical_trace_of(result: RetrievalResult) -> LexicalRetrievalTrace | None:
+    """Estreita o trace do contrato ao detalhe lexical, quando o há.
 
-    O contrato ``Retriever`` mantém-se neutro (só ``search``); o trace é
-    um extra opcional, detetado por introspeção. Um retriever alternativo
-    ou um duplo de teste sem ``search_with_trace`` continua a funcionar.
+    O trace genérico é **sempre** obrigatório e chega pelo contrato
+    ``Retriever`` — deixou de ser uma capacidade opcional descoberta por
+    ``getattr``. O que continua opcional é o *detalhe lexical*, e isso é uma
+    propriedade da estratégia, não do contrato: um retriever denso produzirá um
+    trace válido sem variantes de tsquery nem cobertura de termos.
+
+    A secção lexical do relatório é omitida nesse caso, o que é a leitura
+    correta — não há sinais lexicais a relatar —, e não uma degradação
+    silenciosa: as contagens neutras do trace continuam disponíveis em
+    ``result.trace``.
     """
-    search_with_trace = getattr(retriever, "search_with_trace", None)
-    if callable(search_with_trace):
-        results, trace = search_with_trace(db, normalized_query, context, top_k, official_only)
-        return results, trace
-    return retriever.search(db, normalized_query, context, top_k, official_only), None
+    if isinstance(result.trace, LexicalRetrievalTrace):
+        return result.trace
+    return None
 
 
 def run_diagnostic(
@@ -2129,9 +2129,11 @@ def run_diagnostic(
                 language=question.language,
                 reference_date=resolved_reference_date,
             )
-            results, raw_trace = _search_with_optional_trace(
-                retriever, db, normalized_query, context, top_k, official_only
+            retrieval_result = retriever.search(
+                db, normalized_query, context, top_k, official_only
             )
+            results = list(retrieval_result.evidence)
+            raw_trace = _lexical_trace_of(retrieval_result)
             # O trace atravessa para o relatório apenas na forma redigida: as
             # formas canónicas derivadas da pergunta passam a contagens.
             lexical_trace = redact_lexical_trace(raw_trace) if raw_trace is not None else None

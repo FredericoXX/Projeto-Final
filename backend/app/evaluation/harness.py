@@ -34,7 +34,14 @@ from app.core.config import settings
 from app.evaluation.contracts import CorpusCase, ExecutionConfig
 from app.models.institution import Institution
 from app.models.user import User
-from app.retrieval.base import Evidence, RetrievalContext
+from app.retrieval.base import (
+    Evidence,
+    RetrievalContext,
+    RetrievalResult,
+    RetrievalTrace,
+    ScoreKind,
+    ScoreSemantics,
+)
 
 # Namespace estável: os UUID técnicos são derivados, nunca versionados no
 # corpus, e nunca aparecem no relatório.
@@ -47,6 +54,15 @@ SYNTHETIC_USER_ID: Final[UUID] = uuid5(EVALUATION_NAMESPACE, "user")
 # `Evidence` exige o campo, mas o answering usa a **ordem** do ranking e
 # nunca o valor (ver docs/answering.md). Uma constante deixa isso claro.
 SYNTHETIC_EVIDENCE_SCORE: Final = 1.0
+
+# E o contrato deixa-o explícito: este 1.0 não é relevância lexical nem
+# qualquer outra medida. Declará-lo `LEXICAL_RELEVANCE` daria significado
+# científico a um número que existe apenas para satisfazer o dataclass.
+SYNTHETIC_SCORE_SEMANTICS: Final = ScoreSemantics(
+    kind=ScoreKind.SYNTHETIC,
+    version="moment05_harness_v1",
+    comparable_across_queries=False,
+)
 
 SYNTHETIC_LANGUAGES: Final[list[str]] = ["pt", "en"]
 
@@ -104,9 +120,19 @@ class FakeRetriever:
         context: RetrievalContext,
         top_k: int,
         official_only: bool,
-    ) -> list[Evidence]:
+    ) -> RetrievalResult:
         self.calls.append({"top_k": top_k, "official_only": official_only})
-        return list(self.evidence)
+        # O trace é factual sobre este fake: as evidências do caso são as
+        # únicas candidatas e nenhuma é excluída. Não se inventa detalhe
+        # lexical — o fake não faz correspondência lexical nenhuma.
+        return RetrievalResult(
+            evidence=tuple(self.evidence),
+            trace=RetrievalTrace(
+                candidates_evaluated=len(self.evidence),
+                result_count_before_limit=len(self.evidence),
+            ),
+            score_semantics=SYNTHETIC_SCORE_SEMANTICS,
+        )
 
 
 @dataclass
