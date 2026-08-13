@@ -72,10 +72,9 @@ silenciosamente o registo do que foi dito na altura.
 
 Este princípio é geral e não fixa mecanismo. A forma concreta de o cumprir — o
 modelo de citações persistidas, e a distinção entre "recuperável agora" e
-"legitimamente citado então" — é matéria de desenho, atualmente em discussão na
-issue #24 (ver [`02-current-state.md`](02-current-state.md)). Essa distinção é
-uma **decisão de domínio pendente de formalização**, não uma regra
-constitucional.
+"legitimamente citado então" — é **matéria de desenho, não regra
+constitucional**. O estado dessa formalização vive em
+[`02-current-state.md`](02-current-state.md).
 
 ## 5. Neutralidade de fornecedor como objetivo arquitetural
 
@@ -84,11 +83,13 @@ A integração com serviços externos fica isolada atrás de contratos neutros, 
 módulo adaptador dedicado, para que trocar de fornecedor seja uma alteração
 localizada.
 
-Isto é um objetivo de desenho, não uma afirmação sobre o presente: o adapter
-reduz o acoplamento, mas o SDK do fornecedor atualmente configurado **é uma
-dependência de runtime** da aplicação, importada quando a aplicação é
-carregada. A neutralidade que existe é a do contrato, não a da árvore de
-dependências.
+Isto é um objetivo de desenho, e o seu alcance é declarado em vez de presumido:
+um contrato neutro reduz o acoplamento, mas não elimina por si só a dependência
+de instalação nem determina em que ponto o SDK é carregado. **Resolver um
+fornecedor não deve impor o carregamento de outro**, e o conhecimento do SDK não
+sai do adaptador. O que é hoje dependência de instalação, e onde o SDK é
+efetivamente importado, é estado corrente e vive em
+[`02-current-state.md`](02-current-state.md).
 
 A aplicação deve arrancar sem credenciais de fornecedor; a ausência de
 configuração só produz efeito no ponto em que o serviço é realmente necessário.

@@ -1,20 +1,17 @@
 # Estado atual
 
-**Observação:** 2026-08-12 · implementação A6.1 na branch
-`feat/provider-lazy-import-a6-1`, baseada no commit
-`73fe8ef642fce4320c3290f0e1be07bcfaca795e` (`main`, merge do Pull Request
-#44) · repositório `FredericoXX/Projeto-Final`
+**Observação:** 2026-08-13 · `main` em
+`6ae9badefc81f90135feb726be10a750c80105d6` (merge do Pull Request #45) ·
+repositório `FredericoXX/Projeto-Final`
 
-Os factos abaixo descrevem a implementação A6.1 desta branch sobre
-`73fe8ef642fce4320c3290f0e1be07bcfaca795e`, merge do Pull Request #44 que
-integrou a caracterização A6.0. A A6.1 ainda não está integrada na `main`; este
-documento não antecipa SHA de merge. Trabalho em curso noutras branches não é
-estado deste snapshot e, quando referido, é identificado como tal.
+Os factos abaixo descrevem a `main` em
+`6ae9badefc81f90135feb726be10a750c80105d6`, merge do Pull Request #45 que
+integrou a implementação A6.1. Trabalho em curso noutras branches não é estado
+deste snapshot e, quando referido, é identificado como tal.
 
-O snapshot técnico aqui descrito é o da implementação A6.1, baseada na `main`
-em `73fe8ef`. O contrato de resultado do retrieval — `RetrievalResult`, trace
-obrigatório no contrato e semântica explícita do score — **está integrado**
-desde o Pull Request #43; ver
+O contrato de resultado do retrieval — `RetrievalResult`, trace obrigatório no
+contrato e semântica explícita do score — está integrado desde o Pull Request
+#43; ver
 [Contrato de resultado do retrieval](#contrato-de-resultado-do-retrieval).
 
 Snapshot factual. Não contém regras: os princípios estão em
@@ -50,9 +47,10 @@ O mapa oficial dos temas está no [`README.md`](README.md#momentos).
 Depois do Momento 6, e fora da numeração dos momentos, foram integrados o
 **Pull Request #41** (fecho documental da issue #24, merge `2b3c91e`), o
 **Pull Request #42** (contratos provisórios de decisão, merge `e3f43f4`), o
-**Pull Request #43** (contrato de resultado do retrieval, merge `d6dd75b`) e o
+**Pull Request #43** (contrato de resultado do retrieval, merge `d6dd75b`), o
 **Pull Request #44** (fecho documental A3/A4.2 e caracterização A6.0, merge
-`73fe8ef`) — ver
+`73fe8ef`) e o **Pull Request #45** (carregamento tardio do provider, A6.1,
+merge `6ae9bad`) — ver
 [Trabalho arquitetural em aberto](#trabalho-arquitetural-em-aberto).
 
 ## Arquitetura
@@ -190,14 +188,16 @@ answerability, que não pertence a esta camada.
 
 ## Testes e verificações
 
-Contagens estruturais medidas em 2026-08-12 sobre a implementação A6.1: 56
+Contagens estruturais medidas em 2026-08-12 sobre o conteúdo da implementação
+A6.1, entretanto integrado em `6ae9bad`: 56
 ficheiros `test_*.py` no backend (em 60 módulos de
 [`backend/tests/`](../../backend/tests/), incluindo `conftest.py` e utilitários)
 e 9 ficheiros de teste no frontend. Os testes do backend usam PostgreSQL real
 numa base dedicada; os do frontend usam MSW, sem rede nem backend.
 
-Contagem de execução **medida sobre esta branch antes do commit**, em
-2026-08-12: **1287 passed, 1 warning, 338.18 s** (`python -m pytest -q`). O
+Contagem de execução medida em 2026-08-12 **sobre o conteúdo da A6.1 antes do
+merge**, idêntico ao de `6ae9bad`: **1287 passed, 1 warning, 338.18 s**
+(`python -m pytest -q`). Não foi executada nova corrida após o merge. O
 warning é o
 `StarletteDeprecationWarning` pré-existente de `fastapi/testclient.py`. Na mesma
 data e sobre o mesmo conteúdo, `mypy app tests scripts` reporta **167 source
@@ -356,7 +356,16 @@ As divergências anteriormente registadas aqui foram corrigidas **na fonte**:
   isolamento das queries, as foreign keys compostas garantem integridade
   relacional, e não existe Row-Level Security;
 - [`docs/diagnostics/README.md`](../diagnostics/README.md) deixou de descrever
-  D2 como a única mudança possível de veredicto do formato v5.
+  D2 como a única mudança possível de veredicto do formato v5;
+- a §5 de [`01-project-constitution.md`](01-project-constitution.md) descrevia o
+  SDK do fornecedor como "importado quando a aplicação é carregada", o que
+  deixou de ser verdade com a A6.1 (Pull Request #45). Passou a enunciar o
+  princípio duradouro e a remeter o estado corrente para este documento;
+- a §4 de [`01-project-constitution.md`](01-project-constitution.md) descrevia a
+  distinção entre "recuperável agora" e "legitimamente citado então" como
+  "atualmente em discussão na issue #24". A issue está encerrada e a distinção
+  está formalizada no código; a afirmação temporal foi removida e o princípio de
+  auditabilidade preservado.
 
 A divergência sobre o conteúdo dos logs do answering tinha já sido corrigida em
 [`docs/answering.md`](../answering.md): a descrição passou a ser específica do
