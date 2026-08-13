@@ -1,4 +1,10 @@
-"""Geração experimental de respostas fundamentadas em evidências."""
+"""Geração experimental de respostas fundamentadas em evidências.
+
+O pacote reexporta apenas contratos **neutros**. `get_answer_generator`
+fica deliberadamente de fora para separar a API pública de contratos da
+composition root. O carregamento tardio do adapter é garantido pela factory;
+quem precisa dela importa-a de `app.answering.dependencies`.
+"""
 
 from app.answering.base import (
     AnswerGenerationError,
@@ -9,7 +15,6 @@ from app.answering.base import (
     GeneratedAnswer,
     InvalidGeneratedAnswerError,
 )
-from app.answering.dependencies import get_answer_generator
 
 __all__ = [
     "AnswerGenerationError",
@@ -19,5 +24,4 @@ __all__ = [
     "ContextEvidence",
     "GeneratedAnswer",
     "InvalidGeneratedAnswerError",
-    "get_answer_generator",
 ]

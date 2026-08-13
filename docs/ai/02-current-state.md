@@ -1,17 +1,20 @@
 # Estado atual
 
-**Observação:** 2026-08-12 · commit `d6dd75bd8aa6a802d6850018803eb4c91ec92f97` (`main`) · repositório
-`FredericoXX/Projeto-Final`
+**Observação:** 2026-08-12 · implementação A6.1 na branch
+`feat/provider-lazy-import-a6-1`, baseada no commit
+`73fe8ef642fce4320c3290f0e1be07bcfaca795e` (`main`, merge do Pull Request
+#44) · repositório `FredericoXX/Projeto-Final`
 
-Os factos abaixo descrevem o conteúdo de
-`d6dd75bd8aa6a802d6850018803eb4c91ec92f97`, o merge do Pull Request #43 que
-integrou o contrato de resultado do retrieval (A3/A4.1). Trabalho em curso em
-branches não fundidas não é estado deste SHA e, quando referido, é identificado
-como tal.
+Os factos abaixo descrevem a implementação A6.1 desta branch sobre
+`73fe8ef642fce4320c3290f0e1be07bcfaca795e`, merge do Pull Request #44 que
+integrou a caracterização A6.0. A A6.1 ainda não está integrada na `main`; este
+documento não antecipa SHA de merge. Trabalho em curso noutras branches não é
+estado deste snapshot e, quando referido, é identificado como tal.
 
-O snapshot técnico aqui descrito é o da `main` em `d6dd75b`. O contrato de
-resultado do retrieval — `RetrievalResult`, trace obrigatório no contrato e
-semântica explícita do score — **está integrado** desde esse merge; ver
+O snapshot técnico aqui descrito é o da implementação A6.1, baseada na `main`
+em `73fe8ef`. O contrato de resultado do retrieval — `RetrievalResult`, trace
+obrigatório no contrato e semântica explícita do score — **está integrado**
+desde o Pull Request #43; ver
 [Contrato de resultado do retrieval](#contrato-de-resultado-do-retrieval).
 
 Snapshot factual. Não contém regras: os princípios estão em
@@ -46,8 +49,10 @@ O mapa oficial dos temas está no [`README.md`](README.md#momentos).
 
 Depois do Momento 6, e fora da numeração dos momentos, foram integrados o
 **Pull Request #41** (fecho documental da issue #24, merge `2b3c91e`), o
-**Pull Request #42** (contratos provisórios de decisão, merge `e3f43f4`) e o
-**Pull Request #43** (contrato de resultado do retrieval, merge `d6dd75b`) — ver
+**Pull Request #42** (contratos provisórios de decisão, merge `e3f43f4`), o
+**Pull Request #43** (contrato de resultado do retrieval, merge `d6dd75b`) e o
+**Pull Request #44** (fecho documental A3/A4.2 e caracterização A6.0, merge
+`73fe8ef`) — ver
 [Trabalho arquitetural em aberto](#trabalho-arquitetural-em-aberto).
 
 ## Arquitetura
@@ -127,14 +132,17 @@ do protótipo:
 - processamento documental **síncrono**, sem filas nem workers;
 - execução local, sem serviços externos no retrieval e sem rede nos testes.
 
-Precisões factuais, verificadas neste SHA:
+Precisões factuais, verificadas neste snapshot:
 
 - **Dependência do fornecedor.** O contrato `AnswerGenerator` é neutro e todo o
-  conhecimento do SDK vive em `app/answering/providers/openai.py`, mas esse
-  módulo é importado por `app/answering/dependencies.py` no carregamento da
-  aplicação: o SDK da OpenAI **é uma dependência de runtime**, ainda que
-  isolada por adapter. A aplicação arranca sem chave de API; a ausência só
-  produz efeito (503) quando a geração é necessária.
+  conhecimento do SDK vive em `app/answering/providers/openai.py`. O pacote
+  `openai` continua a ser uma dependência obrigatória de instalação, mas a A6.1
+  deixou de o carregar no import dos contratos, do pacote `app.answering` ou da
+  aplicação. A composition root importa o adapter apenas dentro do ramo
+  `provider == "openai"`; resolver outro provider não carrega o SDK. Resolver
+  OpenAI carrega o adapter, ainda sem construir cliente, usar chave ou chamar a
+  rede. A ausência de chave ou modelo só produz efeito (503) quando a geração é
+  necessária.
 - **Processamento documental.** Depende atualmente do storage, de
   `storage_path` e de `mime_type` — a extração resolve o caminho no storage e
   seleciona o extrator pelo tipo de conteúdo. A independência face à origem
@@ -182,21 +190,23 @@ answerability, que não pertence a esta camada.
 
 ## Testes e verificações
 
-Contagens estruturais medidas em 2026-08-12 sobre `d6dd75b`: 55 ficheiros
-`test_*.py` no backend (em 59 módulos de
+Contagens estruturais medidas em 2026-08-12 sobre a implementação A6.1: 56
+ficheiros `test_*.py` no backend (em 60 módulos de
 [`backend/tests/`](../../backend/tests/), incluindo `conftest.py` e utilitários)
 e 9 ficheiros de teste no frontend. Os testes do backend usam PostgreSQL real
 numa base dedicada; os do frontend usam MSW, sem rede nem backend.
 
-Contagem de execução **medida sobre este SHA**, em 2026-08-12: **1280 passed,
-1 warning, 304.87 s** (`python -m pytest -q`). O warning é o
+Contagem de execução **medida sobre esta branch antes do commit**, em
+2026-08-12: **1287 passed, 1 warning, 338.18 s** (`python -m pytest -q`). O
+warning é o
 `StarletteDeprecationWarning` pré-existente de `fastapi/testclient.py`. Na mesma
-data e sobre o mesmo SHA, `mypy app tests scripts` reporta **166 source files**
-sem erros e `ruff check .` passa.
+data e sobre o mesmo conteúdo, `mypy app tests scripts` reporta **167 source
+files** sem erros e `ruff check .` passa.
 
-Proveniência histórica, para leitura das diferenças: a execução sobre `e3f43f4`
-(antes do Pull Request #43) deu **1263 passed**. A diferença de 17 testes é
-`tests/test_retrieval_contract.py`, acrescentado por esse PR. O tempo de
+Proveniência histórica, para leitura das diferenças: a execução sobre
+`d6dd75b` deu **1280 passed**; os sete testes adicionais pertencem a
+`tests/test_answering_provider_loading.py`, acrescentado pela A6.1. Antes do
+Pull Request #43, a execução sobre `e3f43f4` deu **1263 passed**. O tempo de
 execução varia entre corridas e não deve ser lido como medida de desempenho.
 
 Existe uma **baseline estrutural offline** das respostas fundamentadas,
@@ -323,7 +333,8 @@ como anúncio de trabalho iniciado nessa direção.
 
 ## Divergências documentais conhecidas
 
-Afirmações da documentação canónica que não correspondem ao código neste SHA.
+Afirmações da documentação canónica que não correspondem ao código neste
+snapshot.
 
 **Nenhuma divergência documental canónica conhecida no snapshot observado.**
 

@@ -19,6 +19,7 @@ from typing import Any
 import openai
 
 from app.answering.base import (
+    GENERATOR_UNAVAILABLE_MESSAGE,
     AnswerGenerationError,
     AnswerGeneratorUnavailableError,
     AnsweringContext,
@@ -29,7 +30,9 @@ from app.core.config import settings
 
 logger = logging.getLogger(__name__)
 
-GENERATOR_UNAVAILABLE_MESSAGE = "Answer generation is not configured on this server."
+# A mensagem de indisponibilidade é partilhada com a factory e vive em
+# base.py; a de falha de geração é específica de uma chamada ao
+# fornecedor e fica aqui.
 GENERATION_FAILED_MESSAGE = "The answer generator failed to produce a usable response."
 
 # Resposta estruturada: o modelo devolve exatamente {answer,

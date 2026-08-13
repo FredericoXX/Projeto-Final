@@ -12,6 +12,12 @@ from typing import Protocol
 from app.core.exceptions import ServiceUnavailableError, UpstreamServiceError
 from app.retrieval.base import Evidence
 
+# Mensagem única da indisponibilidade do gerador, qualquer que seja a
+# causa: provider desconhecido (decidido na factory) ou chave/modelo em
+# falta (detetado no adapter). Vive aqui, e não no adapter, para que a
+# factory a possa usar sem importar fornecedor nenhum.
+GENERATOR_UNAVAILABLE_MESSAGE = "Answer generation is not configured on this server."
+
 
 class AnswerGeneratorUnavailableError(ServiceUnavailableError):
     """O gerador não está configurado/disponível (-> 503).
