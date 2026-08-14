@@ -65,6 +65,21 @@ export interface ConversationAskResponse {
   assistant_message: MessageRead;
 }
 
+// Encaminhamento humano E1. O desfecho é sempre 'escalate' — o cliente não o
+// escolhe, tal como não escolhe o destino nem a origem do encaminhamento.
+export interface HumanHandoffDestination {
+  name: string;
+  email: string | null;
+  url: string | null;
+}
+
+export interface ConversationHandoffResponse {
+  outcome: 'escalate';
+  conversation_id: UUID;
+  destination: HumanHandoffDestination;
+  assistant_message: MessageRead;
+}
+
 // Apenas os campos que o frontend pode enviar. institution_id, user_id, role,
 // reply_to_message_id, sources, status e metadata nunca são enviados.
 export interface AnsweringRequest {

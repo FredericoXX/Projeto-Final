@@ -11,15 +11,18 @@ import {
   getConversation,
   listConversations,
   listMessages,
+  requestHandoff,
   updateConversation,
 } from '../../api/conversations';
 import type {
   AnsweringRequest,
   ConversationAskResponse,
   ConversationCreateRequest,
+  ConversationHandoffResponse,
   ConversationListResponse,
   ConversationRead,
   MessageListResponse,
+  MessageRead,
 } from '../../types/conversations';
 import type { UUID } from '../../types/api';
 
@@ -116,6 +119,33 @@ export function useRenameConversation(conversationId: UUID) {
   });
 }
 
+// Acrescenta ao cache mensagens já persistidas pelo backend, desduplicadas por
+// ID. Nunca insere uma mensagem apenas local: o que aparece na conversa é
+// sempre o que o backend confirmou ter gravado.
+function appendPersistedMessages(
+  queryClient: ReturnType<typeof useQueryClient>,
+  conversationId: UUID,
+  messages: MessageRead[],
+): void {
+  queryClient.setQueryData<MessagePages>(conversationKeys.messages(conversationId), (current) => {
+    if (!current || current.pages.length === 0) return current;
+    const existing = current.pages.flatMap((page) => page.items);
+    const known = new Set(existing.map((message) => message.id));
+    const appended = messages.filter((message) => !known.has(message.id));
+    if (appended.length === 0) return current;
+    const lastPageIndex = current.pages.length - 1;
+    const total = current.pages[lastPageIndex].total + appended.length;
+    return {
+      ...current,
+      pages: current.pages.map((page, index) => ({
+        ...page,
+        total,
+        items: index === lastPageIndex ? [...page.items, ...appended] : page.items,
+      })),
+    };
+  });
+}
+
 export function useAsk(conversationId: UUID) {
   const queryClient = useQueryClient();
   return useMutation<ConversationAskResponse, unknown, AnsweringRequest>({
@@ -123,31 +153,30 @@ export function useAsk(conversationId: UUID) {
     onSuccess: (response) => {
       // O turno persistido é a fonte de verdade: acrescentar ambas as mensagens
       // devolvidas, desduplicadas por ID, em vez de fazer uma inserção otimista.
-      queryClient.setQueryData<MessagePages>(
-        conversationKeys.messages(conversationId),
-        (current) => {
-          if (!current || current.pages.length === 0) return current;
-          const existing = current.pages.flatMap((page) => page.items);
-          const known = new Set(existing.map((message) => message.id));
-          const appended = [response.user_message, response.assistant_message].filter(
-            (message) => !known.has(message.id),
-          );
-          if (appended.length === 0) return current;
-          const lastPageIndex = current.pages.length - 1;
-          const total = current.pages[lastPageIndex].total + appended.length;
-          return {
-            ...current,
-            pages: current.pages.map((page, index) => ({
-              ...page,
-              total,
-              items: index === lastPageIndex ? [...page.items, ...appended] : page.items,
-            })),
-          };
-        },
-      );
+      appendPersistedMessages(queryClient, conversationId, [
+        response.user_message,
+        response.assistant_message,
+      ]);
       // O backend pode ter definido o título automático no primeiro
       // turno: o detalhe é invalidado para o cabeçalho atualizar sem
       // refresh manual (o frontend nunca replica o algoritmo do título).
+      void queryClient.invalidateQueries({
+        queryKey: conversationKeys.detail(conversationId),
+      });
+      void queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    },
+  });
+}
+
+export function useRequestHandoff(conversationId: UUID) {
+  const queryClient = useQueryClient();
+  return useMutation<ConversationHandoffResponse, unknown, void>({
+    mutationFn: () => requestHandoff(conversationId),
+    onSuccess: (response) => {
+      // Só a mensagem do assistente: o handoff não fabrica uma mensagem de
+      // utilizador para representar o clique.
+      appendPersistedMessages(queryClient, conversationId, [response.assistant_message]);
+      // updated_at mudou no backend; a listagem reordena por atividade.
       void queryClient.invalidateQueries({
         queryKey: conversationKeys.detail(conversationId),
       });

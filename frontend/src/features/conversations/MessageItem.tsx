@@ -1,6 +1,7 @@
 import { useTranslation } from '../../i18n/useTranslation';
 import type { MessageRead } from '../../types/conversations';
 import { SourceList } from './SourceList';
+import { HandoffDestinationActions } from './HandoffDestination';
 
 function isInsufficient(message: MessageRead): boolean {
   const status = message.extra_metadata?.['answer_status'];
@@ -30,6 +31,7 @@ export function MessageItem({ message }: { message: MessageRead }) {
 
       {grounded && <span className="message-note">✓ {t('message.grounded')}</span>}
       {insufficient && <span className="message-note">ⓘ {t('message.insufficient')}</span>}
+      {isAssistant && <HandoffDestinationActions message={message} />}
       {isAssistant && <SourceList sources={message.sources} />}
     </article>
   );

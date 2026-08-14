@@ -47,6 +47,17 @@ export const pt = {
   'composer.charCount': '{count}/{max}',
   'composer.hint': 'Enter envia • Shift+Enter nova linha',
 
+  'handoff.button': 'Falar com atendimento humano',
+  'handoff.pending': 'A encaminhar…',
+  // Descreve o que E1 faz — indicar um contacto —, não uma entrega do caso.
+  // "Encaminhado para atendimento humano" sugeriria que alguém já o recebeu.
+  'handoff.note': 'Contacto de atendimento humano indicado',
+  'handoff.service': 'Serviço',
+  'handoff.email': 'Enviar email',
+  'handoff.link': 'Abrir página de apoio',
+  'handoff.unavailable':
+    'Não foi possível encaminhar para atendimento humano. Este serviço pode não estar configurado para a sua instituição.',
+
   'message.you': 'Você',
   'message.assistant': 'Assistente',
   'message.system': 'Sistema',

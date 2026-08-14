@@ -18,6 +18,7 @@
 | 12 | `f2a91c47d3b8` | Adiciona metadados de extração a `document_versions` (`extraction_method`, `extraction_quality`, `extraction_warning` e `extraction_details` JSONB; anuláveis e limitados por CHECK; linhas históricas permanecem NULL, sem backfill) |
 | 13 | `4a7c1e9d2b63` | Adiciona metadados estruturais anuláveis a `document_chunks` (`page_number`, `section_title`, `structure_type`, `chunking_strategy`), com CHECKs e sem backfill |
 | 14 | `e7b1c9d4a2f0` | Localiza o `search_vector` por idioma: a coluna gerada passa a escolher `portuguese`/`english`/`simple` pela subtag primária de `language`. Revectoriza os chunks históricos automaticamente, sem backfill; recria o índice GIN. Reversível para `simple` |
+| 15 | `a5c31f70b8d2` | Adiciona o destino humano default a `institutions` (`human_support_name`, `human_support_email`, `human_support_url`; anuláveis, sem backfill) e o CHECK que exige configuração completa ou totalmente ausente |
 
 Como o projeto ainda está em desenvolvimento exclusivamente local, sem
 ambientes partilhados, dados de produção ou bases de dados permanentes, a
@@ -73,6 +74,64 @@ estrangeira composta `(reply_to_message_id, conversation_id, institution_id)`
 garante que o alvo pertence à mesma conversa e instituição, e um CHECK rejeita
 autorreferências. Mensagens manuais de utilizador ou sistema mantêm o campo nulo;
 ele não é aceite por `MessageCreate`.
+
+## Destino humano default (`institutions.human_support_*`)
+
+A migração `a5c31f70b8d2` acrescenta a `institutions` a configuração mínima do
+encaminhamento humano E1 (ver [`docs/answering.md`](answering.md)):
+
+- `human_support_name` — `String(255)`, anulável;
+- `human_support_email` — `String(320)`, anulável;
+- `human_support_url` — `String(2048)`, anulável.
+
+É **um único destino por instituição**. Não existem — nem devem ser inferidos
+daqui — telefone, taxonomia de departamentos, regras de encaminhamento por
+assunto, prioridade, horário de funcionamento, SLA, identificador de operador
+ou fila.
+
+A configuração vive num de dois estados, e o CHECK
+`ck_institutions_human_support_configuration` recusa qualquer estado
+intermédio. São duas condições combinadas — nenhum campo presente pode ser
+vazio, e a forma do conjunto tem de ser válida:
+
+```sql
+   (human_support_name  IS NULL OR btrim(human_support_name,  E' \t\n\r\f\v') <> '')
+AND (human_support_email IS NULL OR btrim(human_support_email, E' \t\n\r\f\v') <> '')
+AND (human_support_url   IS NULL OR btrim(human_support_url,   E' \t\n\r\f\v') <> '')
+AND (
+       (human_support_name IS NULL
+        AND human_support_email IS NULL
+        AND human_support_url IS NULL)
+    OR (human_support_name IS NOT NULL
+        AND (human_support_email IS NOT NULL OR human_support_url IS NOT NULL))
+)
+```
+
+Um nome sem contacto não encaminha ninguém; um contacto sem nome não identifica
+o serviço. E um valor presente mas em branco é dado corrompido: `IS NOT NULL`
+sozinho aceitaria `"   "` como nome e contacto, produzindo uma configuração
+formalmente completa que o handoff apresentaria como um destino vazio. Cada
+campo é validado **por si** — um email em branco é recusado mesmo quando existe
+um URL válido que já satisfaria a exigência de "pelo menos um contacto".
+
+O conjunto de corte do `btrim` é explícito de propósito. O `btrim(x)` sem
+segundo argumento — o padrão usado em `document_chunks` — corta apenas
+espaços, pelo que deixaria passar um valor composto só por tabs ou newlines. A mesma regra é aplicada antes do INSERT/UPDATE por
+`is_valid_human_support_configuration` (`app/schemas/institution.py`) e por
+`institution_service.validate_human_support_configuration`, que a avalia sobre
+o **estado final** de um PATCH parcial — o que nenhum schema consegue fazer
+sozinho. A constraint é a defesa em profundidade para quem contorne a API.
+
+As três colunas começam `NULL` e **não recebem backfill**: nenhuma instituição
+existente ganha um contacto que ninguém configurou, e o estado "tudo NULL"
+satisfaz a constraint, pelo que a migração não falha sobre dados existentes.
+Nenhum contacto institucional real entra no repositório; o seed de demonstração
+usa valores sintéticos com o TLD reservado `.invalid`.
+
+Os valores são validados de forma determinística por `app/core/contact.py`
+antes de chegarem à base: o URL só pode ser `http`/`https`, e o email é
+verificado estruturalmente (sem implementar a RFC 5322 nem acrescentar
+dependências).
 
 ## Núcleo documental (`documents` e `document_versions`)
 
@@ -579,7 +638,17 @@ multi-institucionais não eram aplicadas. Elas complementam a limitação por
 - **O `status` de uma conversa controla novas atividades.** Apenas `active`
   aceita novas mensagens ou atualizações PATCH. `closed` e `archived` são
   estados **finais** neste protótipo: ambos rejeitam novas mensagens e qualquer
-  PATCH com 409. Não há endpoint de reabertura nesta fase.
+  PATCH com 409. Não há endpoint de reabertura nesta fase. O mesmo vale para o
+  encaminhamento humano: `POST .../handoff` responde 409 numa conversa não
+  ativa, sem criar mensagem.
+- **O destino do encaminhamento humano vem sempre da instituição do utilizador
+  autenticado.** `POST /api/v1/conversations/{id}/handoff` não aceita payload;
+  `institution_id`, `user_id`, `destination`, `decision_outcome` e
+  `handoff_trigger` nunca são lidos do cliente. Uma conversa de outro tenant
+  responde 404 — o mesmo comportamento do restante módulo conversacional —, e
+  a verificação de acesso precede a validação do destino, para que a resposta
+  não varie consoante a instituição do requisitante ter atendimento
+  configurado.
 - **O `language` de conversas e mensagens é sempre sensível à instituição.** Em
   `POST /api/v1/conversations`, a omissão herda
   `institution.default_language`; um valor fornecido é normalizado e deve

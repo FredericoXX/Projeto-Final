@@ -49,6 +49,16 @@ export const en: Record<keyof typeof pt, string> = {
   'composer.charCount': '{count}/{max}',
   'composer.hint': 'Enter sends • Shift+Enter new line',
 
+  'handoff.button': 'Talk to human support',
+  'handoff.pending': 'Handing off…',
+  // Ver a nota em pt.ts: E1 indica um contacto, não entrega o caso.
+  'handoff.note': 'Human support contact provided',
+  'handoff.service': 'Service',
+  'handoff.email': 'Send email',
+  'handoff.link': 'Open support page',
+  'handoff.unavailable':
+    'Could not hand off to human support. This service may not be configured for your institution.',
+
   'message.you': 'You',
   'message.assistant': 'Assistant',
   'message.system': 'System',

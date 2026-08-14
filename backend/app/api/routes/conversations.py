@@ -17,13 +17,19 @@ from app.schemas.conversation import (
     ConversationRead,
     ConversationUpdate,
 )
+from app.schemas.handoff import ConversationHandoffResponse
 from app.schemas.message import (
     ConversationAskResponse,
     MessageCreate,
     MessageListResponse,
     MessageRead,
 )
-from app.services import conversation_answering_service, conversation_service, message_service
+from app.services import (
+    conversation_answering_service,
+    conversation_service,
+    human_handoff_service,
+    message_service,
+)
 
 # Todas as rotas exigem um utilizador autenticado (get_current_user). O
 # isolamento multi-institucional e a regra de posse (utilizador comum vs.
@@ -109,6 +115,27 @@ def ask_in_conversation(
         retriever,
         generator,
     )
+
+
+@router.post(
+    "/{conversation_id}/handoff",
+    response_model=ConversationHandoffResponse,
+    status_code=status.HTTP_201_CREATED,
+)
+def request_handoff(
+    conversation_id: uuid.UUID,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+) -> ConversationHandoffResponse:
+    """O utilizador autenticado pede explicitamente atendimento humano.
+
+    Sem payload: o destino vem da configuração da própria instituição e a
+    origem do encaminhamento é determinada pelo backend a partir deste
+    endpoint — o cliente nunca escolhe o desfecho, o trigger nem o destino.
+    Sem retriever e sem generator nas dependências: E1 não usa LLM, e a
+    ausência aqui é a primeira barreira a que volte a usar.
+    """
+    return human_handoff_service.request_human_handoff(db, current_user, conversation_id)
 
 
 @router.post(

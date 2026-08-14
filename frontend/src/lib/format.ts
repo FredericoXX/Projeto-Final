@@ -47,6 +47,18 @@ export function formatFileSize(bytes: number | null | undefined, language: UiLan
   return `${formatted} ${units[unitIndex]}`;
 }
 
+// Espelha a validação estrutural do backend (app/core/contact.py). O valor já
+// chega validado; repeti-lo aqui garante que um endereço malformado — vindo de
+// um backend antigo ou de dados manipulados — nunca vira um mailto navegável.
+const EMAIL_PATTERN = /^[^\s<>()[\],;:"\\]+@[^\s<>()[\],;:"\\]+\.[^\s<>()[\],;:"\\]+$/;
+
+export function safeMailtoUrl(value: string | null | undefined): string | null {
+  if (!value) return null;
+  const trimmed = value.trim();
+  if (!EMAIL_PATTERN.test(trimmed)) return null;
+  return `mailto:${trimmed}`;
+}
+
 // Apenas URLs http/https se tornam links; qualquer outro formato (javascript:,
 // data:, relativo ou inválido) devolve null e nunca é renderizado como link.
 export function safeHttpUrl(value: string | null | undefined): string | null {

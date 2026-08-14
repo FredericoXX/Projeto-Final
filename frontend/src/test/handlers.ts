@@ -2,10 +2,16 @@ import { http, HttpResponse } from 'msw';
 import {
   activeConversation,
   adminUser,
+  handoffDestination,
+  makeHandoffMessage,
   makeVersion,
   sampleDocument,
 } from './fixtures';
-import type { ConversationAskResponse, MessageRead } from '../types/conversations';
+import type {
+  ConversationAskResponse,
+  ConversationHandoffResponse,
+  MessageRead,
+} from '../types/conversations';
 
 export const API = 'http://localhost/api/v1';
 
@@ -99,6 +105,16 @@ export const handlers = [
           },
         ],
       },
+    };
+    return HttpResponse.json(response, { status: 201 });
+  }),
+
+  http.post(`${API}/conversations/:id/handoff`, () => {
+    const response: ConversationHandoffResponse = {
+      outcome: 'escalate',
+      conversation_id: activeConversation.id,
+      destination: { ...handoffDestination },
+      assistant_message: makeHandoffMessage(),
     };
     return HttpResponse.json(response, { status: 201 });
   }),
