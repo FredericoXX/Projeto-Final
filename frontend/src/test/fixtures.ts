@@ -44,6 +44,13 @@ export const closedConversation: ConversationRead = {
   status: 'closed',
 };
 
+export const archivedConversation: ConversationRead = {
+  ...activeConversation,
+  id: '55555555-5555-5555-5555-555555555555',
+  title: 'Archived conversation',
+  status: 'archived',
+};
+
 export function makeSource(overrides: Partial<MessageSourceRead> = {}): MessageSourceRead {
   return {
     id: 'source-1',
@@ -79,6 +86,37 @@ export function makeMessage(overrides: Partial<MessageRead> = {}): MessageRead {
     sources: [],
     ...overrides,
   };
+}
+
+export const handoffDestination = {
+  name: 'Academic Services',
+  email: 'support@example.invalid',
+  url: 'https://example.invalid/support',
+};
+
+// Mensagem de encaminhamento tal como o backend a persiste: o destino vive no
+// snapshot do metadata, que é o que a torna visível ao reabrir a conversa.
+export function makeHandoffMessage(overrides: Partial<MessageRead> = {}): MessageRead {
+  return makeMessage({
+    id: 'handoff-msg-1',
+    content:
+      'This request is better handled by human support. ' +
+      'Please contact the service listed below directly.\n\n' +
+      `Service: ${handoffDestination.name}\n` +
+      `Email: ${handoffDestination.email}\n` +
+      `Link: ${handoffDestination.url}`,
+    reply_to_message_id: null,
+    extra_metadata: {
+      turn_type: 'human_handoff',
+      decision_outcome: 'escalate',
+      handoff_mode: 'e1',
+      handoff_trigger: 'user_requested',
+      message_version: 'human_handoff_e1_v1',
+      handoff_destination: { ...handoffDestination },
+    },
+    created_at: '2026-02-01T09:20:00Z',
+    ...overrides,
+  });
 }
 
 export const sampleDocument: DocumentRead = {

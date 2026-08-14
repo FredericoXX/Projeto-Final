@@ -14,6 +14,13 @@ from app.services import institution_service
 
 DEMO_CODE = "DEMO-HEI"
 
+# Destino humano deliberadamente sintético. O TLD ".invalid" é reservado pela
+# RFC 2606 precisamente para não resolver: um email de demonstração nunca pode
+# chegar a uma caixa real. Nenhum contacto institucional verdadeiro entra no
+# repositório — a instituição real configura o seu destino pela API.
+DEMO_HUMAN_SUPPORT_NAME = "Academic Services"
+DEMO_HUMAN_SUPPORT_EMAIL = "support@example.invalid"
+
 
 def seed() -> None:
     with SessionLocal() as db:
@@ -32,6 +39,8 @@ def seed() -> None:
                 domain=None,
                 default_language="pt",
                 supported_languages=["pt", "en"],
+                human_support_name=DEMO_HUMAN_SUPPORT_NAME,
+                human_support_email=DEMO_HUMAN_SUPPORT_EMAIL,
             ),
         )
         print(f"Demo institution created (id={institution.id}).")

@@ -3,6 +3,7 @@ import type {
   AnsweringRequest,
   ConversationAskResponse,
   ConversationCreateRequest,
+  ConversationHandoffResponse,
   ConversationListResponse,
   ConversationRead,
   MessageListResponse,
@@ -75,6 +76,19 @@ export function askInConversation(
   return apiRequest<ConversationAskResponse>(`/conversations/${conversationId}/ask`, {
     method: 'POST',
     body: payload,
+    signal,
+  });
+}
+
+// Pedido explícito de atendimento humano. Sem corpo: o destino e a origem do
+// encaminhamento são determinados pelo backend a partir do utilizador
+// autenticado e da configuração da instituição.
+export function requestHandoff(
+  conversationId: UUID,
+  signal?: AbortSignal,
+): Promise<ConversationHandoffResponse> {
+  return apiRequest<ConversationHandoffResponse>(`/conversations/${conversationId}/handoff`, {
+    method: 'POST',
     signal,
   });
 }

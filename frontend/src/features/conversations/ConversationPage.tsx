@@ -1,7 +1,13 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { Link, useParams } from 'react-router-dom';
 import { useTranslation } from '../../i18n/useTranslation';
-import { useAsk, useConversation, useMessages, useRenameConversation } from './hooks';
+import {
+  useAsk,
+  useConversation,
+  useMessages,
+  useRenameConversation,
+  useRequestHandoff,
+} from './hooks';
 import { MessageItem } from './MessageItem';
 import { Composer } from './Composer';
 import { LoadingState } from '../../components/feedback/LoadingState';
@@ -9,7 +15,7 @@ import { ErrorState } from '../../components/feedback/ErrorState';
 import { EmptyState } from '../../components/feedback/EmptyState';
 import { InlineError } from '../../components/feedback/InlineError';
 import { ConversationStatusBadge } from '../../components/common/StatusBadge';
-import { errorTranslationKey } from '../../api/errors';
+import { ApiError, errorTranslationKey } from '../../api/errors';
 import type { MessageRead } from '../../types/conversations';
 
 function sortMessages(messages: MessageRead[]): MessageRead[] {
@@ -29,7 +35,9 @@ export function ConversationPage() {
   const messagesQuery = useMessages(conversationId);
   const ask = useAsk(conversationId);
   const rename = useRenameConversation(conversationId);
+  const handoff = useRequestHandoff(conversationId);
   const [askError, setAskError] = useState<string | null>(null);
+  const [handoffError, setHandoffError] = useState<string | null>(null);
   const [renaming, setRenaming] = useState(false);
   const [renameValue, setRenameValue] = useState('');
   const [renameError, setRenameError] = useState<string | null>(null);
@@ -76,6 +84,26 @@ export function ConversationPage() {
       // persiste turnos parciais. Manter o texto digitado para nova tentativa.
       setAskError(t(errorTranslationKey(error)));
       return false;
+    }
+  }
+
+  async function handleHandoff() {
+    // Segunda barreira ao duplo clique, além do disabled: o backend não tem
+    // idempotência, e dois pedidos são dois encaminhamentos registados.
+    if (handoff.isPending) {
+      return;
+    }
+    setHandoffError(null);
+    try {
+      await handoff.mutateAsync();
+    } catch (error) {
+      // O erro é mostrado e o botão volta a ficar disponível: uma falha nunca
+      // faz a ação desaparecer sem explicação.
+      setHandoffError(
+        error instanceof ApiError && error.status === 409
+          ? t('handoff.unavailable')
+          : t(errorTranslationKey(error)),
+      );
     }
   }
 
@@ -213,8 +241,29 @@ export function ConversationPage() {
         </p>
       )}
 
+      {handoffError && (
+        <p className="inline-error" role="alert" aria-live="assertive">
+          {handoffError}
+        </p>
+      )}
+
       {conversation && isActive && (
-        <Composer disabled={!isActive} pending={ask.isPending} onSubmit={handleAsk} />
+        <>
+          <Composer disabled={!isActive} pending={ask.isPending} onSubmit={handleAsk} />
+          {/* Ação secundária, junto ao composer mas fora dele: não compete
+              visualmente com o envio normal da pergunta. Só existe em
+              conversas ativas — closed/archived não aceitam mensagens novas. */}
+          <div className="composer-meta">
+            <button
+              type="button"
+              className="btn btn-ghost"
+              disabled={handoff.isPending}
+              onClick={() => void handleHandoff()}
+            >
+              {handoff.isPending ? t('handoff.pending') : t('handoff.button')}
+            </button>
+          </div>
+        </>
       )}
     </div>
   );

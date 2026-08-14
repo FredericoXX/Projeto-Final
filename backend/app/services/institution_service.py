@@ -7,10 +7,16 @@ from sqlalchemy.orm import Session
 from app.core.exceptions import ConflictError, NotFoundError, ValidationError
 from app.models.institution import Institution
 from app.models.user import User
-from app.schemas.institution import InstitutionAdminUpdate, InstitutionCreate
+from app.schemas.institution import (
+    HUMAN_SUPPORT_CONFIGURATION_ERROR,
+    InstitutionAdminUpdate,
+    InstitutionCreate,
+    is_valid_human_support_configuration,
+)
 
 CODE_UNIQUE_CONSTRAINT = "uq_institutions_code"
 DEFAULT_LANGUAGE_CHECK_CONSTRAINT = "ck_institutions_default_language_supported"
+HUMAN_SUPPORT_CHECK_CONSTRAINT = "ck_institutions_human_support_configuration"
 
 
 def get_constraint_name(error: IntegrityError) -> str | None:
@@ -36,8 +42,25 @@ def validate_language_configuration(
         raise ValidationError(msg)
 
 
+def validate_human_support_configuration(
+    name: str | None,
+    email: str | None,
+    url: str | None,
+) -> None:
+    """Mesma justificação de validate_language_configuration: a regra vive
+    também aqui para que qualquer caller que contorne a API — scripts de
+    seed, outros serviços — não consiga gravar um destino humano parcial."""
+    if not is_valid_human_support_configuration(name, email, url):
+        raise ValidationError(HUMAN_SUPPORT_CONFIGURATION_ERROR)
+
+
 def create_institution(db: Session, data: InstitutionCreate) -> Institution:
     validate_language_configuration(data.default_language, data.supported_languages)
+    validate_human_support_configuration(
+        data.human_support_name,
+        data.human_support_email,
+        data.human_support_url,
+    )
 
     existing = db.scalar(select(Institution).where(Institution.code == data.code))
     if existing is not None:
@@ -51,6 +74,9 @@ def create_institution(db: Session, data: InstitutionCreate) -> Institution:
         default_language=data.default_language,
         supported_languages=data.supported_languages,
         is_active=data.is_active,
+        human_support_name=data.human_support_name,
+        human_support_email=data.human_support_email,
+        human_support_url=data.human_support_url,
     )
     db.add(institution)
     try:
@@ -67,6 +93,8 @@ def create_institution(db: Session, data: InstitutionCreate) -> Institution:
         if constraint_name == DEFAULT_LANGUAGE_CHECK_CONSTRAINT:
             msg = "default_language must be one of supported_languages"
             raise ValidationError(msg) from exc
+        if constraint_name == HUMAN_SUPPORT_CHECK_CONSTRAINT:
+            raise ValidationError(HUMAN_SUPPORT_CONFIGURATION_ERROR) from exc
         raise
     db.refresh(institution)
     return institution
@@ -132,6 +160,15 @@ def update_institution(
     resulting_supported = changes.get("supported_languages", institution.supported_languages)
     validate_language_configuration(resulting_default, resulting_supported)
 
+    # A invariante do destino humano é avaliada sobre o estado final: limpar
+    # apenas o email de uma configuração que só tinha email deixaria um nome
+    # sem qualquer via de contacto.
+    validate_human_support_configuration(
+        changes.get("human_support_name", institution.human_support_name),
+        changes.get("human_support_email", institution.human_support_email),
+        changes.get("human_support_url", institution.human_support_url),
+    )
+
     new_code = changes.get("code")
     if new_code is not None and new_code != institution.code:
         existing = db.scalar(
@@ -162,6 +199,8 @@ def update_institution(
         if constraint_name == DEFAULT_LANGUAGE_CHECK_CONSTRAINT:
             msg = "default_language must be one of supported_languages"
             raise ValidationError(msg) from exc
+        if constraint_name == HUMAN_SUPPORT_CHECK_CONSTRAINT:
+            raise ValidationError(HUMAN_SUPPORT_CONFIGURATION_ERROR) from exc
         raise
     db.refresh(institution)
     return institution

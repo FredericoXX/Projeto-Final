@@ -1,13 +1,21 @@
 # Estado atual
 
 **Observação:** 2026-08-13 · `main` em
-`6ae9badefc81f90135feb726be10a750c80105d6` (merge do Pull Request #45) ·
+`42187e7c843b0725f9c2135f23838cca498d8e19` (merge do Pull Request #46) ·
 repositório `FredericoXX/Projeto-Final`
 
 Os factos abaixo descrevem a `main` em
-`6ae9badefc81f90135feb726be10a750c80105d6`, merge do Pull Request #45 que
-integrou a implementação A6.1. Trabalho em curso noutras branches não é estado
+`42187e7c843b0725f9c2135f23838cca498d8e19`, merge do Pull Request #46 que
+integrou a especificação A2.2. Trabalho em curso noutras branches não é estado
 deste snapshot e, quando referido, é identificado como tal.
+
+**Exceção declarada:** a secção
+[Encaminhamento humano E1](#encaminhamento-humano-e1) descreve a implementação
+**A2.3a**, que vive na branch `feat/human-handoff-e1-a2-3a` e ainda **não está
+na `main`**. Está aqui porque é o estado corrente do trabalho e porque o
+enunciado da tarefa o exige; as contagens de execução da secção
+[Testes e verificações](#testes-e-verificações) identificam explicitamente
+sobre que conteúdo foram medidas.
 
 O contrato de resultado do retrieval — `RetrievalResult`, trace obrigatório no
 contrato e semântica explícita do score — está integrado desde o Pull Request
@@ -49,8 +57,9 @@ Depois do Momento 6, e fora da numeração dos momentos, foram integrados o
 **Pull Request #42** (contratos provisórios de decisão, merge `e3f43f4`), o
 **Pull Request #43** (contrato de resultado do retrieval, merge `d6dd75b`), o
 **Pull Request #44** (fecho documental A3/A4.2 e caracterização A6.0, merge
-`73fe8ef`) e o **Pull Request #45** (carregamento tardio do provider, A6.1,
-merge `6ae9bad`) — ver
+`73fe8ef`), o **Pull Request #45** (carregamento tardio do provider, A6.1,
+merge `6ae9bad`) e o **Pull Request #46** (especificação científica da política
+de decisão, A2.2, merge `42187e7c`) — ver
 [Trabalho arquitetural em aberto](#trabalho-arquitetural-em-aberto).
 
 ## Arquitetura
@@ -77,12 +86,16 @@ Módulos do backend, em [`backend/app/`](../../backend/app/):
 | `models/`, `schemas/` | entidades ORM e contratos de pedido/resposta |
 | `storage/` | abstração de armazenamento (`Protocol` + implementação local) |
 | `documents/` | domínio documental partilhado, incluindo a política canónica de admissibilidade da evidência e as composições `RetrievalEligibility` / `CitationPersistenceEligibility` |
-| `decision/` | contratos provisórios de domínio da decisão agêntica (A2.1): tipos puros, **sem consumidores** |
+| `decision/` | contratos provisórios de domínio da decisão agêntica (A2.1): tipos puros. `DecisionOutcome.ESCALATE` ganhou o seu primeiro consumidor com a A2.3a; os restantes continuam sem consumidores |
 | `retrieval/` | contrato de resultado (`RetrievalResult`), planeamento de consulta, elegibilidade lexical, ranking, configuração FTS |
 | `answering/` | contratos neutros, contexto, prompts, validação e adaptador de fornecedor |
 | `evaluation/` | contratos e artefactos da avaliação offline do Momento 5; não é importado pela aplicação |
 | `diagnostics/` | ferramenta interna de observação do pipeline documental |
 | `core/` | configuração, segurança, normalização de texto, idioma, erros |
+
+`app/core/` inclui ainda `contact.py` (validação determinística de email/URL de
+contacto) e `handoff_message.py` (mensagem determinística do encaminhamento
+humano), ambos acrescentados pela A2.3a.
 
 `scripts/` contém `seed_demo_institution`, `rebuild_document_chunks`,
 `diagnose_document_pipeline`, `evaluate_answering_offline` (avaliação offline
@@ -91,7 +104,8 @@ determinística) e `build_moment05_baseline` (composição da baseline).
 ## Superfície da API
 
 Endpoints sob `/api/v1`: `health`, `institutions`, `auth`, `users`,
-`conversations`, `bootstrap`, `documents`, `retrieval`, `answering`.
+`conversations`, `bootstrap`, `documents`, `retrieval`, `answering`. A A2.3a
+acrescenta `POST /conversations/{id}/handoff` (fora da `main`).
 
 Detalhe por área: [`README.md`](../../README.md) (bootstrap e autenticação),
 [`docs/document-core.md`](../document-core.md) (documentos, versões, OCR,
@@ -101,9 +115,10 @@ conversacionais), [`docs/diagnostics/README.md`](../diagnostics/README.md).
 
 ## Base de dados
 
-14 migrations em [`backend/alembic/versions/`](../../backend/alembic/versions/),
-head `e7b1c9d4a2f0` (`localize_search_vector_by_language`). Histórico completo
-em [`docs/database.md`](../database.md).
+15 migrations em [`backend/alembic/versions/`](../../backend/alembic/versions/),
+head `a5c31f70b8d2` (`add_institution_human_support_contact`, A2.3a; na `main`
+a head continua `e7b1c9d4a2f0`). Histórico completo em
+[`docs/database.md`](../database.md).
 
 A extensão `pgvector` está ativa como infraestrutura e não é usada pela
 recuperação atual.
@@ -126,7 +141,11 @@ do protótipo:
 - geração de respostas por um adaptador de fornecedor (atualmente OpenAI), com
   validação determinística e estrutural;
 - **sem** memória conversacional no prompt, segundo LLM de validação,
-  confidence score, idempotência, feedback ou escalonamento humano;
+  confidence score, idempotência ou feedback;
+- encaminhamento humano **E1 solicitado pelo utilizador** (A2.3a, ainda fora da
+  `main`): determinístico, sem retrieval e sem LLM. **Sem** escalação decidida
+  pelo sistema, ticketing, fila ou operador — ver
+  [Encaminhamento humano E1](#encaminhamento-humano-e1);
 - processamento documental **síncrono**, sem filas nem workers;
 - execução local, sem serviços externos no retrieval e sem rede nos testes.
 
@@ -186,28 +205,84 @@ Não existe `RetrievalOutcome`: o resultado não classifica a suficiência da
 evidência. Interpretar contagens ou motivos de exclusão seria decidir
 answerability, que não pertence a esta camada.
 
+## Encaminhamento humano E1
+
+**Estado:** implementado na branch `feat/human-handoff-e1-a2-3a` (A2.3a).
+**Não está na `main`.** Enquadramento científico: **DSR3 — Design &
+Development**. É implementação, não avaliação: a A2.3a **não** realiza DSR4 nem
+DSR5, e o encaminhamento **não foi avaliado empiricamente**.
+
+O que passou a existir, e o que continua a não existir:
+
+| Existe | Não existe |
+| --- | --- |
+| `POST /api/v1/conversations/{id}/handoff`, sem payload | `DecisionPolicy`, `DefaultDecisionPolicy`, matriz de decisão, `policy_version` |
+| `DecisionOutcome.ESCALATE` como desfecho operacional real | `AnswerabilityEvaluator`, `RequestSpecificity` |
+| origem `user_requested` | origem `system_decision` — escalação decidida pelo sistema |
+| um destino humano **default por instituição** (`institutions.human_support_*`) | tipologia de destinos, encaminhamento por assunto, múltiplos destinos |
+| mensagem `assistant` determinística com snapshot do destino no `extra_metadata` | tabelas `escalations`, `turn_decisions`, `support_tickets`, filas |
+| — | ticket, atribuição de operador, SLA, notificação interna, UI de operador (E2) |
+
+A A2.3a implementa a **capacidade de escalar**, não a política que decide
+quando escalar. A única decisão observada é "o utilizador pediu atendimento
+humano", que é uma ação explícita e não uma inferência normativa: por isso não
+depende das decisões O1–O7 da A2.2, que continuam em aberto e continuam a
+bloquear a escalação decidida pelo sistema.
+
+Propriedades fixadas por teste:
+
+- **determinismo** — o handoff não chama o Retriever nem o AnswerGenerator, não
+  carrega o SDK do fornecedor e não faz chamada externa. A rota não declara
+  essas dependências e `human_handoff_service` não importa `app.retrieval` nem
+  `app.answering`;
+- **snapshot histórico** — alterar a configuração da instituição depois de um
+  encaminhamento não reescreve a mensagem antiga, tal como em `MessageSource`;
+- **isolamento** — conversa de outro tenant responde 404, e a verificação de
+  acesso precede a validação do destino;
+- **atomicidade** — destino não configurado ou conversa `closed`/`archived`
+  respondem 409 sem persistir mensagem e sem alterar `conversation.updated_at`;
+- **sem idempotência**, por decisão explícita: duas solicitações produzem duas
+  mensagens. O duplo clique acidental é travado no frontend pelo estado
+  `pending`.
+
+O contrato de `/ask` **não mudou**: `AnsweringResponse.status` e
+`ConversationAskResponse.status` continuam a declarar exatamente `answered` e
+`insufficient_evidence`, e `answering_service.ask()` mantém o comportamento
+`evidence == () → insufficient_evidence`. O handoff tem contrato próprio, o que
+evita alterar prematuramente a API caracterizada no Momento 6.
+
+Detalhe em [`docs/answering.md`](../answering.md) e
+[`docs/database.md`](../database.md).
+
 ## Testes e verificações
 
-Contagens estruturais medidas em 2026-08-12 sobre o conteúdo da implementação
-A6.1, entretanto integrado em `6ae9bad`: 56
-ficheiros `test_*.py` no backend (em 60 módulos de
-[`backend/tests/`](../../backend/tests/), incluindo `conftest.py` e utilitários)
-e 9 ficheiros de teste no frontend. Os testes do backend usam PostgreSQL real
-numa base dedicada; os do frontend usam MSW, sem rede nem backend.
+Os testes do backend usam PostgreSQL real numa base dedicada; os do frontend
+usam MSW, sem rede nem backend.
 
-Contagem de execução medida em 2026-08-12 **sobre o conteúdo da A6.1 antes do
-merge**, idêntico ao de `6ae9bad`: **1287 passed, 1 warning, 338.18 s**
-(`python -m pytest -q`). Não foi executada nova corrida após o merge. O
-warning é o
-`StarletteDeprecationWarning` pré-existente de `fastapi/testclient.py`. Na mesma
-data e sobre o mesmo conteúdo, `mypy app tests scripts` reporta **167 source
-files** sem erros e `ruff check .` passa.
+Contagem de execução medida em **2026-08-13**, sobre o conteúdo da **A2.3a na
+branch `feat/human-handoff-e1-a2-3a`** (base `42187e7c`, antes de qualquer
+merge), **depois das correções da revisão**: **1414 passed, 1 warning, 274.12 s**
+(`python -m pytest -q`). O warning é o `StarletteDeprecationWarning`
+pré-existente de `fastapi/testclient.py`. Na mesma data e sobre o mesmo
+conteúdo, `mypy app tests scripts` reporta **174 source files** sem erros e
+`ruff check .` passa. No frontend, `npm run test:run` dá **95 passed em 10
+ficheiros**, com lint, typecheck e build verdes.
+
+Os 127 testes adicionais face à `main` pertencem aos três ficheiros novos da
+A2.3a — `tests/test_contact_validation_unit.py` (54),
+`tests/test_institution_human_support.py` (38) e `tests/test_human_handoff.py`
+(35). **Nenhum teste existente foi alterado, enfraquecido ou removido.**
+
+Uma corrida anterior, sobre o conteúdo da A2.3a **antes** das correções da
+revisão, dava **1401 passed** com 114 testes novos; os 13 acrescentados cobrem
+a revalidação da identidade sob lock e a recusa de configurações compostas
+apenas por whitespace.
 
 Proveniência histórica, para leitura das diferenças: a execução sobre
-`d6dd75b` deu **1280 passed**; os sete testes adicionais pertencem a
-`tests/test_answering_provider_loading.py`, acrescentado pela A6.1. Antes do
-Pull Request #43, a execução sobre `e3f43f4` deu **1263 passed**. O tempo de
-execução varia entre corridas e não deve ser lido como medida de desempenho.
+`6ae9bad` deu **1287 passed** (medida em 2026-08-12, com **167 source files** no
+mypy); sobre `d6dd75b`, **1280 passed**; sobre `e3f43f4`, **1263 passed**. O
+tempo de execução varia entre corridas e não deve ser lido como medida de
+desempenho.
 
 Existe uma **baseline estrutural offline** das respostas fundamentadas,
 produzida pelo Momento 5 e versionada em
@@ -235,6 +310,15 @@ para `frontend/**`), este com Node.js 22. Os comandos correspondentes estão em
 - Processamento síncrono: documentos grandes atrasam a resposta do upload.
 - Armazenamento local único, sem réplicas nem backup automático.
 - OCR não corrige nem adivinha texto.
+- O encaminhamento humano **apenas direciona**: apresenta um destino ao
+  utilizador e regista a decisão. Não cria caso, não notifica ninguém, não
+  atribui operador e não garante prazo de resposta. O sistema nunca decide
+  sozinho encaminhar.
+- Numa instituição **sem destino configurado**, a ação continua visível em
+  conversas ativas e o pedido é recusado com 409 e erro controlado. A interface
+  não a esconde porque não tem como saber a configuração: ler a instituição
+  exige autorização de administrador, e expô-la ao utilizador comum seria
+  superfície de API nova. É uma limitação assumida, não um descuido.
 - A medição reprodutível da qualidade das respostas cobre **apenas a população
   P1** — estrutural, offline, sobre corpus sintético e respostas controladas de
   um gerador falso. **P2 e P3 não foram medidas**, pelo que as métricas humanas
@@ -313,16 +397,31 @@ concluída.
 
 O Pull Request #42 introduziu, em `app/decision/contracts.py`, quatro contratos
 provisórios de domínio para a decisão de resposta — `ScopeClass`,
-`RequestConstraint`, `AnswerabilityClass` e `DecisionOutcome`. São **tipos puros
-sem consumidores**: nenhum módulo os importa, e apagá-los não alteraria o
-comportamento do sistema. Não existe `DecisionPolicy`, não existe qualquer
-mapeamento entre eles, e as questões de investigação que os governam continuam
-em aberto.
+`RequestConstraint`, `AnswerabilityClass` e `DecisionOutcome`. O módulo continua
+a ser **apenas vocabulário**: não existe `DecisionPolicy` e não existe qualquer
+mapeamento entre contratos.
+
+A A2.3a (fora da `main`) deu a `DecisionOutcome.ESCALATE` o seu **primeiro
+consumidor funcional**, no encaminhamento humano E1. Isso não é uma política:
+o desfecho decorre de uma ação explícita do utilizador, não de uma inferência
+sobre o pedido. `ScopeClass`, `RequestConstraint` e `AnswerabilityClass`
+continuam sem consumidores, e os mapeamentos que a A2.1 declarou proibidos —
+`PERSONAL_DATA_REQUIRED → ESCALATE`, `NOT_ANSWERABLE → ABSTAIN` — continuam
+inexistentes.
+
+O Pull Request #46 integrou a **A2.2**, a especificação científica da política
+de decisão. As sete decisões normativas O1–O7 continuam **em aberto**, e três
+delas (O2, O3, O6) determinam comportamento observável. É por isso que a
+escalação decidida pelo sistema não está implementada: o que a A2.3a torna real
+é o nível **E1** de O6 (destino designado e apresentado ao utilizador), que a
+A2.2 identificou como implementável sem essas decisões.
 
 O Pull Request #43 formalizou o resultado do retrieval (ver
 [Contrato de resultado do retrieval](#contrato-de-resultado-do-retrieval)) mas
 **não** consumiu nada disso numa decisão: o answering continua a tratar zero
-evidências como fallback determinístico e ignora deliberadamente o trace.
+evidências como fallback determinístico e ignora deliberadamente o trace. A
+A2.3a também não alterou isto — o encaminhamento humano é uma capacidade
+paralela ao pipeline de resposta, não um ramo dentro dele.
 Situações causalmente distintas que produzem zero evidências — corpus não
 admissível, ausência de correspondência lexical, cobertura insuficiente, limiar
 de relevância — continuam a colapsar no mesmo estado `insufficient_evidence`.

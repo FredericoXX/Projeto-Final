@@ -12,9 +12,14 @@ semântica.
 Continuam a **não** existir: embeddings, pesquisa semântica, pesquisa
 híbrida, reranking por modelo, validação por segundo LLM, confidence score
 final, memória/histórico no prompt, idempotência, persistência de prompts ou
-respostas brutas do fornecedor, feedback, escalonamento humano e frontend. O
+respostas brutas do fornecedor e feedback. O
 reranking que existe é lexical e determinístico, na etapa de retrieval (ver
 [`docs/database.md`](database.md)).
+
+Existe desde a A2.3a um **encaminhamento humano E1 solicitado pelo
+utilizador**, descrito em [Encaminhamento humano (E1)](#encaminhamento-humano-e1).
+É uma capacidade separada deste pipeline: não usa retrieval nem LLM, e não
+altera o contrato de `/ask`.
 
 ## Fluxo
 
@@ -128,6 +133,156 @@ conversas é rejeitado por inteiro com 409, sem alterar o título. A
 resposta de `/ask` não devolve o título: o frontend invalida a query de
 detalhe da conversa e obtém-no do backend.
 
+## Encaminhamento humano (E1)
+
+`POST /api/v1/conversations/{conversation_id}/handoff` — **sem payload**. O
+utilizador autenticado pede explicitamente que o atendimento continue com uma
+pessoa; o backend valida o contexto, obtém o destino humano da própria
+instituição e persiste uma mensagem `assistant` determinística.
+
+Esta é a **capacidade de escalar**, não uma política que decida quando
+escalar. A distinção é o âmbito da A2.3a e não deve ser lida como mais do que
+é:
+
+| Existe | Não existe |
+| --- | --- |
+| `DecisionOutcome.ESCALATE` como desfecho operacional real | `DecisionPolicy`, matriz de decisão, `policy_version` |
+| origem `user_requested` | origem `system_decision` (escalação decidida pelo sistema) |
+| um destino humano **default por instituição** | tipologia de serviços, encaminhamento por assunto, múltiplos destinos |
+| mensagem auditável com snapshot do destino | ticket, fila, atribuição de operador, SLA, notificação interna, UI de operador |
+| — | `AnswerabilityEvaluator`, `RequestSpecificity`, classificação da pergunta |
+
+Não há inferência: o sistema **não** analisa a pergunta, não procura palavras
+como "nota" ou "propina", e nunca decide sozinho encaminhar. A escalação
+decidida pelo sistema (nível `system_decision`) depende da política de decisão,
+que continua por validar — ver
+[`docs/relatorios/a2-2-decision-policy-specification.md`](relatorios/a2-2-decision-policy-specification.md),
+secções 7.6 e O6.
+
+### Configuração institucional
+
+Três campos anuláveis em `institutions`: `human_support_name`,
+`human_support_email`, `human_support_url` (ver
+[`docs/database.md`](database.md)). A configuração está **ou** totalmente
+ausente, **ou** completa — nome com pelo menos uma via de contacto —, e a
+invariante é aplicada no schema, no serviço e por `CheckConstraint`. Configurar
+e ler continuam a exigir a autorização administrativa já existente; nenhuma
+rota de instituição se tornou pública.
+
+Os contactos são validados de forma determinística
+(`app/core/contact.py`), sem dependência nova: o URL só pode ser `http`/`https`
+— `javascript:`, `data:`, `file:` e `ftp:` são recusados —, e o email é
+validado estruturalmente, não pela RFC 5322.
+
+### Comportamento
+
+```
+utilizador
+→ POST /conversations/{id}/handoff
+→ autorização e isolamento das conversas (regras existentes)
+→ lock instituição → utilizador → conversa (mesma ordem de /ask)
+→ utilizador relido sob lock: ativo, e o papel usado é o persistido
+→ conversa tem de estar active
+→ destino humano da própria instituição
+→ DecisionOutcome.ESCALATE
+→ snapshot do destino
+→ mensagem assistant determinística (pt/en, sem LLM)
+→ commit único
+```
+
+Os três locks fecham janelas distintas e nenhum é decorativo: a **instituição**
+torna o snapshot do destino coerente perante uma alteração administrativa
+concorrente; o **utilizador** é relido porque `current_user` foi lido na
+autenticação, num statement anterior — em READ COMMITTED, uma desativação ou
+despromoção que faça commit entretanto não seria visível a esta transação, e o
+papel usado a seguir é o **persistido**, para que um admin despromovido deixe
+de alcançar conversas de outros utilizadores; a **conversa** garante que um
+fecho concorrente não é ultrapassado. A ordem é exatamente a de
+`ask_in_conversation`, para que os dois fluxos não possam entrar em deadlock.
+
+O handoff **não chama o Retriever nem o AnswerGenerator**, não carrega o SDK
+do fornecedor e não faz qualquer chamada externa. O endpoint nem sequer declara
+essas dependências, e `human_handoff_service` não importa `app.retrieval` nem
+`app.answering` — ambas as propriedades são fixadas por teste.
+
+Respostas HTTP:
+
+- `201` — encaminhamento registado: `outcome: "escalate"`, `conversation_id`,
+  `destination` (`name`/`email`/`url`) e `assistant_message` persistida;
+- `404` — conversa inexistente, de outro tenant ou inacessível, exatamente como
+  no restante módulo conversacional;
+- `409` — conversa `closed`/`archived`, **ou** instituição sem atendimento
+  humano configurado (`Human support is not configured for this institution.`).
+  Em qualquer dos casos nada é persistido e `conversation.updated_at` não muda;
+- `401` — sem autenticação.
+
+O corpo do pedido é ignorado por inteiro. `decision_outcome`, `handoff_trigger`,
+`destination`, `institution_id` e `user_id` **nunca** vêm do cliente: o trigger
+é determinado pelo endpoint usado, o destino pela instituição do utilizador
+autenticado.
+
+### Mensagem e auditabilidade
+
+A mensagem é composta por `app/core/handoff_message.py` — função pura, texto
+fixo por idioma (pt/en, inglês como fallback documentado), versionada em
+`HANDOFF_MESSAGE_VERSION`. Segue o padrão de
+`app/answering/fallback.py` e `app/core/conversation_title.py`: **sem LLM e sem
+tradução automática**. A redação apenas direciona — nunca afirma que um caso
+foi criado, que um operador recebeu o pedido ou que haverá resposta num prazo,
+porque nada disso acontece em E1.
+
+A mensagem persistida tem `role="assistant"`, `user_id=None`,
+`reply_to_message_id=None` e `sources=[]` (nenhuma `MessageSource` é criada — o
+encaminhamento não cita documentos). Não é fabricada nenhuma mensagem de
+utilizador para representar o clique.
+
+O `extra_metadata` guarda um **snapshot**, não uma referência viva:
+
+```json
+{
+  "turn_type": "human_handoff",
+  "decision_outcome": "escalate",
+  "handoff_mode": "e1",
+  "handoff_trigger": "user_requested",
+  "message_version": "human_handoff_e1_v1",
+  "handoff_destination": { "name": "...", "email": "...", "url": "..." }
+}
+```
+
+Alterar depois a configuração da instituição **não** reescreve encaminhamentos
+antigos: a leitura devolve o destino tal como foi apresentado na altura. É a
+mesma disciplina de proveniência já aplicada a `MessageSource`, e está fixada
+por teste. O metadata é apenas operacional: não contém a pergunta anterior,
+conteúdo documental, prompts, tokens, credenciais nem dados pessoais.
+
+**Sem idempotência.** Duas solicitações explícitas em momentos diferentes
+produzem duas mensagens — são dois pedidos reais do utilizador, e o backend não
+inventa uma chave de idempotência nem uma janela temporal arbitrária que
+escondesse um deles. O frontend impede o duplo clique acidental através do
+estado `pending` do botão.
+
+### Interface
+
+Em conversas **ativas**, a interface oferece "Falar com atendimento humano"
+junto ao composer, como ação secundária; conversas `closed`/`archived` não
+oferecem a ação. O botão fica desativado enquanto o pedido está pendente, e uma
+falha mostra erro controlado sem fazer a ação desaparecer.
+
+A ação é oferecida **mesmo quando a instituição não tem destino configurado**:
+o pedido devolve 409 e a interface mostra o erro. A alternativa — esconder o
+botão — exigiria que o utilizador comum pudesse ler a configuração da
+instituição, que hoje é leitura de administrador; abrir essa superfície não
+pertence a esta fase. A mensagem
+apresentada é sempre a que o backend persistiu — nunca uma inserção apenas
+local — e continua visível ao reabrir a conversa, porque vem do histórico. O
+email é renderizado como `mailto:` e o URL como ligação externa com
+`target="_blank"` e `rel="noopener noreferrer"`, ambos revalidados no cliente;
+nada vindo do backend é interpretado como HTML.
+
+Fora de âmbito nesta fase, e não implementado: E2 (transferência técnica do
+caso), dashboard de operador, estados de resolução e integração com sistemas
+institucionais.
+
 ## Arquitetura
 
 - `app/answering/base.py` — contratos neutros: `AnsweringContext`,
@@ -164,6 +319,13 @@ detalhe da conversa e obtém-no do backend.
   leitura da transação curta de escrita.
 - `app/services/message_source_service.py` — bloqueia e revalida as fontes,
   cria snapshots e lista citações dentro do tenant; não faz commit.
+- `app/services/human_handoff_service.py` — encaminhamento humano E1, numa
+  transação curta e sem qualquer chamada externa; não importa retrieval nem
+  answering.
+- `app/core/handoff_message.py` — mensagem determinística do encaminhamento,
+  pura e versionada, sem LLM.
+- `app/core/contact.py` — validação determinística de email/URL de contacto,
+  usada pela configuração institucional.
 - `app/models/message_source.py` — snapshots auditáveis dos metadados das
   fontes efetivamente citadas.
 
