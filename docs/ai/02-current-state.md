@@ -1,18 +1,18 @@
 # Estado atual
 
-**Observação:** 2026-08-14 · `main` em
-`311d917072c31066ec16c4ff8cfc90420cc35b02` (merge do Pull Request #47) ·
+**Observação:** 2026-08-15 · `main` em
+`6235b572b7ac33c79b08b9aa52e42c4967d747d2` (merge do Pull Request #48) ·
 repositório `FredericoXX/Projeto-Final`
 
 Os factos abaixo descrevem a `main` em
-`311d917072c31066ec16c4ff8cfc90420cc35b02`, merge do Pull Request #47 que
-integrou a implementação A2.3a. Trabalho em curso noutras branches não é estado
+`6235b572b7ac33c79b08b9aa52e42c4967d747d2`, merge do Pull Request #48 que
+integrou o Evaluation Snapshot. Trabalho em curso noutras branches não é estado
 deste snapshot e, quando referido, é identificado como tal.
 
-**Exceção declarada:** a secção
-[Evaluation Snapshot](#evaluation-snapshot) descreve trabalho que vive na branch
-`feat/evaluation-snapshot` e ainda **não está na `main`**. As contagens de
-execução da secção [Testes e verificações](#testes-e-verificações) identificam
+O Evaluation Snapshot **está na `main`** desde o Pull Request #48; a ressalva
+anterior, que o descrevia como trabalho de branch, deixou de ser verdadeira e foi
+removida. As contagens de execução da secção
+[Testes e verificações](#testes-e-verificações) continuam a identificar
 explicitamente sobre que conteúdo foram medidas.
 
 O contrato de resultado do retrieval — `RetrievalResult`, trace obrigatório no
@@ -56,8 +56,10 @@ Depois do Momento 6, e fora da numeração dos momentos, foram integrados o
 **Pull Request #43** (contrato de resultado do retrieval, merge `d6dd75b`), o
 **Pull Request #44** (fecho documental A3/A4.2 e caracterização A6.0, merge
 `73fe8ef`), o **Pull Request #45** (carregamento tardio do provider, A6.1,
-merge `6ae9bad`) e o **Pull Request #46** (especificação científica da política
-de decisão, A2.2, merge `42187e7c`) — ver
+merge `6ae9bad`), o **Pull Request #46** (especificação científica da política
+de decisão, A2.2, merge `42187e7c`), o **Pull Request #47** (encaminhamento
+humano E1, A2.3a, merge `311d917`) e o **Pull Request #48** (Evaluation
+Snapshot, merge `6235b57`) — ver
 [Trabalho arquitetural em aberto](#trabalho-arquitetural-em-aberto).
 
 ## Arquitetura
@@ -87,7 +89,7 @@ Módulos do backend, em [`backend/app/`](../../backend/app/):
 | `decision/` | contratos provisórios de domínio da decisão agêntica (A2.1): tipos puros. `DecisionOutcome.ESCALATE` ganhou o seu primeiro consumidor com a A2.3a; os restantes continuam sem consumidores |
 | `retrieval/` | contrato de resultado (`RetrievalResult`), planeamento de consulta, elegibilidade lexical, ranking, configuração FTS |
 | `answering/` | contratos neutros, contexto, prompts, validação e adaptador de fornecedor |
-| `evaluation/` | contratos e artefactos da avaliação offline do Momento 5 e, na branch `feat/evaluation-snapshot`, a identidade reprodutível do contexto experimental; não é importado pela aplicação |
+| `evaluation/` | contratos e artefactos da avaliação offline do Momento 5 e a identidade reprodutível do contexto experimental (Evaluation Snapshot); não é importado pela aplicação |
 | `diagnostics/` | ferramenta interna de observação do pipeline documental |
 | `core/` | configuração, segurança, normalização de texto, idioma, erros |
 
@@ -96,9 +98,9 @@ contacto) e `handoff_message.py` (mensagem determinística do encaminhamento
 humano), ambos acrescentados pela A2.3a.
 
 Em `app/evaluation/`, e fora do que `__init__.py` reexporta, vivem também
-`results.py` (canonicalização e digest do Momento 5) e — na branch
-`feat/evaluation-snapshot` — `snapshot.py` e `snapshot_builder.py`. A exclusão
-do `__init__.py` é deliberada: importar `app.evaluation.assets` não pode
+`results.py` (canonicalização e digest do Momento 5), `snapshot.py` e
+`snapshot_builder.py`. A exclusão do `__init__.py` é deliberada: importar
+`app.evaluation.assets` não pode
 carregar `sqlalchemy` nem as Settings, e essa garantia está fixada por um teste
 em subprocesso.
 
@@ -260,9 +262,10 @@ Detalhe em [`docs/answering.md`](../answering.md) e
 
 ## Evaluation Snapshot
 
-**Estado:** implementado na branch `feat/evaluation-snapshot`. **Não está na
-`main`.** Enquadramento: **DSR3 — Design & Development**; é infraestrutura
-**para** DSR4/DSR5, e não realiza nem uma nem outra.
+**Estado:** integrado na `main` pelo Pull Request #48 (merge `6235b57`).
+Enquadramento: **DSR3 — Design & Development**; é infraestrutura **para**
+DSR4/DSR5, e não realiza nem uma nem outra. O seu **primeiro uso sobre corpus
+real** está descrito em [Pilot Corpus P1](#pilot-corpus-p1).
 
 Dá identidade determinística ao contexto experimental de uma avaliação, para que
 duas medições possam ser declaradas comparáveis em vez de presumidas. Sem isso,
@@ -307,20 +310,84 @@ Detalhe, incluindo o que entra e o que não entra na identidade e as limitaçõe
 declaradas, em
 [`docs/relatorios/evaluation-snapshot.md`](../relatorios/evaluation-snapshot.md).
 
+## Pilot Corpus P1
+
+**Estado:** instanciação piloto **iniciada**. Primeiro corpus contextual real
+processado e primeiro Evaluation Snapshot real produzido. Enquadramento:
+**início de DSR4 — Demonstration**. DSR4 **não** está validada e DSR5 **não**
+começou: não houve utilizadores, não houve medição e **nenhuma métrica de
+recuperação foi calculada**.
+
+Sete documentos públicos do repositório normativo oficial da Universidade de
+Cabo Verde foram inventariados; **seis** entraram no corpus e um foi recusado
+pela API por exceder o limite de upload configurado. A ingestão usou
+exclusivamente os endpoints já existentes (`POST /documents`,
+`POST /documents/{id}/versions`), num locatário dedicado ao piloto, para que o
+corpus do snapshot seja exatamente P1 e não "os documentos que estão na base".
+
+| Facto | Valor |
+| --- | --- |
+| Documentos no corpus | 6 (de 7 candidatos) |
+| Versões processadas | 6, todas `processed` |
+| Segmentos elegíveis | 1834 |
+| Extração por OCR | 1 documento (PDF integralmente digitalizado) |
+| `snapshot_id` de S1 | `a94f940229152a3b61860b370df8cb3ea8fe1a0e7236d65e86fe4b5118baf4c1` |
+| `corpus_digest` de S1 | `e8a0f08b5ecf37821244e62c266a48b1d64c928cabb75e0e23e08f9c895a447e` |
+| `reference_date` | `2026-08-15` |
+| Reprodutibilidade | duas execuções sobre estado inalterado produziram artefactos **byte a byte idênticos** |
+
+Factos que importa não sobredeclarar:
+
+- **nenhum ficheiro institucional real está no repositório.** Os PDF, o texto
+  extraído, os segmentos e o snapshot serializado vivem em `storage/`, ignorada
+  pelo Git. São versionados apenas metadados públicos, em `docs/evaluation/`;
+- **nenhum documento real entrou em testes.** A suite continua a usar corpus
+  sintético; o Pilot Corpus é um artefacto de demonstração separado;
+- **nenhuma alteração foi feita ao retrieval**, ao pipeline documental ou a
+  qualquer código de produção;
+- o *ground truth* criado é **de recuperação**, não de política: nenhuma anotação
+  afirma `ANSWER`, `CLARIFY`, `ABSTAIN` ou `ESCALATE`, que continuam a depender
+  de O1–O7;
+- as 14 perguntas piloto são **construídas a partir de documentos públicos**, e
+  não perguntas reais de estudantes;
+- a anotação tem **um único anotador** (`SINGLE_ANNOTATOR_PILOT`), sem medida de
+  concordância;
+- `valid_from`/`valid_until` estão a `NULL` em todos os documentos, porque a
+  convenção institucional de vigência é uma dependência Uni-CV com estado
+  desconhecido. O corpus não tem, por isso, discriminação temporal.
+
+A ingestão de documentos reais expôs um defeito não corrigido nesta fase,
+**BUG-D4.1-01**: a extração nativa em modo `layout` acrescenta apenas espaços, e
+a segmentação orça em coordenadas do texto bruto, pelo que o preenchimento
+consome o orçamento do segmento — num dos documentos, 83,2 % dos caracteres são
+espaços e a média de `normalized_content` cai para 65 caracteres. Está
+classificado e reservado para Pull Request separado; se for corrigido, a
+segmentação muda, o `corpus_digest` muda com ela e S1 deixa de ser o contexto
+experimental em vigor — exigindo um novo snapshot. **Não** exige subir
+`LEXICAL_PIPELINE_VERSION`, que cobre apenas etapas de `app/retrieval/` e não a
+extração nem a segmentação.
+
+Detalhe, incluindo critérios de inclusão e exclusão, proveniência, rubrica de
+relevância, protocolo de anotação e as métricas preparadas mas não executadas,
+em
+[`docs/relatorios/d4-1-pilot-corpus-ground-truth.md`](../relatorios/d4-1-pilot-corpus-ground-truth.md).
+
 ## Testes e verificações
 
 Os testes do backend usam PostgreSQL real numa base dedicada; os do frontend
 usam MSW, sem rede nem backend.
 
 Contagem de execução medida em **2026-08-14**, sobre o conteúdo do Evaluation
-Snapshot na branch `feat/evaluation-snapshot` (base `311d917`, antes de qualquer
-merge): **1493 passed, 1 warning** (`python -m pytest -q`). O warning é o
+Snapshot então na branch `feat/evaluation-snapshot` (base `311d917`) — conteúdo
+que o Pull Request #48 integrou sem alteração, e que é hoje o da `main` em
+`6235b57`: **1493 passed, 1 warning** (`python -m pytest -q`). O warning é o
 `StarletteDeprecationWarning` pré-existente de `fastapi/testclient.py`. Na mesma
 data e sobre o mesmo conteúdo, `mypy app tests scripts` reporta **178 source
 files** sem erros e `ruff check .` passa. O frontend **não foi alterado** por
 este trabalho.
 
-Os 79 testes adicionais face à `main` pertencem aos dois ficheiros novos —
+Os 79 testes adicionais face à `main` anterior pertencem aos dois ficheiros
+novos —
 `tests/test_evaluation_snapshot_unit.py` (48) e
 `tests/test_evaluation_snapshot_corpus.py` (31). **Nenhum teste existente foi
 alterado, enfraquecido ou removido.**

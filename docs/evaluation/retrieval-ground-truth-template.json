@@ -1,0 +1,96 @@
+{
+  "schema_version": "2",
+  "contract": "retrieval_ground_truth",
+  "scope_note": "Ground truth de RECUPERACAO. Declara que evidencia documental deveria ser recuperada para uma pergunta. NAO declara desfecho de politica (ANSWER/CLARIFY/ABSTAIN/ESCALATE), que depende das decisoes O1-O7 ainda em aberto.",
+  "corpus_id": "<identificador do Pilot Corpus, ex.: P1>",
+  "snapshot_id": "<snapshot_id do EvaluationSnapshot contra o qual estas anotacoes valem>",
+  "corpus_digest": "<corpus_digest do mesmo snapshot>",
+  "reference_date": "<data de referencia da experiencia, YYYY-MM-DD>",
+  "annotation_mode": "SINGLE_ANNOTATOR_PILOT",
+  "question_id_rule": "Q + tres digitos, atribuidos por ordem de criacao e nunca reutilizados. A identidade nao depende da ordem dos ficheiros nem da ordem de leitura da base.",
+  "evidence_anchor": "<como os julgamentos referenciam segmentos; no piloto: corpus_item_id + chunk_index, com os UUID da instancia num artefacto local nao versionado>",
+  "temporal_scope_note": "<se o corpus contiver documentos concorrentes no tempo, declarar aqui a consequencia para a determinacao de relevancia>",
+  "relevance_scale": {
+    "0": "irrelevante (inclui distractor: mesmo assunto, ano/publico/procedimento errado)",
+    "1": "parcialmente util: contexto relevante mas insuficiente sozinho",
+    "2": "evidencia diretamente relevante para responder ao pedido"
+  },
+  "metric_protocol": {
+    "note": "Fixa a interpretacao das anotacoes. Sem isto, duas implementacoes produzem metricas diferentes a partir do mesmo ficheiro.",
+    "k_values": [1, 3, 5],
+    "primary_k": 5,
+    "primary_k_rationale": "top_k=5 e o valor da configuracao de recuperacao registada no snapshot.",
+    "binary_relevance_threshold": 2,
+    "binary_relevance_note": "Recall@k e MRR usam apenas grau 2 como relevante. Grau 1 NAO conta: um segmento que nao responde sozinho nao demonstra que a evidencia foi encontrada.",
+    "ndcg_gain_mapping": { "0": 0, "1": 1, "2": 3 },
+    "ndcg_gain_rationale": "Ganho nao linear para que um grau 2 nao seja substituivel por dois grau 1. IDCG calculado sobre os julgamentos desta pergunta ordenados por ganho decrescente.",
+    "unjudged_chunk_treatment": "ASSUMED_IRRELEVANT",
+    "unjudged_chunk_note": "Um segmento devolvido e nao julgado conta como grau 0.",
+    "relevant_set_completeness": "DIRECTED_JUDGMENT_INCOMPLETE",
+    "relevant_set_completeness_note": "Conjunto construido por inspecao dirigida do corpus, nao por pooling de multiplos sistemas. E incompleto por construcao. Valores alternativos: POOLED_MULTI_SYSTEM, EXHAUSTIVE.",
+    "incompleteness_bias": {
+      "precision_at_k": "PESSIMISTIC: um segmento relevante nao julgado conta 0, logo a Precision medida nunca excede a verdadeira.",
+      "recall_at_k": "INDETERMINATE: julgar de menos encolhe numerador e denominador; o sentido do enviesamento nao esta determinado.",
+      "ndcg_at_k": "INDETERMINATE: gaps nao julgados reduzem DCG e tambem IDCG quando este e calculado sobre os julgamentos da propria pergunta.",
+      "mrr": "PESSIMISTIC: o minimo sobre o conjunto julgado e sempre maior ou igual ao minimo sobre o conjunto verdadeiro, logo o reciprocal rank medido nunca excede o verdadeiro. Nao tem denominador dependente do tamanho do conjunto relevante, pelo que se comporta como a Precision e nao como o Recall. Vale enquanto os julgamentos positivos forem corretos.",
+      "consequence": "Nenhum destes numeros e comparavel entre sistemas sem repooling."
+    },
+    "no_evidence_questions": "Perguntas com no_relevant_evidence=true sao EXCLUIDAS de Recall, MRR e nDCG (indefinidos). Sobre elas reporta-se apenas a contagem de segmentos devolvidos, que NAO e um veredicto de politica.",
+    "excluded_questions": "Perguntas com excluded_from_metrics=true sao excluidas de todas as metricas; o motivo e obrigatorio."
+  },
+  "questions": [
+    {
+      "question_id": "Q001",
+      "question": "<pergunta em linguagem de atendimento, nao um titulo do documento>",
+      "language": "pt",
+      "question_origin": "constructed_from_public_documents",
+      "temporal_scope": "<ano letivo a que a pergunta se refere, ou 'unscoped'>",
+      "difficulty_types": ["lexically_close"],
+      "no_relevant_evidence": false,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "evidence_judgments": [
+        {
+          "corpus_item_id": "<id do item no manifest do corpus>",
+          "chunk_index": 0,
+          "relevance": 2,
+          "note": "<porque este segmento e, ou nao e, suficiente>"
+        },
+        {
+          "corpus_item_id": "<id de outro item>",
+          "chunk_index": 0,
+          "relevance": 0,
+          "note": "<distractor: porque parece relevante e nao e>"
+        }
+      ],
+      "document_level_relevance": [
+        { "corpus_item_id": "<id do item no manifest do corpus>", "relevance": 2 }
+      ],
+      "annotation": {
+        "annotator_1": "<identificador do anotador>",
+        "annotator_2": null,
+        "adjudication_status": "NOT_APPLICABLE_SINGLE_ANNOTATOR"
+      },
+      "notes": null
+    },
+    {
+      "question_id": "Q002",
+      "question": "<pergunta cuja resposta nao existe no corpus>",
+      "language": "pt",
+      "question_origin": "constructed_from_public_documents",
+      "temporal_scope": "unscoped",
+      "difficulty_types": ["no_evidence_in_corpus"],
+      "no_relevant_evidence": true,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "evidence_judgments": [],
+      "document_level_relevance": [],
+      "annotation": {
+        "annotator_1": "<identificador do anotador>",
+        "annotator_2": null,
+        "adjudication_status": "NOT_APPLICABLE_SINGLE_ANNOTATOR"
+      },
+      "notes": "no_relevant_evidence=true e um facto sobre o corpus. NAO e NOT_ANSWERABLE nem ABSTAIN: esses sao conceitos de politica."
+    }
+  ]
+}
