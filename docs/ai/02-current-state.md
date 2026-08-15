@@ -1,18 +1,18 @@
 # Estado atual
 
 **Observação:** 2026-08-15 · `main` em
-`d3055d7d7c4d456e1014861ac4a819921f3ab09c` (merge do Pull Request #49) ·
+`a88f4aeb03b2577b8ecad26634b8cbbbc9656bf6` (merge do Pull Request #50) ·
 repositório `FredericoXX/Projeto-Final`
 
 Os factos abaixo descrevem a `main` em
-`d3055d7d7c4d456e1014861ac4a819921f3ab09c`, merge do Pull Request #49 que
-integrou o Pilot Corpus P1 e o protocolo de *ground truth*. Trabalho em curso
-noutras branches não é estado deste snapshot e, quando referido, é identificado
-como tal.
+`a88f4aeb03b2577b8ecad26634b8cbbbc9656bf6`, merge do Pull Request #50 que
+integrou a baseline lexical real sobre P1/S1. Trabalho em curso noutras branches
+não é estado deste snapshot e, quando referido, é identificado como tal.
 
 **Exceção declarada:** a secção
-[Baseline lexical sobre P1/S1](#baseline-lexical-sobre-p1s1) descreve trabalho
-que vive na branch `feat/d4-2-lexical-baseline` e ainda **não está na `main`**.
+[Experimento da correspondência lexical](#experimento-da-correspondência-lexical)
+descreve trabalho que vive na branch `analysis/d4-3-lexical-eligibility` e ainda
+**não está na `main`**.
 
 O Evaluation Snapshot **está na `main`** desde o Pull Request #48; a ressalva
 anterior, que o descrevia como trabalho de branch, deixou de ser verdadeira e foi
@@ -64,8 +64,9 @@ Depois do Momento 6, e fora da numeração dos momentos, foram integrados o
 merge `6ae9bad`), o **Pull Request #46** (especificação científica da política
 de decisão, A2.2, merge `42187e7c`), o **Pull Request #47** (encaminhamento
 humano E1, A2.3a, merge `311d917`), o **Pull Request #48** (Evaluation
-Snapshot, merge `6235b57`) e o **Pull Request #49** (Pilot Corpus P1 e protocolo
-de *ground truth*, D4.1, merge `d3055d7`) — ver
+Snapshot, merge `6235b57`), o **Pull Request #49** (Pilot Corpus P1 e protocolo
+de *ground truth*, D4.1, merge `d3055d7`) e o **Pull Request #50** (baseline
+lexical real sobre P1/S1, D4.2, merge `a88f4ae`) — ver
 [Trabalho arquitetural em aberto](#trabalho-arquitetural-em-aberto).
 
 ## Arquitetura
@@ -112,7 +113,9 @@ em subprocesso.
 
 `scripts/` contém `seed_demo_institution`, `rebuild_document_chunks`,
 `diagnose_document_pipeline`, `evaluate_answering_offline` (avaliação offline
-determinística) e `build_moment05_baseline` (composição da baseline).
+determinística), `build_moment05_baseline` (composição da baseline),
+`evaluate_retrieval_baseline` (baseline lexical sobre um Pilot Corpus) e, na
+branch `analysis/d4-3-lexical-eligibility`, `evaluate_retrieval_experiment`.
 
 ## Superfície da API
 
@@ -380,11 +383,10 @@ em
 
 ## Baseline lexical sobre P1/S1
 
-**Estado:** implementada na branch `feat/d4-2-lexical-baseline`. **Não está na
-`main`.** É a primeira medição de recuperação sobre documentação institucional
-real. Enquadramento: **avaliação técnica formativa** que alimenta DSR5; não é
-DSR5 concluída, porque não houve utilizadores e a amostra não sustenta
-inferência.
+**Estado:** integrada na `main` pelo Pull Request #50 (merge `a88f4ae`). É a
+primeira medição de recuperação sobre documentação institucional real.
+Enquadramento: **avaliação técnica formativa** que alimenta DSR5; não é DSR5
+concluída, porque não houve utilizadores e a amostra não sustenta inferência.
 
 O que passou a existir: `app/evaluation/retrieval_metrics.py` (métricas puras —
 Recall@k, MRR, nDCG@k — sem SQLAlchemy nem Settings, e **não** reexportado por
@@ -418,8 +420,10 @@ Factos que importa não sobredeclarar:
   candidatos usa Full-Text Search **com *stemming***. Um segmento pode ser
   recuperado e depois rejeitado por a forma de superfície diferir —
   `residencia` contra `residencias`;
-- **fragmentação de segmentos e privação do conjunto de candidatos foram
-  testadas e refutadas** como causa das falhas medidas;
+- **fragmentação de segmentos foi testada e refutada** como causa das falhas
+  medidas. A afirmação paralela sobre privação do conjunto de candidatos
+  **estava errada e foi corrigida pelo D4.3** — ver
+  [Experimento da correspondência lexical](#experimento-da-correspondência-lexical);
 - **o impacto de BUG-D4.1-01 na baseline é INCONCLUSIVO.** O defeito existe e é
   observável, mas nenhuma falha medida lhe é atribuível: no caso examinado, os
   segmentos caberiam no orçamento e, mesmo unidos, não passariam a
@@ -444,32 +448,86 @@ análise de tipos de falha, em
 artefacto da execução em
 [`docs/evaluation/retrieval-baseline-p1-s1.json`](../evaluation/retrieval-baseline-p1-s1.json).
 
+## Experimento da correspondência lexical
+
+**Estado:** implementado na branch `analysis/d4-3-lexical-eligibility`. **Não
+está na `main`.** É um **experimento offline**, não uma alteração: compara três
+políticas de correspondência × duas condições de conjunto de candidatos sobre o
+mesmo P1/S1, sem tocar em `PostgresLexicalRetriever`, em `decide_eligibility`,
+no corpus nem no *ground truth*.
+
+O que passou a existir: `app/evaluation/lexical_variants.py` (projeção pura do
+espaço de termos, **não** reexportada por `__init__.py`) e
+`scripts/evaluate_retrieval_experiment.py`. **Nenhum endpoint HTTP, nenhuma
+tabela, nenhuma migration, nenhuma alteração de produção.** A célula de controlo
+reproduz a baseline do D4.2 e o comando recusa executar se não reproduzir.
+
+O que os resultados mostram, e que importa não sobredeclarar:
+
+- **sob as condições de produção, a normalização morfológica não resolve falha
+  nenhuma.** Recall@5 e MRR ficam idênticos à baseline (0,4583 e 0,3750);
+  ganham-se 0,012 de nDCG@5 e perde-se precisão no topo de uma pergunta;
+- **uma única pergunta foi recuperada em todo o experimento**, e só combinando
+  radicalização com a remoção da quota de candidatos — célula que fica abaixo da
+  baseline em MRR e nDCG@5. É uma interação, não o efeito de uma das partes;
+- **BUG-D4.2-01 continua por testar.** A variante que preserva acentos é
+  **inavaliável** com o *ground truth* atual: as perguntas foram escritas sem
+  diacríticos (0 de 163 *tokens*), pelo que a projeção fica assimétrica e quebra
+  correspondências que a baseline tinha. **Não é um defeito do artefacto** — o
+  D4.1 declara as perguntas como construídas e a tipologia real como categoria B,
+  UNKNOWN, pelo que nada demonstra que escrever sem acentos esteja errado. É uma
+  propriedade do *ground truth*, e estudá-la exige uma **versão acentuada
+  pareada**, não a reescrita do original;
+- **a previsão do D4.2 sobre Q008 não se confirmou.** A pergunta não é recuperada
+  em nenhuma das seis células;
+- **a quota de candidatos é uma restrição real, mas em interação.** Dentro da
+  política de correspondência atual o D4.2 estava certo — os alvos seriam
+  rejeitados de qualquer forma; o que o D4.3 mostra é que a quota impede uma
+  política alternativa de os alcançar. O orçamento global (25) reparte-se em
+  quotas que **não são redistribuídas** quando as variantes conjuntivas devolvem
+  zero: uma consulta com 240 correspondências ficou com quota 6;
+- **retirar a quota, isoladamente, piora o resultado** (Recall@5 0,3750 contra
+  0,4583), porque o ranking não aguenta o conjunto maior;
+- **nenhuma célula supera a baseline em MRR**;
+- **a pergunta sem evidência continua a devolver zero resultados** nas seis
+  células, incluindo com um conjunto de candidatos 33 vezes maior — as variantes
+  não são relaxamento disfarçado;
+- **nenhuma variante foi adotada**, e **nenhuma decisão entre lexical e
+  denso/híbrido foi tomada**.
+
+Detalhe, incluindo métricas por célula, resultados por pergunta e a análise dos
+distractores, em
+[`docs/relatorios/d4-3-lexical-eligibility-experiment.md`](../relatorios/d4-3-lexical-eligibility-experiment.md);
+artefacto da execução em
+[`docs/evaluation/retrieval-experiment-p1-s1.json`](../evaluation/retrieval-experiment-p1-s1.json).
+
 ## Testes e verificações
 
 Os testes do backend usam PostgreSQL real numa base dedicada; os do frontend
 usam MSW, sem rede nem backend.
 
-Contagem de execução medida em **2026-08-14**, sobre o conteúdo do Evaluation
-Snapshot então na branch `feat/evaluation-snapshot` (base `311d917`) — conteúdo
-que o Pull Request #48 integrou sem alteração, e que é hoje o da `main` em
-`6235b57`: **1493 passed, 1 warning** (`python -m pytest -q`). O warning é o
-`StarletteDeprecationWarning` pré-existente de `fastapi/testclient.py`. Na mesma
-data e sobre o mesmo conteúdo, `mypy app tests scripts` reporta **178 source
-files** sem erros e `ruff check .` passa. O frontend **não foi alterado** por
-este trabalho.
+Contagem de execução medida em **2026-08-15**, sobre o conteúdo do experimento
+da correspondência lexical na branch `analysis/d4-3-lexical-eligibility` (base
+`a88f4ae`, antes de qualquer merge): **1577 passed, 1 warning**
+(`python -m pytest -q`). O warning é o `StarletteDeprecationWarning`
+pré-existente de `fastapi/testclient.py`. Na mesma data e sobre o mesmo
+conteúdo, `mypy app tests scripts` reporta **187 source files** sem erros e
+`ruff check .` passa. O frontend **não foi alterado** por este trabalho.
 
-Os 79 testes adicionais face à `main` anterior pertencem aos dois ficheiros
-novos —
-`tests/test_evaluation_snapshot_unit.py` (48) e
-`tests/test_evaluation_snapshot_corpus.py` (31). **Nenhum teste existente foi
+Os 26 testes adicionais face à `main` pertencem a dois ficheiros novos —
+`tests/test_evaluation_lexical_variants.py` (10) e
+`tests/test_evaluation_experiment_guard.py` (16). **Nenhum teste existente foi
 alterado, enfraquecido ou removido.**
 
-Proveniência histórica, para leitura das diferenças: a execução sobre a `main`
-em `311d917` deu **1414 passed** (A2.3a, medida em 2026-08-13, com **174 source
-files** no mypy); sobre `6ae9bad`, **1287 passed** (2026-08-12, **167 source
-files**); sobre `d6dd75b`, **1280 passed**; sobre `e3f43f4`, **1263 passed**. O
-tempo de execução varia entre corridas e não deve ser lido como medida de
-desempenho.
+Proveniência histórica, para leitura das diferenças: a execução sobre o conteúdo
+do Evaluation Snapshot (base `311d917`, hoje na `main` em `6235b57`) deu
+**1493 passed** (2026-08-14, **178 source files** no mypy), dos quais 79
+acrescentados por `tests/test_evaluation_snapshot_unit.py` (48) e
+`tests/test_evaluation_snapshot_corpus.py` (31); sobre a `main` em `311d917`,
+**1414 passed** (A2.3a, 2026-08-13, **174 source files**); sobre `6ae9bad`,
+**1287 passed** (2026-08-12, **167 source files**); sobre `d6dd75b`,
+**1280 passed**; sobre `e3f43f4`, **1263 passed**. O tempo de execução varia
+entre corridas e não deve ser lido como medida de desempenho.
 
 Existe uma **baseline estrutural offline** das respostas fundamentadas,
 produzida pelo Momento 5 e versionada em
