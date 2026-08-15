@@ -1,21 +1,19 @@
 # Estado atual
 
-**Observação:** 2026-08-13 · `main` em
-`42187e7c843b0725f9c2135f23838cca498d8e19` (merge do Pull Request #46) ·
+**Observação:** 2026-08-14 · `main` em
+`311d917072c31066ec16c4ff8cfc90420cc35b02` (merge do Pull Request #47) ·
 repositório `FredericoXX/Projeto-Final`
 
 Os factos abaixo descrevem a `main` em
-`42187e7c843b0725f9c2135f23838cca498d8e19`, merge do Pull Request #46 que
-integrou a especificação A2.2. Trabalho em curso noutras branches não é estado
+`311d917072c31066ec16c4ff8cfc90420cc35b02`, merge do Pull Request #47 que
+integrou a implementação A2.3a. Trabalho em curso noutras branches não é estado
 deste snapshot e, quando referido, é identificado como tal.
 
 **Exceção declarada:** a secção
-[Encaminhamento humano E1](#encaminhamento-humano-e1) descreve a implementação
-**A2.3a**, que vive na branch `feat/human-handoff-e1-a2-3a` e ainda **não está
-na `main`**. Está aqui porque é o estado corrente do trabalho e porque o
-enunciado da tarefa o exige; as contagens de execução da secção
-[Testes e verificações](#testes-e-verificações) identificam explicitamente
-sobre que conteúdo foram medidas.
+[Evaluation Snapshot](#evaluation-snapshot) descreve trabalho que vive na branch
+`feat/evaluation-snapshot` e ainda **não está na `main`**. As contagens de
+execução da secção [Testes e verificações](#testes-e-verificações) identificam
+explicitamente sobre que conteúdo foram medidas.
 
 O contrato de resultado do retrieval — `RetrievalResult`, trace obrigatório no
 contrato e semântica explícita do score — está integrado desde o Pull Request
@@ -89,13 +87,20 @@ Módulos do backend, em [`backend/app/`](../../backend/app/):
 | `decision/` | contratos provisórios de domínio da decisão agêntica (A2.1): tipos puros. `DecisionOutcome.ESCALATE` ganhou o seu primeiro consumidor com a A2.3a; os restantes continuam sem consumidores |
 | `retrieval/` | contrato de resultado (`RetrievalResult`), planeamento de consulta, elegibilidade lexical, ranking, configuração FTS |
 | `answering/` | contratos neutros, contexto, prompts, validação e adaptador de fornecedor |
-| `evaluation/` | contratos e artefactos da avaliação offline do Momento 5; não é importado pela aplicação |
+| `evaluation/` | contratos e artefactos da avaliação offline do Momento 5 e, na branch `feat/evaluation-snapshot`, a identidade reprodutível do contexto experimental; não é importado pela aplicação |
 | `diagnostics/` | ferramenta interna de observação do pipeline documental |
 | `core/` | configuração, segurança, normalização de texto, idioma, erros |
 
 `app/core/` inclui ainda `contact.py` (validação determinística de email/URL de
 contacto) e `handoff_message.py` (mensagem determinística do encaminhamento
 humano), ambos acrescentados pela A2.3a.
+
+Em `app/evaluation/`, e fora do que `__init__.py` reexporta, vivem também
+`results.py` (canonicalização e digest do Momento 5) e — na branch
+`feat/evaluation-snapshot` — `snapshot.py` e `snapshot_builder.py`. A exclusão
+do `__init__.py` é deliberada: importar `app.evaluation.assets` não pode
+carregar `sqlalchemy` nem as Settings, e essa garantia está fixada por um teste
+em subprocesso.
 
 `scripts/` contém `seed_demo_institution`, `rebuild_document_chunks`,
 `diagnose_document_pipeline`, `evaluate_answering_offline` (avaliação offline
@@ -104,8 +109,8 @@ determinística) e `build_moment05_baseline` (composição da baseline).
 ## Superfície da API
 
 Endpoints sob `/api/v1`: `health`, `institutions`, `auth`, `users`,
-`conversations`, `bootstrap`, `documents`, `retrieval`, `answering`. A A2.3a
-acrescenta `POST /conversations/{id}/handoff` (fora da `main`).
+`conversations`, `bootstrap`, `documents`, `retrieval`, `answering`, incluindo
+`POST /conversations/{id}/handoff` (A2.3a).
 
 Detalhe por área: [`README.md`](../../README.md) (bootstrap e autenticação),
 [`docs/document-core.md`](../document-core.md) (documentos, versões, OCR,
@@ -116,9 +121,8 @@ conversacionais), [`docs/diagnostics/README.md`](../diagnostics/README.md).
 ## Base de dados
 
 15 migrations em [`backend/alembic/versions/`](../../backend/alembic/versions/),
-head `a5c31f70b8d2` (`add_institution_human_support_contact`, A2.3a; na `main`
-a head continua `e7b1c9d4a2f0`). Histórico completo em
-[`docs/database.md`](../database.md).
+head `a5c31f70b8d2` (`add_institution_human_support_contact`). Histórico completo
+em [`docs/database.md`](../database.md).
 
 A extensão `pgvector` está ativa como infraestrutura e não é usada pela
 recuperação atual.
@@ -142,9 +146,9 @@ do protótipo:
   validação determinística e estrutural;
 - **sem** memória conversacional no prompt, segundo LLM de validação,
   confidence score, idempotência ou feedback;
-- encaminhamento humano **E1 solicitado pelo utilizador** (A2.3a, ainda fora da
-  `main`): determinístico, sem retrieval e sem LLM. **Sem** escalação decidida
-  pelo sistema, ticketing, fila ou operador — ver
+- encaminhamento humano **E1 solicitado pelo utilizador** (A2.3a):
+  determinístico, sem retrieval e sem LLM. **Sem** escalação decidida pelo
+  sistema, ticketing, fila ou operador — ver
   [Encaminhamento humano E1](#encaminhamento-humano-e1);
 - processamento documental **síncrono**, sem filas nem workers;
 - execução local, sem serviços externos no retrieval e sem rede nos testes.
@@ -207,10 +211,10 @@ answerability, que não pertence a esta camada.
 
 ## Encaminhamento humano E1
 
-**Estado:** implementado na branch `feat/human-handoff-e1-a2-3a` (A2.3a).
-**Não está na `main`.** Enquadramento científico: **DSR3 — Design &
-Development**. É implementação, não avaliação: a A2.3a **não** realiza DSR4 nem
-DSR5, e o encaminhamento **não foi avaliado empiricamente**.
+**Estado:** integrado na `main` pelo Pull Request #47 (A2.3a). Enquadramento
+científico: **DSR3 — Design & Development**. É implementação, não avaliação: a
+A2.3a **não** realiza DSR4 nem DSR5, e o encaminhamento **não foi avaliado
+empiricamente**.
 
 O que passou a existir, e o que continua a não existir:
 
@@ -254,33 +258,77 @@ evita alterar prematuramente a API caracterizada no Momento 6.
 Detalhe em [`docs/answering.md`](../answering.md) e
 [`docs/database.md`](../database.md).
 
+## Evaluation Snapshot
+
+**Estado:** implementado na branch `feat/evaluation-snapshot`. **Não está na
+`main`.** Enquadramento: **DSR3 — Design & Development**; é infraestrutura
+**para** DSR4/DSR5, e não realiza nem uma nem outra.
+
+Dá identidade determinística ao contexto experimental de uma avaliação, para que
+duas medições possam ser declaradas comparáveis em vez de presumidas. Sem isso,
+"pergunta + resultado" não é reprodutível: se o corpus ou a configuração de
+recuperação mudarem entretanto, o mesmo pedido produz outro resultado sem que
+nada o assinale.
+
+```
+app/evaluation/snapshot.py          contratos + canonicalização + digest (puro)
+app/evaluation/snapshot_builder.py  construção sobre a base, via RetrievalEligibility
+```
+
+Duas identidades com semântica distinta: `corpus_digest` identifica apenas o
+corpus elegível; `snapshot_id` identifica a experiência — corpus, instituição,
+data de referência e configuração de recuperação. A separação permite observar
+"mesmo corpus, recuperação diferente" e o caso inverso.
+
+Factos que importam não sobredeclarar:
+
+- o corpus é **exatamente** o conjunto de `RetrievalEligibility`; nenhuma
+  condição C1–C11 foi reescrita ou duplicada;
+- a identidade dos segmentos usa hashes **recalculados em SQL** sobre `content`
+  e `normalized_content` — este último é o texto efetivamente pesquisado, de que
+  a coluna gerada `search_vector` deriva. Nenhum texto documental atravessa a
+  fronteira da base;
+- `app/retrieval/lexical.py` ganhou `LEXICAL_PIPELINE_VERSION`, constante pura
+  que identifica planeamento, normalização, elegibilidade lexical, indexação e
+  ranking. `SCORING_VERSION` cobre apenas os pesos do rerank, pelo que sozinha
+  deixaria passar alterações materiais. **Não altera comportamento nem contrato
+  público**;
+- `reference_date` é parâmetro **obrigatório e explícito** e participa sempre no
+  `snapshot_id`; não existe qualquer `date.today()` no builder;
+- a canonicalização reutiliza `app.evaluation.results.canonical_json`, a
+  serialização canónica única do projeto; `hash()` do Python nunca é usado;
+- **nenhuma tabela e nenhuma migration** foram criadas — decisão explícita: não
+  existe consumidor operacional, e o snapshot é um valor recalculável e
+  serializável;
+- **nenhum endpoint HTTP** foi criado;
+- o score continua declarado como **relevância lexical**, nunca confiança.
+
+Detalhe, incluindo o que entra e o que não entra na identidade e as limitações
+declaradas, em
+[`docs/relatorios/evaluation-snapshot.md`](../relatorios/evaluation-snapshot.md).
+
 ## Testes e verificações
 
 Os testes do backend usam PostgreSQL real numa base dedicada; os do frontend
 usam MSW, sem rede nem backend.
 
-Contagem de execução medida em **2026-08-13**, sobre o conteúdo da **A2.3a na
-branch `feat/human-handoff-e1-a2-3a`** (base `42187e7c`, antes de qualquer
-merge), **depois das correções da revisão**: **1414 passed, 1 warning, 274.12 s**
-(`python -m pytest -q`). O warning é o `StarletteDeprecationWarning`
-pré-existente de `fastapi/testclient.py`. Na mesma data e sobre o mesmo
-conteúdo, `mypy app tests scripts` reporta **174 source files** sem erros e
-`ruff check .` passa. No frontend, `npm run test:run` dá **95 passed em 10
-ficheiros**, com lint, typecheck e build verdes.
+Contagem de execução medida em **2026-08-14**, sobre o conteúdo do Evaluation
+Snapshot na branch `feat/evaluation-snapshot` (base `311d917`, antes de qualquer
+merge): **1493 passed, 1 warning** (`python -m pytest -q`). O warning é o
+`StarletteDeprecationWarning` pré-existente de `fastapi/testclient.py`. Na mesma
+data e sobre o mesmo conteúdo, `mypy app tests scripts` reporta **178 source
+files** sem erros e `ruff check .` passa. O frontend **não foi alterado** por
+este trabalho.
 
-Os 127 testes adicionais face à `main` pertencem aos três ficheiros novos da
-A2.3a — `tests/test_contact_validation_unit.py` (54),
-`tests/test_institution_human_support.py` (38) e `tests/test_human_handoff.py`
-(35). **Nenhum teste existente foi alterado, enfraquecido ou removido.**
+Os 79 testes adicionais face à `main` pertencem aos dois ficheiros novos —
+`tests/test_evaluation_snapshot_unit.py` (48) e
+`tests/test_evaluation_snapshot_corpus.py` (31). **Nenhum teste existente foi
+alterado, enfraquecido ou removido.**
 
-Uma corrida anterior, sobre o conteúdo da A2.3a **antes** das correções da
-revisão, dava **1401 passed** com 114 testes novos; os 13 acrescentados cobrem
-a revalidação da identidade sob lock e a recusa de configurações compostas
-apenas por whitespace.
-
-Proveniência histórica, para leitura das diferenças: a execução sobre
-`6ae9bad` deu **1287 passed** (medida em 2026-08-12, com **167 source files** no
-mypy); sobre `d6dd75b`, **1280 passed**; sobre `e3f43f4`, **1263 passed**. O
+Proveniência histórica, para leitura das diferenças: a execução sobre a `main`
+em `311d917` deu **1414 passed** (A2.3a, medida em 2026-08-13, com **174 source
+files** no mypy); sobre `6ae9bad`, **1287 passed** (2026-08-12, **167 source
+files**); sobre `d6dd75b`, **1280 passed**; sobre `e3f43f4`, **1263 passed**. O
 tempo de execução varia entre corridas e não deve ser lido como medida de
 desempenho.
 
@@ -401,8 +449,8 @@ provisórios de domínio para a decisão de resposta — `ScopeClass`,
 a ser **apenas vocabulário**: não existe `DecisionPolicy` e não existe qualquer
 mapeamento entre contratos.
 
-A A2.3a (fora da `main`) deu a `DecisionOutcome.ESCALATE` o seu **primeiro
-consumidor funcional**, no encaminhamento humano E1. Isso não é uma política:
+A A2.3a deu a `DecisionOutcome.ESCALATE` o seu **primeiro consumidor
+funcional**, no encaminhamento humano E1. Isso não é uma política:
 o desfecho decorre de uma ação explícita do utilizador, não de uma inferência
 sobre o pedido. `ScopeClass`, `RequestConstraint` e `AnswerabilityClass`
 continuam sem consumidores, e os mapeamentos que a A2.1 declarou proibidos —
