@@ -90,6 +90,29 @@ LEXICAL_SCORE_SEMANTICS = ScoreSemantics(
     comparable_across_queries=False,
 )
 
+# Identidade da **pipeline** lexical inteira, distinta de SCORING_VERSION.
+#
+# SCORING_VERSION identifica apenas os pesos e o limiar do rerank — está
+# declarado assim em app/retrieval/reranking.py. Mas o resultado de uma
+# pesquisa depende de mais etapas do que a pontuação, e todas elas podem mudar
+# sem que nenhum peso mude:
+#
+#   - planeamento da consulta (variantes, prioridades, MAX_INFORMATIVE_TERMS,
+#     tokenização, operadores de websearch) — app/retrieval/query_planning.py;
+#   - normalização lexical e formas canónicas de ordinais/intervalos —
+#     app/retrieval/lexical_normalization.py;
+#   - elegibilidade lexical (cobertura mínima, bases de admissão) —
+#     app/retrieval/eligibility.py;
+#   - expressão da coluna gerada `search_vector` e configuração FTS por idioma;
+#   - orçamento e repartição do candidate pool, neste módulo.
+#
+# Sem uma identidade que as cubra, duas execuções com resultados diferentes
+# poderiam declarar o mesmo contexto experimental. **Subir esta versão é
+# obrigatório quando qualquer uma das etapas acima muda de comportamento**,
+# mesmo que os pesos do ranking fiquem iguais. Viaja no Evaluation Snapshot
+# (app/evaluation/snapshot.py) e não altera nenhum contrato público.
+LEXICAL_PIPELINE_VERSION = "lexical_pipeline_v1"
+
 # --- Orçamento global do candidate pool -------------------------------------
 # global_candidate_limit = min(MAX, max(MIN, top_k * MULTIPLIER)). Proporcional
 # a top_k, com um mínimo razoável e um máximo absoluto. É calculado **antes**
