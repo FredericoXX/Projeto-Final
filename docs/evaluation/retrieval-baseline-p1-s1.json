@@ -1,0 +1,1306 @@
+{
+  "schema_version": "2",
+  "digest_algorithm": "sha256",
+  "corpus_id": "P1",
+  "snapshot_id": "a94f940229152a3b61860b370df8cb3ea8fe1a0e7236d65e86fe4b5118baf4c1",
+  "corpus_digest": "e8a0f08b5ecf37821244e62c266a48b1d64c928cabb75e0e23e08f9c895a447e",
+  "reference_date": "2026-08-15",
+  "snapshot_verified_before_execution": true,
+  "retrieval": {
+    "strategy": "lexical",
+    "pipeline_version": "lexical_pipeline_v1",
+    "scoring_version": "lexical_composite_v1",
+    "score_kind": "lexical_relevance",
+    "comparable_across_queries": false,
+    "language": "pt",
+    "top_k": 5,
+    "official_only": true,
+    "fts_config": "portuguese",
+    "min_relevance_score": 0.05,
+    "candidate_limit": 25
+  },
+  "metric_protocol": {
+    "k_values": [
+      1,
+      3,
+      5
+    ],
+    "primary_k": 5,
+    "binary_relevance_threshold": 2,
+    "ndcg_gain_mapping": {
+      "0": 0,
+      "1": 1,
+      "2": 3
+    },
+    "unjudged_chunk_treatment": "ASSUMED_IRRELEVANT",
+    "aggregation": "macro_average_over_measured_questions"
+  },
+  "questions_total": 14,
+  "aggregate": {
+    "questions_measured": 12,
+    "recall": {
+      "1": 0.208333,
+      "3": 0.416667,
+      "5": 0.458333
+    },
+    "mrr": 0.375,
+    "ndcg": {
+      "1": 0.25,
+      "3": 0.332341,
+      "5": 0.363034
+    }
+  },
+  "question_results": [
+    {
+      "question_id": "Q001",
+      "temporal_scope": "2025/2026",
+      "difficulty_types": [
+        "date_deadline",
+        "table_information",
+        "lexically_close"
+      ],
+      "no_relevant_evidence": false,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "retrieved_count": 4,
+      "candidates_evaluated": 8,
+      "result_count_before_limit": 4,
+      "query_terms": [
+        "comecam",
+        "aulas",
+        "ano",
+        "letivo",
+        "2025",
+        "2026"
+      ],
+      "candidate_budget": 25,
+      "variants": [
+        {
+          "strategy": "exact",
+          "quota": 9,
+          "returned_count": 0
+        },
+        {
+          "strategy": "reduced_and",
+          "quota": 8,
+          "returned_count": 0
+        },
+        {
+          "strategy": "reduced_or",
+          "quota": 8,
+          "returned_count": 8
+        }
+      ],
+      "excluded_counts": {
+        "no_content_match": 0,
+        "insufficient_coverage": 4,
+        "below_threshold": 0
+      },
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 89,
+          "score": 0.414333,
+          "relevance": 0,
+          "judged": false
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 14,
+          "score": 0.338667,
+          "relevance": 2,
+          "judged": true
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 31,
+          "score": 0.311758,
+          "relevance": 0,
+          "judged": false
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 2,
+          "score": 0.280333,
+          "relevance": 0,
+          "judged": false
+        }
+      ],
+      "judged_grades": [
+        2,
+        2,
+        0
+      ],
+      "target_fate": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 16,
+          "fate": "NEVER_A_CANDIDATE",
+          "counterfactual": {
+            "coverage": 0.333333,
+            "matched_terms": [
+              "2025",
+              "aulas"
+            ],
+            "would_be_eligible": false,
+            "exclusion_reason": "insufficient_coverage"
+          }
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 14,
+          "fate": "RETURNED"
+        }
+      ],
+      "total_relevant_judged": 2,
+      "recall": {
+        "1": 0.0,
+        "3": 0.5,
+        "5": 0.5
+      },
+      "reciprocal_rank": 0.5,
+      "ndcg": {
+        "1": 0.0,
+        "3": 0.386853,
+        "5": 0.386853
+      }
+    },
+    {
+      "question_id": "Q002",
+      "temporal_scope": "2025/2026",
+      "difficulty_types": [
+        "date_deadline",
+        "table_information",
+        "lexically_close",
+        "similar_documents"
+      ],
+      "no_relevant_evidence": false,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "retrieved_count": 2,
+      "candidates_evaluated": 6,
+      "result_count_before_limit": 2,
+      "query_terms": [
+        "pedir",
+        "anulacao",
+        "matricula",
+        "ord:1",
+        "semestre",
+        "ano",
+        "letivo",
+        "2025",
+        "2026"
+      ],
+      "candidate_budget": 25,
+      "variants": [
+        {
+          "strategy": "exact",
+          "quota": 7,
+          "returned_count": 0
+        },
+        {
+          "strategy": "reduced_and",
+          "quota": 6,
+          "returned_count": 0
+        },
+        {
+          "strategy": "canonical_relaxed_and",
+          "quota": 6,
+          "returned_count": 0
+        },
+        {
+          "strategy": "reduced_or",
+          "quota": 6,
+          "returned_count": 6
+        }
+      ],
+      "excluded_counts": {
+        "no_content_match": 0,
+        "insufficient_coverage": 4,
+        "below_threshold": 0
+      },
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 89,
+          "score": 0.430926,
+          "relevance": 0,
+          "judged": false
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 24,
+          "score": 0.355185,
+          "relevance": 2,
+          "judged": true
+        }
+      ],
+      "judged_grades": [
+        2,
+        0,
+        0
+      ],
+      "target_fate": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 24,
+          "fate": "RETURNED"
+        }
+      ],
+      "total_relevant_judged": 1,
+      "recall": {
+        "1": 0.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 0.5,
+      "ndcg": {
+        "1": 0.0,
+        "3": 0.63093,
+        "5": 0.63093
+      }
+    },
+    {
+      "question_id": "Q003",
+      "temporal_scope": "2025/2026",
+      "difficulty_types": [
+        "paraphrase",
+        "date_deadline",
+        "table_information",
+        "similar_documents"
+      ],
+      "no_relevant_evidence": false,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "retrieved_count": 1,
+      "candidates_evaluated": 6,
+      "result_count_before_limit": 1,
+      "query_terms": [
+        "periodo",
+        "renovo",
+        "matricula",
+        "ord:2",
+        "semestre",
+        "ano",
+        "letivo",
+        "2025",
+        "2026"
+      ],
+      "candidate_budget": 25,
+      "variants": [
+        {
+          "strategy": "exact",
+          "quota": 7,
+          "returned_count": 0
+        },
+        {
+          "strategy": "reduced_and",
+          "quota": 6,
+          "returned_count": 0
+        },
+        {
+          "strategy": "canonical_relaxed_and",
+          "quota": 6,
+          "returned_count": 0
+        },
+        {
+          "strategy": "reduced_or",
+          "quota": 6,
+          "returned_count": 6
+        }
+      ],
+      "excluded_counts": {
+        "no_content_match": 0,
+        "insufficient_coverage": 5,
+        "below_threshold": 0
+      },
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 12,
+          "score": 0.39037,
+          "relevance": 0,
+          "judged": false
+        }
+      ],
+      "judged_grades": [
+        2,
+        0,
+        0,
+        0
+      ],
+      "target_fate": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 44,
+          "fate": "NEVER_A_CANDIDATE",
+          "counterfactual": {
+            "coverage": 0.333333,
+            "matched_terms": [
+              "2026",
+              "ord:2",
+              "semestre"
+            ],
+            "would_be_eligible": false,
+            "exclusion_reason": "insufficient_coverage"
+          }
+        }
+      ],
+      "total_relevant_judged": 1,
+      "recall": {
+        "1": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "ndcg": {
+        "1": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      }
+    },
+    {
+      "question_id": "Q004",
+      "temporal_scope": "2025/2026",
+      "difficulty_types": [
+        "acronym",
+        "date_deadline",
+        "table_information",
+        "similar_documents"
+      ],
+      "no_relevant_evidence": false,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "retrieved_count": 3,
+      "candidates_evaluated": 8,
+      "result_count_before_limit": 3,
+      "query_terms": [
+        "publicada",
+        "lista",
+        "inscritos",
+        "uct",
+        "ano",
+        "letivo",
+        "2025",
+        "2026"
+      ],
+      "candidate_budget": 25,
+      "variants": [
+        {
+          "strategy": "exact",
+          "quota": 9,
+          "returned_count": 0
+        },
+        {
+          "strategy": "reduced_and",
+          "quota": 8,
+          "returned_count": 0
+        },
+        {
+          "strategy": "reduced_or",
+          "quota": 8,
+          "returned_count": 8
+        }
+      ],
+      "excluded_counts": {
+        "no_content_match": 0,
+        "insufficient_coverage": 5,
+        "below_threshold": 0
+      },
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 57,
+          "score": 0.44369,
+          "relevance": 0,
+          "judged": false
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 19,
+          "score": 0.311812,
+          "relevance": 2,
+          "judged": true
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 97,
+          "score": 0.286812,
+          "relevance": 0,
+          "judged": false
+        }
+      ],
+      "judged_grades": [
+        2,
+        0,
+        0
+      ],
+      "target_fate": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 19,
+          "fate": "RETURNED"
+        }
+      ],
+      "total_relevant_judged": 1,
+      "recall": {
+        "1": 0.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 0.5,
+      "ndcg": {
+        "1": 0.0,
+        "3": 0.63093,
+        "5": 0.63093
+      }
+    },
+    {
+      "question_id": "Q005",
+      "temporal_scope": "not_time_dependent",
+      "difficulty_types": [
+        "paraphrase",
+        "synonym",
+        "rule_in_specific_section"
+      ],
+      "no_relevant_evidence": false,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "retrieved_count": 5,
+      "candidates_evaluated": 8,
+      "result_count_before_limit": 6,
+      "query_terms": [
+        "presenca",
+        "aulas",
+        "praticas",
+        "obrigatoria"
+      ],
+      "candidate_budget": 25,
+      "variants": [
+        {
+          "strategy": "exact",
+          "quota": 9,
+          "returned_count": 0
+        },
+        {
+          "strategy": "reduced_and",
+          "quota": 8,
+          "returned_count": 0
+        },
+        {
+          "strategy": "reduced_or",
+          "quota": 8,
+          "returned_count": 8
+        }
+      ],
+      "excluded_counts": {
+        "no_content_match": 0,
+        "insufficient_coverage": 2,
+        "below_threshold": 0
+      },
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 175,
+          "score": 0.413708,
+          "relevance": 2,
+          "judged": true
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 60,
+          "score": 0.266667,
+          "relevance": 0,
+          "judged": false
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 310,
+          "score": 0.25303,
+          "relevance": 0,
+          "judged": false
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 173,
+          "score": 0.246333,
+          "relevance": 1,
+          "judged": true
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 178,
+          "score": 0.232333,
+          "relevance": 0,
+          "judged": false
+        }
+      ],
+      "judged_grades": [
+        2,
+        1,
+        1
+      ],
+      "target_fate": [
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 175,
+          "fate": "RETURNED"
+        }
+      ],
+      "total_relevant_judged": 1,
+      "recall": {
+        "1": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "ndcg": {
+        "1": 1.0,
+        "3": 0.726229,
+        "5": 0.830485
+      }
+    },
+    {
+      "question_id": "Q006",
+      "temporal_scope": "not_time_dependent",
+      "difficulty_types": [
+        "rule_in_specific_section",
+        "synonym"
+      ],
+      "no_relevant_evidence": false,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "retrieved_count": 0,
+      "candidates_evaluated": 8,
+      "result_count_before_limit": 0,
+      "query_terms": [
+        "percentagem",
+        "minima",
+        "presencas",
+        "exigida",
+        "componente",
+        "pratica",
+        "laboratorial"
+      ],
+      "candidate_budget": 25,
+      "variants": [
+        {
+          "strategy": "exact",
+          "quota": 9,
+          "returned_count": 0
+        },
+        {
+          "strategy": "reduced_and",
+          "quota": 8,
+          "returned_count": 0
+        },
+        {
+          "strategy": "reduced_or",
+          "quota": 8,
+          "returned_count": 8
+        }
+      ],
+      "excluded_counts": {
+        "no_content_match": 3,
+        "insufficient_coverage": 5,
+        "below_threshold": 0
+      },
+      "ranking": [],
+      "judged_grades": [
+        2,
+        1
+      ],
+      "target_fate": [
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 184,
+          "fate": "NEVER_A_CANDIDATE",
+          "counterfactual": {
+            "coverage": 0.142857,
+            "matched_terms": [
+              "pratica"
+            ],
+            "would_be_eligible": false,
+            "exclusion_reason": "insufficient_coverage"
+          }
+        }
+      ],
+      "total_relevant_judged": 1,
+      "recall": {
+        "1": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "ndcg": {
+        "1": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      }
+    },
+    {
+      "question_id": "Q007",
+      "temporal_scope": "not_time_dependent",
+      "difficulty_types": [
+        "paraphrase",
+        "rule_in_specific_section"
+      ],
+      "no_relevant_evidence": false,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "retrieved_count": 0,
+      "candidates_evaluated": 8,
+      "result_count_before_limit": 0,
+      "query_terms": [
+        "durante",
+        "quantos",
+        "anos",
+        "continuar",
+        "alojado",
+        "numa",
+        "residencia",
+        "universidade"
+      ],
+      "candidate_budget": 25,
+      "variants": [
+        {
+          "strategy": "exact",
+          "quota": 9,
+          "returned_count": 0
+        },
+        {
+          "strategy": "reduced_and",
+          "quota": 8,
+          "returned_count": 0
+        },
+        {
+          "strategy": "reduced_or",
+          "quota": 8,
+          "returned_count": 8
+        }
+      ],
+      "excluded_counts": {
+        "no_content_match": 1,
+        "insufficient_coverage": 7,
+        "below_threshold": 0
+      },
+      "ranking": [],
+      "judged_grades": [
+        2
+      ],
+      "target_fate": [
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 160,
+          "fate": "CANDIDATE_EXCLUDED",
+          "exclusion_reason": "insufficient_coverage",
+          "coverage": 0.25,
+          "matched_terms": [
+            "anos",
+            "residencia"
+          ]
+        }
+      ],
+      "total_relevant_judged": 1,
+      "recall": {
+        "1": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "ndcg": {
+        "1": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      }
+    },
+    {
+      "question_id": "Q008",
+      "temporal_scope": "not_time_dependent",
+      "difficulty_types": [
+        "rule_in_specific_section",
+        "date_deadline"
+      ],
+      "no_relevant_evidence": false,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "retrieved_count": 0,
+      "candidates_evaluated": 8,
+      "result_count_before_limit": 0,
+      "query_terms": [
+        "antecedencia",
+        "tenho",
+        "pedir",
+        "prorrogacao",
+        "alojamento"
+      ],
+      "candidate_budget": 25,
+      "variants": [
+        {
+          "strategy": "exact",
+          "quota": 9,
+          "returned_count": 0
+        },
+        {
+          "strategy": "reduced_and",
+          "quota": 8,
+          "returned_count": 0
+        },
+        {
+          "strategy": "reduced_or",
+          "quota": 8,
+          "returned_count": 8
+        }
+      ],
+      "excluded_counts": {
+        "no_content_match": 1,
+        "insufficient_coverage": 7,
+        "below_threshold": 0
+      },
+      "ranking": [],
+      "judged_grades": [
+        2
+      ],
+      "target_fate": [
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 161,
+          "fate": "CANDIDATE_EXCLUDED",
+          "exclusion_reason": "insufficient_coverage",
+          "coverage": 0.4,
+          "matched_terms": [
+            "alojamento",
+            "antecedencia"
+          ]
+        }
+      ],
+      "total_relevant_judged": 1,
+      "recall": {
+        "1": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "ndcg": {
+        "1": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      }
+    },
+    {
+      "question_id": "Q009",
+      "temporal_scope": "not_time_dependent",
+      "difficulty_types": [
+        "paraphrase",
+        "rule_in_specific_section"
+      ],
+      "no_relevant_evidence": false,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "retrieved_count": 0,
+      "candidates_evaluated": 8,
+      "result_count_before_limit": 0,
+      "query_terms": [
+        "me",
+        "candidato",
+        "residencia",
+        "universitaria"
+      ],
+      "candidate_budget": 25,
+      "variants": [
+        {
+          "strategy": "exact",
+          "quota": 9,
+          "returned_count": 0
+        },
+        {
+          "strategy": "reduced_and",
+          "quota": 8,
+          "returned_count": 0
+        },
+        {
+          "strategy": "reduced_or",
+          "quota": 8,
+          "returned_count": 8
+        }
+      ],
+      "excluded_counts": {
+        "no_content_match": 3,
+        "insufficient_coverage": 5,
+        "below_threshold": 0
+      },
+      "ranking": [],
+      "judged_grades": [
+        2,
+        1,
+        1,
+        1
+      ],
+      "target_fate": [
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 251,
+          "fate": "NEVER_A_CANDIDATE",
+          "counterfactual": {
+            "coverage": 0.25,
+            "matched_terms": [
+              "candidato"
+            ],
+            "would_be_eligible": false,
+            "exclusion_reason": "insufficient_coverage"
+          }
+        }
+      ],
+      "total_relevant_judged": 1,
+      "recall": {
+        "1": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "ndcg": {
+        "1": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      }
+    },
+    {
+      "question_id": "Q010",
+      "temporal_scope": "not_time_dependent",
+      "difficulty_types": [
+        "acronym",
+        "table_information"
+      ],
+      "no_relevant_evidence": false,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "retrieved_count": 1,
+      "candidates_evaluated": 8,
+      "result_count_before_limit": 1,
+      "query_terms": [
+        "quanto",
+        "custa",
+        "candidatura",
+        "concurso",
+        "especial",
+        "ingresso",
+        "diplomados",
+        "cesp"
+      ],
+      "candidate_budget": 25,
+      "variants": [
+        {
+          "strategy": "exact",
+          "quota": 9,
+          "returned_count": 0
+        },
+        {
+          "strategy": "reduced_and",
+          "quota": 8,
+          "returned_count": 0
+        },
+        {
+          "strategy": "reduced_or",
+          "quota": 8,
+          "returned_count": 8
+        }
+      ],
+      "excluded_counts": {
+        "no_content_match": 1,
+        "insufficient_coverage": 6,
+        "below_threshold": 0
+      },
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 397,
+          "score": 0.403318,
+          "relevance": 2,
+          "judged": true
+        }
+      ],
+      "judged_grades": [
+        2
+      ],
+      "target_fate": [
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 397,
+          "fate": "RETURNED"
+        }
+      ],
+      "total_relevant_judged": 1,
+      "recall": {
+        "1": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "ndcg": {
+        "1": 1.0,
+        "3": 1.0,
+        "5": 1.0
+      }
+    },
+    {
+      "question_id": "Q011",
+      "temporal_scope": "2023/2024",
+      "difficulty_types": [
+        "cross_year_disambiguation",
+        "similar_documents",
+        "date_deadline"
+      ],
+      "no_relevant_evidence": false,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "retrieved_count": 4,
+      "candidates_evaluated": 6,
+      "result_count_before_limit": 4,
+      "query_terms": [
+        "foi",
+        "ord:1",
+        "dia",
+        "aulas",
+        "ord:2",
+        "semestre",
+        "2023",
+        "2024"
+      ],
+      "candidate_budget": 25,
+      "variants": [
+        {
+          "strategy": "exact",
+          "quota": 7,
+          "returned_count": 0
+        },
+        {
+          "strategy": "reduced_and",
+          "quota": 6,
+          "returned_count": 0
+        },
+        {
+          "strategy": "canonical_relaxed_and",
+          "quota": 6,
+          "returned_count": 0
+        },
+        {
+          "strategy": "reduced_or",
+          "quota": 6,
+          "returned_count": 6
+        }
+      ],
+      "excluded_counts": {
+        "no_content_match": 0,
+        "insufficient_coverage": 2,
+        "below_threshold": 0
+      },
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 37,
+          "score": 0.429453,
+          "relevance": 2,
+          "judged": true
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 21,
+          "score": 0.329539,
+          "relevance": 0,
+          "judged": false
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 38,
+          "score": 0.320886,
+          "relevance": 0,
+          "judged": false
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 72,
+          "score": 0.309999,
+          "relevance": 2,
+          "judged": true
+        }
+      ],
+      "judged_grades": [
+        2,
+        2
+      ],
+      "target_fate": [
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 37,
+          "fate": "RETURNED"
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 72,
+          "fate": "RETURNED"
+        }
+      ],
+      "total_relevant_judged": 2,
+      "recall": {
+        "1": 0.5,
+        "3": 0.5,
+        "5": 1.0
+      },
+      "reciprocal_rank": 1.0,
+      "ndcg": {
+        "1": 1.0,
+        "3": 0.613147,
+        "5": 0.877215
+      }
+    },
+    {
+      "question_id": "Q012",
+      "temporal_scope": "2025/2026",
+      "difficulty_types": [
+        "cross_document_reference",
+        "paraphrase",
+        "table_information"
+      ],
+      "no_relevant_evidence": false,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "retrieved_count": 0,
+      "candidates_evaluated": 8,
+      "result_count_before_limit": 0,
+      "query_terms": [
+        "cerimonia",
+        "entrega",
+        "diplomas",
+        "ano",
+        "letivo",
+        "2025",
+        "2026"
+      ],
+      "candidate_budget": 25,
+      "variants": [
+        {
+          "strategy": "exact",
+          "quota": 9,
+          "returned_count": 0
+        },
+        {
+          "strategy": "reduced_and",
+          "quota": 8,
+          "returned_count": 0
+        },
+        {
+          "strategy": "reduced_or",
+          "quota": 8,
+          "returned_count": 8
+        }
+      ],
+      "excluded_counts": {
+        "no_content_match": 0,
+        "insufficient_coverage": 8,
+        "below_threshold": 0
+      },
+      "ranking": [],
+      "judged_grades": [
+        2,
+        1,
+        0
+      ],
+      "target_fate": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 78,
+          "fate": "NEVER_A_CANDIDATE",
+          "counterfactual": {
+            "coverage": 0.142857,
+            "matched_terms": [
+              "cerimonia"
+            ],
+            "would_be_eligible": false,
+            "exclusion_reason": "insufficient_coverage"
+          }
+        }
+      ],
+      "total_relevant_judged": 1,
+      "recall": {
+        "1": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      },
+      "reciprocal_rank": 0.0,
+      "ndcg": {
+        "1": 0.0,
+        "3": 0.0,
+        "5": 0.0
+      }
+    }
+  ],
+  "observed_only": [
+    {
+      "question_id": "Q013",
+      "temporal_scope": "not_time_dependent",
+      "difficulty_types": [
+        "no_evidence_in_corpus"
+      ],
+      "no_relevant_evidence": true,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "retrieved_count": 0,
+      "candidates_evaluated": 8,
+      "result_count_before_limit": 0,
+      "query_terms": [
+        "perdi",
+        "palavra",
+        "passe",
+        "portal",
+        "estudante",
+        "recupero"
+      ],
+      "candidate_budget": 25,
+      "variants": [
+        {
+          "strategy": "exact",
+          "quota": 9,
+          "returned_count": 0
+        },
+        {
+          "strategy": "reduced_and",
+          "quota": 8,
+          "returned_count": 0
+        },
+        {
+          "strategy": "reduced_or",
+          "quota": 8,
+          "returned_count": 8
+        }
+      ],
+      "excluded_counts": {
+        "no_content_match": 1,
+        "insufficient_coverage": 7,
+        "below_threshold": 0
+      },
+      "ranking": [],
+      "judged_grades": [],
+      "target_fate": []
+    },
+    {
+      "question_id": "Q014",
+      "temporal_scope": "unscoped",
+      "difficulty_types": [
+        "temporal_ambiguity",
+        "similar_documents",
+        "date_deadline"
+      ],
+      "no_relevant_evidence": false,
+      "excluded_from_metrics": true,
+      "exclusion_reason": "Pergunta temporalmente ambigua por construcao. O corpus tem dois calendarios simultaneamente elegiveis e nenhum tem vigencia declarada, pelo que existem duas respostas corretas e incompativeis e nenhuma ordenacao entre elas e defensavel. Incluir esta pergunta numa metrica exigiria escolher um ano sem fundamento institucional. Deixa de estar excluida quando a convencao de vigencia (categoria B) for conhecida.",
+      "retrieved_count": 3,
+      "candidates_evaluated": 6,
+      "result_count_before_limit": 3,
+      "query_terms": [
+        "pedir",
+        "anulacao",
+        "matricula",
+        "ord:1",
+        "semestre"
+      ],
+      "candidate_budget": 25,
+      "variants": [
+        {
+          "strategy": "exact",
+          "quota": 7,
+          "returned_count": 0
+        },
+        {
+          "strategy": "reduced_and",
+          "quota": 6,
+          "returned_count": 0
+        },
+        {
+          "strategy": "canonical_relaxed_and",
+          "quota": 6,
+          "returned_count": 3
+        },
+        {
+          "strategy": "reduced_or",
+          "quota": 6,
+          "returned_count": 6
+        }
+      ],
+      "excluded_counts": {
+        "no_content_match": 1,
+        "insufficient_coverage": 2,
+        "below_threshold": 0
+      },
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 24,
+          "score": 0.560667,
+          "relevance": 2,
+          "judged": true
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 64,
+          "score": 0.398,
+          "relevance": 0,
+          "judged": false
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 38,
+          "score": 0.328079,
+          "relevance": 0,
+          "judged": false
+        }
+      ],
+      "judged_grades": [
+        2,
+        2
+      ],
+      "target_fate": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 24,
+          "fate": "RETURNED"
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 25,
+          "fate": "CANDIDATE_EXCLUDED",
+          "exclusion_reason": "insufficient_coverage",
+          "coverage": 0.4,
+          "matched_terms": [
+            "matricula",
+            "semestre"
+          ]
+        }
+      ]
+    }
+  ],
+  "result_digest": "b00ca87b01f47a1aa618c775354940f8b4d9d45903c01ae999efd4e9a0cc7fb4",
+  "executed_at": "2026-08-15T16:15:59.144681+00:00"
+}
