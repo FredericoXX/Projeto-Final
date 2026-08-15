@@ -1,13 +1,18 @@
 # Estado atual
 
 **Observação:** 2026-08-15 · `main` em
-`6235b572b7ac33c79b08b9aa52e42c4967d747d2` (merge do Pull Request #48) ·
+`d3055d7d7c4d456e1014861ac4a819921f3ab09c` (merge do Pull Request #49) ·
 repositório `FredericoXX/Projeto-Final`
 
 Os factos abaixo descrevem a `main` em
-`6235b572b7ac33c79b08b9aa52e42c4967d747d2`, merge do Pull Request #48 que
-integrou o Evaluation Snapshot. Trabalho em curso noutras branches não é estado
-deste snapshot e, quando referido, é identificado como tal.
+`d3055d7d7c4d456e1014861ac4a819921f3ab09c`, merge do Pull Request #49 que
+integrou o Pilot Corpus P1 e o protocolo de *ground truth*. Trabalho em curso
+noutras branches não é estado deste snapshot e, quando referido, é identificado
+como tal.
+
+**Exceção declarada:** a secção
+[Baseline lexical sobre P1/S1](#baseline-lexical-sobre-p1s1) descreve trabalho
+que vive na branch `feat/d4-2-lexical-baseline` e ainda **não está na `main`**.
 
 O Evaluation Snapshot **está na `main`** desde o Pull Request #48; a ressalva
 anterior, que o descrevia como trabalho de branch, deixou de ser verdadeira e foi
@@ -58,8 +63,9 @@ Depois do Momento 6, e fora da numeração dos momentos, foram integrados o
 `73fe8ef`), o **Pull Request #45** (carregamento tardio do provider, A6.1,
 merge `6ae9bad`), o **Pull Request #46** (especificação científica da política
 de decisão, A2.2, merge `42187e7c`), o **Pull Request #47** (encaminhamento
-humano E1, A2.3a, merge `311d917`) e o **Pull Request #48** (Evaluation
-Snapshot, merge `6235b57`) — ver
+humano E1, A2.3a, merge `311d917`), o **Pull Request #48** (Evaluation
+Snapshot, merge `6235b57`) e o **Pull Request #49** (Pilot Corpus P1 e protocolo
+de *ground truth*, D4.1, merge `d3055d7`) — ver
 [Trabalho arquitetural em aberto](#trabalho-arquitetural-em-aberto).
 
 ## Arquitetura
@@ -371,6 +377,72 @@ Detalhe, incluindo critérios de inclusão e exclusão, proveniência, rubrica d
 relevância, protocolo de anotação e as métricas preparadas mas não executadas,
 em
 [`docs/relatorios/d4-1-pilot-corpus-ground-truth.md`](../relatorios/d4-1-pilot-corpus-ground-truth.md).
+
+## Baseline lexical sobre P1/S1
+
+**Estado:** implementada na branch `feat/d4-2-lexical-baseline`. **Não está na
+`main`.** É a primeira medição de recuperação sobre documentação institucional
+real. Enquadramento: **avaliação técnica formativa** que alimenta DSR5; não é
+DSR5 concluída, porque não houve utilizadores e a amostra não sustenta
+inferência.
+
+O que passou a existir: `app/evaluation/retrieval_metrics.py` (métricas puras —
+Recall@k, MRR, nDCG@k — sem SQLAlchemy nem Settings, e **não** reexportado por
+`__init__.py`) e `scripts/evaluate_retrieval_baseline.py`. **Nenhum endpoint
+HTTP, nenhuma tabela, nenhuma migration**, e **nenhuma alteração ao retrieval, à
+segmentação, à extração ou ao ground truth**.
+
+Resultados macro sobre as 12 perguntas medidas de P1/S1:
+
+| Métrica | Valor |
+| --- | --- |
+| Recall@1 / @3 / @5 | 0,2083 / 0,4167 / **0,4583** |
+| MRR | 0,3750 |
+| nDCG@1 / @3 / @5 | 0,2500 / 0,3323 / 0,3630 |
+
+Factos que importa não sobredeclarar:
+
+- **não é o desempenho do assistente na Uni-CV.** Corpus piloto de seis
+  documentos, perguntas construídas, anotador único, julgamentos incompletos e
+  BUG-D4.1-01 presente. É baseline **diagnóstica**;
+- o snapshot é **condição de execução**: o runner reconstrói S1 e recusa medir se
+  `snapshot_id` ou `corpus_digest` divergirem;
+- a execução é **determinística** — `result_digest`
+  `b00ca87b01f47a1aa618c775354940f8b4d9d45903c01ae999efd4e9a0cc7fb4`, idêntico
+  entre execuções, calculado sobre o payload sem o carimbo temporal;
+- **o modo de falha dominante não é ordenação.** Nenhum alvo foi devolvido em má
+  posição: sete foram devolvidos, dois foram vistos e rejeitados pela
+  elegibilidade lexical, cinco nunca chegaram a candidatos;
+- **as seis falhas têm um único mecanismo**: a cobertura da elegibilidade compara
+  **formas canónicas exatas** contra um limiar de 0,5, enquanto a geração de
+  candidatos usa Full-Text Search **com *stemming***. Um segmento pode ser
+  recuperado e depois rejeitado por a forma de superfície diferir —
+  `residencia` contra `residencias`;
+- **fragmentação de segmentos e privação do conjunto de candidatos foram
+  testadas e refutadas** como causa das falhas medidas;
+- **o impacto de BUG-D4.1-01 na baseline é INCONCLUSIVO.** O defeito existe e é
+  observável, mas nenhuma falha medida lhe é atribuível: no caso examinado, os
+  segmentos caberiam no orçamento e, mesmo unidos, não passariam a
+  elegibilidade;
+- **nenhum distractor temporal anotado foi recuperado** — não por desambiguação,
+  mas porque o sistema recupera pouco;
+- **nenhuma decisão entre lexical e denso/híbrido foi tomada**, e nada nos
+  resultados a autoriza enquanto duas das seis falhas forem divergências de
+  flexão que normalização morfológica resolveria.
+
+A medição expôs um segundo defeito, **BUG-D4.2-01** (MEDIUM), **não corrigido**:
+o texto é normalizado sem acentos antes do Full-Text Search, e o *stemmer*
+português depende do acento na regra `-ção` — `prorrogação` e `prorrogar`
+conflaem, `prorrogacao` e `prorrogar` não. Corrigi-lo altera o comportamento do
+retrieval e obrigaria a subir `LEXICAL_PIPELINE_VERSION`. **O seu impacto nesta
+baseline não está demonstrado**: o segmento afetado foi recuperado apesar disso e
+caiu depois na cobertura exata, que não usa *stemming*.
+
+Detalhe, incluindo resultados por pergunta, destino de cada segmento-alvo e
+análise de tipos de falha, em
+[`docs/relatorios/d4-2-lexical-baseline-p1-s1.md`](../relatorios/d4-2-lexical-baseline-p1-s1.md);
+artefacto da execução em
+[`docs/evaluation/retrieval-baseline-p1-s1.json`](../evaluation/retrieval-baseline-p1-s1.json).
 
 ## Testes e verificações
 
