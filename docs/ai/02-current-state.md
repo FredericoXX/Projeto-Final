@@ -1,23 +1,23 @@
 # Estado atual
 
-**Observação:** 2026-08-15 · `main` em
-`5514d8ba076a43ac7de951dfcddc081428459937` (merge do Pull Request #51) ·
+**Observação:** 2026-08-16 · `main` em
+`b42f9ede32ab906a33cc4c675af948a939d59a1d` (merge do Pull Request #52) ·
 repositório `FredericoXX/Projeto-Final`
 
 Os factos abaixo descrevem a `main` em
-`5514d8ba076a43ac7de951dfcddc081428459937`, merge do Pull Request #51 que
-integrou o experimento controlado da correspondência lexical sobre P1/S1.
-Trabalho em curso noutras branches não é estado deste snapshot e, quando
-referido, é identificado como tal.
+`b42f9ede32ab906a33cc4c675af948a939d59a1d`, merge do Pull Request #52 que
+integrou a condição pareada com diacríticos sobre P1/S1. Trabalho em curso
+noutras branches não é estado deste snapshot e, quando referido, é identificado
+como tal.
 
 **Exceção declarada:** a secção
-[Condição pareada com diacríticos](#condição-pareada-com-diacríticos) descreve
-trabalho que vive na branch `analysis/d4-4-diacritics-paired` e ainda **não está
+[Orçamento de candidatos e ranking](#orçamento-de-candidatos-e-ranking) descreve
+trabalho que vive na branch `analysis/d4-5-candidate-budget` e ainda **não está
 na `main`**.
 
-O experimento da correspondência lexical (D4.3) **está na `main`** desde o Pull
-Request #51; a ressalva anterior, que o descrevia como trabalho de branch,
-deixou de ser verdadeira e foi removida.
+A condição pareada com diacríticos (D4.4) **está na `main`** desde o Pull Request
+#52; a ressalva anterior, que a descrevia como trabalho de branch, deixou de ser
+verdadeira e foi removida.
 
 O Evaluation Snapshot **está na `main`** desde o Pull Request #48; a ressalva
 anterior, que o descrevia como trabalho de branch, deixou de ser verdadeira e foi
@@ -72,8 +72,9 @@ humano E1, A2.3a, merge `311d917`), o **Pull Request #48** (Evaluation
 Snapshot, merge `6235b57`), o **Pull Request #49** (Pilot Corpus P1 e protocolo
 de *ground truth*, D4.1, merge `d3055d7`), o **Pull Request #50** (baseline
 lexical real sobre P1/S1, D4.2, merge `a88f4ae`) e o **Pull Request #51**
-(experimento controlado da correspondência lexical, D4.3, merge `5514d8b`) — ver
-[Trabalho arquitetural em aberto](#trabalho-arquitetural-em-aberto).
+(experimento controlado da correspondência lexical, D4.3, merge `5514d8b`) e o
+**Pull Request #52** (condição pareada com diacríticos, D4.4, merge `b42f9ed`) —
+ver [Trabalho arquitetural em aberto](#trabalho-arquitetural-em-aberto).
 
 ## Arquitetura
 
@@ -112,18 +113,19 @@ humano), ambos acrescentados pela A2.3a.
 
 Em `app/evaluation/`, e fora do que `__init__.py` reexporta, vivem também
 `results.py` (canonicalização e digest do Momento 5), `snapshot.py`,
-`snapshot_builder.py`, `retrieval_metrics.py`, `lexical_variants.py` e, na
-branch `analysis/d4-4-diacritics-paired`, `ground_truth_identity.py`. A exclusão
-do `__init__.py` é deliberada: importar `app.evaluation.assets` não pode
-carregar `sqlalchemy` nem as Settings, e essa garantia está fixada por um teste
-em subprocesso.
+`snapshot_builder.py`, `retrieval_metrics.py`, `lexical_variants.py`,
+`ground_truth_identity.py` e, na branch `analysis/d4-5-candidate-budget`,
+`candidate_budget.py`. A exclusão do `__init__.py` é deliberada: importar
+`app.evaluation.assets` não pode carregar `sqlalchemy` nem as Settings, e essa
+garantia está fixada por um teste em subprocesso.
 
 `scripts/` contém `seed_demo_institution`, `rebuild_document_chunks`,
 `diagnose_document_pipeline`, `evaluate_answering_offline` (avaliação offline
 determinística), `build_moment05_baseline` (composição da baseline),
 `evaluate_retrieval_baseline` (baseline lexical sobre um Pilot Corpus),
-`evaluate_retrieval_experiment` (variantes de correspondência lexical) e, na
-branch `analysis/d4-4-diacritics-paired`, `evaluate_diacritics_experiment`.
+`evaluate_retrieval_experiment` (variantes de correspondência lexical),
+`evaluate_diacritics_experiment` (condição pareada com diacríticos) e, na branch
+`analysis/d4-5-candidate-budget`, `evaluate_candidate_budget_experiment`.
 
 ## Superfície da API
 
@@ -515,11 +517,10 @@ artefacto da execução em
 
 ## Condição pareada com diacríticos
 
-**Estado:** implementada na branch `analysis/d4-4-diacritics-paired`. **Não está
-na `main`.** É um **experimento offline** que isola uma variável — os diacríticos
-da pergunta — sem tocar em produção, no corpus, no *ground truth* histórico nem
-nos artefactos do D4.2/D4.3. Além da atualização deste documento, os sete
-artefactos da D4.4 são **novos**; **nenhum ficheiro de produção foi modificado**.
+**Estado:** integrada na `main` pelo Pull Request #52 (merge `b42f9ed`). É um
+**experimento offline** que isola uma variável — os diacríticos da pergunta —
+sem tocar em produção, no corpus, no *ground truth* histórico nem nos artefactos
+do D4.2/D4.3. **Nenhum ficheiro de produção foi modificado.**
 
 O que passou a existir: `app/evaluation/ground_truth_identity.py` (digest do
 *ground truth* e controlo de pareamento, puro, **não** reexportado por
@@ -600,27 +601,109 @@ as guardas de replicação do D4.2/D4.3, em
 artefacto da execução em
 [`docs/evaluation/retrieval-experiment-diacritics-p1-s1.json`](../evaluation/retrieval-experiment-diacritics-p1-s1.json).
 
+## Orçamento de candidatos e ranking
+
+**Estado:** implementado na branch `analysis/d4-5-candidate-budget`. **Não está
+na `main`.** É um **experimento offline** que varia uma coisa — quantas linhas
+cada variante de consulta pode devolver e quando o teto é aplicado — sem tocar em
+`PostgresLexicalRetriever`, na elegibilidade, nos pesos do ranking, no limiar, no
+corpus nem no *ground truth*.
+
+O que passou a existir: `app/evaluation/candidate_budget.py` (políticas de
+orçamento e classificação de destino, puro, **não** reexportado por
+`__init__.py`) e `scripts/evaluate_candidate_budget_experiment.py`. **Nenhum
+endpoint HTTP, nenhuma tabela, nenhuma migration, nenhuma alteração de
+produção.** A célula de controlo reproduz a baseline do D4.2 e o comando recusa
+executar se não reproduzir.
+
+Três políticas sobre o orçamento global de 25 — `current_quota` (produção),
+`redistribute_unused` (o **mesmo** teto, com a quota não usada a cair para as
+variantes seguintes) e `global_limited_pool` (sem teto por variante, corte global
+depois da recolha) — cruzadas com dois painéis de correspondência. O painel que
+decide é `exact_canonical`; `stem_normalized` é diagnóstico.
+
+Passou a ser possível dizer **onde** cada alvo parou. O D4.2 só via o *trace* e
+classificava o caso ambíguo como `NOT_RETURNED_INDETERMINATE`; aqui o conjunto de
+candidatos é conhecido por inteiro e a lista ordenada é guardada antes do corte,
+o que acrescenta `RANKED_OUTSIDE_TOP_K` ao vocabulário e torna o destino uma
+observação.
+
+O artefacto guarda ainda, em `target_candidate_positions`, a posição de cada um
+dos **16** segmentos de grau 2 na ordenação FTS sem teto — variante, posição,
+total e quota aplicável. É evidência versionada, não uma sondagem avulsa: o
+runner **recusa escrever** se essas posições não explicarem os destinos
+observados.
+
+| Condição (painel de produção) | R@5 | MRR | nDCG@5 | candidate recall |
+| --- | --- | --- | --- | --- |
+| `current_quota` | **0,4583** | **0,3750** | **0,3630** | 0,6250 |
+| `redistribute_unused` | 0,3750 | 0,2569 | 0,2623 | **0,9167** |
+| `global_limited_pool` | 0,3750 | 0,2569 | 0,2623 | **0,9167** |
+
+Factos que importa não sobredeclarar:
+
+- **a quota atual restringe mesmo o conjunto de candidatos.** Quinze dos
+  dezasseis alvos estão nos **13 primeiros** resultados da sua consulta e a quota
+  efetiva é 6 ou 8; redistribuir o orçamento não usado reduz os alvos nunca
+  avaliados de **5 para 1** e sobe o `candidate_recall` 0,29;
+- **mas o orçamento não é a alavanca.** Sob correspondência de produção, os
+  quatro alvos recém-admitidos são **todos** rejeitados pela elegibilidade
+  (`insufficient_coverage`). Zero recuperações;
+- **e o ranking piora com um conjunto maior.** Dois alvos que estavam no top 5
+  saem dele e outros três descem. Em Q011, quatro das cinco posições passam a ser
+  ocupadas por um documento que o *ground truth* declara com
+  `document_level_relevance` **0**. O saldo é −0,0833 de Recall@5 e −0,1181 de
+  MRR;
+- **Q009 confirma a interação prevista pelo D4.3**: com o orçamento
+  redistribuído **e** correspondência por radical, o alvo passa de
+  `NEVER_A_CANDIDATE` a `RETURNED` em posição 3. Precisa das duas alterações — e
+  bastam 25 candidatos, sem remover o limite;
+- **`global_limited_pool` não se justifica sobre `redistribute_unused`** neste
+  corpus: resultado idêntico em todas as 14 perguntas, a **6 vezes** o custo de
+  leitura (2105 linhas contra 350);
+- **a pergunta sem evidência continua a devolver zero** nas seis condições,
+  incluindo onde 261 linhas foram lidas — nenhuma política produziu evidência
+  espúria;
+- **são dois bloqueios distintos, e a fase não os funde.** Quatro alvos morrem na
+  **elegibilidade** — o bloqueio já caracterizado pelo D4.3, que o orçamento não
+  toca — e dois na **ordenação**. O que fica demonstrado é que *o ranking torna
+  inseguro ampliar o orçamento e explica as regressões medidas*, **não** que seja
+  o principal bloqueio de todas as falhas;
+- **nenhuma política é recomendada para implementação**, e a consequência
+  operacional é manter a quota como está: não por estar bem dimensionada, mas
+  porque alargá-la sem corrigir a discriminação a jusante troca uma falha
+  silenciosa por uma regressão medida.
+
+Detalhe, incluindo a posição de cada alvo na ordenação FTS, o destino por
+pergunta e a análise das regressões, em
+[`docs/relatorios/d4-5-candidate-budget-ranking-experiment.md`](../relatorios/d4-5-candidate-budget-ranking-experiment.md);
+artefacto da execução em
+[`docs/evaluation/retrieval-experiment-candidate-budget-p1-s1.json`](../evaluation/retrieval-experiment-candidate-budget-p1-s1.json).
+
 ## Testes e verificações
 
 Os testes do backend usam PostgreSQL real numa base dedicada; os do frontend
 usam MSW, sem rede nem backend.
 
-Contagem de execução medida em **2026-08-15**, sobre o conteúdo da condição
-pareada com diacríticos na branch `analysis/d4-4-diacritics-paired` (base
-`5514d8b`, antes de qualquer merge): **1659 passed, 1 warning**
+Contagem de execução medida em **2026-08-16**, sobre o conteúdo do experimento do
+orçamento de candidatos na branch `analysis/d4-5-candidate-budget` (base
+`b42f9ed`, antes de qualquer merge): **1702 passed, 1 warning**
 (`python -m pytest -q`). O warning é o `StarletteDeprecationWarning`
 pré-existente de `fastapi/testclient.py`. Na mesma data e sobre o mesmo
-conteúdo, `mypy app tests scripts` reporta **191 source files** sem erros e
+conteúdo, `mypy app tests scripts` reporta **194 source files** sem erros e
 `ruff check .` passa. O frontend **não foi alterado** por este trabalho.
 
-Os 82 testes adicionais face à `main` pertencem a dois ficheiros novos —
-`tests/test_evaluation_ground_truth_identity.py` (64) e
-`tests/test_evaluation_diacritics_experiment.py` (18). **Nenhum teste existente
-foi alterado, enfraquecido ou removido.**
+Os 43 testes adicionais face à `main` pertencem a um único ficheiro novo,
+`tests/test_evaluation_candidate_budget.py`. **Nenhum teste existente foi
+alterado, enfraquecido ou removido.**
 
-Proveniência histórica, para leitura das diferenças: sobre o conteúdo do
+Proveniência histórica, para leitura das diferenças: sobre o conteúdo da condição
+pareada com diacríticos (base `5514d8b`, hoje na `main` em `b42f9ed`) a execução
+deu **1659 passed** (2026-08-15, **191 source files** no mypy), dos quais 82
+acrescentados por `tests/test_evaluation_ground_truth_identity.py` (64) e
+`tests/test_evaluation_diacritics_experiment.py` (18); sobre o conteúdo do
 experimento da correspondência lexical (base `a88f4ae`, hoje na `main` em
-`5514d8b`) a execução deu **1577 passed** (2026-08-15, **187 source files** no
+`5514d8b`), **1577 passed** (2026-08-15, **187 source files** no
 mypy), dos quais 26 acrescentados por `tests/test_evaluation_lexical_variants.py`
 (10) e `tests/test_evaluation_experiment_guard.py` (16). A execução sobre o conteúdo
 do Evaluation Snapshot (base `311d917`, hoje na `main` em `6235b57`) deu
