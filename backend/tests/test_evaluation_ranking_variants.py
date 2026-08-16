@@ -346,12 +346,6 @@ DIAGNOSTICS = (
     / "ranking-diagnostics-p1-s1.json"
 )
 GROUND_TRUTH = DIAGNOSTICS.with_name("retrieval-ground-truth-p1-repooled.json")
-BINDING = (
-    Path(__file__).resolve().parents[2]
-    / "storage"
-    / "pilot-corpus"
-    / "S1-identifier-binding.json"
-)
 
 
 def _diagnostics() -> dict[str, Any]:
@@ -380,6 +374,8 @@ def test_runner_refuses_tampered_diagnostics_before_writing_output(
     tampered["result_digest"] = "0" * 64
     diagnostics = tmp_path / "tampered-diagnostics.json"
     diagnostics.write_text(json.dumps(tampered), encoding="utf-8")
+    binding = tmp_path / "binding.json"
+    binding.write_text("{}", encoding="utf-8")
     output = tmp_path / "ranking-variants.json"
 
     exit_code = run_ranking_variants(
@@ -387,7 +383,7 @@ def test_runner_refuses_tampered_diagnostics_before_writing_output(
             "--ground-truth",
             str(GROUND_TRUTH),
             "--binding",
-            str(BINDING),
+            str(binding),
             "--diagnostics",
             str(diagnostics),
             "--output",
