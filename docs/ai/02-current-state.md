@@ -1,23 +1,23 @@
 # Estado atual
 
 **Observação:** 2026-08-16 · `main` em
-`b42f9ede32ab906a33cc4c675af948a939d59a1d` (merge do Pull Request #52) ·
+`85c00550ffaa195b9b9adad3bbcec35c448d2774` (merge do Pull Request #53) ·
 repositório `FredericoXX/Projeto-Final`
 
 Os factos abaixo descrevem a `main` em
-`b42f9ede32ab906a33cc4c675af948a939d59a1d`, merge do Pull Request #52 que
-integrou a condição pareada com diacríticos sobre P1/S1. Trabalho em curso
+`85c00550ffaa195b9b9adad3bbcec35c448d2774`, merge do Pull Request #53 que
+integrou o experimento do orçamento de candidatos sobre P1/S1. Trabalho em curso
 noutras branches não é estado deste snapshot e, quando referido, é identificado
 como tal.
 
 **Exceção declarada:** a secção
-[Orçamento de candidatos e ranking](#orçamento-de-candidatos-e-ranking) descreve
-trabalho que vive na branch `analysis/d4-5-candidate-budget` e ainda **não está
-na `main`**.
+[Repooling dirigido e diagnóstico do ranking](#repooling-dirigido-e-diagnóstico-do-ranking)
+descreve trabalho que vive na branch `analysis/d4-6-ranking-diagnostics` e ainda
+**não está na `main`**.
 
-A condição pareada com diacríticos (D4.4) **está na `main`** desde o Pull Request
-#52; a ressalva anterior, que a descrevia como trabalho de branch, deixou de ser
-verdadeira e foi removida.
+O experimento do orçamento de candidatos (D4.5) **está na `main`** desde o Pull
+Request #53; a ressalva anterior, que o descrevia como trabalho de branch, deixou
+de ser verdadeira e foi removida.
 
 O Evaluation Snapshot **está na `main`** desde o Pull Request #48; a ressalva
 anterior, que o descrevia como trabalho de branch, deixou de ser verdadeira e foi
@@ -73,8 +73,10 @@ Snapshot, merge `6235b57`), o **Pull Request #49** (Pilot Corpus P1 e protocolo
 de *ground truth*, D4.1, merge `d3055d7`), o **Pull Request #50** (baseline
 lexical real sobre P1/S1, D4.2, merge `a88f4ae`) e o **Pull Request #51**
 (experimento controlado da correspondência lexical, D4.3, merge `5514d8b`) e o
-**Pull Request #52** (condição pareada com diacríticos, D4.4, merge `b42f9ed`) —
-ver [Trabalho arquitetural em aberto](#trabalho-arquitetural-em-aberto).
+**Pull Request #52** (condição pareada com diacríticos, D4.4, merge `b42f9ed`) e
+o **Pull Request #53** (orçamento de candidatos e ranking, D4.5, merge
+`85c0055`) — ver
+[Trabalho arquitetural em aberto](#trabalho-arquitetural-em-aberto).
 
 ## Arquitetura
 
@@ -114,8 +116,9 @@ humano), ambos acrescentados pela A2.3a.
 Em `app/evaluation/`, e fora do que `__init__.py` reexporta, vivem também
 `results.py` (canonicalização e digest do Momento 5), `snapshot.py`,
 `snapshot_builder.py`, `retrieval_metrics.py`, `lexical_variants.py`,
-`ground_truth_identity.py` e, na branch `analysis/d4-5-candidate-budget`,
-`candidate_budget.py`. A exclusão do `__init__.py` é deliberada: importar
+`ground_truth_identity.py`, `candidate_budget.py` e, na branch
+`analysis/d4-6-ranking-diagnostics`, `repooling.py`. A exclusão do
+`__init__.py` é deliberada: importar
 `app.evaluation.assets` não pode carregar `sqlalchemy` nem as Settings, e essa
 garantia está fixada por um teste em subprocesso.
 
@@ -124,8 +127,9 @@ garantia está fixada por um teste em subprocesso.
 determinística), `build_moment05_baseline` (composição da baseline),
 `evaluate_retrieval_baseline` (baseline lexical sobre um Pilot Corpus),
 `evaluate_retrieval_experiment` (variantes de correspondência lexical),
-`evaluate_diacritics_experiment` (condição pareada com diacríticos) e, na branch
-`analysis/d4-5-candidate-budget`, `evaluate_candidate_budget_experiment`.
+`evaluate_diacritics_experiment` (condição pareada com diacríticos),
+`evaluate_candidate_budget_experiment` (políticas de orçamento) e, na branch
+`analysis/d4-6-ranking-diagnostics`, `diagnose_ranking_signals`.
 
 ## Superfície da API
 
@@ -603,8 +607,8 @@ artefacto da execução em
 
 ## Orçamento de candidatos e ranking
 
-**Estado:** implementado na branch `analysis/d4-5-candidate-budget`. **Não está
-na `main`.** É um **experimento offline** que varia uma coisa — quantas linhas
+**Estado:** integrado na `main` pelo Pull Request #53 (merge `85c0055`). É um
+**experimento offline** que varia uma coisa — quantas linhas
 cada variante de consulta pode devolver e quando o teto é aplicado — sem tocar em
 `PostgresLexicalRetriever`, na elegibilidade, nos pesos do ranking, no limiar, no
 corpus nem no *ground truth*.
@@ -680,24 +684,95 @@ pergunta e a análise das regressões, em
 artefacto da execução em
 [`docs/evaluation/retrieval-experiment-candidate-budget-p1-s1.json`](../evaluation/retrieval-experiment-candidate-budget-p1-s1.json).
 
+## Repooling dirigido e diagnóstico do ranking
+
+**Estado:** implementado na branch `analysis/d4-6-ranking-diagnostics`. **Não
+está na `main`.** É **diagnóstico**, não afinação: nenhum peso, limiar, fórmula,
+orçamento, elegibilidade ou retrieval de produção foi alterado.
+
+O que passou a existir: `app/evaluation/repooling.py` (controlo do repooling,
+puro, **não** reexportado por `__init__.py`),
+`scripts/diagnose_ranking_signals.py` e um *ground truth* **novo**,
+`docs/evaluation/retrieval-ground-truth-p1-repooled.json`. **Nenhum endpoint
+HTTP, nenhuma tabela, nenhuma migration, nenhuma alteração de produção.**
+
+### Repooling
+
+O D4.5 mediu o ranking com 26 dos 33 resultados da condição ampliada por julgar.
+Foram anotados os **34** pares por julgar da **união dos top 5 de todas as seis
+células** do D4.5 — união, e não só a condição ampliada, para que a comparação
+entre condições não fique assimétrica.
+
+| | Valor |
+| --- | --- |
+| `ground_truth_digest` antes | `1f05f49ae8f596175b6943734c3778d73280e6a2f89da7886db08434e6db8ea2` |
+| `ground_truth_digest` depois | `ada6b38886a06910e425e4be164099a3a63320050890253404064e3fde88586e` |
+| Julgamentos novos | 34 — **27** grau 0, **6** grau 1, **1** grau 2 |
+| Cobertura dos resultados devolvidos | 9/23 e 7/33 → **23/23 e 33/33** |
+
+O conjunto histórico **não foi tocado**, e a regra é imposta por código:
+**acrescentar julgamentos é legítimo, rever os existentes não é** — uma revisão
+silenciosa tornaria a série D4.2–D4.5 incomparável sem que nada o assinalasse. Os
+identificadores mantêm-se, ao contrário do conjunto pareado do D4.4: aqui as
+perguntas são as mesmas letra a letra, e é o digest que distingue as versões.
+
+Factos que importa não sobredeclarar:
+
+- **o repooling mudou o quadro do D4.5.** Cerca de **84 %** da regressão de
+  nDCG@5 medida naquela fase (−0,1007) era artefacto de resultados por julgar:
+  sob anotação completa fica em **−0,0166**. A perda de Recall@5 (−0,0833) não se
+  move e a de MRR quase não se move;
+- **uma das quatro regressões não existia.** O único grau 2 novo — P1-DOC-002/57,
+  a segunda publicação da lista de UCT no ano perguntado — estava em **posição 1
+  em todas as seis células**. O que o D4.5 leu como "o alvo foi empurrado" era
+  outra resposta correta à frente da primeira. Q004 passa a ter `RR = 1,00` nas
+  duas condições;
+- **os sinais atuais discriminam na maioria dos casos observáveis, mas não em
+  todos**: 6 casos do tipo A (reponderáveis), 1 alvo do tipo B (dominado em todos
+  os sinais, nas duas condições) e 16 do tipo C — o alvo não chega ao ranking, e
+  isso pertence às etapas **anteriores** a ele: 10 por a elegibilidade os
+  rejeitar e 6 por nunca serem candidatos, que é orçamento e não elegibilidade;
+- **dois dos nove sinais estão a medir outra coisa.** `structure_table_row` exige
+  `structure_type == "table_row"`, e esse tipo existe em **um** dos seis
+  documentos do corpus: 56 segmentos no P1-DOC-002, **zero** nos restantes cinco,
+  incluindo o documento OCR P1-DOC-003 que detém a evidência correta de Q011.
+  Mede qualidade de extração e não pertinência. É a mesma família do
+  BUG-D4.1-01, agora com efeito de ranking documentado. `section_overlap` premeia
+  secções que contêm o ano por acidente de titulação;
+- **são três modos de falha, não um**: densidade lexical (um cabeçalho vence o
+  conteúdo dentro do mesmo documento), assimetria de extração entre documentos, e
+  ausência de sinal;
+- **nenhum peso foi alterado** e nenhuma alteração de ranking é recomendada nesta
+  fase.
+
+Detalhe, incluindo a decomposição sinal a sinal de cada comparação e o critério
+de dominância, em
+[`docs/relatorios/d4-6-ranking-diagnostics.md`](../relatorios/d4-6-ranking-diagnostics.md);
+artefacto da execução em
+[`docs/evaluation/ranking-diagnostics-p1-s1.json`](../evaluation/ranking-diagnostics-p1-s1.json).
+
 ## Testes e verificações
 
 Os testes do backend usam PostgreSQL real numa base dedicada; os do frontend
 usam MSW, sem rede nem backend.
 
-Contagem de execução medida em **2026-08-16**, sobre o conteúdo do experimento do
-orçamento de candidatos na branch `analysis/d4-5-candidate-budget` (base
-`b42f9ed`, antes de qualquer merge): **1702 passed, 1 warning**
+Contagem de execução medida em **2026-08-16**, sobre o conteúdo do repooling e
+diagnóstico do ranking na branch `analysis/d4-6-ranking-diagnostics` (base
+`85c0055`, antes de qualquer merge): **1744 passed, 1 warning**
 (`python -m pytest -q`). O warning é o `StarletteDeprecationWarning`
 pré-existente de `fastapi/testclient.py`. Na mesma data e sobre o mesmo
-conteúdo, `mypy app tests scripts` reporta **194 source files** sem erros e
+conteúdo, `mypy app tests scripts` reporta **197 source files** sem erros e
 `ruff check .` passa. O frontend **não foi alterado** por este trabalho.
 
-Os 43 testes adicionais face à `main` pertencem a um único ficheiro novo,
-`tests/test_evaluation_candidate_budget.py`. **Nenhum teste existente foi
-alterado, enfraquecido ou removido.**
+Os 42 testes adicionais face à `main` pertencem a um único ficheiro novo,
+`tests/test_evaluation_repooling.py`. **Nenhum teste existente foi alterado,
+enfraquecido ou removido.**
 
-Proveniência histórica, para leitura das diferenças: sobre o conteúdo da condição
+Proveniência histórica, para leitura das diferenças: sobre o conteúdo do
+experimento do orçamento de candidatos (base `b42f9ed`, hoje na `main` em
+`85c0055`) a execução deu **1702 passed** (2026-08-16, **194 source files** no
+mypy), dos quais 43 acrescentados por
+`tests/test_evaluation_candidate_budget.py`. Sobre o conteúdo da condição
 pareada com diacríticos (base `5514d8b`, hoje na `main` em `b42f9ed`) a execução
 deu **1659 passed** (2026-08-15, **191 source files** no mypy), dos quais 82
 acrescentados por `tests/test_evaluation_ground_truth_identity.py` (64) e

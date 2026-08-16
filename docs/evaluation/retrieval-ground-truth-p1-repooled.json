@@ -1,0 +1,879 @@
+{
+  "schema_version": "2",
+  "contract": "retrieval_ground_truth",
+  "scope_note": "Ground truth de RECUPERACAO sobre o Pilot Corpus P1, com REPOOLING DIRIGIDO. Contem todos os julgamentos do conjunto historico, sem excecao e sem revisao, mais os julgamentos dos resultados que entraram no top 5 de alguma condicao do experimento D4.5. As perguntas sao as mesmas, letra a letra: o que muda e a densidade da anotacao, e e o ground_truth_digest que distingue as duas versoes. NAO substitui o conjunto historico, ao qual os resultados D4.2-D4.5 continuam ligados. Como o original, NAO declara desfecho de politica: nenhum campo afirma ANSWER, CLARIFY, ABSTAIN ou ESCALATE.",
+  "corpus_id": "P1",
+  "snapshot_id": "a94f940229152a3b61860b370df8cb3ea8fe1a0e7236d65e86fe4b5118baf4c1",
+  "corpus_digest": "e8a0f08b5ecf37821244e62c266a48b1d64c928cabb75e0e23e08f9c895a447e",
+  "reference_date": "2026-08-15",
+  "annotation_mode": "SINGLE_ANNOTATOR_PILOT",
+  "question_id_rule": "Q + tres digitos, atribuidos por ordem de criacao e nunca reutilizados. A identidade nao depende da ordem dos ficheiros nem da ordem de leitura da base.",
+  "evidence_anchor": "corpus_item_id + chunk_index. Os UUID de document/document_version que compunham S1 vivem no artefacto local nao versionado (storage/pilot-corpus/), porque identificam uma instancia local da base.",
+  "temporal_scope_note": "O corpus contem dois calendarios academicos simultaneamente elegiveis, porque nenhum documento tem vigencia declarada (convencao institucional e dependencia categoria B, estado UNKNOWN). Uma pergunta sobre prazos sem ano indicado nao tem resposta unica determinavel. As perguntas com temporal_scope explicito sao well-posed; a unica com 'unscoped' esta excluida das metricas e existe para documentar o problema.",
+  "relevance_scale": {
+    "0": "irrelevante (inclui distractor: mesmo assunto, ano/publico/procedimento errado)",
+    "1": "parcialmente util: contexto relevante mas insuficiente sozinho",
+    "2": "evidencia diretamente relevante para responder ao pedido"
+  },
+  "metric_protocol": {
+    "note": "Fixa a interpretacao das anotacoes. Sem isto, duas implementacoes produzem metricas diferentes a partir do mesmo ficheiro.",
+    "k_values": [
+      1,
+      3,
+      5
+    ],
+    "primary_k": 5,
+    "primary_k_rationale": "top_k=5 e o valor da configuracao de recuperacao registada em S1.",
+    "binary_relevance_threshold": 2,
+    "binary_relevance_note": "Recall@k e MRR usam apenas grau 2 como relevante. Grau 1 NAO conta: um segmento que nao responde sozinho nao demonstra que a evidencia foi encontrada.",
+    "ndcg_gain_mapping": {
+      "0": 0,
+      "1": 1,
+      "2": 3
+    },
+    "ndcg_gain_rationale": "Ganho nao linear para que um grau 2 nao seja substituivel por dois grau 1. IDCG calculado sobre os julgamentos da propria pergunta, ordenados por ganho decrescente.",
+    "unjudged_chunk_treatment": "ASSUMED_IRRELEVANT",
+    "unjudged_chunk_note": "Um segmento devolvido e nao julgado conta como grau 0.",
+    "relevant_set_completeness": "DIRECTED_JUDGMENT_INCOMPLETE",
+    "relevant_set_completeness_note": "Conjunto construido por inspecao dirigida do corpus, nao por pooling de multiplos sistemas. E incompleto por construcao.",
+    "incompleteness_bias": {
+      "precision_at_k": "PESSIMISTIC: um segmento relevante nao julgado conta 0, logo a Precision medida nunca excede a verdadeira.",
+      "recall_at_k": "INDETERMINATE: julgar de menos encolhe numerador e denominador. Um sistema que recupere todo o conjunto julgado mede 1.0 com Recall verdadeiro inferior (sobrestima); um sistema que recupere apenas relevantes nao julgados mede 0 com Recall verdadeiro positivo (subestima).",
+      "ndcg_at_k": "INDETERMINATE: gaps nao julgados reduzem DCG e tambem IDCG, que aqui e calculado sobre os julgamentos da propria pergunta. O sentido do enviesamento nao esta determinado.",
+      "mrr": "PESSIMISTIC: o rank do primeiro relevante JULGADO nunca e anterior ao do primeiro relevante VERDADEIRO, porque o conjunto julgado esta contido no verdadeiro; o minimo sobre um subconjunto e sempre maior ou igual. Logo o reciprocal rank medido nunca excede o verdadeiro. Ao contrario do Recall, o MRR nao tem denominador que dependa do tamanho do conjunto relevante, pelo que se comporta como a Precision. Vale enquanto os julgamentos positivos forem corretos (sem falsos positivos).",
+      "consequence": "Nenhum destes numeros e comparavel entre sistemas sem repooling. Antes de comparar lexical com denso ou hibrido, repoolar o conjunto com os resultados de ambos e reanotar."
+    },
+    "no_evidence_questions": "Excluidas de Recall, MRR e nDCG (indefinidos). Reporta-se apenas a contagem de segmentos devolvidos, que NAO e veredicto de politica.",
+    "excluded_questions": "excluded_from_metrics=true retira a pergunta de todas as metricas; exclusion_reason e obrigatorio."
+  },
+  "questions": [
+    {
+      "question_id": "Q001",
+      "question": "Quando comecam as aulas do ano letivo 2025/2026?",
+      "language": "pt",
+      "question_origin": "constructed_from_public_documents",
+      "temporal_scope": "2025/2026",
+      "difficulty_types": [
+        "date_deadline",
+        "table_information",
+        "lexically_close"
+      ],
+      "no_relevant_evidence": false,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "evidence_judgments": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 16,
+          "relevance": 2,
+          "note": "Primeiro dia de aulas do 1.o semestre com data."
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 14,
+          "relevance": 2,
+          "note": "Inicio do ano letivo com a mesma data."
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 72,
+          "relevance": 0,
+          "note": "Distractor: inicio das aulas do 1.o semestre no ano letivo 2023/2024."
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 2,
+          "relevance": 0,
+          "note": "Preambulo da deliberacao que aprova o calendario; identifica o ato normativo e nao contem data de inicio de aulas."
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 10,
+          "relevance": 0,
+          "note": "Cabecalho generico do calendario do ano letivo; nao localiza semestre nem evento."
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 12,
+          "relevance": 1,
+          "note": "Cabecalho da seccao do 1.o semestre do ano perguntado, onde vive a data; localiza mas nao responde."
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 31,
+          "relevance": 0,
+          "note": "Recesso do Natal, na seccao certa e no ano certo; evento diferente."
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 56,
+          "relevance": 0,
+          "note": "Cabecalho do 2.o semestre; semestre errado para o inicio do ano letivo."
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 86,
+          "relevance": 0,
+          "note": "Cabecalho de matriculas do ano letivo seguinte; ano e assunto errados."
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 89,
+          "relevance": 0,
+          "note": "Renovacao de matriculas do ano letivo seguinte; assunto e ano errados."
+        }
+      ],
+      "document_level_relevance": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "relevance": 2
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "relevance": 0
+        }
+      ],
+      "annotation": {
+        "annotator_1": "author",
+        "annotator_2": null,
+        "adjudication_status": "NOT_APPLICABLE_SINGLE_ANNOTATOR"
+      },
+      "notes": null
+    },
+    {
+      "question_id": "Q002",
+      "question": "Ate quando posso pedir a anulacao da matricula do primeiro semestre do ano letivo 2025/2026?",
+      "language": "pt",
+      "question_origin": "constructed_from_public_documents",
+      "temporal_scope": "2025/2026",
+      "difficulty_types": [
+        "date_deadline",
+        "table_information",
+        "lexically_close",
+        "similar_documents"
+      ],
+      "no_relevant_evidence": false,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "evidence_judgments": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 24,
+          "relevance": 2,
+          "note": "Prazo do pedido de anulacao no 1.o semestre, no ano letivo perguntado."
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 25,
+          "relevance": 0,
+          "note": "Distractor forte: o mesmo procedimento com prazo diferente, no ano letivo 2023/2024."
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 38,
+          "relevance": 0,
+          "note": "Distractor: pedido de anulacao no 2.o semestre de 2023/2024; semestre e ano errados."
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 12,
+          "relevance": 1,
+          "note": "Cabecalho da seccao do 1.o semestre do ano perguntado, onde vive o prazo; localiza mas nao responde."
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 56,
+          "relevance": 0,
+          "note": "Cabecalho do 2.o semestre; semestre errado."
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 64,
+          "relevance": 0,
+          "note": "Distractor forte: mesmo procedimento com prazo proprio, no 2.o semestre do ano certo."
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 89,
+          "relevance": 0,
+          "note": "Renovacao de matriculas do ano seguinte; procedimento e ano errados."
+        }
+      ],
+      "document_level_relevance": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "relevance": 2
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "relevance": 0
+        }
+      ],
+      "annotation": {
+        "annotator_1": "author",
+        "annotator_2": null,
+        "adjudication_status": "NOT_APPLICABLE_SINGLE_ANNOTATOR"
+      },
+      "notes": "O ano letivo passou a ser explicito na pergunta: sem ele, os dois calendarios dao respostas incompativeis e a relevancia nao e determinavel. Ver Q014."
+    },
+    {
+      "question_id": "Q003",
+      "question": "Em que periodo e que renovo a matricula para o segundo semestre do ano letivo 2025/2026?",
+      "language": "pt",
+      "question_origin": "constructed_from_public_documents",
+      "temporal_scope": "2025/2026",
+      "difficulty_types": [
+        "paraphrase",
+        "date_deadline",
+        "table_information",
+        "similar_documents"
+      ],
+      "no_relevant_evidence": false,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "evidence_judgments": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 44,
+          "relevance": 2,
+          "note": "Intervalo de datas para renovacao de matricula no 2.o semestre do ano letivo perguntado."
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 89,
+          "relevance": 0,
+          "note": "Distractor no mesmo documento: renovacao referente ao 1.o semestre do ano letivo seguinte."
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 29,
+          "relevance": 0,
+          "note": "Distractor forte: renovacao das matriculas no 2.o semestre com intervalo de datas proprio, no ano letivo 2023/2024. Mesmo procedimento e mesmo semestre, ano errado."
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 72,
+          "relevance": 0,
+          "note": "Distractor fraco: renovacao das matriculas anuais em 2023/2024, na seccao de pos-graduacao. Procedimento, ano e publico diferentes."
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 12,
+          "relevance": 0,
+          "note": "Cabecalho do 1.o semestre; semestre errado."
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 56,
+          "relevance": 1,
+          "note": "Cabecalho da seccao do 2.o semestre do ano perguntado, onde vive o intervalo; localiza mas nao responde."
+        }
+      ],
+      "document_level_relevance": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "relevance": 2
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "relevance": 0
+        }
+      ],
+      "annotation": {
+        "annotator_1": "author",
+        "annotator_2": null,
+        "adjudication_status": "NOT_APPLICABLE_SINGLE_ANNOTATOR"
+      },
+      "notes": null
+    },
+    {
+      "question_id": "Q004",
+      "question": "Quando e publicada a lista de inscritos em UCT no ano letivo 2025/2026?",
+      "language": "pt",
+      "question_origin": "constructed_from_public_documents",
+      "temporal_scope": "2025/2026",
+      "difficulty_types": [
+        "acronym",
+        "date_deadline",
+        "table_information",
+        "similar_documents"
+      ],
+      "no_relevant_evidence": false,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "evidence_judgments": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 19,
+          "relevance": 2,
+          "note": "Prazo de publicacao da lista de inscritos em UCT no ano letivo perguntado."
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 21,
+          "relevance": 0,
+          "note": "Distractor: entrega da 1.a lista de inscritos em UCT em 2023/2024."
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 25,
+          "relevance": 0,
+          "note": "Distractor: entrega da 2.a lista de inscritos em UCT em 2023/2024."
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 10,
+          "relevance": 0,
+          "note": "Cabecalho generico do calendario; nao identifica o evento."
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 57,
+          "relevance": 2,
+          "note": "Publicacao da lista de inscritos em UCT 2025-2026 com prazo, na seccao do 2.o semestre. Segunda evidencia diretamente relevante da mesma pergunta, ausente da anotacao original: a pergunta nao fixa semestre."
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 97,
+          "relevance": 0,
+          "note": "Entrega da 1.a lista de inscritos em UCT na seccao do ano letivo 2026/2027; ano errado."
+        }
+      ],
+      "document_level_relevance": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "relevance": 2
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "relevance": 0
+        }
+      ],
+      "annotation": {
+        "annotator_1": "author",
+        "annotator_2": null,
+        "adjudication_status": "NOT_APPLICABLE_SINGLE_ANNOTATOR"
+      },
+      "notes": "UCT e um acronimo institucional que o corpus usa sem expandir junto do prazo."
+    },
+    {
+      "question_id": "Q005",
+      "question": "A presenca nas aulas praticas e obrigatoria?",
+      "language": "pt",
+      "question_origin": "constructed_from_public_documents",
+      "temporal_scope": "not_time_dependent",
+      "difficulty_types": [
+        "paraphrase",
+        "synonym",
+        "rule_in_specific_section"
+      ],
+      "no_relevant_evidence": false,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "evidence_judgments": [
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 175,
+          "relevance": 2,
+          "note": "Declara a obrigatoriedade da frequencia das aulas teorico-praticas e praticas laboratoriais."
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 184,
+          "relevance": 1,
+          "note": "Acrescenta a percentagem exigida; sozinho nao responde a pergunta binaria."
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 173,
+          "relevance": 1,
+          "note": "Excecao para trabalhadores-estudantes nas aulas teoricas; qualifica mas nao responde."
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 60,
+          "relevance": 1,
+          "note": "Fragmento com as percentagens minimas exigidas nas aulas teoricas e praticas; acrescenta o valor sem responder a pergunta binaria, como o segmento 184."
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 178,
+          "relevance": 0,
+          "note": "Limites de numero de estudantes por turma e por grupo laboratorial; assunto diferente."
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 310,
+          "relevance": 0,
+          "note": "Regra de planificacao de horarios e horas letivas seguidas; assunto diferente."
+        }
+      ],
+      "document_level_relevance": [
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "relevance": 2
+        }
+      ],
+      "annotation": {
+        "annotator_1": "author",
+        "annotator_2": null,
+        "adjudication_status": "NOT_APPLICABLE_SINGLE_ANNOTATOR"
+      },
+      "notes": "O documento usa 'frequencia'; a pergunta usa 'presenca'. Testa vocabulario de atendimento contra vocabulario normativo."
+    },
+    {
+      "question_id": "Q006",
+      "question": "Qual e a percentagem minima de presencas exigida na componente pratica laboratorial?",
+      "language": "pt",
+      "question_origin": "constructed_from_public_documents",
+      "temporal_scope": "not_time_dependent",
+      "difficulty_types": [
+        "rule_in_specific_section",
+        "synonym"
+      ],
+      "no_relevant_evidence": false,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "evidence_judgments": [
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 184,
+          "relevance": 2,
+          "note": "Indica o valor percentual exigido."
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 175,
+          "relevance": 1,
+          "note": "Estabelece a obrigatoriedade mas nao o valor."
+        }
+      ],
+      "document_level_relevance": [
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "relevance": 2
+        }
+      ],
+      "annotation": {
+        "annotator_1": "author",
+        "annotator_2": null,
+        "adjudication_status": "NOT_APPLICABLE_SINGLE_ANNOTATOR"
+      },
+      "notes": null
+    },
+    {
+      "question_id": "Q007",
+      "question": "Durante quantos anos posso continuar alojado numa residencia da universidade?",
+      "language": "pt",
+      "question_origin": "constructed_from_public_documents",
+      "temporal_scope": "not_time_dependent",
+      "difficulty_types": [
+        "paraphrase",
+        "rule_in_specific_section"
+      ],
+      "no_relevant_evidence": false,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "evidence_judgments": [
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 160,
+          "relevance": 2,
+          "note": "Declara a atribuicao por ano letivo e o limite de renovacao."
+        }
+      ],
+      "document_level_relevance": [
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "relevance": 2
+        }
+      ],
+      "annotation": {
+        "annotator_1": "author",
+        "annotator_2": null,
+        "adjudication_status": "NOT_APPLICABLE_SINGLE_ANNOTATOR"
+      },
+      "notes": null
+    },
+    {
+      "question_id": "Q008",
+      "question": "Com que antecedencia tenho de pedir a prorrogacao do alojamento?",
+      "language": "pt",
+      "question_origin": "constructed_from_public_documents",
+      "temporal_scope": "not_time_dependent",
+      "difficulty_types": [
+        "rule_in_specific_section",
+        "date_deadline"
+      ],
+      "no_relevant_evidence": false,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "evidence_judgments": [
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 161,
+          "relevance": 2,
+          "note": "Indica a antecedencia minima exigida."
+        }
+      ],
+      "document_level_relevance": [
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "relevance": 2
+        }
+      ],
+      "annotation": {
+        "annotator_1": "author",
+        "annotator_2": null,
+        "adjudication_status": "NOT_APPLICABLE_SINGLE_ANNOTATOR"
+      },
+      "notes": null
+    },
+    {
+      "question_id": "Q009",
+      "question": "Como me candidato a uma residencia universitaria?",
+      "language": "pt",
+      "question_origin": "constructed_from_public_documents",
+      "temporal_scope": "not_time_dependent",
+      "difficulty_types": [
+        "paraphrase",
+        "rule_in_specific_section"
+      ],
+      "no_relevant_evidence": false,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "evidence_judgments": [
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 251,
+          "relevance": 2,
+          "note": "Artigo sobre candidaturas: termos e prazos."
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 250,
+          "relevance": 1,
+          "note": "Cabecalho do capitulo do processo de candidatura; localiza mas nao responde."
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 257,
+          "relevance": 1,
+          "note": "Periodos de candidatura; complementa."
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 125,
+          "relevance": 1,
+          "note": "Criterios de admissao; condiciona a candidatura sem descrever o processo."
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 6,
+          "relevance": 0,
+          "note": "Preambulo do regulamento das residencias; descreve a finalidade da politica, nao o processo nem as suas condicoes."
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 31,
+          "relevance": 1,
+          "note": "Ambito de aplicacao: declara a quem se destinam as residencias; condiciona a candidatura sem descrever o processo, como o segmento 125."
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 192,
+          "relevance": 0,
+          "note": "Valor da renda mensal; assunto diferente."
+        }
+      ],
+      "document_level_relevance": [
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "relevance": 2
+        }
+      ],
+      "annotation": {
+        "annotator_1": "author",
+        "annotator_2": null,
+        "adjudication_status": "NOT_APPLICABLE_SINGLE_ANNOTATOR"
+      },
+      "notes": null
+    },
+    {
+      "question_id": "Q010",
+      "question": "Quanto custa a candidatura ao concurso especial de ingresso para diplomados dos CESP?",
+      "language": "pt",
+      "question_origin": "constructed_from_public_documents",
+      "temporal_scope": "not_time_dependent",
+      "difficulty_types": [
+        "acronym",
+        "table_information"
+      ],
+      "no_relevant_evidence": false,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "evidence_judgments": [
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 397,
+          "relevance": 2,
+          "note": "Linha da tabela de emolumentos com o valor."
+        }
+      ],
+      "document_level_relevance": [
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "relevance": 2
+        }
+      ],
+      "annotation": {
+        "annotator_1": "author",
+        "annotator_2": null,
+        "adjudication_status": "NOT_APPLICABLE_SINGLE_ANNOTATOR"
+      },
+      "notes": "O valor consta de um documento de 2014 cuja vigencia nao foi possivel determinar. A anotacao afirma onde esta a evidencia, nao que o valor esteja em vigor."
+    },
+    {
+      "question_id": "Q011",
+      "question": "Quando foi o primeiro dia de aulas do segundo semestre em 2023/2024?",
+      "language": "pt",
+      "question_origin": "constructed_from_public_documents",
+      "temporal_scope": "2023/2024",
+      "difficulty_types": [
+        "cross_year_disambiguation",
+        "similar_documents",
+        "date_deadline"
+      ],
+      "no_relevant_evidence": false,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "evidence_judgments": [
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 37,
+          "relevance": 2,
+          "note": "Primeiro dia de aulas do 2.o semestre no ano letivo perguntado."
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 72,
+          "relevance": 2,
+          "note": "Repete inicio de aulas do 2.o semestre com a mesma data, na seccao de pos-graduacao."
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 16,
+          "relevance": 0,
+          "note": "Distractor: primeiro dia de aulas, semestre e ano letivo errados (1.o semestre de 2025/2026)."
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 38,
+          "relevance": 0,
+          "note": "Ultimo dia de aulas do 1.o semestre de 2025/2026; evento, semestre e ano errados."
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 58,
+          "relevance": 0,
+          "note": "Distractor mais forte do conjunto: primeiro dia de aulas do 2.o semestre, mesmo evento e mesmo semestre, no ano letivo errado. Recuperado no topo produziria uma resposta confiante e errada."
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 66,
+          "relevance": 0,
+          "note": "Ultimo dia de aulas do 2.o semestre de 2025/2026; evento e ano errados."
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 21,
+          "relevance": 0,
+          "note": "Fragmento do 1.o semestre de 2023/2024: ano certo, semestre errado."
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 38,
+          "relevance": 0,
+          "note": "Fragmento do 2.o semestre de 2023/2024 com exames, anulacao e ultimo dia de aulas; seccao certa, evento errado."
+        }
+      ],
+      "document_level_relevance": [
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "relevance": 2
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "relevance": 0
+        }
+      ],
+      "annotation": {
+        "annotator_1": "author",
+        "annotator_2": null,
+        "adjudication_status": "NOT_APPLICABLE_SINGLE_ANNOTATOR"
+      },
+      "notes": "Par deliberado com Q001 e Q003: pergunta o ano mais antigo, para que o calendario recente seja o distractor."
+    },
+    {
+      "question_id": "Q012",
+      "question": "Quando e a cerimonia de entrega dos diplomas no ano letivo 2025/2026?",
+      "language": "pt",
+      "question_origin": "constructed_from_public_documents",
+      "temporal_scope": "2025/2026",
+      "difficulty_types": [
+        "cross_document_reference",
+        "paraphrase",
+        "table_information"
+      ],
+      "no_relevant_evidence": false,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "evidence_judgments": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 78,
+          "relevance": 2,
+          "note": "Intervalo de datas da cerimonia de outorga de grau no calendario do ano perguntado."
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 41,
+          "relevance": 0,
+          "note": "Distractor: cerimonia de outorga de grau no calendario de 2023/2024. Grau 0 por ser o ano errado, apesar de o intervalo de datas coincidir com o de 2025/2026 — recuperar este segmento produziria a resposta certa pela razao errada, e a coincidencia nao e garantida noutro ano."
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 117,
+          "relevance": 1,
+          "note": "O regulamento remete a fixacao das datas para o calendario academico; contexto necessario, sem data."
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 10,
+          "relevance": 0,
+          "note": "Cabecalho generico do calendario; nao identifica o evento."
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 12,
+          "relevance": 0,
+          "note": "Cabecalho do 1.o semestre; a cerimonia consta da seccao do 2.o semestre."
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 56,
+          "relevance": 1,
+          "note": "Cabecalho da seccao do 2.o semestre do ano perguntado, onde vive a cerimonia; localiza mas nao responde."
+        }
+      ],
+      "document_level_relevance": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "relevance": 2
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "relevance": 0
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "relevance": 1
+        }
+      ],
+      "annotation": {
+        "annotator_1": "author",
+        "annotator_2": null,
+        "adjudication_status": "NOT_APPLICABLE_SINGLE_ANNOTATOR"
+      },
+      "notes": "Caso multi-documento: a pergunta usa 'entrega dos diplomas' e o corpus usa 'outorga de grau'. O ano e explicito porque os dois calendarios tem entrada de cerimonia."
+    },
+    {
+      "question_id": "Q013",
+      "question": "Perdi a palavra-passe do portal do estudante. Como a recupero?",
+      "language": "pt",
+      "question_origin": "constructed_from_public_documents",
+      "temporal_scope": "not_time_dependent",
+      "difficulty_types": [
+        "no_evidence_in_corpus"
+      ],
+      "no_relevant_evidence": true,
+      "excluded_from_metrics": false,
+      "exclusion_reason": null,
+      "evidence_judgments": [],
+      "document_level_relevance": [],
+      "annotation": {
+        "annotator_1": "author",
+        "annotator_2": null,
+        "adjudication_status": "NOT_APPLICABLE_SINGLE_ANNOTATOR"
+      },
+      "notes": "Ausencia verificada por sondagem sobre o corpus: as unicas ocorrencias de 'portal' referem submissao de programas de disciplinas por docentes, e 'credenciados' refere acreditacao de profissionais de comunicacao. no_relevant_evidence=true e um facto sobre o corpus, nao um desfecho de politica. Excluida de Recall, MRR e nDCG pelo metric_protocol."
+    },
+    {
+      "question_id": "Q014",
+      "question": "Ate quando posso pedir a anulacao da matricula do primeiro semestre?",
+      "language": "pt",
+      "question_origin": "constructed_from_public_documents",
+      "temporal_scope": "unscoped",
+      "difficulty_types": [
+        "temporal_ambiguity",
+        "similar_documents",
+        "date_deadline"
+      ],
+      "no_relevant_evidence": false,
+      "excluded_from_metrics": true,
+      "exclusion_reason": "Pergunta temporalmente ambigua por construcao. O corpus tem dois calendarios simultaneamente elegiveis e nenhum tem vigencia declarada, pelo que existem duas respostas corretas e incompativeis e nenhuma ordenacao entre elas e defensavel. Incluir esta pergunta numa metrica exigiria escolher um ano sem fundamento institucional. Deixa de estar excluida quando a convencao de vigencia (categoria B) for conhecida.",
+      "evidence_judgments": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 24,
+          "relevance": 2,
+          "note": "Resposta valida sob a interpretacao 'ano letivo 2025/2026'."
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 25,
+          "relevance": 2,
+          "note": "Resposta valida sob a interpretacao 'ano letivo 2023/2024'. Igualmente correta e incompativel com a anterior."
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 64,
+          "relevance": 0,
+          "note": "Anulacao no 2.o semestre; a pergunta refere o primeiro semestre."
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 89,
+          "relevance": 0,
+          "note": "Renovacao de matriculas; procedimento diferente."
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 38,
+          "relevance": 0,
+          "note": "Anulacao no 2.o semestre de 2023/2024; semestre errado sob qualquer das duas interpretacoes."
+        }
+      ],
+      "document_level_relevance": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "relevance": 2
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "relevance": 2
+        }
+      ],
+      "annotation": {
+        "annotator_1": "author",
+        "annotator_2": null,
+        "adjudication_status": "NOT_APPLICABLE_SINGLE_ANNOTATOR"
+      },
+      "notes": "Gemea sem ano de Q002. Existe para preservar, documentada, a formulacao natural que um estudante usaria, sem contaminar as metricas com uma relevancia indeterminavel."
+    }
+  ],
+  "question_set_variant": "directed_repooling",
+  "extends": "retrieval-ground-truth-p1-seed.json",
+  "pooling_note": "Conjunto a julgar = uniao dos resultados que entraram no top 5 de QUALQUER uma das seis celulas do D4.5, e nao apenas os da condicao ampliada. A uniao e deliberada: anotar so os resultados novos daria a condicao ampliada mais julgamentos do que a baseline e enviesaria a comparacao entre as duas. Nao foi anotado o corpus inteiro, e o conjunto continua incompleto por construcao (DIRECTED_JUDGMENT_INCOMPLETE): o repooling reduz a incompletude onde ela afeta a comparacao, nao a elimina.",
+  "annotation_note": "Os graus foram atribuidos contra o documento e a pergunta, nunca contra a posicao ou o score do sistema. Ser recuperado nao confere relevancia. Anotador unico, sem adjudicacao, como no conjunto historico."
+}

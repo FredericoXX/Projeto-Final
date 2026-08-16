@@ -1,0 +1,5570 @@
+{
+  "schema_version": "1",
+  "digest_algorithm": "sha256",
+  "corpus_id": "P1",
+  "snapshot_id": "a94f940229152a3b61860b370df8cb3ea8fe1a0e7236d65e86fe4b5118baf4c1",
+  "corpus_digest": "e8a0f08b5ecf37821244e62c266a48b1d64c928cabb75e0e23e08f9c895a447e",
+  "reference_date": "2026-08-15",
+  "ground_truth_digest_algorithm": "sha256",
+  "ground_truth_digest_scope": "measurement_relevant_fields",
+  "ground_truth_digest_before": "1f05f49ae8f596175b6943734c3778d73280e6a2f89da7886db08434e6db8ea2",
+  "ground_truth_digest_after": "ada6b38886a06910e425e4be164099a3a63320050890253404064e3fde88586e",
+  "repooling": {
+    "artefact": "retrieval-ground-truth-p1-repooled.json",
+    "extends": "retrieval-ground-truth-p1-seed.json",
+    "judgments_added": 34,
+    "judgments_added_by_grade": {
+      "0": 27,
+      "1": 6,
+      "2": 1
+    },
+    "questions_touched": [
+      "Q001",
+      "Q002",
+      "Q003",
+      "Q004",
+      "Q005",
+      "Q009",
+      "Q011",
+      "Q012",
+      "Q014"
+    ],
+    "added": [
+      {
+        "question_id": "Q001",
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 2,
+        "relevance": 0
+      },
+      {
+        "question_id": "Q001",
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 10,
+        "relevance": 0
+      },
+      {
+        "question_id": "Q001",
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 12,
+        "relevance": 1
+      },
+      {
+        "question_id": "Q001",
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 31,
+        "relevance": 0
+      },
+      {
+        "question_id": "Q001",
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 56,
+        "relevance": 0
+      },
+      {
+        "question_id": "Q001",
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 86,
+        "relevance": 0
+      },
+      {
+        "question_id": "Q001",
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 89,
+        "relevance": 0
+      },
+      {
+        "question_id": "Q002",
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 12,
+        "relevance": 1
+      },
+      {
+        "question_id": "Q002",
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 56,
+        "relevance": 0
+      },
+      {
+        "question_id": "Q002",
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 64,
+        "relevance": 0
+      },
+      {
+        "question_id": "Q002",
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 89,
+        "relevance": 0
+      },
+      {
+        "question_id": "Q003",
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 12,
+        "relevance": 0
+      },
+      {
+        "question_id": "Q003",
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 56,
+        "relevance": 1
+      },
+      {
+        "question_id": "Q004",
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 10,
+        "relevance": 0
+      },
+      {
+        "question_id": "Q004",
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 57,
+        "relevance": 2
+      },
+      {
+        "question_id": "Q004",
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 97,
+        "relevance": 0
+      },
+      {
+        "question_id": "Q005",
+        "corpus_item_id": "P1-DOC-004",
+        "chunk_index": 60,
+        "relevance": 1
+      },
+      {
+        "question_id": "Q005",
+        "corpus_item_id": "P1-DOC-004",
+        "chunk_index": 178,
+        "relevance": 0
+      },
+      {
+        "question_id": "Q005",
+        "corpus_item_id": "P1-DOC-004",
+        "chunk_index": 310,
+        "relevance": 0
+      },
+      {
+        "question_id": "Q009",
+        "corpus_item_id": "P1-DOC-007",
+        "chunk_index": 6,
+        "relevance": 0
+      },
+      {
+        "question_id": "Q009",
+        "corpus_item_id": "P1-DOC-007",
+        "chunk_index": 31,
+        "relevance": 1
+      },
+      {
+        "question_id": "Q009",
+        "corpus_item_id": "P1-DOC-007",
+        "chunk_index": 192,
+        "relevance": 0
+      },
+      {
+        "question_id": "Q011",
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 16,
+        "relevance": 0
+      },
+      {
+        "question_id": "Q011",
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 38,
+        "relevance": 0
+      },
+      {
+        "question_id": "Q011",
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 58,
+        "relevance": 0
+      },
+      {
+        "question_id": "Q011",
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 66,
+        "relevance": 0
+      },
+      {
+        "question_id": "Q011",
+        "corpus_item_id": "P1-DOC-003",
+        "chunk_index": 21,
+        "relevance": 0
+      },
+      {
+        "question_id": "Q011",
+        "corpus_item_id": "P1-DOC-003",
+        "chunk_index": 38,
+        "relevance": 0
+      },
+      {
+        "question_id": "Q012",
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 10,
+        "relevance": 0
+      },
+      {
+        "question_id": "Q012",
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 12,
+        "relevance": 0
+      },
+      {
+        "question_id": "Q012",
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 56,
+        "relevance": 1
+      },
+      {
+        "question_id": "Q014",
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 64,
+        "relevance": 0
+      },
+      {
+        "question_id": "Q014",
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 89,
+        "relevance": 0
+      },
+      {
+        "question_id": "Q014",
+        "corpus_item_id": "P1-DOC-003",
+        "chunk_index": 38,
+        "relevance": 0
+      }
+    ],
+    "recall_denominator_changes": [
+      {
+        "question_id": "Q004",
+        "before": 1,
+        "after": 2
+      }
+    ],
+    "revisions": [],
+    "revisions_note": "A repooling may add judgments; revising an existing grade would make the D4.2-D4.5 series incomparable without saying so. The guard rejects any revision, so this list is empty by construction."
+  },
+  "d45_result_digest": "3c6eed912f424e613e9993503fa6b1ceae102d9c7d16db1462a3d56818b9633c",
+  "reproduces_d45_cells": true,
+  "retrieval": {
+    "strategy": "lexical",
+    "pipeline_version": "lexical_pipeline_v1",
+    "scoring_version": "lexical_composite_v1",
+    "score_kind": "lexical_relevance",
+    "comparable_across_queries": false,
+    "language": "pt",
+    "top_k": 5,
+    "official_only": true,
+    "fts_config": "portuguese",
+    "min_relevance_score": 0.05,
+    "candidate_limit": 25
+  },
+  "matching_variant": "exact_canonical",
+  "budget_policies": [
+    "current_quota",
+    "redistribute_unused"
+  ],
+  "primary_k": 5,
+  "score_terms": [
+    {
+      "signal": "coverage",
+      "weight": 0.4
+    },
+    {
+      "signal": "exact_phrase",
+      "weight": 0.16
+    },
+    {
+      "signal": "proximity",
+      "weight": 0.14
+    },
+    {
+      "signal": "ordered",
+      "weight": 0.08
+    },
+    {
+      "signal": "title_overlap",
+      "weight": 0.07
+    },
+    {
+      "signal": "structure_table_row",
+      "weight": 0.06
+    },
+    {
+      "signal": "section_overlap",
+      "weight": 0.05
+    },
+    {
+      "signal": "fts_component",
+      "weight": 0.02
+    },
+    {
+      "signal": "strategy_quality",
+      "weight": 0.02
+    }
+  ],
+  "score_terms_note": "The real linear basis of compute_score. compactness and length_factor are absent because they are not summands: the first only gates table_row_bonus, the second multiplies fts_norm inside fts_component.",
+  "document_structure_counts": {
+    "P1-DOC-002": {
+      "fallback_fragment": 2,
+      "heading": 16,
+      "list_block": 3,
+      "list_item": 3,
+      "paragraph": 28,
+      "table_row": 56
+    },
+    "P1-DOC-003": {
+      "fallback_fragment": 9,
+      "heading": 23,
+      "list_block": 1,
+      "list_item": 13,
+      "paragraph": 30
+    },
+    "P1-DOC-004": {
+      "heading": 50,
+      "list_block": 16,
+      "list_item": 245,
+      "paragraph": 278
+    },
+    "P1-DOC-005": {
+      "fallback_fragment": 51,
+      "heading": 149,
+      "list_block": 6,
+      "list_item": 114,
+      "paragraph": 162
+    },
+    "P1-DOC-006": {
+      "heading": 46,
+      "list_block": 7,
+      "list_item": 43,
+      "paragraph": 60
+    },
+    "P1-DOC-007": {
+      "fallback_fragment": 9,
+      "heading": 141,
+      "list_block": 14,
+      "list_item": 98,
+      "paragraph": 161
+    }
+  },
+  "structure_bonus_availability": {
+    "signal": "structure_table_row",
+    "weight": 0.06,
+    "requires_structure_type": "table_row",
+    "documents_with_table_rows": [
+      "P1-DOC-002"
+    ],
+    "documents_without_table_rows": [
+      "P1-DOC-003",
+      "P1-DOC-004",
+      "P1-DOC-005",
+      "P1-DOC-006",
+      "P1-DOC-007"
+    ],
+    "note": "A document with no table_row chunk can never earn this bonus. Where such a document holds the correct evidence, the signal measures extraction quality rather than relevance."
+  },
+  "cells": [
+    {
+      "budget_policy": "current_quota",
+      "matching_variant": "exact_canonical",
+      "aggregate": {
+        "questions_measured": 12,
+        "recall": {
+          "1": 0.208333,
+          "3": 0.416667,
+          "5": 0.458333
+        },
+        "mrr": 0.375,
+        "ndcg": {
+          "1": 0.25,
+          "3": 0.332341,
+          "5": 0.363034
+        }
+      },
+      "question_results": [
+        {
+          "question_id": "Q001",
+          "retrieved_count": 4,
+          "total_relevant_judged": 2,
+          "judgment_coverage": {
+            "returned": 4,
+            "judged": 1,
+            "unjudged": 3
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 89,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 14,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 31,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 2,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.5,
+            "5": 0.5
+          },
+          "reciprocal_rank": 0.5,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.386853,
+            "5": 0.386853
+          }
+        },
+        {
+          "question_id": "Q002",
+          "retrieved_count": 2,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 2,
+            "judged": 1,
+            "unjudged": 1
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 89,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 24,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 0.5,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.63093,
+            "5": 0.63093
+          }
+        },
+        {
+          "question_id": "Q003",
+          "retrieved_count": 1,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 1,
+            "judged": 0,
+            "unjudged": 1
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 12,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q004",
+          "retrieved_count": 3,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 3,
+            "judged": 1,
+            "unjudged": 2
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 57,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 19,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 97,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 0.5,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.63093,
+            "5": 0.63093
+          }
+        },
+        {
+          "question_id": "Q005",
+          "retrieved_count": 5,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 5,
+            "judged": 2,
+            "unjudged": 3
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 175,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 60,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 310,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 173,
+              "grade": 1,
+              "judged": true
+            },
+            {
+              "position": 5,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 178,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 0.726229,
+            "5": 0.830485
+          }
+        },
+        {
+          "question_id": "Q006",
+          "retrieved_count": 0,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 0,
+            "judged": 0,
+            "unjudged": 0
+          },
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q007",
+          "retrieved_count": 0,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 0,
+            "judged": 0,
+            "unjudged": 0
+          },
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q008",
+          "retrieved_count": 0,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 0,
+            "judged": 0,
+            "unjudged": 0
+          },
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q009",
+          "retrieved_count": 0,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 0,
+            "judged": 0,
+            "unjudged": 0
+          },
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q010",
+          "retrieved_count": 1,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 1,
+            "judged": 1,
+            "unjudged": 0
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-005",
+              "chunk_index": 397,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          }
+        },
+        {
+          "question_id": "Q011",
+          "retrieved_count": 4,
+          "total_relevant_judged": 2,
+          "judgment_coverage": {
+            "returned": 4,
+            "judged": 2,
+            "unjudged": 2
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 37,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 21,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 38,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 72,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 0.5,
+            "3": 0.5,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 0.613147,
+            "5": 0.877215
+          }
+        },
+        {
+          "question_id": "Q012",
+          "retrieved_count": 0,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 0,
+            "judged": 0,
+            "unjudged": 0
+          },
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q013",
+          "retrieved_count": 0,
+          "total_relevant_judged": 0,
+          "judgment_coverage": {
+            "returned": 0,
+            "judged": 0,
+            "unjudged": 0
+          },
+          "ranking": [],
+          "measured": false
+        },
+        {
+          "question_id": "Q014",
+          "retrieved_count": 3,
+          "total_relevant_judged": 2,
+          "judgment_coverage": {
+            "returned": 3,
+            "judged": 1,
+            "unjudged": 2
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 24,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 64,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 38,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "measured": false
+        }
+      ],
+      "ground_truth": "historical"
+    },
+    {
+      "budget_policy": "current_quota",
+      "matching_variant": "exact_canonical",
+      "aggregate": {
+        "questions_measured": 12,
+        "recall": {
+          "1": 0.25,
+          "3": 0.416667,
+          "5": 0.458333
+        },
+        "mrr": 0.416667,
+        "ndcg": {
+          "1": 0.333333,
+          "3": 0.363699,
+          "5": 0.386657
+        }
+      },
+      "question_results": [
+        {
+          "question_id": "Q001",
+          "retrieved_count": 4,
+          "total_relevant_judged": 2,
+          "judgment_coverage": {
+            "returned": 4,
+            "judged": 4,
+            "unjudged": 0
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 89,
+              "grade": 0,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 14,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 31,
+              "grade": 0,
+              "judged": true
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 2,
+              "grade": 0,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.5,
+            "5": 0.5
+          },
+          "reciprocal_rank": 0.5,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.350985,
+            "5": 0.350985
+          }
+        },
+        {
+          "question_id": "Q002",
+          "retrieved_count": 2,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 2,
+            "judged": 2,
+            "unjudged": 0
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 89,
+              "grade": 0,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 24,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 0.5,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.521296,
+            "5": 0.521296
+          }
+        },
+        {
+          "question_id": "Q003",
+          "retrieved_count": 1,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 1,
+            "judged": 1,
+            "unjudged": 0
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 12,
+              "grade": 0,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q004",
+          "retrieved_count": 3,
+          "total_relevant_judged": 2,
+          "judgment_coverage": {
+            "returned": 3,
+            "judged": 3,
+            "unjudged": 0
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 57,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 19,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 97,
+              "grade": 0,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 0.5,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          }
+        },
+        {
+          "question_id": "Q005",
+          "retrieved_count": 5,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 5,
+            "judged": 5,
+            "unjudged": 0
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 175,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 60,
+              "grade": 1,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 310,
+              "grade": 0,
+              "judged": true
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 173,
+              "grade": 1,
+              "judged": true
+            },
+            {
+              "position": 5,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 178,
+              "grade": 0,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 0.878962,
+            "5": 0.890389
+          }
+        },
+        {
+          "question_id": "Q006",
+          "retrieved_count": 0,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 0,
+            "judged": 0,
+            "unjudged": 0
+          },
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q007",
+          "retrieved_count": 0,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 0,
+            "judged": 0,
+            "unjudged": 0
+          },
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q008",
+          "retrieved_count": 0,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 0,
+            "judged": 0,
+            "unjudged": 0
+          },
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q009",
+          "retrieved_count": 0,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 0,
+            "judged": 0,
+            "unjudged": 0
+          },
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q010",
+          "retrieved_count": 1,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 1,
+            "judged": 1,
+            "unjudged": 0
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-005",
+              "chunk_index": 397,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          }
+        },
+        {
+          "question_id": "Q011",
+          "retrieved_count": 4,
+          "total_relevant_judged": 2,
+          "judgment_coverage": {
+            "returned": 4,
+            "judged": 4,
+            "unjudged": 0
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 37,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 21,
+              "grade": 0,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 38,
+              "grade": 0,
+              "judged": true
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 72,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 0.5,
+            "3": 0.5,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 0.613147,
+            "5": 0.877215
+          }
+        },
+        {
+          "question_id": "Q012",
+          "retrieved_count": 0,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 0,
+            "judged": 0,
+            "unjudged": 0
+          },
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q013",
+          "retrieved_count": 0,
+          "total_relevant_judged": 0,
+          "judgment_coverage": {
+            "returned": 0,
+            "judged": 0,
+            "unjudged": 0
+          },
+          "ranking": [],
+          "measured": false
+        },
+        {
+          "question_id": "Q014",
+          "retrieved_count": 3,
+          "total_relevant_judged": 2,
+          "judgment_coverage": {
+            "returned": 3,
+            "judged": 3,
+            "unjudged": 0
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 24,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 64,
+              "grade": 0,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 38,
+              "grade": 0,
+              "judged": true
+            }
+          ],
+          "measured": false
+        }
+      ],
+      "ground_truth": "repooled"
+    },
+    {
+      "budget_policy": "redistribute_unused",
+      "matching_variant": "exact_canonical",
+      "aggregate": {
+        "questions_measured": 12,
+        "recall": {
+          "1": 0.166667,
+          "3": 0.291667,
+          "5": 0.375
+        },
+        "mrr": 0.256944,
+        "ndcg": {
+          "1": 0.166667,
+          "3": 0.217757,
+          "5": 0.262335
+        }
+      },
+      "question_results": [
+        {
+          "question_id": "Q001",
+          "retrieved_count": 5,
+          "total_relevant_judged": 2,
+          "judgment_coverage": {
+            "returned": 5,
+            "judged": 0,
+            "unjudged": 5
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 12,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 56,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 10,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 89,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 5,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 86,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q002",
+          "retrieved_count": 4,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 4,
+            "judged": 1,
+            "unjudged": 3
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 12,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 89,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 56,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 24,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 0.25,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.430677
+          }
+        },
+        {
+          "question_id": "Q003",
+          "retrieved_count": 2,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 2,
+            "judged": 0,
+            "unjudged": 2
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 56,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 12,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q004",
+          "retrieved_count": 4,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 4,
+            "judged": 1,
+            "unjudged": 3
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 57,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 10,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 19,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 97,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 0.333333,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.5,
+            "5": 0.5
+          }
+        },
+        {
+          "question_id": "Q005",
+          "retrieved_count": 5,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 5,
+            "judged": 2,
+            "unjudged": 3
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 175,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 60,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 310,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 173,
+              "grade": 1,
+              "judged": true
+            },
+            {
+              "position": 5,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 178,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 0.726229,
+            "5": 0.830485
+          }
+        },
+        {
+          "question_id": "Q006",
+          "retrieved_count": 0,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 0,
+            "judged": 0,
+            "unjudged": 0
+          },
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q007",
+          "retrieved_count": 0,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 0,
+            "judged": 0,
+            "unjudged": 0
+          },
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q008",
+          "retrieved_count": 0,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 0,
+            "judged": 0,
+            "unjudged": 0
+          },
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q009",
+          "retrieved_count": 1,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 1,
+            "judged": 0,
+            "unjudged": 1
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-007",
+              "chunk_index": 192,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q010",
+          "retrieved_count": 1,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 1,
+            "judged": 1,
+            "unjudged": 0
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-005",
+              "chunk_index": 397,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          }
+        },
+        {
+          "question_id": "Q011",
+          "retrieved_count": 5,
+          "total_relevant_judged": 2,
+          "judgment_coverage": {
+            "returned": 5,
+            "judged": 1,
+            "unjudged": 4
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 58,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 37,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 66,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 16,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 5,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 38,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.5,
+            "5": 0.5
+          },
+          "reciprocal_rank": 0.5,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.386853,
+            "5": 0.386853
+          }
+        },
+        {
+          "question_id": "Q012",
+          "retrieved_count": 3,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 3,
+            "judged": 0,
+            "unjudged": 3
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 12,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 56,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 10,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q013",
+          "retrieved_count": 0,
+          "total_relevant_judged": 0,
+          "judgment_coverage": {
+            "returned": 0,
+            "judged": 0,
+            "unjudged": 0
+          },
+          "ranking": [],
+          "measured": false
+        },
+        {
+          "question_id": "Q014",
+          "retrieved_count": 3,
+          "total_relevant_judged": 2,
+          "judgment_coverage": {
+            "returned": 3,
+            "judged": 1,
+            "unjudged": 2
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 24,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 64,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 38,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "measured": false
+        }
+      ],
+      "ground_truth": "historical"
+    },
+    {
+      "budget_policy": "redistribute_unused",
+      "matching_variant": "exact_canonical",
+      "aggregate": {
+        "questions_measured": 12,
+        "recall": {
+          "1": 0.208333,
+          "3": 0.291667,
+          "5": 0.375
+        },
+        "mrr": 0.3125,
+        "ndcg": {
+          "1": 0.333333,
+          "3": 0.339544,
+          "5": 0.370149
+        }
+      },
+      "question_results": [
+        {
+          "question_id": "Q001",
+          "retrieved_count": 5,
+          "total_relevant_judged": 2,
+          "judgment_coverage": {
+            "returned": 5,
+            "judged": 5,
+            "unjudged": 0
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 12,
+              "grade": 1,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 56,
+              "grade": 0,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 10,
+              "grade": 0,
+              "judged": true
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 89,
+              "grade": 0,
+              "judged": true
+            },
+            {
+              "position": 5,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 86,
+              "grade": 0,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.333333,
+            "3": 0.185433,
+            "5": 0.185433
+          }
+        },
+        {
+          "question_id": "Q002",
+          "retrieved_count": 4,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 4,
+            "judged": 4,
+            "unjudged": 0
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 12,
+              "grade": 1,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 89,
+              "grade": 0,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 56,
+              "grade": 0,
+              "judged": true
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 24,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 0.25,
+          "ndcg": {
+            "1": 0.333333,
+            "3": 0.275412,
+            "5": 0.631251
+          }
+        },
+        {
+          "question_id": "Q003",
+          "retrieved_count": 2,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 2,
+            "judged": 2,
+            "unjudged": 0
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 56,
+              "grade": 1,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 12,
+              "grade": 0,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.333333,
+            "3": 0.275412,
+            "5": 0.275412
+          }
+        },
+        {
+          "question_id": "Q004",
+          "retrieved_count": 4,
+          "total_relevant_judged": 2,
+          "judgment_coverage": {
+            "returned": 4,
+            "judged": 4,
+            "unjudged": 0
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 57,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 10,
+              "grade": 0,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 19,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 97,
+              "grade": 0,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 0.5,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 0.919721,
+            "5": 0.919721
+          }
+        },
+        {
+          "question_id": "Q005",
+          "retrieved_count": 5,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 5,
+            "judged": 5,
+            "unjudged": 0
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 175,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 60,
+              "grade": 1,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 310,
+              "grade": 0,
+              "judged": true
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 173,
+              "grade": 1,
+              "judged": true
+            },
+            {
+              "position": 5,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 178,
+              "grade": 0,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 0.878962,
+            "5": 0.890389
+          }
+        },
+        {
+          "question_id": "Q006",
+          "retrieved_count": 0,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 0,
+            "judged": 0,
+            "unjudged": 0
+          },
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q007",
+          "retrieved_count": 0,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 0,
+            "judged": 0,
+            "unjudged": 0
+          },
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q008",
+          "retrieved_count": 0,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 0,
+            "judged": 0,
+            "unjudged": 0
+          },
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q009",
+          "retrieved_count": 1,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 1,
+            "judged": 1,
+            "unjudged": 0
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-007",
+              "chunk_index": 192,
+              "grade": 0,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q010",
+          "retrieved_count": 1,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 1,
+            "judged": 1,
+            "unjudged": 0
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-005",
+              "chunk_index": 397,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          }
+        },
+        {
+          "question_id": "Q011",
+          "retrieved_count": 5,
+          "total_relevant_judged": 2,
+          "judgment_coverage": {
+            "returned": 5,
+            "judged": 5,
+            "unjudged": 0
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 58,
+              "grade": 0,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 37,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 66,
+              "grade": 0,
+              "judged": true
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 16,
+              "grade": 0,
+              "judged": true
+            },
+            {
+              "position": 5,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 38,
+              "grade": 0,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.5,
+            "5": 0.5
+          },
+          "reciprocal_rank": 0.5,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.386853,
+            "5": 0.386853
+          }
+        },
+        {
+          "question_id": "Q012",
+          "retrieved_count": 3,
+          "total_relevant_judged": 1,
+          "judgment_coverage": {
+            "returned": 3,
+            "judged": 3,
+            "unjudged": 0
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 12,
+              "grade": 0,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 56,
+              "grade": 1,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 10,
+              "grade": 0,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.152733,
+            "5": 0.152733
+          }
+        },
+        {
+          "question_id": "Q013",
+          "retrieved_count": 0,
+          "total_relevant_judged": 0,
+          "judgment_coverage": {
+            "returned": 0,
+            "judged": 0,
+            "unjudged": 0
+          },
+          "ranking": [],
+          "measured": false
+        },
+        {
+          "question_id": "Q014",
+          "retrieved_count": 3,
+          "total_relevant_judged": 2,
+          "judgment_coverage": {
+            "returned": 3,
+            "judged": 3,
+            "unjudged": 0
+          },
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 24,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 64,
+              "grade": 0,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 38,
+              "grade": 0,
+              "judged": true
+            }
+          ],
+          "measured": false
+        }
+      ],
+      "ground_truth": "repooled"
+    }
+  ],
+  "ranking_cases": [
+    {
+      "budget_policy": "current_quota",
+      "question_id": "Q001",
+      "target": {
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 16
+      },
+      "target_rank": null,
+      "within_top_k": false,
+      "diagnosis": "C_INDETERMINATE",
+      "diagnosis_note": "the target never reached the ranking; no signal comparison is observable",
+      "competitors": []
+    },
+    {
+      "budget_policy": "current_quota",
+      "question_id": "Q001",
+      "target": {
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 14
+      },
+      "target_rank": 2,
+      "within_top_k": true,
+      "target_structure_type": "table_row",
+      "target_decomposition": {
+        "score": 0.338667,
+        "structure_type": "table_row",
+        "signals": {
+          "coverage": 0.5,
+          "exact_phrase": 0.0,
+          "proximity": 0.214286,
+          "ordered": 0.4,
+          "title_overlap": 0.333333,
+          "structure_table_row": 0.0,
+          "section_overlap": 0.666667,
+          "fts_component": 0.75,
+          "strategy_quality": 0.25
+        },
+        "contributions": {
+          "coverage": 0.2,
+          "exact_phrase": 0.0,
+          "proximity": 0.03,
+          "ordered": 0.032,
+          "title_overlap": 0.023333,
+          "structure_table_row": 0.0,
+          "section_overlap": 0.033333,
+          "fts_component": 0.015,
+          "strategy_quality": 0.005
+        },
+        "auxiliary": {
+          "compactness": 0.428571,
+          "length_factor": 1.0,
+          "fts_norm": 0.75,
+          "matched_terms": [
+            "2025",
+            "ano",
+            "letivo"
+          ]
+        }
+      },
+      "unjudged_competitors": 0,
+      "cross_document_competitors": 0,
+      "common_signals_favouring_target": [
+        "ordered",
+        "section_overlap"
+      ],
+      "single_signal_inversion_possible": true,
+      "diagnosis": "A_SIGNALS_DISCRIMINATE_WEIGHTING_MAY_BE_WRONG",
+      "diagnosis_note": "every competitor is beaten by the target on some signal, and at least one signal beats them all at once, so a single reweighting demonstrably inverts the whole set",
+      "competitors": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 89,
+          "rank": 1,
+          "grade": 0,
+          "judged": true,
+          "same_document_as_target": true,
+          "structure_type": "table_row",
+          "decomposition": {
+            "score": 0.414333,
+            "structure_type": "table_row",
+            "signals": {
+              "coverage": 0.5,
+              "exact_phrase": 0.0,
+              "proximity": 0.5,
+              "ordered": 0.2,
+              "title_overlap": 0.333333,
+              "structure_table_row": 1.0,
+              "section_overlap": 0.5,
+              "fts_component": 0.75,
+              "strategy_quality": 0.25
+            },
+            "contributions": {
+              "coverage": 0.2,
+              "exact_phrase": 0.0,
+              "proximity": 0.07,
+              "ordered": 0.016,
+              "title_overlap": 0.023333,
+              "structure_table_row": 0.06,
+              "section_overlap": 0.025,
+              "fts_component": 0.015,
+              "strategy_quality": 0.005
+            },
+            "auxiliary": {
+              "compactness": 1.0,
+              "length_factor": 1.0,
+              "fts_norm": 0.75,
+              "matched_terms": [
+                "2026",
+                "ano",
+                "letivo"
+              ]
+            }
+          },
+          "comparison": {
+            "per_signal": {
+              "coverage": {
+                "target": 0.5,
+                "competitor": 0.5,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "exact_phrase": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "proximity": {
+                "target": 0.214286,
+                "competitor": 0.5,
+                "favours": "competitor",
+                "weighted_delta": -0.04
+              },
+              "ordered": {
+                "target": 0.4,
+                "competitor": 0.2,
+                "favours": "target",
+                "weighted_delta": 0.016
+              },
+              "title_overlap": {
+                "target": 0.333333,
+                "competitor": 0.333333,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "structure_table_row": {
+                "target": 0.0,
+                "competitor": 1.0,
+                "favours": "competitor",
+                "weighted_delta": -0.06
+              },
+              "section_overlap": {
+                "target": 0.666667,
+                "competitor": 0.5,
+                "favours": "target",
+                "weighted_delta": 0.008333
+              },
+              "fts_component": {
+                "target": 0.75,
+                "competitor": 0.75,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "strategy_quality": {
+                "target": 0.25,
+                "competitor": 0.25,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              }
+            },
+            "favours_target": [
+              "ordered",
+              "section_overlap"
+            ],
+            "favours_competitor": [
+              "proximity",
+              "structure_table_row"
+            ],
+            "dominated": false,
+            "score_gap": 0.075667
+          },
+          "diagnosis": "A_SIGNALS_DISCRIMINATE_WEIGHTING_MAY_BE_WRONG"
+        }
+      ]
+    },
+    {
+      "budget_policy": "current_quota",
+      "question_id": "Q002",
+      "target": {
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 24
+      },
+      "target_rank": 2,
+      "within_top_k": true,
+      "target_structure_type": "table_row",
+      "target_decomposition": {
+        "score": 0.355185,
+        "structure_type": "table_row",
+        "signals": {
+          "coverage": 0.555556,
+          "exact_phrase": 0.0,
+          "proximity": 0.231481,
+          "ordered": 0.375,
+          "title_overlap": 0.222222,
+          "structure_table_row": 0.0,
+          "section_overlap": 0.666667,
+          "fts_component": 0.833333,
+          "strategy_quality": 0.25
+        },
+        "contributions": {
+          "coverage": 0.222222,
+          "exact_phrase": 0.0,
+          "proximity": 0.032407,
+          "ordered": 0.03,
+          "title_overlap": 0.015556,
+          "structure_table_row": 0.0,
+          "section_overlap": 0.033333,
+          "fts_component": 0.016667,
+          "strategy_quality": 0.005
+        },
+        "auxiliary": {
+          "compactness": 0.416667,
+          "length_factor": 1.0,
+          "fts_norm": 0.833333,
+          "matched_terms": [
+            "2025",
+            "anulacao",
+            "matricula",
+            "ord:1",
+            "semestre"
+          ]
+        }
+      },
+      "unjudged_competitors": 0,
+      "cross_document_competitors": 0,
+      "common_signals_favouring_target": [
+        "section_overlap"
+      ],
+      "single_signal_inversion_possible": true,
+      "diagnosis": "A_SIGNALS_DISCRIMINATE_WEIGHTING_MAY_BE_WRONG",
+      "diagnosis_note": "every competitor is beaten by the target on some signal, and at least one signal beats them all at once, so a single reweighting demonstrably inverts the whole set",
+      "competitors": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 89,
+          "rank": 1,
+          "grade": 0,
+          "judged": true,
+          "same_document_as_target": true,
+          "structure_type": "table_row",
+          "decomposition": {
+            "score": 0.430926,
+            "structure_type": "table_row",
+            "signals": {
+              "coverage": 0.555556,
+              "exact_phrase": 0.0,
+              "proximity": 0.462963,
+              "ordered": 0.375,
+              "title_overlap": 0.222222,
+              "structure_table_row": 1.0,
+              "section_overlap": 0.333333,
+              "fts_component": 0.833333,
+              "strategy_quality": 0.25
+            },
+            "contributions": {
+              "coverage": 0.222222,
+              "exact_phrase": 0.0,
+              "proximity": 0.064815,
+              "ordered": 0.03,
+              "title_overlap": 0.015556,
+              "structure_table_row": 0.06,
+              "section_overlap": 0.016667,
+              "fts_component": 0.016667,
+              "strategy_quality": 0.005
+            },
+            "auxiliary": {
+              "compactness": 0.833333,
+              "length_factor": 1.0,
+              "fts_norm": 0.833333,
+              "matched_terms": [
+                "2026",
+                "ano",
+                "letivo",
+                "ord:1",
+                "semestre"
+              ]
+            }
+          },
+          "comparison": {
+            "per_signal": {
+              "coverage": {
+                "target": 0.555556,
+                "competitor": 0.555556,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "exact_phrase": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "proximity": {
+                "target": 0.231481,
+                "competitor": 0.462963,
+                "favours": "competitor",
+                "weighted_delta": -0.032407
+              },
+              "ordered": {
+                "target": 0.375,
+                "competitor": 0.375,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "title_overlap": {
+                "target": 0.222222,
+                "competitor": 0.222222,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "structure_table_row": {
+                "target": 0.0,
+                "competitor": 1.0,
+                "favours": "competitor",
+                "weighted_delta": -0.06
+              },
+              "section_overlap": {
+                "target": 0.666667,
+                "competitor": 0.333333,
+                "favours": "target",
+                "weighted_delta": 0.016667
+              },
+              "fts_component": {
+                "target": 0.833333,
+                "competitor": 0.833333,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "strategy_quality": {
+                "target": 0.25,
+                "competitor": 0.25,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              }
+            },
+            "favours_target": [
+              "section_overlap"
+            ],
+            "favours_competitor": [
+              "proximity",
+              "structure_table_row"
+            ],
+            "dominated": false,
+            "score_gap": 0.075741
+          },
+          "diagnosis": "A_SIGNALS_DISCRIMINATE_WEIGHTING_MAY_BE_WRONG"
+        }
+      ]
+    },
+    {
+      "budget_policy": "current_quota",
+      "question_id": "Q003",
+      "target": {
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 44
+      },
+      "target_rank": null,
+      "within_top_k": false,
+      "diagnosis": "C_INDETERMINATE",
+      "diagnosis_note": "the target never reached the ranking; no signal comparison is observable",
+      "competitors": []
+    },
+    {
+      "budget_policy": "current_quota",
+      "question_id": "Q006",
+      "target": {
+        "corpus_item_id": "P1-DOC-004",
+        "chunk_index": 184
+      },
+      "target_rank": null,
+      "within_top_k": false,
+      "diagnosis": "C_INDETERMINATE",
+      "diagnosis_note": "the target never reached the ranking; no signal comparison is observable",
+      "competitors": []
+    },
+    {
+      "budget_policy": "current_quota",
+      "question_id": "Q007",
+      "target": {
+        "corpus_item_id": "P1-DOC-007",
+        "chunk_index": 160
+      },
+      "target_rank": null,
+      "within_top_k": false,
+      "diagnosis": "C_INDETERMINATE",
+      "diagnosis_note": "the target never reached the ranking; no signal comparison is observable",
+      "competitors": []
+    },
+    {
+      "budget_policy": "current_quota",
+      "question_id": "Q008",
+      "target": {
+        "corpus_item_id": "P1-DOC-007",
+        "chunk_index": 161
+      },
+      "target_rank": null,
+      "within_top_k": false,
+      "diagnosis": "C_INDETERMINATE",
+      "diagnosis_note": "the target never reached the ranking; no signal comparison is observable",
+      "competitors": []
+    },
+    {
+      "budget_policy": "current_quota",
+      "question_id": "Q009",
+      "target": {
+        "corpus_item_id": "P1-DOC-007",
+        "chunk_index": 251
+      },
+      "target_rank": null,
+      "within_top_k": false,
+      "diagnosis": "C_INDETERMINATE",
+      "diagnosis_note": "the target never reached the ranking; no signal comparison is observable",
+      "competitors": []
+    },
+    {
+      "budget_policy": "current_quota",
+      "question_id": "Q011",
+      "target": {
+        "corpus_item_id": "P1-DOC-003",
+        "chunk_index": 72
+      },
+      "target_rank": 4,
+      "within_top_k": true,
+      "target_structure_type": "paragraph",
+      "target_decomposition": {
+        "score": 0.309999,
+        "structure_type": "paragraph",
+        "signals": {
+          "coverage": 0.625,
+          "exact_phrase": 0.0,
+          "proximity": 0.058962,
+          "ordered": 0.285714,
+          "title_overlap": 0.25,
+          "structure_table_row": 0.0,
+          "section_overlap": 0.0,
+          "fts_component": 0.319339,
+          "strategy_quality": 0.25
+        },
+        "contributions": {
+          "coverage": 0.25,
+          "exact_phrase": 0.0,
+          "proximity": 0.008255,
+          "ordered": 0.022857,
+          "title_overlap": 0.0175,
+          "structure_table_row": 0.0,
+          "section_overlap": 0.0,
+          "fts_component": 0.006387,
+          "strategy_quality": 0.005
+        },
+        "auxiliary": {
+          "compactness": 0.09434,
+          "length_factor": 0.338123,
+          "fts_norm": 0.944444,
+          "matched_terms": [
+            "2023",
+            "2024",
+            "aulas",
+            "ord:2",
+            "semestre"
+          ]
+        }
+      },
+      "unjudged_competitors": 0,
+      "cross_document_competitors": 0,
+      "common_signals_favouring_target": [],
+      "single_signal_inversion_possible": false,
+      "diagnosis": "B_SIGNALS_INSUFFICIENT",
+      "diagnosis_note": "at least one competitor dominates the target on every signal; no non-negative reweighting inverts that pair",
+      "competitors": [
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 21,
+          "rank": 2,
+          "grade": 0,
+          "judged": true,
+          "same_document_as_target": true,
+          "structure_type": "fallback_fragment",
+          "decomposition": {
+            "score": 0.329539,
+            "structure_type": "fallback_fragment",
+            "signals": {
+              "coverage": 0.625,
+              "exact_phrase": 0.0,
+              "proximity": 0.14881,
+              "ordered": 0.285714,
+              "title_overlap": 0.25,
+              "structure_table_row": 0.0,
+              "section_overlap": 0.125,
+              "fts_component": 0.354925,
+              "strategy_quality": 0.25
+            },
+            "contributions": {
+              "coverage": 0.25,
+              "exact_phrase": 0.0,
+              "proximity": 0.020833,
+              "ordered": 0.022857,
+              "title_overlap": 0.0175,
+              "structure_table_row": 0.0,
+              "section_overlap": 0.00625,
+              "fts_component": 0.007098,
+              "strategy_quality": 0.005
+            },
+            "auxiliary": {
+              "compactness": 0.238095,
+              "length_factor": 0.414079,
+              "fts_norm": 0.857143,
+              "matched_terms": [
+                "2023",
+                "aulas",
+                "dia",
+                "ord:1",
+                "semestre"
+              ]
+            }
+          },
+          "comparison": {
+            "per_signal": {
+              "coverage": {
+                "target": 0.625,
+                "competitor": 0.625,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "exact_phrase": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "proximity": {
+                "target": 0.058962,
+                "competitor": 0.14881,
+                "favours": "competitor",
+                "weighted_delta": -0.012579
+              },
+              "ordered": {
+                "target": 0.285714,
+                "competitor": 0.285714,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "title_overlap": {
+                "target": 0.25,
+                "competitor": 0.25,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "structure_table_row": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "section_overlap": {
+                "target": 0.0,
+                "competitor": 0.125,
+                "favours": "competitor",
+                "weighted_delta": -0.00625
+              },
+              "fts_component": {
+                "target": 0.319339,
+                "competitor": 0.354925,
+                "favours": "competitor",
+                "weighted_delta": -0.000712
+              },
+              "strategy_quality": {
+                "target": 0.25,
+                "competitor": 0.25,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              }
+            },
+            "favours_target": [],
+            "favours_competitor": [
+              "proximity",
+              "section_overlap",
+              "fts_component"
+            ],
+            "dominated": true,
+            "score_gap": 0.01954
+          },
+          "diagnosis": "B_SIGNALS_INSUFFICIENT"
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 38,
+          "rank": 3,
+          "grade": 0,
+          "judged": true,
+          "same_document_as_target": true,
+          "structure_type": "paragraph",
+          "decomposition": {
+            "score": 0.320886,
+            "structure_type": "paragraph",
+            "signals": {
+              "coverage": 0.625,
+              "exact_phrase": 0.0,
+              "proximity": 0.084459,
+              "ordered": 0.142857,
+              "title_overlap": 0.25,
+              "structure_table_row": 0.0,
+              "section_overlap": 0.375,
+              "fts_component": 0.319149,
+              "strategy_quality": 0.25
+            },
+            "contributions": {
+              "coverage": 0.25,
+              "exact_phrase": 0.0,
+              "proximity": 0.011824,
+              "ordered": 0.011429,
+              "title_overlap": 0.0175,
+              "structure_table_row": 0.0,
+              "section_overlap": 0.01875,
+              "fts_component": 0.006383,
+              "strategy_quality": 0.005
+            },
+            "auxiliary": {
+              "compactness": 0.135135,
+              "length_factor": 0.35461,
+              "fts_norm": 0.9,
+              "matched_terms": [
+                "2024",
+                "aulas",
+                "dia",
+                "ord:2",
+                "semestre"
+              ]
+            }
+          },
+          "comparison": {
+            "per_signal": {
+              "coverage": {
+                "target": 0.625,
+                "competitor": 0.625,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "exact_phrase": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "proximity": {
+                "target": 0.058962,
+                "competitor": 0.084459,
+                "favours": "competitor",
+                "weighted_delta": -0.00357
+              },
+              "ordered": {
+                "target": 0.285714,
+                "competitor": 0.142857,
+                "favours": "target",
+                "weighted_delta": 0.011429
+              },
+              "title_overlap": {
+                "target": 0.25,
+                "competitor": 0.25,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "structure_table_row": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "section_overlap": {
+                "target": 0.0,
+                "competitor": 0.375,
+                "favours": "competitor",
+                "weighted_delta": -0.01875
+              },
+              "fts_component": {
+                "target": 0.319339,
+                "competitor": 0.319149,
+                "favours": "target",
+                "weighted_delta": 4e-06
+              },
+              "strategy_quality": {
+                "target": 0.25,
+                "competitor": 0.25,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              }
+            },
+            "favours_target": [
+              "ordered",
+              "fts_component"
+            ],
+            "favours_competitor": [
+              "proximity",
+              "section_overlap"
+            ],
+            "dominated": false,
+            "score_gap": 0.010887
+          },
+          "diagnosis": "A_SIGNALS_DISCRIMINATE_WEIGHTING_MAY_BE_WRONG"
+        }
+      ]
+    },
+    {
+      "budget_policy": "current_quota",
+      "question_id": "Q012",
+      "target": {
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 78
+      },
+      "target_rank": null,
+      "within_top_k": false,
+      "diagnosis": "C_INDETERMINATE",
+      "diagnosis_note": "the target never reached the ranking; no signal comparison is observable",
+      "competitors": []
+    },
+    {
+      "budget_policy": "current_quota",
+      "question_id": "Q014",
+      "target": {
+        "corpus_item_id": "P1-DOC-003",
+        "chunk_index": 25
+      },
+      "target_rank": null,
+      "within_top_k": false,
+      "diagnosis": "C_INDETERMINATE",
+      "diagnosis_note": "the target never reached the ranking; no signal comparison is observable",
+      "competitors": []
+    },
+    {
+      "budget_policy": "redistribute_unused",
+      "question_id": "Q001",
+      "target": {
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 16
+      },
+      "target_rank": null,
+      "within_top_k": false,
+      "diagnosis": "C_INDETERMINATE",
+      "diagnosis_note": "the target never reached the ranking; no signal comparison is observable",
+      "competitors": []
+    },
+    {
+      "budget_policy": "redistribute_unused",
+      "question_id": "Q001",
+      "target": {
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 14
+      },
+      "target_rank": 7,
+      "within_top_k": false,
+      "target_structure_type": "table_row",
+      "target_decomposition": {
+        "score": 0.338667,
+        "structure_type": "table_row",
+        "signals": {
+          "coverage": 0.5,
+          "exact_phrase": 0.0,
+          "proximity": 0.214286,
+          "ordered": 0.4,
+          "title_overlap": 0.333333,
+          "structure_table_row": 0.0,
+          "section_overlap": 0.666667,
+          "fts_component": 0.75,
+          "strategy_quality": 0.25
+        },
+        "contributions": {
+          "coverage": 0.2,
+          "exact_phrase": 0.0,
+          "proximity": 0.03,
+          "ordered": 0.032,
+          "title_overlap": 0.023333,
+          "structure_table_row": 0.0,
+          "section_overlap": 0.033333,
+          "fts_component": 0.015,
+          "strategy_quality": 0.005
+        },
+        "auxiliary": {
+          "compactness": 0.428571,
+          "length_factor": 1.0,
+          "fts_norm": 0.75,
+          "matched_terms": [
+            "2025",
+            "ano",
+            "letivo"
+          ]
+        }
+      },
+      "unjudged_competitors": 1,
+      "cross_document_competitors": 0,
+      "common_signals_favouring_target": [],
+      "single_signal_inversion_possible": false,
+      "diagnosis": "A_SIGNALS_DISCRIMINATE_WEIGHTING_MAY_BE_WRONG",
+      "diagnosis_note": "every competitor is beaten by the target on some signal, but no single signal beats them all; pairwise invertibility does not establish that one weighting inverts the set",
+      "competitors": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 12,
+          "rank": 1,
+          "grade": 1,
+          "judged": true,
+          "same_document_as_target": true,
+          "structure_type": "heading",
+          "decomposition": {
+            "score": 0.483,
+            "structure_type": "heading",
+            "signals": {
+              "coverage": 0.666667,
+              "exact_phrase": 0.0,
+              "proximity": 0.666667,
+              "ordered": 0.6,
+              "title_overlap": 0.333333,
+              "structure_table_row": 0.0,
+              "section_overlap": 0.666667,
+              "fts_component": 0.666667,
+              "strategy_quality": 0.25
+            },
+            "contributions": {
+              "coverage": 0.266667,
+              "exact_phrase": 0.0,
+              "proximity": 0.093333,
+              "ordered": 0.048,
+              "title_overlap": 0.023333,
+              "structure_table_row": 0.0,
+              "section_overlap": 0.033333,
+              "fts_component": 0.013333,
+              "strategy_quality": 0.005
+            },
+            "auxiliary": {
+              "compactness": 1.0,
+              "length_factor": 1.0,
+              "fts_norm": 0.666667,
+              "matched_terms": [
+                "2025",
+                "2026",
+                "ano",
+                "letivo"
+              ]
+            }
+          },
+          "comparison": {
+            "per_signal": {
+              "coverage": {
+                "target": 0.5,
+                "competitor": 0.666667,
+                "favours": "competitor",
+                "weighted_delta": -0.066667
+              },
+              "exact_phrase": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "proximity": {
+                "target": 0.214286,
+                "competitor": 0.666667,
+                "favours": "competitor",
+                "weighted_delta": -0.063333
+              },
+              "ordered": {
+                "target": 0.4,
+                "competitor": 0.6,
+                "favours": "competitor",
+                "weighted_delta": -0.016
+              },
+              "title_overlap": {
+                "target": 0.333333,
+                "competitor": 0.333333,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "structure_table_row": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "section_overlap": {
+                "target": 0.666667,
+                "competitor": 0.666667,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "fts_component": {
+                "target": 0.75,
+                "competitor": 0.666667,
+                "favours": "target",
+                "weighted_delta": 0.001667
+              },
+              "strategy_quality": {
+                "target": 0.25,
+                "competitor": 0.25,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              }
+            },
+            "favours_target": [
+              "fts_component"
+            ],
+            "favours_competitor": [
+              "coverage",
+              "proximity",
+              "ordered"
+            ],
+            "dominated": false,
+            "score_gap": 0.144333
+          },
+          "diagnosis": "A_SIGNALS_DISCRIMINATE_WEIGHTING_MAY_BE_WRONG"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 56,
+          "rank": 2,
+          "grade": 0,
+          "judged": true,
+          "same_document_as_target": true,
+          "structure_type": "heading",
+          "decomposition": {
+            "score": 0.483,
+            "structure_type": "heading",
+            "signals": {
+              "coverage": 0.666667,
+              "exact_phrase": 0.0,
+              "proximity": 0.666667,
+              "ordered": 0.6,
+              "title_overlap": 0.333333,
+              "structure_table_row": 0.0,
+              "section_overlap": 0.666667,
+              "fts_component": 0.666667,
+              "strategy_quality": 0.25
+            },
+            "contributions": {
+              "coverage": 0.266667,
+              "exact_phrase": 0.0,
+              "proximity": 0.093333,
+              "ordered": 0.048,
+              "title_overlap": 0.023333,
+              "structure_table_row": 0.0,
+              "section_overlap": 0.033333,
+              "fts_component": 0.013333,
+              "strategy_quality": 0.005
+            },
+            "auxiliary": {
+              "compactness": 1.0,
+              "length_factor": 1.0,
+              "fts_norm": 0.666667,
+              "matched_terms": [
+                "2025",
+                "2026",
+                "ano",
+                "letivo"
+              ]
+            }
+          },
+          "comparison": {
+            "per_signal": {
+              "coverage": {
+                "target": 0.5,
+                "competitor": 0.666667,
+                "favours": "competitor",
+                "weighted_delta": -0.066667
+              },
+              "exact_phrase": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "proximity": {
+                "target": 0.214286,
+                "competitor": 0.666667,
+                "favours": "competitor",
+                "weighted_delta": -0.063333
+              },
+              "ordered": {
+                "target": 0.4,
+                "competitor": 0.6,
+                "favours": "competitor",
+                "weighted_delta": -0.016
+              },
+              "title_overlap": {
+                "target": 0.333333,
+                "competitor": 0.333333,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "structure_table_row": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "section_overlap": {
+                "target": 0.666667,
+                "competitor": 0.666667,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "fts_component": {
+                "target": 0.75,
+                "competitor": 0.666667,
+                "favours": "target",
+                "weighted_delta": 0.001667
+              },
+              "strategy_quality": {
+                "target": 0.25,
+                "competitor": 0.25,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              }
+            },
+            "favours_target": [
+              "fts_component"
+            ],
+            "favours_competitor": [
+              "coverage",
+              "proximity",
+              "ordered"
+            ],
+            "dominated": false,
+            "score_gap": 0.144333
+          },
+          "diagnosis": "A_SIGNALS_DISCRIMINATE_WEIGHTING_MAY_BE_WRONG"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 10,
+          "rank": 3,
+          "grade": 0,
+          "judged": true,
+          "same_document_as_target": true,
+          "structure_type": "heading",
+          "decomposition": {
+            "score": 0.464333,
+            "structure_type": "heading",
+            "signals": {
+              "coverage": 0.666667,
+              "exact_phrase": 0.0,
+              "proximity": 0.533333,
+              "ordered": 0.6,
+              "title_overlap": 0.333333,
+              "structure_table_row": 0.0,
+              "section_overlap": 0.666667,
+              "fts_component": 0.666667,
+              "strategy_quality": 0.25
+            },
+            "contributions": {
+              "coverage": 0.266667,
+              "exact_phrase": 0.0,
+              "proximity": 0.074667,
+              "ordered": 0.048,
+              "title_overlap": 0.023333,
+              "structure_table_row": 0.0,
+              "section_overlap": 0.033333,
+              "fts_component": 0.013333,
+              "strategy_quality": 0.005
+            },
+            "auxiliary": {
+              "compactness": 0.8,
+              "length_factor": 1.0,
+              "fts_norm": 0.666667,
+              "matched_terms": [
+                "2025",
+                "2026",
+                "ano",
+                "letivo"
+              ]
+            }
+          },
+          "comparison": {
+            "per_signal": {
+              "coverage": {
+                "target": 0.5,
+                "competitor": 0.666667,
+                "favours": "competitor",
+                "weighted_delta": -0.066667
+              },
+              "exact_phrase": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "proximity": {
+                "target": 0.214286,
+                "competitor": 0.533333,
+                "favours": "competitor",
+                "weighted_delta": -0.044667
+              },
+              "ordered": {
+                "target": 0.4,
+                "competitor": 0.6,
+                "favours": "competitor",
+                "weighted_delta": -0.016
+              },
+              "title_overlap": {
+                "target": 0.333333,
+                "competitor": 0.333333,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "structure_table_row": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "section_overlap": {
+                "target": 0.666667,
+                "competitor": 0.666667,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "fts_component": {
+                "target": 0.75,
+                "competitor": 0.666667,
+                "favours": "target",
+                "weighted_delta": 0.001667
+              },
+              "strategy_quality": {
+                "target": 0.25,
+                "competitor": 0.25,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              }
+            },
+            "favours_target": [
+              "fts_component"
+            ],
+            "favours_competitor": [
+              "coverage",
+              "proximity",
+              "ordered"
+            ],
+            "dominated": false,
+            "score_gap": 0.125667
+          },
+          "diagnosis": "A_SIGNALS_DISCRIMINATE_WEIGHTING_MAY_BE_WRONG"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 89,
+          "rank": 4,
+          "grade": 0,
+          "judged": true,
+          "same_document_as_target": true,
+          "structure_type": "table_row",
+          "decomposition": {
+            "score": 0.414333,
+            "structure_type": "table_row",
+            "signals": {
+              "coverage": 0.5,
+              "exact_phrase": 0.0,
+              "proximity": 0.5,
+              "ordered": 0.2,
+              "title_overlap": 0.333333,
+              "structure_table_row": 1.0,
+              "section_overlap": 0.5,
+              "fts_component": 0.75,
+              "strategy_quality": 0.25
+            },
+            "contributions": {
+              "coverage": 0.2,
+              "exact_phrase": 0.0,
+              "proximity": 0.07,
+              "ordered": 0.016,
+              "title_overlap": 0.023333,
+              "structure_table_row": 0.06,
+              "section_overlap": 0.025,
+              "fts_component": 0.015,
+              "strategy_quality": 0.005
+            },
+            "auxiliary": {
+              "compactness": 1.0,
+              "length_factor": 1.0,
+              "fts_norm": 0.75,
+              "matched_terms": [
+                "2026",
+                "ano",
+                "letivo"
+              ]
+            }
+          },
+          "comparison": {
+            "per_signal": {
+              "coverage": {
+                "target": 0.5,
+                "competitor": 0.5,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "exact_phrase": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "proximity": {
+                "target": 0.214286,
+                "competitor": 0.5,
+                "favours": "competitor",
+                "weighted_delta": -0.04
+              },
+              "ordered": {
+                "target": 0.4,
+                "competitor": 0.2,
+                "favours": "target",
+                "weighted_delta": 0.016
+              },
+              "title_overlap": {
+                "target": 0.333333,
+                "competitor": 0.333333,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "structure_table_row": {
+                "target": 0.0,
+                "competitor": 1.0,
+                "favours": "competitor",
+                "weighted_delta": -0.06
+              },
+              "section_overlap": {
+                "target": 0.666667,
+                "competitor": 0.5,
+                "favours": "target",
+                "weighted_delta": 0.008333
+              },
+              "fts_component": {
+                "target": 0.75,
+                "competitor": 0.75,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "strategy_quality": {
+                "target": 0.25,
+                "competitor": 0.25,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              }
+            },
+            "favours_target": [
+              "ordered",
+              "section_overlap"
+            ],
+            "favours_competitor": [
+              "proximity",
+              "structure_table_row"
+            ],
+            "dominated": false,
+            "score_gap": 0.075667
+          },
+          "diagnosis": "A_SIGNALS_DISCRIMINATE_WEIGHTING_MAY_BE_WRONG"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 86,
+          "rank": 5,
+          "grade": 0,
+          "judged": true,
+          "same_document_as_target": true,
+          "structure_type": "heading",
+          "decomposition": {
+            "score": 0.352667,
+            "structure_type": "heading",
+            "signals": {
+              "coverage": 0.5,
+              "exact_phrase": 0.0,
+              "proximity": 0.5,
+              "ordered": 0.2,
+              "title_overlap": 0.333333,
+              "structure_table_row": 0.0,
+              "section_overlap": 0.5,
+              "fts_component": 0.666667,
+              "strategy_quality": 0.25
+            },
+            "contributions": {
+              "coverage": 0.2,
+              "exact_phrase": 0.0,
+              "proximity": 0.07,
+              "ordered": 0.016,
+              "title_overlap": 0.023333,
+              "structure_table_row": 0.0,
+              "section_overlap": 0.025,
+              "fts_component": 0.013333,
+              "strategy_quality": 0.005
+            },
+            "auxiliary": {
+              "compactness": 1.0,
+              "length_factor": 1.0,
+              "fts_norm": 0.666667,
+              "matched_terms": [
+                "2026",
+                "ano",
+                "letivo"
+              ]
+            }
+          },
+          "comparison": {
+            "per_signal": {
+              "coverage": {
+                "target": 0.5,
+                "competitor": 0.5,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "exact_phrase": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "proximity": {
+                "target": 0.214286,
+                "competitor": 0.5,
+                "favours": "competitor",
+                "weighted_delta": -0.04
+              },
+              "ordered": {
+                "target": 0.4,
+                "competitor": 0.2,
+                "favours": "target",
+                "weighted_delta": 0.016
+              },
+              "title_overlap": {
+                "target": 0.333333,
+                "competitor": 0.333333,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "structure_table_row": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "section_overlap": {
+                "target": 0.666667,
+                "competitor": 0.5,
+                "favours": "target",
+                "weighted_delta": 0.008333
+              },
+              "fts_component": {
+                "target": 0.75,
+                "competitor": 0.666667,
+                "favours": "target",
+                "weighted_delta": 0.001667
+              },
+              "strategy_quality": {
+                "target": 0.25,
+                "competitor": 0.25,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              }
+            },
+            "favours_target": [
+              "ordered",
+              "section_overlap",
+              "fts_component"
+            ],
+            "favours_competitor": [
+              "proximity"
+            ],
+            "dominated": false,
+            "score_gap": 0.014
+          },
+          "diagnosis": "A_SIGNALS_DISCRIMINATE_WEIGHTING_MAY_BE_WRONG"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 4,
+          "rank": 6,
+          "grade": 0,
+          "judged": false,
+          "same_document_as_target": true,
+          "structure_type": "list_block",
+          "decomposition": {
+            "score": 0.343667,
+            "structure_type": "list_block",
+            "signals": {
+              "coverage": 0.5,
+              "exact_phrase": 0.0,
+              "proximity": 0.5,
+              "ordered": 0.4,
+              "title_overlap": 0.333333,
+              "structure_table_row": 0.0,
+              "section_overlap": 0.0,
+              "fts_component": 0.666667,
+              "strategy_quality": 0.25
+            },
+            "contributions": {
+              "coverage": 0.2,
+              "exact_phrase": 0.0,
+              "proximity": 0.07,
+              "ordered": 0.032,
+              "title_overlap": 0.023333,
+              "structure_table_row": 0.0,
+              "section_overlap": 0.0,
+              "fts_component": 0.013333,
+              "strategy_quality": 0.005
+            },
+            "auxiliary": {
+              "compactness": 1.0,
+              "length_factor": 1.0,
+              "fts_norm": 0.666667,
+              "matched_terms": [
+                "2025",
+                "ano",
+                "letivo"
+              ]
+            }
+          },
+          "comparison": {
+            "per_signal": {
+              "coverage": {
+                "target": 0.5,
+                "competitor": 0.5,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "exact_phrase": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "proximity": {
+                "target": 0.214286,
+                "competitor": 0.5,
+                "favours": "competitor",
+                "weighted_delta": -0.04
+              },
+              "ordered": {
+                "target": 0.4,
+                "competitor": 0.4,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "title_overlap": {
+                "target": 0.333333,
+                "competitor": 0.333333,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "structure_table_row": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "section_overlap": {
+                "target": 0.666667,
+                "competitor": 0.0,
+                "favours": "target",
+                "weighted_delta": 0.033333
+              },
+              "fts_component": {
+                "target": 0.75,
+                "competitor": 0.666667,
+                "favours": "target",
+                "weighted_delta": 0.001667
+              },
+              "strategy_quality": {
+                "target": 0.25,
+                "competitor": 0.25,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              }
+            },
+            "favours_target": [
+              "section_overlap",
+              "fts_component"
+            ],
+            "favours_competitor": [
+              "proximity"
+            ],
+            "dominated": false,
+            "score_gap": 0.005
+          },
+          "diagnosis": "A_SIGNALS_DISCRIMINATE_WEIGHTING_MAY_BE_WRONG"
+        }
+      ]
+    },
+    {
+      "budget_policy": "redistribute_unused",
+      "question_id": "Q002",
+      "target": {
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 24
+      },
+      "target_rank": 4,
+      "within_top_k": true,
+      "target_structure_type": "table_row",
+      "target_decomposition": {
+        "score": 0.355185,
+        "structure_type": "table_row",
+        "signals": {
+          "coverage": 0.555556,
+          "exact_phrase": 0.0,
+          "proximity": 0.231481,
+          "ordered": 0.375,
+          "title_overlap": 0.222222,
+          "structure_table_row": 0.0,
+          "section_overlap": 0.666667,
+          "fts_component": 0.833333,
+          "strategy_quality": 0.25
+        },
+        "contributions": {
+          "coverage": 0.222222,
+          "exact_phrase": 0.0,
+          "proximity": 0.032407,
+          "ordered": 0.03,
+          "title_overlap": 0.015556,
+          "structure_table_row": 0.0,
+          "section_overlap": 0.033333,
+          "fts_component": 0.016667,
+          "strategy_quality": 0.005
+        },
+        "auxiliary": {
+          "compactness": 0.416667,
+          "length_factor": 1.0,
+          "fts_norm": 0.833333,
+          "matched_terms": [
+            "2025",
+            "anulacao",
+            "matricula",
+            "ord:1",
+            "semestre"
+          ]
+        }
+      },
+      "unjudged_competitors": 0,
+      "cross_document_competitors": 0,
+      "common_signals_favouring_target": [],
+      "single_signal_inversion_possible": false,
+      "diagnosis": "A_SIGNALS_DISCRIMINATE_WEIGHTING_MAY_BE_WRONG",
+      "diagnosis_note": "every competitor is beaten by the target on some signal, but no single signal beats them all; pairwise invertibility does not establish that one weighting inverts the set",
+      "competitors": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 12,
+          "rank": 1,
+          "grade": 1,
+          "judged": true,
+          "same_document_as_target": true,
+          "structure_type": "heading",
+          "decomposition": {
+            "score": 0.465556,
+            "structure_type": "heading",
+            "signals": {
+              "coverage": 0.666667,
+              "exact_phrase": 0.0,
+              "proximity": 0.571429,
+              "ordered": 0.625,
+              "title_overlap": 0.222222,
+              "structure_table_row": 0.0,
+              "section_overlap": 0.666667,
+              "fts_component": 0.75,
+              "strategy_quality": 0.25
+            },
+            "contributions": {
+              "coverage": 0.266667,
+              "exact_phrase": 0.0,
+              "proximity": 0.08,
+              "ordered": 0.05,
+              "title_overlap": 0.015556,
+              "structure_table_row": 0.0,
+              "section_overlap": 0.033333,
+              "fts_component": 0.015,
+              "strategy_quality": 0.005
+            },
+            "auxiliary": {
+              "compactness": 0.857143,
+              "length_factor": 1.0,
+              "fts_norm": 0.75,
+              "matched_terms": [
+                "2025",
+                "2026",
+                "ano",
+                "letivo",
+                "ord:1",
+                "semestre"
+              ]
+            }
+          },
+          "comparison": {
+            "per_signal": {
+              "coverage": {
+                "target": 0.555556,
+                "competitor": 0.666667,
+                "favours": "competitor",
+                "weighted_delta": -0.044444
+              },
+              "exact_phrase": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "proximity": {
+                "target": 0.231481,
+                "competitor": 0.571429,
+                "favours": "competitor",
+                "weighted_delta": -0.047593
+              },
+              "ordered": {
+                "target": 0.375,
+                "competitor": 0.625,
+                "favours": "competitor",
+                "weighted_delta": -0.02
+              },
+              "title_overlap": {
+                "target": 0.222222,
+                "competitor": 0.222222,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "structure_table_row": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "section_overlap": {
+                "target": 0.666667,
+                "competitor": 0.666667,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "fts_component": {
+                "target": 0.833333,
+                "competitor": 0.75,
+                "favours": "target",
+                "weighted_delta": 0.001667
+              },
+              "strategy_quality": {
+                "target": 0.25,
+                "competitor": 0.25,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              }
+            },
+            "favours_target": [
+              "fts_component"
+            ],
+            "favours_competitor": [
+              "coverage",
+              "proximity",
+              "ordered"
+            ],
+            "dominated": false,
+            "score_gap": 0.11037
+          },
+          "diagnosis": "A_SIGNALS_DISCRIMINATE_WEIGHTING_MAY_BE_WRONG"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 89,
+          "rank": 2,
+          "grade": 0,
+          "judged": true,
+          "same_document_as_target": true,
+          "structure_type": "table_row",
+          "decomposition": {
+            "score": 0.430926,
+            "structure_type": "table_row",
+            "signals": {
+              "coverage": 0.555556,
+              "exact_phrase": 0.0,
+              "proximity": 0.462963,
+              "ordered": 0.375,
+              "title_overlap": 0.222222,
+              "structure_table_row": 1.0,
+              "section_overlap": 0.333333,
+              "fts_component": 0.833333,
+              "strategy_quality": 0.25
+            },
+            "contributions": {
+              "coverage": 0.222222,
+              "exact_phrase": 0.0,
+              "proximity": 0.064815,
+              "ordered": 0.03,
+              "title_overlap": 0.015556,
+              "structure_table_row": 0.06,
+              "section_overlap": 0.016667,
+              "fts_component": 0.016667,
+              "strategy_quality": 0.005
+            },
+            "auxiliary": {
+              "compactness": 0.833333,
+              "length_factor": 1.0,
+              "fts_norm": 0.833333,
+              "matched_terms": [
+                "2026",
+                "ano",
+                "letivo",
+                "ord:1",
+                "semestre"
+              ]
+            }
+          },
+          "comparison": {
+            "per_signal": {
+              "coverage": {
+                "target": 0.555556,
+                "competitor": 0.555556,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "exact_phrase": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "proximity": {
+                "target": 0.231481,
+                "competitor": 0.462963,
+                "favours": "competitor",
+                "weighted_delta": -0.032407
+              },
+              "ordered": {
+                "target": 0.375,
+                "competitor": 0.375,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "title_overlap": {
+                "target": 0.222222,
+                "competitor": 0.222222,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "structure_table_row": {
+                "target": 0.0,
+                "competitor": 1.0,
+                "favours": "competitor",
+                "weighted_delta": -0.06
+              },
+              "section_overlap": {
+                "target": 0.666667,
+                "competitor": 0.333333,
+                "favours": "target",
+                "weighted_delta": 0.016667
+              },
+              "fts_component": {
+                "target": 0.833333,
+                "competitor": 0.833333,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "strategy_quality": {
+                "target": 0.25,
+                "competitor": 0.25,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              }
+            },
+            "favours_target": [
+              "section_overlap"
+            ],
+            "favours_competitor": [
+              "proximity",
+              "structure_table_row"
+            ],
+            "dominated": false,
+            "score_gap": 0.075741
+          },
+          "diagnosis": "A_SIGNALS_DISCRIMINATE_WEIGHTING_MAY_BE_WRONG"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 56,
+          "rank": 3,
+          "grade": 0,
+          "judged": true,
+          "same_document_as_target": true,
+          "structure_type": "heading",
+          "decomposition": {
+            "score": 0.39037,
+            "structure_type": "heading",
+            "signals": {
+              "coverage": 0.555556,
+              "exact_phrase": 0.0,
+              "proximity": 0.462963,
+              "ordered": 0.5,
+              "title_overlap": 0.222222,
+              "structure_table_row": 0.0,
+              "section_overlap": 0.555556,
+              "fts_component": 0.75,
+              "strategy_quality": 0.25
+            },
+            "contributions": {
+              "coverage": 0.222222,
+              "exact_phrase": 0.0,
+              "proximity": 0.064815,
+              "ordered": 0.04,
+              "title_overlap": 0.015556,
+              "structure_table_row": 0.0,
+              "section_overlap": 0.027778,
+              "fts_component": 0.015,
+              "strategy_quality": 0.005
+            },
+            "auxiliary": {
+              "compactness": 0.833333,
+              "length_factor": 1.0,
+              "fts_norm": 0.75,
+              "matched_terms": [
+                "2025",
+                "2026",
+                "ano",
+                "letivo",
+                "semestre"
+              ]
+            }
+          },
+          "comparison": {
+            "per_signal": {
+              "coverage": {
+                "target": 0.555556,
+                "competitor": 0.555556,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "exact_phrase": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "proximity": {
+                "target": 0.231481,
+                "competitor": 0.462963,
+                "favours": "competitor",
+                "weighted_delta": -0.032407
+              },
+              "ordered": {
+                "target": 0.375,
+                "competitor": 0.5,
+                "favours": "competitor",
+                "weighted_delta": -0.01
+              },
+              "title_overlap": {
+                "target": 0.222222,
+                "competitor": 0.222222,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "structure_table_row": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "section_overlap": {
+                "target": 0.666667,
+                "competitor": 0.555556,
+                "favours": "target",
+                "weighted_delta": 0.005556
+              },
+              "fts_component": {
+                "target": 0.833333,
+                "competitor": 0.75,
+                "favours": "target",
+                "weighted_delta": 0.001667
+              },
+              "strategy_quality": {
+                "target": 0.25,
+                "competitor": 0.25,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              }
+            },
+            "favours_target": [
+              "section_overlap",
+              "fts_component"
+            ],
+            "favours_competitor": [
+              "proximity",
+              "ordered"
+            ],
+            "dominated": false,
+            "score_gap": 0.035185
+          },
+          "diagnosis": "A_SIGNALS_DISCRIMINATE_WEIGHTING_MAY_BE_WRONG"
+        }
+      ]
+    },
+    {
+      "budget_policy": "redistribute_unused",
+      "question_id": "Q003",
+      "target": {
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 44
+      },
+      "target_rank": null,
+      "within_top_k": false,
+      "diagnosis": "C_INDETERMINATE",
+      "diagnosis_note": "the target never reached the ranking; no signal comparison is observable",
+      "competitors": []
+    },
+    {
+      "budget_policy": "redistribute_unused",
+      "question_id": "Q004",
+      "target": {
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 19
+      },
+      "target_rank": 3,
+      "within_top_k": true,
+      "target_structure_type": "table_row",
+      "target_decomposition": {
+        "score": 0.311812,
+        "structure_type": "table_row",
+        "signals": {
+          "coverage": 0.5,
+          "exact_phrase": 0.0,
+          "proximity": 0.181818,
+          "ordered": 0.285714,
+          "title_overlap": 0.25,
+          "structure_table_row": 0.0,
+          "section_overlap": 0.5,
+          "fts_component": 0.8,
+          "strategy_quality": 0.25
+        },
+        "contributions": {
+          "coverage": 0.2,
+          "exact_phrase": 0.0,
+          "proximity": 0.025455,
+          "ordered": 0.022857,
+          "title_overlap": 0.0175,
+          "structure_table_row": 0.0,
+          "section_overlap": 0.025,
+          "fts_component": 0.016,
+          "strategy_quality": 0.005
+        },
+        "auxiliary": {
+          "compactness": 0.363636,
+          "length_factor": 1.0,
+          "fts_norm": 0.8,
+          "matched_terms": [
+            "2025",
+            "inscritos",
+            "lista",
+            "uct"
+          ]
+        }
+      },
+      "unjudged_competitors": 0,
+      "cross_document_competitors": 0,
+      "common_signals_favouring_target": [
+        "fts_component"
+      ],
+      "single_signal_inversion_possible": true,
+      "diagnosis": "A_SIGNALS_DISCRIMINATE_WEIGHTING_MAY_BE_WRONG",
+      "diagnosis_note": "every competitor is beaten by the target on some signal, and at least one signal beats them all at once, so a single reweighting demonstrably inverts the whole set",
+      "competitors": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 10,
+          "rank": 2,
+          "grade": 0,
+          "judged": true,
+          "same_document_as_target": true,
+          "structure_type": "heading",
+          "decomposition": {
+            "score": 0.351119,
+            "structure_type": "heading",
+            "signals": {
+              "coverage": 0.5,
+              "exact_phrase": 0.0,
+              "proximity": 0.4,
+              "ordered": 0.428571,
+              "title_overlap": 0.25,
+              "structure_table_row": 0.0,
+              "section_overlap": 0.5,
+              "fts_component": 0.666667,
+              "strategy_quality": 0.25
+            },
+            "contributions": {
+              "coverage": 0.2,
+              "exact_phrase": 0.0,
+              "proximity": 0.056,
+              "ordered": 0.034286,
+              "title_overlap": 0.0175,
+              "structure_table_row": 0.0,
+              "section_overlap": 0.025,
+              "fts_component": 0.013333,
+              "strategy_quality": 0.005
+            },
+            "auxiliary": {
+              "compactness": 0.8,
+              "length_factor": 1.0,
+              "fts_norm": 0.666667,
+              "matched_terms": [
+                "2025",
+                "2026",
+                "ano",
+                "letivo"
+              ]
+            }
+          },
+          "comparison": {
+            "per_signal": {
+              "coverage": {
+                "target": 0.5,
+                "competitor": 0.5,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "exact_phrase": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "proximity": {
+                "target": 0.181818,
+                "competitor": 0.4,
+                "favours": "competitor",
+                "weighted_delta": -0.030545
+              },
+              "ordered": {
+                "target": 0.285714,
+                "competitor": 0.428571,
+                "favours": "competitor",
+                "weighted_delta": -0.011429
+              },
+              "title_overlap": {
+                "target": 0.25,
+                "competitor": 0.25,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "structure_table_row": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "section_overlap": {
+                "target": 0.5,
+                "competitor": 0.5,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "fts_component": {
+                "target": 0.8,
+                "competitor": 0.666667,
+                "favours": "target",
+                "weighted_delta": 0.002667
+              },
+              "strategy_quality": {
+                "target": 0.25,
+                "competitor": 0.25,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              }
+            },
+            "favours_target": [
+              "fts_component"
+            ],
+            "favours_competitor": [
+              "proximity",
+              "ordered"
+            ],
+            "dominated": false,
+            "score_gap": 0.039307
+          },
+          "diagnosis": "A_SIGNALS_DISCRIMINATE_WEIGHTING_MAY_BE_WRONG"
+        }
+      ]
+    },
+    {
+      "budget_policy": "redistribute_unused",
+      "question_id": "Q006",
+      "target": {
+        "corpus_item_id": "P1-DOC-004",
+        "chunk_index": 184
+      },
+      "target_rank": null,
+      "within_top_k": false,
+      "diagnosis": "C_INDETERMINATE",
+      "diagnosis_note": "the target never reached the ranking; no signal comparison is observable",
+      "competitors": []
+    },
+    {
+      "budget_policy": "redistribute_unused",
+      "question_id": "Q007",
+      "target": {
+        "corpus_item_id": "P1-DOC-007",
+        "chunk_index": 160
+      },
+      "target_rank": null,
+      "within_top_k": false,
+      "diagnosis": "C_INDETERMINATE",
+      "diagnosis_note": "the target never reached the ranking; no signal comparison is observable",
+      "competitors": []
+    },
+    {
+      "budget_policy": "redistribute_unused",
+      "question_id": "Q008",
+      "target": {
+        "corpus_item_id": "P1-DOC-007",
+        "chunk_index": 161
+      },
+      "target_rank": null,
+      "within_top_k": false,
+      "diagnosis": "C_INDETERMINATE",
+      "diagnosis_note": "the target never reached the ranking; no signal comparison is observable",
+      "competitors": []
+    },
+    {
+      "budget_policy": "redistribute_unused",
+      "question_id": "Q009",
+      "target": {
+        "corpus_item_id": "P1-DOC-007",
+        "chunk_index": 251
+      },
+      "target_rank": null,
+      "within_top_k": false,
+      "diagnosis": "C_INDETERMINATE",
+      "diagnosis_note": "the target never reached the ranking; no signal comparison is observable",
+      "competitors": []
+    },
+    {
+      "budget_policy": "redistribute_unused",
+      "question_id": "Q011",
+      "target": {
+        "corpus_item_id": "P1-DOC-003",
+        "chunk_index": 37
+      },
+      "target_rank": 2,
+      "within_top_k": true,
+      "target_structure_type": "paragraph",
+      "target_decomposition": {
+        "score": 0.429453,
+        "structure_type": "paragraph",
+        "signals": {
+          "coverage": 0.75,
+          "exact_phrase": 0.0,
+          "proximity": 0.321429,
+          "ordered": 0.428571,
+          "title_overlap": 0.25,
+          "structure_table_row": 0.0,
+          "section_overlap": 0.375,
+          "fts_component": 0.44586,
+          "strategy_quality": 0.25
+        },
+        "contributions": {
+          "coverage": 0.3,
+          "exact_phrase": 0.0,
+          "proximity": 0.045,
+          "ordered": 0.034286,
+          "title_overlap": 0.0175,
+          "structure_table_row": 0.0,
+          "section_overlap": 0.01875,
+          "fts_component": 0.008917,
+          "strategy_quality": 0.005
+        },
+        "auxiliary": {
+          "compactness": 0.428571,
+          "length_factor": 0.509554,
+          "fts_norm": 0.875,
+          "matched_terms": [
+            "2023",
+            "2024",
+            "aulas",
+            "dia",
+            "ord:1",
+            "semestre"
+          ]
+        }
+      },
+      "unjudged_competitors": 0,
+      "cross_document_competitors": 1,
+      "common_signals_favouring_target": [
+        "coverage",
+        "section_overlap",
+        "title_overlap"
+      ],
+      "single_signal_inversion_possible": true,
+      "diagnosis": "A_SIGNALS_DISCRIMINATE_WEIGHTING_MAY_BE_WRONG",
+      "diagnosis_note": "every competitor is beaten by the target on some signal, and at least one signal beats them all at once, so a single reweighting demonstrably inverts the whole set",
+      "competitors": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 58,
+          "rank": 1,
+          "grade": 0,
+          "judged": true,
+          "same_document_as_target": false,
+          "structure_type": "table_row",
+          "decomposition": {
+            "score": 0.451714,
+            "structure_type": "table_row",
+            "signals": {
+              "coverage": 0.625,
+              "exact_phrase": 0.0,
+              "proximity": 0.446429,
+              "ordered": 0.571429,
+              "title_overlap": 0.0,
+              "structure_table_row": 1.0,
+              "section_overlap": 0.25,
+              "fts_component": 0.8,
+              "strategy_quality": 0.25
+            },
+            "contributions": {
+              "coverage": 0.25,
+              "exact_phrase": 0.0,
+              "proximity": 0.0625,
+              "ordered": 0.045714,
+              "title_overlap": 0.0,
+              "structure_table_row": 0.06,
+              "section_overlap": 0.0125,
+              "fts_component": 0.016,
+              "strategy_quality": 0.005
+            },
+            "auxiliary": {
+              "compactness": 0.714286,
+              "length_factor": 1.0,
+              "fts_norm": 0.8,
+              "matched_terms": [
+                "aulas",
+                "dia",
+                "ord:1",
+                "ord:2",
+                "semestre"
+              ]
+            }
+          },
+          "comparison": {
+            "per_signal": {
+              "coverage": {
+                "target": 0.75,
+                "competitor": 0.625,
+                "favours": "target",
+                "weighted_delta": 0.05
+              },
+              "exact_phrase": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "proximity": {
+                "target": 0.321429,
+                "competitor": 0.446429,
+                "favours": "competitor",
+                "weighted_delta": -0.0175
+              },
+              "ordered": {
+                "target": 0.428571,
+                "competitor": 0.571429,
+                "favours": "competitor",
+                "weighted_delta": -0.011429
+              },
+              "title_overlap": {
+                "target": 0.25,
+                "competitor": 0.0,
+                "favours": "target",
+                "weighted_delta": 0.0175
+              },
+              "structure_table_row": {
+                "target": 0.0,
+                "competitor": 1.0,
+                "favours": "competitor",
+                "weighted_delta": -0.06
+              },
+              "section_overlap": {
+                "target": 0.375,
+                "competitor": 0.25,
+                "favours": "target",
+                "weighted_delta": 0.00625
+              },
+              "fts_component": {
+                "target": 0.44586,
+                "competitor": 0.8,
+                "favours": "competitor",
+                "weighted_delta": -0.007083
+              },
+              "strategy_quality": {
+                "target": 0.25,
+                "competitor": 0.25,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              }
+            },
+            "favours_target": [
+              "coverage",
+              "title_overlap",
+              "section_overlap"
+            ],
+            "favours_competitor": [
+              "proximity",
+              "ordered",
+              "structure_table_row",
+              "fts_component"
+            ],
+            "dominated": false,
+            "score_gap": 0.022261
+          },
+          "diagnosis": "A_SIGNALS_DISCRIMINATE_WEIGHTING_MAY_BE_WRONG"
+        }
+      ]
+    },
+    {
+      "budget_policy": "redistribute_unused",
+      "question_id": "Q011",
+      "target": {
+        "corpus_item_id": "P1-DOC-003",
+        "chunk_index": 72
+      },
+      "target_rank": 8,
+      "within_top_k": false,
+      "target_structure_type": "paragraph",
+      "target_decomposition": {
+        "score": 0.309999,
+        "structure_type": "paragraph",
+        "signals": {
+          "coverage": 0.625,
+          "exact_phrase": 0.0,
+          "proximity": 0.058962,
+          "ordered": 0.285714,
+          "title_overlap": 0.25,
+          "structure_table_row": 0.0,
+          "section_overlap": 0.0,
+          "fts_component": 0.319339,
+          "strategy_quality": 0.25
+        },
+        "contributions": {
+          "coverage": 0.25,
+          "exact_phrase": 0.0,
+          "proximity": 0.008255,
+          "ordered": 0.022857,
+          "title_overlap": 0.0175,
+          "structure_table_row": 0.0,
+          "section_overlap": 0.0,
+          "fts_component": 0.006387,
+          "strategy_quality": 0.005
+        },
+        "auxiliary": {
+          "compactness": 0.09434,
+          "length_factor": 0.338123,
+          "fts_norm": 0.944444,
+          "matched_terms": [
+            "2023",
+            "2024",
+            "aulas",
+            "ord:2",
+            "semestre"
+          ]
+        }
+      },
+      "unjudged_competitors": 0,
+      "cross_document_competitors": 4,
+      "common_signals_favouring_target": [],
+      "single_signal_inversion_possible": false,
+      "diagnosis": "B_SIGNALS_INSUFFICIENT",
+      "diagnosis_note": "at least one competitor dominates the target on every signal; no non-negative reweighting inverts that pair",
+      "competitors": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 58,
+          "rank": 1,
+          "grade": 0,
+          "judged": true,
+          "same_document_as_target": false,
+          "structure_type": "table_row",
+          "decomposition": {
+            "score": 0.451714,
+            "structure_type": "table_row",
+            "signals": {
+              "coverage": 0.625,
+              "exact_phrase": 0.0,
+              "proximity": 0.446429,
+              "ordered": 0.571429,
+              "title_overlap": 0.0,
+              "structure_table_row": 1.0,
+              "section_overlap": 0.25,
+              "fts_component": 0.8,
+              "strategy_quality": 0.25
+            },
+            "contributions": {
+              "coverage": 0.25,
+              "exact_phrase": 0.0,
+              "proximity": 0.0625,
+              "ordered": 0.045714,
+              "title_overlap": 0.0,
+              "structure_table_row": 0.06,
+              "section_overlap": 0.0125,
+              "fts_component": 0.016,
+              "strategy_quality": 0.005
+            },
+            "auxiliary": {
+              "compactness": 0.714286,
+              "length_factor": 1.0,
+              "fts_norm": 0.8,
+              "matched_terms": [
+                "aulas",
+                "dia",
+                "ord:1",
+                "ord:2",
+                "semestre"
+              ]
+            }
+          },
+          "comparison": {
+            "per_signal": {
+              "coverage": {
+                "target": 0.625,
+                "competitor": 0.625,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "exact_phrase": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "proximity": {
+                "target": 0.058962,
+                "competitor": 0.446429,
+                "favours": "competitor",
+                "weighted_delta": -0.054245
+              },
+              "ordered": {
+                "target": 0.285714,
+                "competitor": 0.571429,
+                "favours": "competitor",
+                "weighted_delta": -0.022857
+              },
+              "title_overlap": {
+                "target": 0.25,
+                "competitor": 0.0,
+                "favours": "target",
+                "weighted_delta": 0.0175
+              },
+              "structure_table_row": {
+                "target": 0.0,
+                "competitor": 1.0,
+                "favours": "competitor",
+                "weighted_delta": -0.06
+              },
+              "section_overlap": {
+                "target": 0.0,
+                "competitor": 0.25,
+                "favours": "competitor",
+                "weighted_delta": -0.0125
+              },
+              "fts_component": {
+                "target": 0.319339,
+                "competitor": 0.8,
+                "favours": "competitor",
+                "weighted_delta": -0.009613
+              },
+              "strategy_quality": {
+                "target": 0.25,
+                "competitor": 0.25,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              }
+            },
+            "favours_target": [
+              "title_overlap"
+            ],
+            "favours_competitor": [
+              "proximity",
+              "ordered",
+              "structure_table_row",
+              "section_overlap",
+              "fts_component"
+            ],
+            "dominated": false,
+            "score_gap": 0.141716
+          },
+          "diagnosis": "A_SIGNALS_DISCRIMINATE_WEIGHTING_MAY_BE_WRONG"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 66,
+          "rank": 3,
+          "grade": 0,
+          "judged": true,
+          "same_document_as_target": false,
+          "structure_type": "table_row",
+          "decomposition": {
+            "score": 0.373452,
+            "structure_type": "table_row",
+            "signals": {
+              "coverage": 0.5,
+              "exact_phrase": 0.0,
+              "proximity": 0.333333,
+              "ordered": 0.428571,
+              "title_overlap": 0.0,
+              "structure_table_row": 1.0,
+              "section_overlap": 0.25,
+              "fts_component": 0.75,
+              "strategy_quality": 0.25
+            },
+            "contributions": {
+              "coverage": 0.2,
+              "exact_phrase": 0.0,
+              "proximity": 0.046667,
+              "ordered": 0.034286,
+              "title_overlap": 0.0,
+              "structure_table_row": 0.06,
+              "section_overlap": 0.0125,
+              "fts_component": 0.015,
+              "strategy_quality": 0.005
+            },
+            "auxiliary": {
+              "compactness": 0.666667,
+              "length_factor": 1.0,
+              "fts_norm": 0.75,
+              "matched_terms": [
+                "aulas",
+                "dia",
+                "ord:2",
+                "semestre"
+              ]
+            }
+          },
+          "comparison": {
+            "per_signal": {
+              "coverage": {
+                "target": 0.625,
+                "competitor": 0.5,
+                "favours": "target",
+                "weighted_delta": 0.05
+              },
+              "exact_phrase": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "proximity": {
+                "target": 0.058962,
+                "competitor": 0.333333,
+                "favours": "competitor",
+                "weighted_delta": -0.038412
+              },
+              "ordered": {
+                "target": 0.285714,
+                "competitor": 0.428571,
+                "favours": "competitor",
+                "weighted_delta": -0.011429
+              },
+              "title_overlap": {
+                "target": 0.25,
+                "competitor": 0.0,
+                "favours": "target",
+                "weighted_delta": 0.0175
+              },
+              "structure_table_row": {
+                "target": 0.0,
+                "competitor": 1.0,
+                "favours": "competitor",
+                "weighted_delta": -0.06
+              },
+              "section_overlap": {
+                "target": 0.0,
+                "competitor": 0.25,
+                "favours": "competitor",
+                "weighted_delta": -0.0125
+              },
+              "fts_component": {
+                "target": 0.319339,
+                "competitor": 0.75,
+                "favours": "competitor",
+                "weighted_delta": -0.008613
+              },
+              "strategy_quality": {
+                "target": 0.25,
+                "competitor": 0.25,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              }
+            },
+            "favours_target": [
+              "coverage",
+              "title_overlap"
+            ],
+            "favours_competitor": [
+              "proximity",
+              "ordered",
+              "structure_table_row",
+              "section_overlap",
+              "fts_component"
+            ],
+            "dominated": false,
+            "score_gap": 0.063454
+          },
+          "diagnosis": "A_SIGNALS_DISCRIMINATE_WEIGHTING_MAY_BE_WRONG"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 16,
+          "rank": 4,
+          "grade": 0,
+          "judged": true,
+          "same_document_as_target": false,
+          "structure_type": "table_row",
+          "decomposition": {
+            "score": 0.363024,
+            "structure_type": "table_row",
+            "signals": {
+              "coverage": 0.5,
+              "exact_phrase": 0.0,
+              "proximity": 0.333333,
+              "ordered": 0.285714,
+              "title_overlap": 0.0,
+              "structure_table_row": 1.0,
+              "section_overlap": 0.25,
+              "fts_component": 0.8,
+              "strategy_quality": 0.25
+            },
+            "contributions": {
+              "coverage": 0.2,
+              "exact_phrase": 0.0,
+              "proximity": 0.046667,
+              "ordered": 0.022857,
+              "title_overlap": 0.0,
+              "structure_table_row": 0.06,
+              "section_overlap": 0.0125,
+              "fts_component": 0.016,
+              "strategy_quality": 0.005
+            },
+            "auxiliary": {
+              "compactness": 0.666667,
+              "length_factor": 1.0,
+              "fts_norm": 0.8,
+              "matched_terms": [
+                "aulas",
+                "dia",
+                "ord:1",
+                "semestre"
+              ]
+            }
+          },
+          "comparison": {
+            "per_signal": {
+              "coverage": {
+                "target": 0.625,
+                "competitor": 0.5,
+                "favours": "target",
+                "weighted_delta": 0.05
+              },
+              "exact_phrase": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "proximity": {
+                "target": 0.058962,
+                "competitor": 0.333333,
+                "favours": "competitor",
+                "weighted_delta": -0.038412
+              },
+              "ordered": {
+                "target": 0.285714,
+                "competitor": 0.285714,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "title_overlap": {
+                "target": 0.25,
+                "competitor": 0.0,
+                "favours": "target",
+                "weighted_delta": 0.0175
+              },
+              "structure_table_row": {
+                "target": 0.0,
+                "competitor": 1.0,
+                "favours": "competitor",
+                "weighted_delta": -0.06
+              },
+              "section_overlap": {
+                "target": 0.0,
+                "competitor": 0.25,
+                "favours": "competitor",
+                "weighted_delta": -0.0125
+              },
+              "fts_component": {
+                "target": 0.319339,
+                "competitor": 0.8,
+                "favours": "competitor",
+                "weighted_delta": -0.009613
+              },
+              "strategy_quality": {
+                "target": 0.25,
+                "competitor": 0.25,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              }
+            },
+            "favours_target": [
+              "coverage",
+              "title_overlap"
+            ],
+            "favours_competitor": [
+              "proximity",
+              "structure_table_row",
+              "section_overlap",
+              "fts_component"
+            ],
+            "dominated": false,
+            "score_gap": 0.053025
+          },
+          "diagnosis": "A_SIGNALS_DISCRIMINATE_WEIGHTING_MAY_BE_WRONG"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 38,
+          "rank": 5,
+          "grade": 0,
+          "judged": true,
+          "same_document_as_target": false,
+          "structure_type": "table_row",
+          "decomposition": {
+            "score": 0.350595,
+            "structure_type": "table_row",
+            "signals": {
+              "coverage": 0.5,
+              "exact_phrase": 0.0,
+              "proximity": 0.333333,
+              "ordered": 0.142857,
+              "title_overlap": 0.0,
+              "structure_table_row": 1.0,
+              "section_overlap": 0.25,
+              "fts_component": 0.75,
+              "strategy_quality": 0.25
+            },
+            "contributions": {
+              "coverage": 0.2,
+              "exact_phrase": 0.0,
+              "proximity": 0.046667,
+              "ordered": 0.011429,
+              "title_overlap": 0.0,
+              "structure_table_row": 0.06,
+              "section_overlap": 0.0125,
+              "fts_component": 0.015,
+              "strategy_quality": 0.005
+            },
+            "auxiliary": {
+              "compactness": 0.666667,
+              "length_factor": 1.0,
+              "fts_norm": 0.75,
+              "matched_terms": [
+                "aulas",
+                "dia",
+                "ord:1",
+                "semestre"
+              ]
+            }
+          },
+          "comparison": {
+            "per_signal": {
+              "coverage": {
+                "target": 0.625,
+                "competitor": 0.5,
+                "favours": "target",
+                "weighted_delta": 0.05
+              },
+              "exact_phrase": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "proximity": {
+                "target": 0.058962,
+                "competitor": 0.333333,
+                "favours": "competitor",
+                "weighted_delta": -0.038412
+              },
+              "ordered": {
+                "target": 0.285714,
+                "competitor": 0.142857,
+                "favours": "target",
+                "weighted_delta": 0.011429
+              },
+              "title_overlap": {
+                "target": 0.25,
+                "competitor": 0.0,
+                "favours": "target",
+                "weighted_delta": 0.0175
+              },
+              "structure_table_row": {
+                "target": 0.0,
+                "competitor": 1.0,
+                "favours": "competitor",
+                "weighted_delta": -0.06
+              },
+              "section_overlap": {
+                "target": 0.0,
+                "competitor": 0.25,
+                "favours": "competitor",
+                "weighted_delta": -0.0125
+              },
+              "fts_component": {
+                "target": 0.319339,
+                "competitor": 0.75,
+                "favours": "competitor",
+                "weighted_delta": -0.008613
+              },
+              "strategy_quality": {
+                "target": 0.25,
+                "competitor": 0.25,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              }
+            },
+            "favours_target": [
+              "coverage",
+              "ordered",
+              "title_overlap"
+            ],
+            "favours_competitor": [
+              "proximity",
+              "structure_table_row",
+              "section_overlap",
+              "fts_component"
+            ],
+            "dominated": false,
+            "score_gap": 0.040597
+          },
+          "diagnosis": "A_SIGNALS_DISCRIMINATE_WEIGHTING_MAY_BE_WRONG"
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 21,
+          "rank": 6,
+          "grade": 0,
+          "judged": true,
+          "same_document_as_target": true,
+          "structure_type": "fallback_fragment",
+          "decomposition": {
+            "score": 0.329539,
+            "structure_type": "fallback_fragment",
+            "signals": {
+              "coverage": 0.625,
+              "exact_phrase": 0.0,
+              "proximity": 0.14881,
+              "ordered": 0.285714,
+              "title_overlap": 0.25,
+              "structure_table_row": 0.0,
+              "section_overlap": 0.125,
+              "fts_component": 0.354925,
+              "strategy_quality": 0.25
+            },
+            "contributions": {
+              "coverage": 0.25,
+              "exact_phrase": 0.0,
+              "proximity": 0.020833,
+              "ordered": 0.022857,
+              "title_overlap": 0.0175,
+              "structure_table_row": 0.0,
+              "section_overlap": 0.00625,
+              "fts_component": 0.007098,
+              "strategy_quality": 0.005
+            },
+            "auxiliary": {
+              "compactness": 0.238095,
+              "length_factor": 0.414079,
+              "fts_norm": 0.857143,
+              "matched_terms": [
+                "2023",
+                "aulas",
+                "dia",
+                "ord:1",
+                "semestre"
+              ]
+            }
+          },
+          "comparison": {
+            "per_signal": {
+              "coverage": {
+                "target": 0.625,
+                "competitor": 0.625,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "exact_phrase": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "proximity": {
+                "target": 0.058962,
+                "competitor": 0.14881,
+                "favours": "competitor",
+                "weighted_delta": -0.012579
+              },
+              "ordered": {
+                "target": 0.285714,
+                "competitor": 0.285714,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "title_overlap": {
+                "target": 0.25,
+                "competitor": 0.25,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "structure_table_row": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "section_overlap": {
+                "target": 0.0,
+                "competitor": 0.125,
+                "favours": "competitor",
+                "weighted_delta": -0.00625
+              },
+              "fts_component": {
+                "target": 0.319339,
+                "competitor": 0.354925,
+                "favours": "competitor",
+                "weighted_delta": -0.000712
+              },
+              "strategy_quality": {
+                "target": 0.25,
+                "competitor": 0.25,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              }
+            },
+            "favours_target": [],
+            "favours_competitor": [
+              "proximity",
+              "section_overlap",
+              "fts_component"
+            ],
+            "dominated": true,
+            "score_gap": 0.01954
+          },
+          "diagnosis": "B_SIGNALS_INSUFFICIENT"
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 38,
+          "rank": 7,
+          "grade": 0,
+          "judged": true,
+          "same_document_as_target": true,
+          "structure_type": "paragraph",
+          "decomposition": {
+            "score": 0.320886,
+            "structure_type": "paragraph",
+            "signals": {
+              "coverage": 0.625,
+              "exact_phrase": 0.0,
+              "proximity": 0.084459,
+              "ordered": 0.142857,
+              "title_overlap": 0.25,
+              "structure_table_row": 0.0,
+              "section_overlap": 0.375,
+              "fts_component": 0.319149,
+              "strategy_quality": 0.25
+            },
+            "contributions": {
+              "coverage": 0.25,
+              "exact_phrase": 0.0,
+              "proximity": 0.011824,
+              "ordered": 0.011429,
+              "title_overlap": 0.0175,
+              "structure_table_row": 0.0,
+              "section_overlap": 0.01875,
+              "fts_component": 0.006383,
+              "strategy_quality": 0.005
+            },
+            "auxiliary": {
+              "compactness": 0.135135,
+              "length_factor": 0.35461,
+              "fts_norm": 0.9,
+              "matched_terms": [
+                "2024",
+                "aulas",
+                "dia",
+                "ord:2",
+                "semestre"
+              ]
+            }
+          },
+          "comparison": {
+            "per_signal": {
+              "coverage": {
+                "target": 0.625,
+                "competitor": 0.625,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "exact_phrase": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "proximity": {
+                "target": 0.058962,
+                "competitor": 0.084459,
+                "favours": "competitor",
+                "weighted_delta": -0.00357
+              },
+              "ordered": {
+                "target": 0.285714,
+                "competitor": 0.142857,
+                "favours": "target",
+                "weighted_delta": 0.011429
+              },
+              "title_overlap": {
+                "target": 0.25,
+                "competitor": 0.25,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "structure_table_row": {
+                "target": 0.0,
+                "competitor": 0.0,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              },
+              "section_overlap": {
+                "target": 0.0,
+                "competitor": 0.375,
+                "favours": "competitor",
+                "weighted_delta": -0.01875
+              },
+              "fts_component": {
+                "target": 0.319339,
+                "competitor": 0.319149,
+                "favours": "target",
+                "weighted_delta": 4e-06
+              },
+              "strategy_quality": {
+                "target": 0.25,
+                "competitor": 0.25,
+                "favours": "tie",
+                "weighted_delta": 0.0
+              }
+            },
+            "favours_target": [
+              "ordered",
+              "fts_component"
+            ],
+            "favours_competitor": [
+              "proximity",
+              "section_overlap"
+            ],
+            "dominated": false,
+            "score_gap": 0.010887
+          },
+          "diagnosis": "A_SIGNALS_DISCRIMINATE_WEIGHTING_MAY_BE_WRONG"
+        }
+      ]
+    },
+    {
+      "budget_policy": "redistribute_unused",
+      "question_id": "Q012",
+      "target": {
+        "corpus_item_id": "P1-DOC-002",
+        "chunk_index": 78
+      },
+      "target_rank": null,
+      "within_top_k": false,
+      "diagnosis": "C_INDETERMINATE",
+      "diagnosis_note": "the target never reached the ranking; no signal comparison is observable",
+      "competitors": []
+    },
+    {
+      "budget_policy": "redistribute_unused",
+      "question_id": "Q014",
+      "target": {
+        "corpus_item_id": "P1-DOC-003",
+        "chunk_index": 25
+      },
+      "target_rank": null,
+      "within_top_k": false,
+      "diagnosis": "C_INDETERMINATE",
+      "diagnosis_note": "the target never reached the ranking; no signal comparison is observable",
+      "competitors": []
+    }
+  ],
+  "diagnosis_summary": {
+    "current_quota": {
+      "cases": 11,
+      "by_diagnosis": {
+        "A_SIGNALS_DISCRIMINATE_WEIGHTING_MAY_BE_WRONG": 2,
+        "B_SIGNALS_INSUFFICIENT": 1,
+        "C_INDETERMINATE": 8
+      },
+      "questions": [
+        "Q001",
+        "Q002",
+        "Q003",
+        "Q006",
+        "Q007",
+        "Q008",
+        "Q009",
+        "Q011",
+        "Q012",
+        "Q014"
+      ]
+    },
+    "redistribute_unused": {
+      "cases": 13,
+      "by_diagnosis": {
+        "A_SIGNALS_DISCRIMINATE_WEIGHTING_MAY_BE_WRONG": 4,
+        "B_SIGNALS_INSUFFICIENT": 1,
+        "C_INDETERMINATE": 8
+      },
+      "questions": [
+        "Q001",
+        "Q002",
+        "Q003",
+        "Q004",
+        "Q006",
+        "Q007",
+        "Q008",
+        "Q009",
+        "Q011",
+        "Q012",
+        "Q014"
+      ]
+    }
+  },
+  "result_digest": "b10e940c1164f2611a13a0c6194be267fb76c8d0fb4e015537e443b83d3bf13f",
+  "executed_at": "2026-08-16T16:01:32.213118+00:00"
+}
