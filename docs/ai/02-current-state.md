@@ -1,23 +1,23 @@
 # Estado atual
 
 **Observação:** 2026-08-16 · `main` em
-`85c00550ffaa195b9b9adad3bbcec35c448d2774` (merge do Pull Request #53) ·
+`1a62016ff2d0f2fecc4be7710d4ca81f6c44f303` (merge do Pull Request #54) ·
 repositório `FredericoXX/Projeto-Final`
 
 Os factos abaixo descrevem a `main` em
-`85c00550ffaa195b9b9adad3bbcec35c448d2774`, merge do Pull Request #53 que
-integrou o experimento do orçamento de candidatos sobre P1/S1. Trabalho em curso
-noutras branches não é estado deste snapshot e, quando referido, é identificado
-como tal.
+`1a62016ff2d0f2fecc4be7710d4ca81f6c44f303`, merge do Pull Request #54 que
+integrou o repooling dirigido e o diagnóstico dos sinais de ranking sobre P1/S1.
+Trabalho em curso noutras branches não é estado deste snapshot e, quando
+referido, é identificado como tal.
 
 **Exceção declarada:** a secção
-[Repooling dirigido e diagnóstico do ranking](#repooling-dirigido-e-diagnóstico-do-ranking)
-descreve trabalho que vive na branch `analysis/d4-6-ranking-diagnostics` e ainda
+[Variantes de ponderação do ranking](#variantes-de-ponderação-do-ranking)
+descreve trabalho que vive na branch `analysis/d4-7-ranking-variants` e ainda
 **não está na `main`**.
 
-O experimento do orçamento de candidatos (D4.5) **está na `main`** desde o Pull
-Request #53; a ressalva anterior, que o descrevia como trabalho de branch, deixou
-de ser verdadeira e foi removida.
+O repooling dirigido e o diagnóstico do ranking (D4.6) **estão na `main`** desde
+o Pull Request #54; a ressalva anterior, que os descrevia como trabalho de
+branch, deixou de ser verdadeira e foi removida.
 
 O Evaluation Snapshot **está na `main`** desde o Pull Request #48; a ressalva
 anterior, que o descrevia como trabalho de branch, deixou de ser verdadeira e foi
@@ -75,7 +75,8 @@ lexical real sobre P1/S1, D4.2, merge `a88f4ae`) e o **Pull Request #51**
 (experimento controlado da correspondência lexical, D4.3, merge `5514d8b`) e o
 **Pull Request #52** (condição pareada com diacríticos, D4.4, merge `b42f9ed`) e
 o **Pull Request #53** (orçamento de candidatos e ranking, D4.5, merge
-`85c0055`) — ver
+`85c0055`) e o **Pull Request #54** (repooling dirigido e diagnóstico do
+ranking, D4.6, merge `1a62016`) — ver
 [Trabalho arquitetural em aberto](#trabalho-arquitetural-em-aberto).
 
 ## Arquitetura
@@ -116,8 +117,8 @@ humano), ambos acrescentados pela A2.3a.
 Em `app/evaluation/`, e fora do que `__init__.py` reexporta, vivem também
 `results.py` (canonicalização e digest do Momento 5), `snapshot.py`,
 `snapshot_builder.py`, `retrieval_metrics.py`, `lexical_variants.py`,
-`ground_truth_identity.py`, `candidate_budget.py` e, na branch
-`analysis/d4-6-ranking-diagnostics`, `repooling.py`. A exclusão do
+`ground_truth_identity.py`, `candidate_budget.py`, `repooling.py` e, na branch
+`analysis/d4-7-ranking-variants`, `ranking_variants.py`. A exclusão do
 `__init__.py` é deliberada: importar
 `app.evaluation.assets` não pode carregar `sqlalchemy` nem as Settings, e essa
 garantia está fixada por um teste em subprocesso.
@@ -128,8 +129,9 @@ determinística), `build_moment05_baseline` (composição da baseline),
 `evaluate_retrieval_baseline` (baseline lexical sobre um Pilot Corpus),
 `evaluate_retrieval_experiment` (variantes de correspondência lexical),
 `evaluate_diacritics_experiment` (condição pareada com diacríticos),
-`evaluate_candidate_budget_experiment` (políticas de orçamento) e, na branch
-`analysis/d4-6-ranking-diagnostics`, `diagnose_ranking_signals`.
+`evaluate_candidate_budget_experiment` (políticas de orçamento),
+`diagnose_ranking_signals` (repooling e sinais de ranking) e, na branch
+`analysis/d4-7-ranking-variants`, `evaluate_ranking_variants`.
 
 ## Superfície da API
 
@@ -686,9 +688,9 @@ artefacto da execução em
 
 ## Repooling dirigido e diagnóstico do ranking
 
-**Estado:** implementado na branch `analysis/d4-6-ranking-diagnostics`. **Não
-está na `main`.** É **diagnóstico**, não afinação: nenhum peso, limiar, fórmula,
-orçamento, elegibilidade ou retrieval de produção foi alterado.
+**Estado:** integrado na `main` pelo Pull Request #54 (merge `1a62016`). É
+**diagnóstico**, não afinação: nenhum peso, limiar, fórmula, orçamento,
+elegibilidade ou retrieval de produção foi alterado.
 
 O que passou a existir: `app/evaluation/repooling.py` (controlo do repooling,
 puro, **não** reexportado por `__init__.py`),
@@ -751,26 +753,81 @@ de dominância, em
 artefacto da execução em
 [`docs/evaluation/ranking-diagnostics-p1-s1.json`](../evaluation/ranking-diagnostics-p1-s1.json).
 
+## Variantes de ponderação do ranking
+
+**Estado:** implementado na branch `analysis/d4-7-ranking-variants`. **Não está
+na `main`.** É um **experimento offline**: nenhum peso, limiar, fórmula, sinal,
+orçamento ou retrieval de produção foi alterado.
+
+O que passou a existir: `app/evaluation/ranking_variants.py` (vetores de pesos e
+score alternativo, puro, **não** reexportado por `__init__.py`) e
+`scripts/evaluate_ranking_variants.py`. **Nenhum endpoint HTTP, nenhuma tabela,
+nenhuma migration, nenhuma alteração de produção.** A célula de controlo
+reproduz as células repooled da D4.6 e o comando recusa executar se não
+reproduzir.
+
+Sete vetores escritos à mão a partir de hipóteses nomeadas — três ablações
+(`structure_table_row` removido e reduzido, `section_overlap` removido), três
+reponderações (`title_overlap` reforçado, `proximity` reduzido, e a composição
+das duas primeiras) e o controlo — cruzados com as duas políticas de orçamento.
+**Sem otimização, sem pesquisa em grelha, sem pesos negativos.**
+
+Factos que importa não sobredeclarar:
+
+- **sob o orçamento de produção, nenhuma variante justifica adoção.** Cinco das
+  seis são **bit a bit idênticas** à baseline; a sexta (`section_overlap`
+  removido) move um alvo de grau 2 da posição 4 para a 3 numa pergunta, o que
+  vale `+0,0035` de nDCG@5 e não toca em Recall@5 nem em MRR;
+- **isto qualifica a D4.6.** Os modos de falha ali diagnosticados são em larga
+  medida propriedades do **conjunto ampliado**, não do sistema em produção: sob a
+  quota atual, o concorrente do ano errado que motivava a ablação estrutural em
+  Q011 **nem sequer é candidato**;
+- **os ganhos reais existem fora de produção.** Sob o orçamento ampliado, a
+  composição «sem bónus estrutural + título reforçado» leva Q011 de R@5 0,50 a
+  **1,00** e nDCG@5 de 0,387 a 0,850, sem regressões; e reduzir a proximidade a
+  metade recupera Q001. Ambos dependem de uma política de orçamento que a D4.5
+  recomendou **não** adotar;
+- **reforçar o título sozinho não faz nada**, porque a renormalização financia
+  esse reforço tirando peso à cobertura, que apontava no mesmo sentido. As duas
+  alterações só compõem porque uma paga a outra;
+- **o caso B da D4.6 continua insolúvel por reponderação**, como a aritmética da
+  dominância exigia. Onde parece melhorar, o alvo entrou no top 5 por
+  deslocamento de terceiros e continua abaixo do concorrente que o domina;
+- **zero regressões** em qualquer variante, painel ou pergunta; e **zero**
+  candidatos abaixo do limiar, o que confirma que as variantes só reordenam e
+  nunca alteram quem é devolvido;
+- **uma variante ficou marcada `REPOOLING_REQUIRED`** por promover ao top 5 um
+  segmento não julgado. O *ground truth* **não** foi alterado nesta fase.
+
+Detalhe, incluindo os vetores normalizados, os deltas por pergunta e a análise da
+composição, em
+[`docs/relatorios/d4-7-ranking-variants.md`](../relatorios/d4-7-ranking-variants.md);
+artefacto da execução em
+[`docs/evaluation/ranking-variants-p1-s1.json`](../evaluation/ranking-variants-p1-s1.json).
+
 ## Testes e verificações
 
 Os testes do backend usam PostgreSQL real numa base dedicada; os do frontend
 usam MSW, sem rede nem backend.
 
-Contagem de execução medida em **2026-08-16**, sobre o conteúdo do repooling e
-diagnóstico do ranking na branch `analysis/d4-6-ranking-diagnostics` (base
-`85c0055`, antes de qualquer merge): **1744 passed, 1 warning**
+Contagem de execução medida em **2026-08-16**, sobre o conteúdo das variantes de
+ponderação do ranking na branch `analysis/d4-7-ranking-variants` (base
+`1a62016`, antes de qualquer merge): **1783 passed, 1 warning**
 (`python -m pytest -q`). O warning é o `StarletteDeprecationWarning`
 pré-existente de `fastapi/testclient.py`. Na mesma data e sobre o mesmo
-conteúdo, `mypy app tests scripts` reporta **197 source files** sem erros e
+conteúdo, `mypy app tests scripts` reporta **200 source files** sem erros e
 `ruff check .` passa. O frontend **não foi alterado** por este trabalho.
 
-Os 42 testes adicionais face à `main` pertencem a um único ficheiro novo,
-`tests/test_evaluation_repooling.py`. **Nenhum teste existente foi alterado,
-enfraquecido ou removido.**
+Os 39 testes adicionais face à `main` pertencem a um único ficheiro novo,
+`tests/test_evaluation_ranking_variants.py`. **Nenhum teste existente foi
+alterado, enfraquecido ou removido.**
 
 Proveniência histórica, para leitura das diferenças: sobre o conteúdo do
-experimento do orçamento de candidatos (base `b42f9ed`, hoje na `main` em
-`85c0055`) a execução deu **1702 passed** (2026-08-16, **194 source files** no
+repooling e diagnóstico do ranking (base `85c0055`, hoje na `main` em
+`1a62016`) a execução deu **1744 passed** (2026-08-16, **197 source files** no
+mypy), dos quais 42 acrescentados por `tests/test_evaluation_repooling.py`.
+Sobre o conteúdo do experimento do orçamento de candidatos (base `b42f9ed`, hoje
+na `main` em `85c0055`), **1702 passed** (2026-08-16, **194 source files** no
 mypy), dos quais 43 acrescentados por
 `tests/test_evaluation_candidate_budget.py`. Sobre o conteúdo da condição
 pareada com diacríticos (base `5514d8b`, hoje na `main` em `b42f9ed`) a execução
