@@ -1,0 +1,5615 @@
+{
+  "schema_version": "1",
+  "digest_algorithm": "sha256",
+  "corpus_id": "P1",
+  "snapshot_id": "a94f940229152a3b61860b370df8cb3ea8fe1a0e7236d65e86fe4b5118baf4c1",
+  "corpus_digest": "e8a0f08b5ecf37821244e62c266a48b1d64c928cabb75e0e23e08f9c895a447e",
+  "reference_date": "2026-08-15",
+  "ground_truth_digest_algorithm": "sha256",
+  "ground_truth_digest_scope": "measurement_relevant_fields",
+  "ground_truth_digest_scope_note": "The digest covers exactly the fields the measurement reads: schema, contract, corpus id, the operative metric protocol, and each question's id, text, language, exclusion flags and relevance judgments. It is not a file hash: prose, difficulty tags, temporal_scope and provenance are excluded because none of them enters any metric.",
+  "question_sets": {
+    "original": {
+      "artefact": "retrieval-ground-truth-p1-seed.json",
+      "ground_truth_digest": "1f05f49ae8f596175b6943734c3778d73280e6a2f89da7886db08434e6db8ea2"
+    },
+    "diacritics": {
+      "artefact": "retrieval-ground-truth-p1-diacritics.json",
+      "ground_truth_digest": "8abe153628ea07207e8f7ddf9651a80d759d9006f9acb2542dedede83c34f51d"
+    }
+  },
+  "pairing": {
+    "pairs_total": 14,
+    "diacritics_restored": [
+      "Q001",
+      "Q002",
+      "Q003",
+      "Q004",
+      "Q005",
+      "Q006",
+      "Q007",
+      "Q008",
+      "Q009",
+      "Q012",
+      "Q014"
+    ],
+    "identity_pairs": [
+      "Q010",
+      "Q011",
+      "Q013"
+    ],
+    "identity_pairs_note": "questions whose correct spelling carries no diacritic; they are the experiment's internal null controls",
+    "reformulation_required": [],
+    "restorations": {
+      "Q001": [
+        [
+          "comecam",
+          "começam"
+        ]
+      ],
+      "Q002": [
+        [
+          "ate",
+          "até"
+        ],
+        [
+          "anulacao",
+          "anulação"
+        ],
+        [
+          "matricula",
+          "matrícula"
+        ]
+      ],
+      "Q003": [
+        [
+          "periodo",
+          "período"
+        ],
+        [
+          "e",
+          "é"
+        ],
+        [
+          "matricula",
+          "matrícula"
+        ]
+      ],
+      "Q004": [
+        [
+          "e",
+          "é"
+        ]
+      ],
+      "Q005": [
+        [
+          "presenca",
+          "presença"
+        ],
+        [
+          "praticas",
+          "práticas"
+        ],
+        [
+          "e",
+          "é"
+        ],
+        [
+          "obrigatoria",
+          "obrigatória"
+        ]
+      ],
+      "Q006": [
+        [
+          "e",
+          "é"
+        ],
+        [
+          "minima",
+          "mínima"
+        ],
+        [
+          "presencas",
+          "presenças"
+        ],
+        [
+          "pratica",
+          "prática"
+        ]
+      ],
+      "Q007": [
+        [
+          "residencia",
+          "residência"
+        ]
+      ],
+      "Q008": [
+        [
+          "antecedencia",
+          "antecedência"
+        ],
+        [
+          "prorrogacao",
+          "prorrogação"
+        ]
+      ],
+      "Q009": [
+        [
+          "residencia",
+          "residência"
+        ],
+        [
+          "universitaria",
+          "universitária"
+        ]
+      ],
+      "Q012": [
+        [
+          "e",
+          "é"
+        ],
+        [
+          "cerimonia",
+          "cerimónia"
+        ]
+      ],
+      "Q014": [
+        [
+          "ate",
+          "até"
+        ],
+        [
+          "anulacao",
+          "anulação"
+        ],
+        [
+          "matricula",
+          "matrícula"
+        ]
+      ]
+    }
+  },
+  "baseline_result_digest": "b00ca87b01f47a1aa618c775354940f8b4d9d45903c01ae999efd4e9a0cc7fb4",
+  "control_reproduces_baseline": true,
+  "d43_result_digest": "9a86a1540229d4fab18b6fbace66c3008ab35978ab7bfba376012eb577e165b6",
+  "reproduces_d43_production_cells": true,
+  "null_controls_hold": true,
+  "retrieval": {
+    "strategy": "lexical",
+    "pipeline_version": "lexical_pipeline_v1",
+    "scoring_version": "lexical_composite_v1",
+    "score_kind": "lexical_relevance",
+    "comparable_across_queries": false,
+    "language": "pt",
+    "top_k": 5,
+    "official_only": true,
+    "fts_config": "portuguese",
+    "min_relevance_score": 0.05,
+    "candidate_limit": 25
+  },
+  "matching_variants": [
+    "exact_canonical",
+    "stem_normalized",
+    "stem_accented"
+  ],
+  "question_set_conditions": [
+    "original",
+    "diacritics"
+  ],
+  "pool_condition": "production_quota",
+  "primary_k": 5,
+  "cells": [
+    {
+      "matching_variant": "exact_canonical",
+      "pool_condition": "production_quota",
+      "aggregate": {
+        "questions_measured": 12,
+        "recall": {
+          "1": 0.208333,
+          "3": 0.416667,
+          "5": 0.458333
+        },
+        "mrr": 0.375,
+        "ndcg": {
+          "1": 0.25,
+          "3": 0.332341,
+          "5": 0.363034
+        }
+      },
+      "question_results": [
+        {
+          "question_id": "Q001",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 4,
+            "below_threshold": 0
+          },
+          "retrieved_count": 4,
+          "retrieved_grades": [
+            0,
+            2,
+            0,
+            0
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 3,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 89,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 14,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 31,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 2,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.5,
+            "5": 0.5
+          },
+          "reciprocal_rank": 0.5,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.386853,
+            "5": 0.386853
+          }
+        },
+        {
+          "question_id": "Q002",
+          "candidates_evaluated": 6,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 7,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "canonical_relaxed_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 6,
+              "returned_count": 6
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 4,
+            "below_threshold": 0
+          },
+          "retrieved_count": 2,
+          "retrieved_grades": [
+            0,
+            2
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 1,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 89,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 24,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 0.5,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.63093,
+            "5": 0.63093
+          }
+        },
+        {
+          "question_id": "Q003",
+          "candidates_evaluated": 6,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 7,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "canonical_relaxed_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 6,
+              "returned_count": 6
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 5,
+            "below_threshold": 0
+          },
+          "retrieved_count": 1,
+          "retrieved_grades": [
+            0
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 1,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 12,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q004",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 5,
+            "below_threshold": 0
+          },
+          "retrieved_count": 3,
+          "retrieved_grades": [
+            0,
+            2,
+            0
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 2,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 57,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 19,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 97,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 0.5,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.63093,
+            "5": 0.63093
+          }
+        },
+        {
+          "question_id": "Q005",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 2,
+            "below_threshold": 0
+          },
+          "retrieved_count": 5,
+          "retrieved_grades": [
+            2,
+            0,
+            0,
+            1,
+            0
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 3,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 175,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 60,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 310,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 173,
+              "grade": 1,
+              "judged": true
+            },
+            {
+              "position": 5,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 178,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 0.726229,
+            "5": 0.830485
+          }
+        },
+        {
+          "question_id": "Q006",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 3,
+            "insufficient_coverage": 5,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q007",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 1,
+            "insufficient_coverage": 7,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q008",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 1,
+            "insufficient_coverage": 7,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q009",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 3,
+            "insufficient_coverage": 5,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q010",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 1,
+            "insufficient_coverage": 6,
+            "below_threshold": 0
+          },
+          "retrieved_count": 1,
+          "retrieved_grades": [
+            2
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-005",
+              "chunk_index": 397,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          }
+        },
+        {
+          "question_id": "Q011",
+          "candidates_evaluated": 6,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 7,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "canonical_relaxed_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 6,
+              "returned_count": 6
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 2,
+            "below_threshold": 0
+          },
+          "retrieved_count": 4,
+          "retrieved_grades": [
+            2,
+            0,
+            0,
+            2
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 2,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 37,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 21,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 38,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 72,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 0.5,
+            "3": 0.5,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 0.613147,
+            "5": 0.877215
+          }
+        },
+        {
+          "question_id": "Q012",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 8,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q013",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 1,
+            "insufficient_coverage": 7,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "measured": false
+        },
+        {
+          "question_id": "Q014",
+          "candidates_evaluated": 6,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 7,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "canonical_relaxed_and",
+              "quota": 6,
+              "returned_count": 3
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 6,
+              "returned_count": 6
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 1,
+            "insufficient_coverage": 2,
+            "below_threshold": 0
+          },
+          "retrieved_count": 3,
+          "retrieved_grades": [
+            2,
+            0,
+            0
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 2,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 24,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 64,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 38,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "measured": false
+        }
+      ],
+      "question_set": "original"
+    },
+    {
+      "matching_variant": "stem_normalized",
+      "pool_condition": "production_quota",
+      "aggregate": {
+        "questions_measured": 12,
+        "recall": {
+          "1": 0.208333,
+          "3": 0.416667,
+          "5": 0.458333
+        },
+        "mrr": 0.375,
+        "ndcg": {
+          "1": 0.25,
+          "3": 0.345068,
+          "5": 0.374878
+        }
+      },
+      "question_results": [
+        {
+          "question_id": "Q001",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 4,
+            "below_threshold": 0
+          },
+          "retrieved_count": 4,
+          "retrieved_grades": [
+            0,
+            2,
+            0,
+            0
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 3,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 89,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 14,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 31,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 2,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.5,
+            "5": 0.5
+          },
+          "reciprocal_rank": 0.5,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.386853,
+            "5": 0.386853
+          }
+        },
+        {
+          "question_id": "Q002",
+          "candidates_evaluated": 6,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 7,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "canonical_relaxed_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 6,
+              "returned_count": 6
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 3,
+            "below_threshold": 0
+          },
+          "retrieved_count": 3,
+          "retrieved_grades": [
+            0,
+            2,
+            0
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 2,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 89,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 24,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 64,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 0.5,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.63093,
+            "5": 0.63093
+          }
+        },
+        {
+          "question_id": "Q003",
+          "candidates_evaluated": 6,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 7,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "canonical_relaxed_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 6,
+              "returned_count": 6
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 4,
+            "below_threshold": 0
+          },
+          "retrieved_count": 2,
+          "retrieved_grades": [
+            0,
+            0
+          ],
+          "judged_distractors_returned": 1,
+          "unjudged_returned": 1,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 89,
+              "grade": 0,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 12,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q004",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 5,
+            "below_threshold": 0
+          },
+          "retrieved_count": 3,
+          "retrieved_grades": [
+            0,
+            2,
+            0
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 2,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 57,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 19,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 97,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 0.5,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.63093,
+            "5": 0.63093
+          }
+        },
+        {
+          "question_id": "Q005",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 1,
+            "below_threshold": 0
+          },
+          "retrieved_count": 5,
+          "retrieved_grades": [
+            2,
+            1,
+            0,
+            0,
+            1
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 2,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 175,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 184,
+              "grade": 1,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 60,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 310,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 5,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 173,
+              "grade": 1,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 0.878962,
+            "5": 0.97261
+          }
+        },
+        {
+          "question_id": "Q006",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 8,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q007",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 8,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q008",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 8,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q009",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 6,
+            "below_threshold": 0
+          },
+          "retrieved_count": 2,
+          "retrieved_grades": [
+            0,
+            0
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 2,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-007",
+              "chunk_index": 6,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-007",
+              "chunk_index": 31,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q010",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 7,
+            "below_threshold": 0
+          },
+          "retrieved_count": 1,
+          "retrieved_grades": [
+            2
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-005",
+              "chunk_index": 397,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          }
+        },
+        {
+          "question_id": "Q011",
+          "candidates_evaluated": 6,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 7,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "canonical_relaxed_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 6,
+              "returned_count": 6
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 2,
+            "below_threshold": 0
+          },
+          "retrieved_count": 4,
+          "retrieved_grades": [
+            2,
+            0,
+            0,
+            2
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 2,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 37,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 21,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 38,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 72,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 0.5,
+            "3": 0.5,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 0.613147,
+            "5": 0.877215
+          }
+        },
+        {
+          "question_id": "Q012",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 8,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q013",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 8,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "measured": false
+        },
+        {
+          "question_id": "Q014",
+          "candidates_evaluated": 6,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 7,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "canonical_relaxed_and",
+              "quota": 6,
+              "returned_count": 3
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 6,
+              "returned_count": 6
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 2,
+            "below_threshold": 0
+          },
+          "retrieved_count": 4,
+          "retrieved_grades": [
+            2,
+            0,
+            0,
+            2
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 2,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 24,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 64,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 38,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 25,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "measured": false
+        }
+      ],
+      "question_set": "original"
+    },
+    {
+      "matching_variant": "stem_accented",
+      "pool_condition": "production_quota",
+      "aggregate": {
+        "questions_measured": 12,
+        "recall": {
+          "1": 0.125,
+          "3": 0.25,
+          "5": 0.291667
+        },
+        "mrr": 0.25,
+        "ndcg": {
+          "1": 0.166667,
+          "3": 0.219244,
+          "5": 0.24125
+        }
+      },
+      "question_results": [
+        {
+          "question_id": "Q001",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 4,
+            "below_threshold": 0
+          },
+          "retrieved_count": 4,
+          "retrieved_grades": [
+            0,
+            2,
+            0,
+            0
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 3,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 89,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 14,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 31,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 2,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.5,
+            "5": 0.5
+          },
+          "reciprocal_rank": 0.5,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.386853,
+            "5": 0.386853
+          }
+        },
+        {
+          "question_id": "Q002",
+          "candidates_evaluated": 6,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 7,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "canonical_relaxed_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 6,
+              "returned_count": 6
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 5,
+            "below_threshold": 0
+          },
+          "retrieved_count": 1,
+          "retrieved_grades": [
+            0
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 1,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 89,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q003",
+          "candidates_evaluated": 6,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 7,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "canonical_relaxed_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 6,
+              "returned_count": 6
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 4,
+            "below_threshold": 0
+          },
+          "retrieved_count": 2,
+          "retrieved_grades": [
+            0,
+            0
+          ],
+          "judged_distractors_returned": 1,
+          "unjudged_returned": 1,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 89,
+              "grade": 0,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 12,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q004",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 5,
+            "below_threshold": 0
+          },
+          "retrieved_count": 3,
+          "retrieved_grades": [
+            0,
+            2,
+            0
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 2,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 57,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 19,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 97,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 0.5,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.63093,
+            "5": 0.63093
+          }
+        },
+        {
+          "question_id": "Q005",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 8,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q006",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 1,
+            "insufficient_coverage": 7,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q007",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 8,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q008",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 8,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q009",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 7,
+            "insufficient_coverage": 1,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q010",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 7,
+            "below_threshold": 0
+          },
+          "retrieved_count": 1,
+          "retrieved_grades": [
+            2
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-005",
+              "chunk_index": 397,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          }
+        },
+        {
+          "question_id": "Q011",
+          "candidates_evaluated": 6,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 7,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "canonical_relaxed_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 6,
+              "returned_count": 6
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 2,
+            "below_threshold": 0
+          },
+          "retrieved_count": 4,
+          "retrieved_grades": [
+            2,
+            0,
+            0,
+            2
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 2,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 37,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 21,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 38,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 72,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 0.5,
+            "3": 0.5,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 0.613147,
+            "5": 0.877215
+          }
+        },
+        {
+          "question_id": "Q012",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 8,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q013",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 8,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "measured": false
+        },
+        {
+          "question_id": "Q014",
+          "candidates_evaluated": 6,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 7,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "canonical_relaxed_and",
+              "quota": 6,
+              "returned_count": 3
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 6,
+              "returned_count": 6
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 5,
+            "below_threshold": 0
+          },
+          "retrieved_count": 1,
+          "retrieved_grades": [
+            2
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 24,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "measured": false
+        }
+      ],
+      "question_set": "original"
+    },
+    {
+      "matching_variant": "exact_canonical",
+      "pool_condition": "production_quota",
+      "aggregate": {
+        "questions_measured": 12,
+        "recall": {
+          "1": 0.208333,
+          "3": 0.416667,
+          "5": 0.458333
+        },
+        "mrr": 0.375,
+        "ndcg": {
+          "1": 0.25,
+          "3": 0.332341,
+          "5": 0.363034
+        }
+      },
+      "question_results": [
+        {
+          "question_id": "Q001-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 4,
+            "below_threshold": 0
+          },
+          "retrieved_count": 4,
+          "retrieved_grades": [
+            0,
+            2,
+            0,
+            0
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 3,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 89,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 14,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 31,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 2,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.5,
+            "5": 0.5
+          },
+          "reciprocal_rank": 0.5,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.386853,
+            "5": 0.386853
+          }
+        },
+        {
+          "question_id": "Q002-diacritics",
+          "candidates_evaluated": 6,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 7,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "canonical_relaxed_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 6,
+              "returned_count": 6
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 4,
+            "below_threshold": 0
+          },
+          "retrieved_count": 2,
+          "retrieved_grades": [
+            0,
+            2
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 1,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 89,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 24,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 0.5,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.63093,
+            "5": 0.63093
+          }
+        },
+        {
+          "question_id": "Q003-diacritics",
+          "candidates_evaluated": 6,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 7,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "canonical_relaxed_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 6,
+              "returned_count": 6
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 5,
+            "below_threshold": 0
+          },
+          "retrieved_count": 1,
+          "retrieved_grades": [
+            0
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 1,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 12,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q004-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 5,
+            "below_threshold": 0
+          },
+          "retrieved_count": 3,
+          "retrieved_grades": [
+            0,
+            2,
+            0
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 2,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 57,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 19,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 97,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 0.5,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.63093,
+            "5": 0.63093
+          }
+        },
+        {
+          "question_id": "Q005-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 2,
+            "below_threshold": 0
+          },
+          "retrieved_count": 5,
+          "retrieved_grades": [
+            2,
+            0,
+            0,
+            1,
+            0
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 3,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 175,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 60,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 310,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 173,
+              "grade": 1,
+              "judged": true
+            },
+            {
+              "position": 5,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 178,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 0.726229,
+            "5": 0.830485
+          }
+        },
+        {
+          "question_id": "Q006-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 3,
+            "insufficient_coverage": 5,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q007-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 1,
+            "insufficient_coverage": 7,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q008-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 1,
+            "insufficient_coverage": 7,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q009-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 3,
+            "insufficient_coverage": 5,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q010-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 1,
+            "insufficient_coverage": 6,
+            "below_threshold": 0
+          },
+          "retrieved_count": 1,
+          "retrieved_grades": [
+            2
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-005",
+              "chunk_index": 397,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          }
+        },
+        {
+          "question_id": "Q011-diacritics",
+          "candidates_evaluated": 6,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 7,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "canonical_relaxed_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 6,
+              "returned_count": 6
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 2,
+            "below_threshold": 0
+          },
+          "retrieved_count": 4,
+          "retrieved_grades": [
+            2,
+            0,
+            0,
+            2
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 2,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 37,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 21,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 38,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 72,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 0.5,
+            "3": 0.5,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 0.613147,
+            "5": 0.877215
+          }
+        },
+        {
+          "question_id": "Q012-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 8,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q013-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 1,
+            "insufficient_coverage": 7,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "measured": false
+        },
+        {
+          "question_id": "Q014-diacritics",
+          "candidates_evaluated": 6,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 7,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "canonical_relaxed_and",
+              "quota": 6,
+              "returned_count": 3
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 6,
+              "returned_count": 6
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 1,
+            "insufficient_coverage": 2,
+            "below_threshold": 0
+          },
+          "retrieved_count": 3,
+          "retrieved_grades": [
+            2,
+            0,
+            0
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 2,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 24,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 64,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 38,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "measured": false
+        }
+      ],
+      "question_set": "diacritics"
+    },
+    {
+      "matching_variant": "stem_normalized",
+      "pool_condition": "production_quota",
+      "aggregate": {
+        "questions_measured": 12,
+        "recall": {
+          "1": 0.208333,
+          "3": 0.416667,
+          "5": 0.458333
+        },
+        "mrr": 0.375,
+        "ndcg": {
+          "1": 0.25,
+          "3": 0.345068,
+          "5": 0.374878
+        }
+      },
+      "question_results": [
+        {
+          "question_id": "Q001-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 4,
+            "below_threshold": 0
+          },
+          "retrieved_count": 4,
+          "retrieved_grades": [
+            0,
+            2,
+            0,
+            0
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 3,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 89,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 14,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 31,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 2,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.5,
+            "5": 0.5
+          },
+          "reciprocal_rank": 0.5,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.386853,
+            "5": 0.386853
+          }
+        },
+        {
+          "question_id": "Q002-diacritics",
+          "candidates_evaluated": 6,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 7,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "canonical_relaxed_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 6,
+              "returned_count": 6
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 3,
+            "below_threshold": 0
+          },
+          "retrieved_count": 3,
+          "retrieved_grades": [
+            0,
+            2,
+            0
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 2,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 89,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 24,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 64,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 0.5,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.63093,
+            "5": 0.63093
+          }
+        },
+        {
+          "question_id": "Q003-diacritics",
+          "candidates_evaluated": 6,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 7,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "canonical_relaxed_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 6,
+              "returned_count": 6
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 4,
+            "below_threshold": 0
+          },
+          "retrieved_count": 2,
+          "retrieved_grades": [
+            0,
+            0
+          ],
+          "judged_distractors_returned": 1,
+          "unjudged_returned": 1,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 89,
+              "grade": 0,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 12,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q004-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 5,
+            "below_threshold": 0
+          },
+          "retrieved_count": 3,
+          "retrieved_grades": [
+            0,
+            2,
+            0
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 2,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 57,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 19,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 97,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 0.5,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.63093,
+            "5": 0.63093
+          }
+        },
+        {
+          "question_id": "Q005-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 1,
+            "below_threshold": 0
+          },
+          "retrieved_count": 5,
+          "retrieved_grades": [
+            2,
+            1,
+            0,
+            0,
+            1
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 2,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 175,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 184,
+              "grade": 1,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 60,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 310,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 5,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 173,
+              "grade": 1,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 0.878962,
+            "5": 0.97261
+          }
+        },
+        {
+          "question_id": "Q006-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 8,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q007-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 8,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q008-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 8,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q009-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 6,
+            "below_threshold": 0
+          },
+          "retrieved_count": 2,
+          "retrieved_grades": [
+            0,
+            0
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 2,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-007",
+              "chunk_index": 6,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-007",
+              "chunk_index": 31,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q010-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 7,
+            "below_threshold": 0
+          },
+          "retrieved_count": 1,
+          "retrieved_grades": [
+            2
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-005",
+              "chunk_index": 397,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          }
+        },
+        {
+          "question_id": "Q011-diacritics",
+          "candidates_evaluated": 6,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 7,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "canonical_relaxed_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 6,
+              "returned_count": 6
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 2,
+            "below_threshold": 0
+          },
+          "retrieved_count": 4,
+          "retrieved_grades": [
+            2,
+            0,
+            0,
+            2
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 2,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 37,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 21,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 38,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 72,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 0.5,
+            "3": 0.5,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 0.613147,
+            "5": 0.877215
+          }
+        },
+        {
+          "question_id": "Q012-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 8,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q013-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 8,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "measured": false
+        },
+        {
+          "question_id": "Q014-diacritics",
+          "candidates_evaluated": 6,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 7,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "canonical_relaxed_and",
+              "quota": 6,
+              "returned_count": 3
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 6,
+              "returned_count": 6
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 2,
+            "below_threshold": 0
+          },
+          "retrieved_count": 4,
+          "retrieved_grades": [
+            2,
+            0,
+            0,
+            2
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 2,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 24,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 64,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 38,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 25,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "measured": false
+        }
+      ],
+      "question_set": "diacritics"
+    },
+    {
+      "matching_variant": "stem_accented",
+      "pool_condition": "production_quota",
+      "aggregate": {
+        "questions_measured": 12,
+        "recall": {
+          "1": 0.291667,
+          "3": 0.5,
+          "5": 0.541667
+        },
+        "mrr": 0.458333,
+        "ndcg": {
+          "1": 0.333333,
+          "3": 0.428402,
+          "5": 0.458211
+        }
+      },
+      "question_results": [
+        {
+          "question_id": "Q001-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 4,
+            "below_threshold": 0
+          },
+          "retrieved_count": 4,
+          "retrieved_grades": [
+            0,
+            2,
+            0,
+            0
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 3,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 89,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 14,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 31,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 2,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.5,
+            "5": 0.5
+          },
+          "reciprocal_rank": 0.5,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.386853,
+            "5": 0.386853
+          }
+        },
+        {
+          "question_id": "Q002-diacritics",
+          "candidates_evaluated": 6,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 7,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "canonical_relaxed_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 6,
+              "returned_count": 6
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 3,
+            "below_threshold": 0
+          },
+          "retrieved_count": 3,
+          "retrieved_grades": [
+            0,
+            2,
+            0
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 2,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 89,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 24,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 64,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 0.5,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.63093,
+            "5": 0.63093
+          }
+        },
+        {
+          "question_id": "Q003-diacritics",
+          "candidates_evaluated": 6,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 7,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "canonical_relaxed_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 6,
+              "returned_count": 6
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 4,
+            "below_threshold": 0
+          },
+          "retrieved_count": 2,
+          "retrieved_grades": [
+            0,
+            0
+          ],
+          "judged_distractors_returned": 1,
+          "unjudged_returned": 1,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 89,
+              "grade": 0,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 12,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q004-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 5,
+            "below_threshold": 0
+          },
+          "retrieved_count": 3,
+          "retrieved_grades": [
+            0,
+            2,
+            0
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 2,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 57,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 19,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 97,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 0.5,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.63093,
+            "5": 0.63093
+          }
+        },
+        {
+          "question_id": "Q005-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 1,
+            "below_threshold": 0
+          },
+          "retrieved_count": 5,
+          "retrieved_grades": [
+            2,
+            1,
+            0,
+            0,
+            1
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 2,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 175,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 184,
+              "grade": 1,
+              "judged": true
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 60,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 310,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 5,
+              "corpus_item_id": "P1-DOC-004",
+              "chunk_index": 173,
+              "grade": 1,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 0.878962,
+            "5": 0.97261
+          }
+        },
+        {
+          "question_id": "Q006-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 8,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q007-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 8,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q008-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 7,
+            "below_threshold": 0
+          },
+          "retrieved_count": 1,
+          "retrieved_grades": [
+            2
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-007",
+              "chunk_index": 161,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          }
+        },
+        {
+          "question_id": "Q009-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 6,
+            "below_threshold": 0
+          },
+          "retrieved_count": 2,
+          "retrieved_grades": [
+            0,
+            0
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 2,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-007",
+              "chunk_index": 6,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-007",
+              "chunk_index": 31,
+              "grade": 0,
+              "judged": false
+            }
+          ],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q010-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 7,
+            "below_threshold": 0
+          },
+          "retrieved_count": 1,
+          "retrieved_grades": [
+            2
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-005",
+              "chunk_index": 397,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 1.0,
+            "5": 1.0
+          }
+        },
+        {
+          "question_id": "Q011-diacritics",
+          "candidates_evaluated": 6,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 7,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "canonical_relaxed_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 6,
+              "returned_count": 6
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 2,
+            "below_threshold": 0
+          },
+          "retrieved_count": 4,
+          "retrieved_grades": [
+            2,
+            0,
+            0,
+            2
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 2,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 37,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 21,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 38,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 72,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "recall": {
+            "1": 0.5,
+            "3": 0.5,
+            "5": 1.0
+          },
+          "reciprocal_rank": 1.0,
+          "ndcg": {
+            "1": 1.0,
+            "3": 0.613147,
+            "5": 0.877215
+          }
+        },
+        {
+          "question_id": "Q012-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 8,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "recall": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          },
+          "reciprocal_rank": 0.0,
+          "ndcg": {
+            "1": 0.0,
+            "3": 0.0,
+            "5": 0.0
+          }
+        },
+        {
+          "question_id": "Q013-diacritics",
+          "candidates_evaluated": 8,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 9,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 8,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 8,
+              "returned_count": 8
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 8,
+            "below_threshold": 0
+          },
+          "retrieved_count": 0,
+          "retrieved_grades": [],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 0,
+          "ranking": [],
+          "measured": false
+        },
+        {
+          "question_id": "Q014-diacritics",
+          "candidates_evaluated": 6,
+          "variants": [
+            {
+              "strategy": "exact",
+              "quota": 7,
+              "returned_count": 0
+            },
+            {
+              "strategy": "reduced_and",
+              "quota": 6,
+              "returned_count": 0
+            },
+            {
+              "strategy": "canonical_relaxed_and",
+              "quota": 6,
+              "returned_count": 3
+            },
+            {
+              "strategy": "reduced_or",
+              "quota": 6,
+              "returned_count": 6
+            }
+          ],
+          "excluded_counts": {
+            "no_content_match": 0,
+            "insufficient_coverage": 2,
+            "below_threshold": 0
+          },
+          "retrieved_count": 4,
+          "retrieved_grades": [
+            2,
+            0,
+            0,
+            2
+          ],
+          "judged_distractors_returned": 0,
+          "unjudged_returned": 2,
+          "ranking": [
+            {
+              "position": 1,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 24,
+              "grade": 2,
+              "judged": true
+            },
+            {
+              "position": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "chunk_index": 64,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 3,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 38,
+              "grade": 0,
+              "judged": false
+            },
+            {
+              "position": 4,
+              "corpus_item_id": "P1-DOC-003",
+              "chunk_index": 25,
+              "grade": 2,
+              "judged": true
+            }
+          ],
+          "measured": false
+        }
+      ],
+      "question_set": "diacritics"
+    }
+  ],
+  "deltas": [
+    {
+      "matching_variant": "exact_canonical",
+      "conditions_identical": true,
+      "aggregate_delta": {
+        "recall": {
+          "1": 0.0,
+          "3": 0.0,
+          "5": 0.0
+        },
+        "mrr": 0.0,
+        "ndcg": {
+          "1": 0.0,
+          "3": 0.0,
+          "5": 0.0
+        }
+      },
+      "improved": [],
+      "regressed": [],
+      "mixed": [],
+      "unchanged_count": 14,
+      "unchanged": [
+        "Q001",
+        "Q002",
+        "Q003",
+        "Q004",
+        "Q005",
+        "Q006",
+        "Q007",
+        "Q008",
+        "Q009",
+        "Q010",
+        "Q011",
+        "Q012",
+        "Q013",
+        "Q014"
+      ],
+      "questions_changed": []
+    },
+    {
+      "matching_variant": "stem_normalized",
+      "conditions_identical": true,
+      "aggregate_delta": {
+        "recall": {
+          "1": 0.0,
+          "3": 0.0,
+          "5": 0.0
+        },
+        "mrr": 0.0,
+        "ndcg": {
+          "1": 0.0,
+          "3": 0.0,
+          "5": 0.0
+        }
+      },
+      "improved": [],
+      "regressed": [],
+      "mixed": [],
+      "unchanged_count": 14,
+      "unchanged": [
+        "Q001",
+        "Q002",
+        "Q003",
+        "Q004",
+        "Q005",
+        "Q006",
+        "Q007",
+        "Q008",
+        "Q009",
+        "Q010",
+        "Q011",
+        "Q012",
+        "Q013",
+        "Q014"
+      ],
+      "questions_changed": []
+    },
+    {
+      "matching_variant": "stem_accented",
+      "conditions_identical": false,
+      "aggregate_delta": {
+        "recall": {
+          "1": 0.166667,
+          "3": 0.25,
+          "5": 0.25
+        },
+        "mrr": 0.208333,
+        "ndcg": {
+          "1": 0.166666,
+          "3": 0.209158,
+          "5": 0.216961
+        }
+      },
+      "improved": [
+        "Q002",
+        "Q005",
+        "Q008"
+      ],
+      "regressed": [],
+      "mixed": [],
+      "unchanged_count": 9,
+      "unchanged": [
+        "Q001",
+        "Q003",
+        "Q004",
+        "Q006",
+        "Q007",
+        "Q010",
+        "Q011",
+        "Q012",
+        "Q013"
+      ],
+      "questions_changed": [
+        {
+          "question_id": "Q002",
+          "paired_question_id": "Q002-diacritics",
+          "measured": true,
+          "direction": "improved",
+          "retrieved_count": [
+            1,
+            3
+          ],
+          "judged_distractors_returned": [
+            0,
+            0
+          ],
+          "unjudged_returned": [
+            1,
+            2
+          ],
+          "ranking_before": [
+            [
+              1,
+              "P1-DOC-002",
+              89,
+              0,
+              false
+            ]
+          ],
+          "ranking_after": [
+            [
+              1,
+              "P1-DOC-002",
+              89,
+              0,
+              false
+            ],
+            [
+              2,
+              "P1-DOC-002",
+              24,
+              2,
+              true
+            ],
+            [
+              3,
+              "P1-DOC-002",
+              64,
+              0,
+              false
+            ]
+          ],
+          "metrics": {
+            "recall": {
+              "1": [
+                0.0,
+                0.0
+              ],
+              "3": [
+                0.0,
+                1.0
+              ],
+              "5": [
+                0.0,
+                1.0
+              ]
+            },
+            "reciprocal_rank": [
+              0.0,
+              0.5
+            ],
+            "ndcg": {
+              "1": [
+                0.0,
+                0.0
+              ],
+              "3": [
+                0.0,
+                0.63093
+              ],
+              "5": [
+                0.0,
+                0.63093
+              ]
+            }
+          }
+        },
+        {
+          "question_id": "Q005",
+          "paired_question_id": "Q005-diacritics",
+          "measured": true,
+          "direction": "improved",
+          "retrieved_count": [
+            0,
+            5
+          ],
+          "judged_distractors_returned": [
+            0,
+            0
+          ],
+          "unjudged_returned": [
+            0,
+            2
+          ],
+          "ranking_before": [],
+          "ranking_after": [
+            [
+              1,
+              "P1-DOC-004",
+              175,
+              2,
+              true
+            ],
+            [
+              2,
+              "P1-DOC-004",
+              184,
+              1,
+              true
+            ],
+            [
+              3,
+              "P1-DOC-004",
+              60,
+              0,
+              false
+            ],
+            [
+              4,
+              "P1-DOC-004",
+              310,
+              0,
+              false
+            ],
+            [
+              5,
+              "P1-DOC-004",
+              173,
+              1,
+              true
+            ]
+          ],
+          "metrics": {
+            "recall": {
+              "1": [
+                0.0,
+                1.0
+              ],
+              "3": [
+                0.0,
+                1.0
+              ],
+              "5": [
+                0.0,
+                1.0
+              ]
+            },
+            "reciprocal_rank": [
+              0.0,
+              1.0
+            ],
+            "ndcg": {
+              "1": [
+                0.0,
+                1.0
+              ],
+              "3": [
+                0.0,
+                0.878962
+              ],
+              "5": [
+                0.0,
+                0.97261
+              ]
+            }
+          }
+        },
+        {
+          "question_id": "Q008",
+          "paired_question_id": "Q008-diacritics",
+          "measured": true,
+          "direction": "improved",
+          "retrieved_count": [
+            0,
+            1
+          ],
+          "judged_distractors_returned": [
+            0,
+            0
+          ],
+          "unjudged_returned": [
+            0,
+            0
+          ],
+          "ranking_before": [],
+          "ranking_after": [
+            [
+              1,
+              "P1-DOC-007",
+              161,
+              2,
+              true
+            ]
+          ],
+          "metrics": {
+            "recall": {
+              "1": [
+                0.0,
+                1.0
+              ],
+              "3": [
+                0.0,
+                1.0
+              ],
+              "5": [
+                0.0,
+                1.0
+              ]
+            },
+            "reciprocal_rank": [
+              0.0,
+              1.0
+            ],
+            "ndcg": {
+              "1": [
+                0.0,
+                1.0
+              ],
+              "3": [
+                0.0,
+                1.0
+              ],
+              "5": [
+                0.0,
+                1.0
+              ]
+            }
+          }
+        },
+        {
+          "question_id": "Q009",
+          "paired_question_id": "Q009-diacritics",
+          "measured": true,
+          "direction": "reordered_without_metric_change",
+          "retrieved_count": [
+            0,
+            2
+          ],
+          "judged_distractors_returned": [
+            0,
+            0
+          ],
+          "unjudged_returned": [
+            0,
+            2
+          ],
+          "ranking_before": [],
+          "ranking_after": [
+            [
+              1,
+              "P1-DOC-007",
+              6,
+              0,
+              false
+            ],
+            [
+              2,
+              "P1-DOC-007",
+              31,
+              0,
+              false
+            ]
+          ],
+          "metrics": {
+            "recall": {
+              "1": [
+                0.0,
+                0.0
+              ],
+              "3": [
+                0.0,
+                0.0
+              ],
+              "5": [
+                0.0,
+                0.0
+              ]
+            },
+            "reciprocal_rank": [
+              0.0,
+              0.0
+            ],
+            "ndcg": {
+              "1": [
+                0.0,
+                0.0
+              ],
+              "3": [
+                0.0,
+                0.0
+              ],
+              "5": [
+                0.0,
+                0.0
+              ]
+            }
+          }
+        },
+        {
+          "question_id": "Q014",
+          "paired_question_id": "Q014-diacritics",
+          "measured": false,
+          "direction": "observed_only",
+          "retrieved_count": [
+            1,
+            4
+          ],
+          "judged_distractors_returned": [
+            0,
+            0
+          ],
+          "unjudged_returned": [
+            0,
+            2
+          ],
+          "ranking_before": [
+            [
+              1,
+              "P1-DOC-002",
+              24,
+              2,
+              true
+            ]
+          ],
+          "ranking_after": [
+            [
+              1,
+              "P1-DOC-002",
+              24,
+              2,
+              true
+            ],
+            [
+              2,
+              "P1-DOC-002",
+              64,
+              0,
+              false
+            ],
+            [
+              3,
+              "P1-DOC-003",
+              38,
+              0,
+              false
+            ],
+            [
+              4,
+              "P1-DOC-003",
+              25,
+              2,
+              true
+            ]
+          ]
+        }
+      ]
+    }
+  ],
+  "result_digest": "1dd1615cb86849d77c5c7ed0d70fef548f0f56ed499cc0c4f58543113989330a",
+  "executed_at": "2026-08-15T21:46:39.777872+00:00"
+}

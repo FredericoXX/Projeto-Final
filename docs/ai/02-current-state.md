@@ -1,18 +1,23 @@
 # Estado atual
 
 **Observação:** 2026-08-15 · `main` em
-`a88f4aeb03b2577b8ecad26634b8cbbbc9656bf6` (merge do Pull Request #50) ·
+`5514d8ba076a43ac7de951dfcddc081428459937` (merge do Pull Request #51) ·
 repositório `FredericoXX/Projeto-Final`
 
 Os factos abaixo descrevem a `main` em
-`a88f4aeb03b2577b8ecad26634b8cbbbc9656bf6`, merge do Pull Request #50 que
-integrou a baseline lexical real sobre P1/S1. Trabalho em curso noutras branches
-não é estado deste snapshot e, quando referido, é identificado como tal.
+`5514d8ba076a43ac7de951dfcddc081428459937`, merge do Pull Request #51 que
+integrou o experimento controlado da correspondência lexical sobre P1/S1.
+Trabalho em curso noutras branches não é estado deste snapshot e, quando
+referido, é identificado como tal.
 
 **Exceção declarada:** a secção
-[Experimento da correspondência lexical](#experimento-da-correspondência-lexical)
-descreve trabalho que vive na branch `analysis/d4-3-lexical-eligibility` e ainda
-**não está na `main`**.
+[Condição pareada com diacríticos](#condição-pareada-com-diacríticos) descreve
+trabalho que vive na branch `analysis/d4-4-diacritics-paired` e ainda **não está
+na `main`**.
+
+O experimento da correspondência lexical (D4.3) **está na `main`** desde o Pull
+Request #51; a ressalva anterior, que o descrevia como trabalho de branch,
+deixou de ser verdadeira e foi removida.
 
 O Evaluation Snapshot **está na `main`** desde o Pull Request #48; a ressalva
 anterior, que o descrevia como trabalho de branch, deixou de ser verdadeira e foi
@@ -65,8 +70,9 @@ merge `6ae9bad`), o **Pull Request #46** (especificação científica da políti
 de decisão, A2.2, merge `42187e7c`), o **Pull Request #47** (encaminhamento
 humano E1, A2.3a, merge `311d917`), o **Pull Request #48** (Evaluation
 Snapshot, merge `6235b57`), o **Pull Request #49** (Pilot Corpus P1 e protocolo
-de *ground truth*, D4.1, merge `d3055d7`) e o **Pull Request #50** (baseline
-lexical real sobre P1/S1, D4.2, merge `a88f4ae`) — ver
+de *ground truth*, D4.1, merge `d3055d7`), o **Pull Request #50** (baseline
+lexical real sobre P1/S1, D4.2, merge `a88f4ae`) e o **Pull Request #51**
+(experimento controlado da correspondência lexical, D4.3, merge `5514d8b`) — ver
 [Trabalho arquitetural em aberto](#trabalho-arquitetural-em-aberto).
 
 ## Arquitetura
@@ -105,17 +111,19 @@ contacto) e `handoff_message.py` (mensagem determinística do encaminhamento
 humano), ambos acrescentados pela A2.3a.
 
 Em `app/evaluation/`, e fora do que `__init__.py` reexporta, vivem também
-`results.py` (canonicalização e digest do Momento 5), `snapshot.py` e
-`snapshot_builder.py`. A exclusão do `__init__.py` é deliberada: importar
-`app.evaluation.assets` não pode
+`results.py` (canonicalização e digest do Momento 5), `snapshot.py`,
+`snapshot_builder.py`, `retrieval_metrics.py`, `lexical_variants.py` e, na
+branch `analysis/d4-4-diacritics-paired`, `ground_truth_identity.py`. A exclusão
+do `__init__.py` é deliberada: importar `app.evaluation.assets` não pode
 carregar `sqlalchemy` nem as Settings, e essa garantia está fixada por um teste
 em subprocesso.
 
 `scripts/` contém `seed_demo_institution`, `rebuild_document_chunks`,
 `diagnose_document_pipeline`, `evaluate_answering_offline` (avaliação offline
 determinística), `build_moment05_baseline` (composição da baseline),
-`evaluate_retrieval_baseline` (baseline lexical sobre um Pilot Corpus) e, na
-branch `analysis/d4-3-lexical-eligibility`, `evaluate_retrieval_experiment`.
+`evaluate_retrieval_baseline` (baseline lexical sobre um Pilot Corpus),
+`evaluate_retrieval_experiment` (variantes de correspondência lexical) e, na
+branch `analysis/d4-4-diacritics-paired`, `evaluate_diacritics_experiment`.
 
 ## Superfície da API
 
@@ -438,9 +446,11 @@ A medição expôs um segundo defeito, **BUG-D4.2-01** (MEDIUM), **não corrigid
 o texto é normalizado sem acentos antes do Full-Text Search, e o *stemmer*
 português depende do acento na regra `-ção` — `prorrogação` e `prorrogar`
 conflaem, `prorrogacao` e `prorrogar` não. Corrigi-lo altera o comportamento do
-retrieval e obrigaria a subir `LEXICAL_PIPELINE_VERSION`. **O seu impacto nesta
-baseline não está demonstrado**: o segmento afetado foi recuperado apesar disso e
-caiu depois na cobertura exata, que não usa *stemming*.
+retrieval e obrigaria a subir `LEXICAL_PIPELINE_VERSION`. O seu impacto **nesta
+baseline** não está demonstrado: o segmento afetado foi recuperado apesar disso e
+caiu depois na cobertura exata, que não usa *stemming*. O impacto do defeito foi
+depois **confirmado experimentalmente** pela D4.4 — ver
+[Condição pareada com diacríticos](#condição-pareada-com-diacríticos).
 
 Detalhe, incluindo resultados por pergunta, destino de cada segmento-alvo e
 análise de tipos de falha, em
@@ -450,11 +460,11 @@ artefacto da execução em
 
 ## Experimento da correspondência lexical
 
-**Estado:** implementado na branch `analysis/d4-3-lexical-eligibility`. **Não
-está na `main`.** É um **experimento offline**, não uma alteração: compara três
-políticas de correspondência × duas condições de conjunto de candidatos sobre o
-mesmo P1/S1, sem tocar em `PostgresLexicalRetriever`, em `decide_eligibility`,
-no corpus nem no *ground truth*.
+**Estado:** integrado na `main` pelo Pull Request #51 (merge `5514d8b`). É um
+**experimento offline**, não uma alteração: compara três políticas de
+correspondência × duas condições de conjunto de candidatos sobre o mesmo P1/S1,
+sem tocar em `PostgresLexicalRetriever`, em `decide_eligibility`, no corpus nem
+no *ground truth*.
 
 O que passou a existir: `app/evaluation/lexical_variants.py` (projeção pura do
 espaço de termos, **não** reexportada por `__init__.py`) e
@@ -470,16 +480,18 @@ O que os resultados mostram, e que importa não sobredeclarar:
 - **uma única pergunta foi recuperada em todo o experimento**, e só combinando
   radicalização com a remoção da quota de candidatos — célula que fica abaixo da
   baseline em MRR e nDCG@5. É uma interação, não o efeito de uma das partes;
-- **BUG-D4.2-01 continua por testar.** A variante que preserva acentos é
-  **inavaliável** com o *ground truth* atual: as perguntas foram escritas sem
+- **BUG-D4.2-01 ficou por testar nesta fase.** A variante que preserva acentos é
+  **inavaliável** com o *ground truth* histórico: as perguntas foram escritas sem
   diacríticos (0 de 163 *tokens*), pelo que a projeção fica assimétrica e quebra
   correspondências que a baseline tinha. **Não é um defeito do artefacto** — o
   D4.1 declara as perguntas como construídas e a tipologia real como categoria B,
   UNKNOWN, pelo que nada demonstra que escrever sem acentos esteja errado. É uma
-  propriedade do *ground truth*, e estudá-la exige uma **versão acentuada
-  pareada**, não a reescrita do original;
-- **a previsão do D4.2 sobre Q008 não se confirmou.** A pergunta não é recuperada
-  em nenhuma das seis células;
+  propriedade do *ground truth*, e estudá-la exigiu uma **versão acentuada
+  pareada**, não a reescrita do original — feita depois pela D4.4;
+- **a previsão do D4.2 sobre Q008 não se confirmou nas condições medidas.** A
+  pergunta não é recuperada em nenhuma das seis células. A D4.4 mostrou depois
+  que a forma acentuada em falta só podia vir da **pergunta**, e que com ela a
+  previsão se confirma;
 - **a quota de candidatos é uma restrição real, mas em interação.** Dentro da
   política de correspondência atual o D4.2 estava certo — os alvos seriam
   rejeitados de qualquer forma; o que o D4.3 mostra é que a quota impede uma
@@ -501,25 +513,116 @@ distractores, em
 artefacto da execução em
 [`docs/evaluation/retrieval-experiment-p1-s1.json`](../evaluation/retrieval-experiment-p1-s1.json).
 
+## Condição pareada com diacríticos
+
+**Estado:** implementada na branch `analysis/d4-4-diacritics-paired`. **Não está
+na `main`.** É um **experimento offline** que isola uma variável — os diacríticos
+da pergunta — sem tocar em produção, no corpus, no *ground truth* histórico nem
+nos artefactos do D4.2/D4.3. Além da atualização deste documento, os sete
+artefactos da D4.4 são **novos**; **nenhum ficheiro de produção foi modificado**.
+
+O que passou a existir: `app/evaluation/ground_truth_identity.py` (digest do
+*ground truth* e controlo de pareamento, puro, **não** reexportado por
+`__init__.py`), `scripts/evaluate_diacritics_experiment.py` e um conjunto de
+perguntas **novo**, `docs/evaluation/retrieval-ground-truth-p1-diacritics.json`.
+**Nenhum endpoint HTTP, nenhuma tabela, nenhuma migration, nenhuma alteração de
+produção.**
+
+### Identidade do *ground truth*
+
+O D4.3 registou que o `snapshot_id` **não** cobre o conjunto de perguntas.
+Existe agora um `ground_truth_digest` determinístico, calculado com
+`canonical_json` e SHA-256 — nunca com `hash()` do Python:
+
+| Conjunto | Digest |
+| --- | --- |
+| Histórico | `1f05f49ae8f596175b6943734c3778d73280e6a2f89da7886db08434e6db8ea2` |
+| Pareado | `8abe153628ea07207e8f7ddf9651a80d759d9006f9acb2542dedede83c34f51d` |
+
+O âmbito é declarado (`measurement_relevant_fields`) e cobre exatamente o que a
+medição lê: esquema, contrato, corpus, protocolo operativo e, por pergunta, id,
+texto, idioma, exclusões e julgamentos. **Não é um hash do ficheiro** — prosa,
+etiquetas de dificuldade e `temporal_scope` ficam de fora por não entrarem em
+métrica nenhuma. `snapshot_id`, `corpus_digest` e `reference_date` também ficam
+de fora, para **desacoplar** a identidade das perguntas do estado do corpus: o
+mesmo conjunto conserva o seu digest quando S1 for substituído. `corpus_id`
+entra, por ser rótulo estável da população e não estado.
+
+### Resultados
+
+Seis células — três políticas de correspondência × dois conjuntos de perguntas —
+todas com a quota de candidatos de produção. As duas condições produzem a mesma
+`tsquery` e **os mesmos 104 candidatos**, porque `normalize_text` remove acentos
+antes da consulta; só a projeção do lado da pergunta difere.
+
+| Célula | R@5 | MRR | nDCG@5 |
+| --- | --- | --- | --- |
+| A1 / A2 `exact_canonical` | 0,4583 | 0,3750 | 0,3630 |
+| B1 / B2 `stem_normalized` | 0,4583 | 0,3750 | 0,3749 |
+| C1 `stem_accented`, perguntas sem acentos | 0,2917 | 0,2500 | 0,2412 |
+| **C2** `stem_accented`, perguntas acentuadas | **0,5417** | **0,4583** | **0,4582** |
+
+Factos que importa não sobredeclarar:
+
+- **BUG-D4.2-01 está CONFIRMADO.** Uma pergunta que nenhuma outra condição
+  recupera — Q008 — é recuperada em posição 1, com o mecanismo verificado ao
+  nível do termo: `stem(prorrogacao) = prorrogaca` quebra a regra `-ção` que
+  `stem(prorrogação) = prorrog` satisfaz, e esta última conflui com
+  `stem(prorrogar)`;
+- **o efeito é específico, não geral.** `exact_canonical` e `stem_normalized`
+  saem **idênticas** nas duas condições, como previsto antes de medir: não leem
+  o texto acentuado. Sobre a melhor política sem acentos, C2 difere em
+  **exatamente uma pergunta**;
+- **C2 é a única célula, em D4.2/D4.3/D4.4, que supera a baseline de produção** —
+  +0,0833 de Recall@5 e de MRR, +0,0952 de nDCG@5 — e fá-lo devolvendo **um**
+  resultado adicional, que é o alvo: zero resultados não julgados novos, zero
+  distractores novos;
+- **a remoção de diacríticos erra nos dois sentidos.** C1 fica **abaixo** da
+  baseline porque a assimetria destrói correspondências que a igualdade exata
+  tinha (`antecedencia` → `antecedenc` deixa de casar com `antecedência` →
+  `antecedent`);
+- **a correção de produção não está determinada.** O experimento varia o lado da
+  **pergunta**; produção recebe o que o utilizador escreve. Se o utilizador
+  escrever sem acentos, nenhuma alteração ao lado documental recupera Q008. Qual
+  das duas formas representa o utilizador real é dependência de **categoria B,
+  UNKNOWN**;
+- **o *ground truth* histórico não foi alterado**, e o pareado não o substitui:
+  as 14 perguntas mantêm julgamentos, `temporal_scope` e exclusões, e a prova de
+  pareamento é uma igualdade exata de cadeias após remoção de marcas
+  combinantes. Nenhuma pergunta exigiu reformulação; três (Q010, Q011, Q013) não
+  tinham acentos a restituir e servem de **controlos nulos**;
+- **as cinco falhas semânticas continuam por resolver** (Q003, Q006, Q007, Q009,
+  Q012) e **nenhuma variante foi adotada**.
+
+Detalhe, incluindo a prova de pareamento, o mecanismo de Q008 ao nível do termo e
+as guardas de replicação do D4.2/D4.3, em
+[`docs/relatorios/d4-4-diacritics-paired-experiment.md`](../relatorios/d4-4-diacritics-paired-experiment.md);
+artefacto da execução em
+[`docs/evaluation/retrieval-experiment-diacritics-p1-s1.json`](../evaluation/retrieval-experiment-diacritics-p1-s1.json).
+
 ## Testes e verificações
 
 Os testes do backend usam PostgreSQL real numa base dedicada; os do frontend
 usam MSW, sem rede nem backend.
 
-Contagem de execução medida em **2026-08-15**, sobre o conteúdo do experimento
-da correspondência lexical na branch `analysis/d4-3-lexical-eligibility` (base
-`a88f4ae`, antes de qualquer merge): **1577 passed, 1 warning**
+Contagem de execução medida em **2026-08-15**, sobre o conteúdo da condição
+pareada com diacríticos na branch `analysis/d4-4-diacritics-paired` (base
+`5514d8b`, antes de qualquer merge): **1659 passed, 1 warning**
 (`python -m pytest -q`). O warning é o `StarletteDeprecationWarning`
 pré-existente de `fastapi/testclient.py`. Na mesma data e sobre o mesmo
-conteúdo, `mypy app tests scripts` reporta **187 source files** sem erros e
+conteúdo, `mypy app tests scripts` reporta **191 source files** sem erros e
 `ruff check .` passa. O frontend **não foi alterado** por este trabalho.
 
-Os 26 testes adicionais face à `main` pertencem a dois ficheiros novos —
-`tests/test_evaluation_lexical_variants.py` (10) e
-`tests/test_evaluation_experiment_guard.py` (16). **Nenhum teste existente foi
-alterado, enfraquecido ou removido.**
+Os 82 testes adicionais face à `main` pertencem a dois ficheiros novos —
+`tests/test_evaluation_ground_truth_identity.py` (64) e
+`tests/test_evaluation_diacritics_experiment.py` (18). **Nenhum teste existente
+foi alterado, enfraquecido ou removido.**
 
-Proveniência histórica, para leitura das diferenças: a execução sobre o conteúdo
+Proveniência histórica, para leitura das diferenças: sobre o conteúdo do
+experimento da correspondência lexical (base `a88f4ae`, hoje na `main` em
+`5514d8b`) a execução deu **1577 passed** (2026-08-15, **187 source files** no
+mypy), dos quais 26 acrescentados por `tests/test_evaluation_lexical_variants.py`
+(10) e `tests/test_evaluation_experiment_guard.py` (16). A execução sobre o conteúdo
 do Evaluation Snapshot (base `311d917`, hoje na `main` em `6235b57`) deu
 **1493 passed** (2026-08-14, **178 source files** no mypy), dos quais 79
 acrescentados por `tests/test_evaluation_snapshot_unit.py` (48) e
