@@ -58,12 +58,22 @@ class ScoreKind(StrEnum):
     conteúdo. **Não é** uma probabilidade, uma confiança, nem uma probabilidade
     de a resposta estar correta.
 
+    ``DENSE_SIMILARITY`` — similaridade entre o vetor da pergunta e o vetor do
+    segmento, sob a métrica declarada pelo modelo de embeddings. **Não é** uma
+    probabilidade nem uma confiança, e sobretudo **não é comparável com
+    ``LEXICAL_RELEVANCE``**: são quantidades de famílias diferentes, produzidas
+    por processos diferentes, e um 0.62 de um lado não significa o mesmo que um
+    0.62 do outro. Qualquer combinação das duas exige uma transformação
+    explícita, e é por isso que esta família tem nome próprio em vez de reutilizar
+    o valor lexical.
+
     ``SYNTHETIC`` — valor produzido por um duplo para satisfazer o contrato, sem
     significado de relevância. Existe para que um retriever falso não tenha de
     se declarar lexical, o que seria falso.
     """
 
     LEXICAL_RELEVANCE = "lexical_relevance"
+    DENSE_SIMILARITY = "dense_similarity"
     SYNTHETIC = "synthetic"
 
 
