@@ -1,0 +1,324 @@
+{
+  "schema_version": "1",
+  "contract": "retrieval_repooling_requests",
+  "source_experiment": "d4.8-dense-baseline-1",
+  "corpus_id": "P1",
+  "snapshot_id": "a94f940229152a3b61860b370df8cb3ea8fe1a0e7236d65e86fe4b5118baf4c1",
+  "corpus_digest": "e8a0f08b5ecf37821244e62c266a48b1d64c928cabb75e0e23e08f9c895a447e",
+  "ground_truth_digest": "ada6b38886a06910e425e4be164099a3a63320050890253404064e3fde88586e",
+  "scope_note": "Pares pergunta/segmento que entraram no top 5 de C0 ou de C1 e nao tem julgamento no conjunto repooled do D4.6. Enquanto esta lista nao estiver vazia, a comparacao C0 x C1 nao e definitiva. A ancora e corpus_item_id + chunk_index; nenhum texto documental e versionado.",
+  "requests_total": 31,
+  "requests": [
+    {
+      "question_id": "Q002",
+      "corpus_item_id": "P1-DOC-002",
+      "chunk_index": 44,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 5
+    },
+    {
+      "question_id": "Q002",
+      "corpus_item_id": "P1-DOC-002",
+      "chunk_index": 50,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 4
+    },
+    {
+      "question_id": "Q003",
+      "corpus_item_id": "P1-DOC-002",
+      "chunk_index": 50,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 3
+    },
+    {
+      "question_id": "Q005",
+      "corpus_item_id": "P1-DOC-004",
+      "chunk_index": 155,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 4
+    },
+    {
+      "question_id": "Q005",
+      "corpus_item_id": "P1-DOC-004",
+      "chunk_index": 177,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 5
+    },
+    {
+      "question_id": "Q006",
+      "corpus_item_id": "P1-DOC-004",
+      "chunk_index": 60,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 1
+    },
+    {
+      "question_id": "Q006",
+      "corpus_item_id": "P1-DOC-004",
+      "chunk_index": 178,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 3
+    },
+    {
+      "question_id": "Q006",
+      "corpus_item_id": "P1-DOC-004",
+      "chunk_index": 183,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 4
+    },
+    {
+      "question_id": "Q007",
+      "corpus_item_id": "P1-DOC-007",
+      "chunk_index": 152,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 1
+    },
+    {
+      "question_id": "Q007",
+      "corpus_item_id": "P1-DOC-007",
+      "chunk_index": 161,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 4
+    },
+    {
+      "question_id": "Q007",
+      "corpus_item_id": "P1-DOC-007",
+      "chunk_index": 177,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 3
+    },
+    {
+      "question_id": "Q007",
+      "corpus_item_id": "P1-DOC-007",
+      "chunk_index": 207,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 5
+    },
+    {
+      "question_id": "Q008",
+      "corpus_item_id": "P1-DOC-007",
+      "chunk_index": 142,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 4
+    },
+    {
+      "question_id": "Q008",
+      "corpus_item_id": "P1-DOC-007",
+      "chunk_index": 152,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 2
+    },
+    {
+      "question_id": "Q008",
+      "corpus_item_id": "P1-DOC-007",
+      "chunk_index": 160,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 5
+    },
+    {
+      "question_id": "Q008",
+      "corpus_item_id": "P1-DOC-007",
+      "chunk_index": 229,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 3
+    },
+    {
+      "question_id": "Q009",
+      "corpus_item_id": "P1-DOC-005",
+      "chunk_index": 414,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 5
+    },
+    {
+      "question_id": "Q009",
+      "corpus_item_id": "P1-DOC-007",
+      "chunk_index": 177,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 3
+    },
+    {
+      "question_id": "Q010",
+      "corpus_item_id": "P1-DOC-004",
+      "chunk_index": 416,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 2
+    },
+    {
+      "question_id": "Q010",
+      "corpus_item_id": "P1-DOC-005",
+      "chunk_index": 138,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 5
+    },
+    {
+      "question_id": "Q010",
+      "corpus_item_id": "P1-DOC-005",
+      "chunk_index": 369,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 3
+    },
+    {
+      "question_id": "Q010",
+      "corpus_item_id": "P1-DOC-005",
+      "chunk_index": 375,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 4
+    },
+    {
+      "question_id": "Q011",
+      "corpus_item_id": "P1-DOC-002",
+      "chunk_index": 56,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 3
+    },
+    {
+      "question_id": "Q012",
+      "corpus_item_id": "P1-DOC-002",
+      "chunk_index": 14,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 4
+    },
+    {
+      "question_id": "Q013",
+      "corpus_item_id": "P1-DOC-004",
+      "chunk_index": 213,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 1
+    },
+    {
+      "question_id": "Q013",
+      "corpus_item_id": "P1-DOC-004",
+      "chunk_index": 290,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 4
+    },
+    {
+      "question_id": "Q013",
+      "corpus_item_id": "P1-DOC-005",
+      "chunk_index": 142,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 3
+    },
+    {
+      "question_id": "Q013",
+      "corpus_item_id": "P1-DOC-005",
+      "chunk_index": 227,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 2
+    },
+    {
+      "question_id": "Q013",
+      "corpus_item_id": "P1-DOC-005",
+      "chunk_index": 229,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 5
+    },
+    {
+      "question_id": "Q014",
+      "corpus_item_id": "P1-DOC-002",
+      "chunk_index": 44,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 4
+    },
+    {
+      "question_id": "Q014",
+      "corpus_item_id": "P1-DOC-003",
+      "chunk_index": 72,
+      "retrieved_by": [
+        "C1"
+      ],
+      "rank_c0": null,
+      "rank_c1": 5
+    }
+  ],
+  "result_digest": "e71c7a90382ada442cc18aa8de5718bb96ed7ad404cfb8119cddb086aa2ede0d"
+}

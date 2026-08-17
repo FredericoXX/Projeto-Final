@@ -28,6 +28,7 @@ from app.main import app
 
 # Importar todos os módulos de modelos para registar as tabelas em Base.metadata
 # antes da execução de create_all.
+from app.models import chunk_embedding as _chunk_embedding  # noqa: F401
 from app.models import conversation as _conversation  # noqa: F401
 from app.models import document as _document  # noqa: F401
 from app.models import document_chunk as _document_chunk  # noqa: F401

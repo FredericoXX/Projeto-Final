@@ -1224,3 +1224,128 @@ def test_localized_search_vector_migration_upgrade_downgrade_upgrade(
         engine.dispose()
     script = ScriptDirectory.from_config(alembic_cfg)
     assert current_revision == script.get_current_head()
+
+
+# Verifica especificamente a migration c4f7ab19d3e5 (tabela experimental de
+# embeddings, D4.8): a tabela é acrescentada e o comportamento lexical fica
+# intacto; upgrade -> downgrade -> upgrade para confirmar que ambos os sentidos
+# estão corretos e são repetíveis.
+def test_chunk_embeddings_migration_upgrade_downgrade_upgrade(
+    migrations_database_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A tabela vetorial é aditiva: `document_chunks` não é tocada.
+
+    O que este teste protege não é a existência da tabela — isso o modelo já
+    diria — mas a promessa de que a experiência do D4.8 não alterou a baseline:
+    depois do upgrade, `search_vector` continua a ser a mesma coluna gerada,
+    com o mesmo índice GIN, e o downgrade remove apenas a tabela nova.
+    """
+    monkeypatch.setattr(settings, "database_url", migrations_database_url)
+    alembic_cfg = Config(str(BACKEND_DIR / "alembic.ini"))
+    command.upgrade(alembic_cfg, "head")
+
+    engine = create_engine(migrations_database_url)
+    try:
+        inspector = inspect(engine)
+        assert "chunk_embeddings" in inspector.get_table_names()
+
+        columns = {
+            column["name"]: column
+            for column in inspector.get_columns("chunk_embeddings")
+        }
+        assert set(columns) == {
+            "chunk_id",
+            "provider",
+            "model",
+            "configuration_version",
+            "embedded_content_sha256",
+            "embedding",
+            "created_at",
+        }
+
+        # A chave primária é composta por desenho: dois fornecedores ou modelos
+        # podem coexistir para o mesmo segmento sem que um apague o outro.
+        primary_key = inspector.get_pk_constraint("chunk_embeddings")
+        assert set(primary_key["constrained_columns"]) == {
+            "chunk_id",
+            "provider",
+            "model",
+        }
+
+        # As constraints têm de cortar o conjunto explícito de brancos: com
+        # `btrim(x)` só o espaço é cortado, e um valor de tabulações passaria.
+        check_constraints = {
+            constraint["name"]: constraint["sqltext"]
+            for constraint in inspector.get_check_constraints("chunk_embeddings")
+        }
+        for column in ("provider", "model", "configuration_version"):
+            name = f"ck_chunk_embeddings_{column}_not_blank"
+            assert name in check_constraints
+            assert "\\t" in check_constraints[name] or "\t" in check_constraints[name]
+
+        foreign_keys = inspector.get_foreign_keys("chunk_embeddings")
+        assert any(
+            fk["referred_table"] == "document_chunks"
+            and fk["constrained_columns"] == ["chunk_id"]
+            and fk["options"].get("ondelete") == "CASCADE"
+            for fk in foreign_keys
+        )
+
+        # Sem índice ANN: a pesquisa exata é determinística, e um índice
+        # aproximado faria o resultado depender dos seus parâmetros de recall.
+        assert inspector.get_indexes("chunk_embeddings") == []
+
+        with engine.connect() as conn:
+            embedding_type = conn.execute(
+                text(
+                    "SELECT format_type(a.atttypid, a.atttypmod) "
+                    "FROM pg_attribute a "
+                    "WHERE a.attrelid = 'chunk_embeddings'::regclass "
+                    "AND a.attname = 'embedding'"
+                )
+            ).scalar_one()
+            assert embedding_type == "vector(1536)"
+
+            # A baseline lexical ficou como estava.
+            chunk_columns = {
+                column["name"] for column in inspector.get_columns("document_chunks")
+            }
+            assert "search_vector" in chunk_columns
+            assert "embedding" not in chunk_columns
+            gin_index = conn.execute(
+                text(
+                    "SELECT indexdef FROM pg_indexes "
+                    "WHERE indexname = 'ix_document_chunks_search_vector'"
+                )
+            ).scalar_one()
+            assert "USING gin" in gin_index
+    finally:
+        engine.dispose()
+
+    command.downgrade(alembic_cfg, "-1")
+    engine = create_engine(migrations_database_url)
+    try:
+        inspector = inspect(engine)
+        assert "chunk_embeddings" not in inspector.get_table_names()
+        # O downgrade não pode levar consigo nada da baseline lexical.
+        assert "document_chunks" in inspector.get_table_names()
+        assert "search_vector" in {
+            column["name"] for column in inspector.get_columns("document_chunks")
+        }
+    finally:
+        engine.dispose()
+
+    command.upgrade(alembic_cfg, "head")
+    engine = create_engine(migrations_database_url)
+    try:
+        inspector = inspect(engine)
+        assert "chunk_embeddings" in inspector.get_table_names()
+        with engine.connect() as conn:
+            current_revision = conn.execute(
+                text("SELECT version_num FROM alembic_version")
+            ).scalar()
+    finally:
+        engine.dispose()
+    script = ScriptDirectory.from_config(alembic_cfg)
+    assert current_revision == script.get_current_head()

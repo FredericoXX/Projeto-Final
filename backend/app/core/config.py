@@ -68,12 +68,21 @@ class Settings(BaseSettings):
     answering_max_context_chars: int = 12000
     answering_max_answer_chars: int = 4000
 
+    # Embeddings experimentais (D4.8). Nenhuma rota os usa: servem a
+    # indexação e a avaliação offline do retrieval denso, que não é a
+    # estratégia de produção. Provider separado do de answering porque são
+    # decisões independentes, ainda que hoje coincidam.
+    embedding_provider: str = "openai"
+
     # Configuração específica do adapter OpenAI. A ausência da chave não
     # impede a aplicação de arrancar: só o endpoint de answering falha
     # (503) quando tenta usar o provider. Nunca escrever a chave em logs
     # nem devolvê-la em respostas.
     openai_api_key: str | None = None
     openai_model: str | None = None
+    # Modelo de embeddings, distinto do modelo de geração: são capacidades
+    # diferentes do mesmo fornecedor e mudam por razões diferentes.
+    openai_embedding_model: str | None = None
     openai_timeout_seconds: int = 30
 
     model_config = SettingsConfigDict(
