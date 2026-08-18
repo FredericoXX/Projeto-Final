@@ -1,24 +1,26 @@
 # Estado atual
 
-**Observação:** 2026-08-16 · `main` em
-`47c1e9cfb8e759c7ff612cf7865126a9cb81939c` (merge do Pull Request #55) ·
+**Observação:** 2026-08-18 · `main` em
+`22b59fc4d2f3ddf7d1e79231d5c3b1fff5971f8d` (merge do Pull Request #56) ·
 repositório `FredericoXX/Projeto-Final`
 
 Os factos abaixo descrevem a `main` em
-`47c1e9cfb8e759c7ff612cf7865126a9cb81939c`, merge do Pull Request #55 que
-integrou a ablação e reponderação controlada do ranking lexical sobre P1/S1.
-Trabalho em curso noutras branches não é estado deste snapshot e, quando
-referido, é identificado como tal.
+`22b59fc4d2f3ddf7d1e79231d5c3b1fff5971f8d`, merge do Pull Request #56 que
+integrou a baseline experimental de dense retrieval sobre P1/S1. Trabalho em
+curso noutras branches não é estado deste snapshot e, quando referido, é
+identificado como tal.
 
-**Exceção declarada:** a secção
-[Baseline experimental de dense retrieval](#baseline-experimental-de-dense-retrieval)
-descreve trabalho que vive na branch `analysis/d4-8-dense-baseline` e ainda
-**não está na `main`**.
+**Exceção declarada:** o **repooling e a comparação definitiva C0 × C1**
+(D4.8.1) vivem na branch `analysis/d4-8-dense-baseline` e ainda **não estão na
+`main`**. O que é trabalho de branch está identificado como tal em cada
+afirmação; ver
+[Baseline experimental de dense retrieval](#baseline-experimental-de-dense-retrieval).
 
-O repooling dirigido e o diagnóstico do ranking (D4.6) **estão na `main`** desde
-o Pull Request #54, e as variantes de ponderação (D4.7) desde o Pull Request
-#55; as ressalvas anteriores, que os descreviam como trabalho de branch,
-deixaram de ser verdadeiras e foram removidas.
+A baseline experimental de dense retrieval (D4.8) **está na `main`** desde o
+Pull Request #56; a ressalva anterior, que a descrevia inteira como trabalho de
+branch, deixou de ser verdadeira e foi removida. O repooling dirigido e o
+diagnóstico do ranking (D4.6) estão na `main` desde o Pull Request #54, e as
+variantes de ponderação (D4.7) desde o Pull Request #55.
 
 O Evaluation Snapshot **está na `main`** desde o Pull Request #48; a ressalva
 anterior, que o descrevia como trabalho de branch, deixou de ser verdadeira e foi
@@ -76,8 +78,10 @@ lexical real sobre P1/S1, D4.2, merge `a88f4ae`) e o **Pull Request #51**
 (experimento controlado da correspondência lexical, D4.3, merge `5514d8b`) e o
 **Pull Request #52** (condição pareada com diacríticos, D4.4, merge `b42f9ed`) e
 o **Pull Request #53** (orçamento de candidatos e ranking, D4.5, merge
-`85c0055`) e o **Pull Request #54** (repooling dirigido e diagnóstico do
-ranking, D4.6, merge `1a62016`) — ver
+`85c0055`), o **Pull Request #54** (repooling dirigido e diagnóstico do
+ranking, D4.6, merge `1a62016`), o **Pull Request #55** (ablação e reponderação
+do ranking lexical, D4.7, merge `47c1e9c`) e o **Pull Request #56** (baseline
+experimental de dense retrieval, D4.8, merge `22b59fc`) — ver
 [Trabalho arquitetural em aberto](#trabalho-arquitetural-em-aberto).
 
 ## Arquitetura
@@ -118,8 +122,9 @@ humano), ambos acrescentados pela A2.3a.
 Em `app/evaluation/`, e fora do que `__init__.py` reexporta, vivem também
 `results.py` (canonicalização e digest do Momento 5), `snapshot.py`,
 `snapshot_builder.py`, `retrieval_metrics.py`, `lexical_variants.py`,
-`ground_truth_identity.py`, `candidate_budget.py`, `repooling.py` e, na branch
-`analysis/d4-7-ranking-variants`, `ranking_variants.py`. A exclusão do
+`ground_truth_identity.py`, `candidate_budget.py`, `repooling.py`,
+`ranking_variants.py`, `dense_baseline.py` e, na branch
+`analysis/d4-8-dense-baseline`, `lexical_dense_comparison.py`. A exclusão do
 `__init__.py` é deliberada: importar
 `app.evaluation.assets` não pode carregar `sqlalchemy` nem as Settings, e essa
 garantia está fixada por um teste em subprocesso.
@@ -131,8 +136,11 @@ determinística), `build_moment05_baseline` (composição da baseline),
 `evaluate_retrieval_experiment` (variantes de correspondência lexical),
 `evaluate_diacritics_experiment` (condição pareada com diacríticos),
 `evaluate_candidate_budget_experiment` (políticas de orçamento),
-`diagnose_ranking_signals` (repooling e sinais de ranking) e, na branch
-`analysis/d4-7-ranking-variants`, `evaluate_ranking_variants`.
+`diagnose_ranking_signals` (repooling e sinais de ranking),
+`evaluate_ranking_variants` (ablação e reponderação do ranking),
+`embed_pilot_corpus` e `evaluate_dense_baseline` (condição densa) e, na branch
+`analysis/d4-8-dense-baseline`, `evaluate_lexical_dense_comparison` (comparação
+definitiva depois do repooling).
 
 ## Superfície da API
 
@@ -153,9 +161,9 @@ head `a5c31f70b8d2` (`add_institution_human_support_contact`). Histórico comple
 em [`docs/database.md`](../database.md).
 
 A extensão `pgvector` está ativa como infraestrutura e não é usada pela
-recuperação atual. Na branch `analysis/d4-8-dense-baseline` existe uma 16.ª
-migration (`c4f7ab19d3e5`) que acrescenta a tabela experimental
-`chunk_embeddings`; **não está na `main`** e nenhuma rota a lê — ver
+recuperação atual. A migration `c4f7ab19d3e5` acrescenta a tabela experimental
+`chunk_embeddings`, com chave primária composta `(chunk_id, provider, model)`;
+**nenhuma rota a lê** — ver
 [Baseline experimental de dense retrieval](#baseline-experimental-de-dense-retrieval).
 
 O isolamento institucional é aplicado por filtros nos services e por foreign
@@ -240,8 +248,8 @@ Não existe `RetrievalOutcome`: o resultado não classifica a suficiência da
 evidência. Interpretar contagens ou motivos de exclusão seria decidir
 answerability, que não pertence a esta camada.
 
-Na branch `analysis/d4-8-dense-baseline`, e **não** na `main`, `ScoreKind` ganhou
-um terceiro membro, `DENSE_SIMILARITY`. É a única alteração a
+`ScoreKind` tem um terceiro membro, `DENSE_SIMILARITY`, acrescentado pela D4.8.
+Foi a única alteração a
 `app/retrieval/base.py` e é **aditiva**: nenhum valor existente mudou de nome ou
 de significado, e o retriever lexical continua a declarar
 `LEXICAL_RELEVANCE`/`lexical_composite_v1`. O membro existe porque uma
@@ -615,7 +623,7 @@ Factos que importa não sobredeclarar:
 - **as cinco falhas semânticas continuam por resolver** (Q003, Q006, Q007, Q009,
   Q012) e **nenhuma variante foi adotada**. Nenhuma alteração ao caminho lexical
   as resolveu até à D4.7; a D4.8 mostrou que quatro delas são recuperadas por uma
-  estratégia densa — ver
+  estratégia densa, e a D4.8.1 confirmou-o com os julgamentos completos — ver
   [Baseline experimental de dense retrieval](#baseline-experimental-de-dense-retrieval).
 
 Detalhe, incluindo a prova de pareamento, o mecanismo de Q008 ao nível do termo e
@@ -824,20 +832,26 @@ artefacto da execução em
 
 ## Baseline experimental de dense retrieval
 
-**Estado:** implementado na branch `analysis/d4-8-dense-baseline`. **Não está na
-`main`.** É um **experimento offline**: o retrieval de produção não foi alterado
-e `app.retrieval.dependencies.get_retriever` continua a devolver
+**Estado:** a **D4.8** está na `main` desde o Pull Request #56. O **repooling e a
+comparação definitiva** (D4.8.1) vivem na branch `analysis/d4-8-dense-baseline` e
+**não estão na `main`**. Em ambos os casos é um **experimento offline**: o
+retrieval de produção não foi alterado e
+`app.retrieval.dependencies.get_retriever` continua a devolver
 `PostgresLexicalRetriever`, fixado por teste.
 
-O que passou a existir: o pacote `app/embeddings/` (contratos neutros
+O que existe na `main` (D4.8): o pacote `app/embeddings/` (contratos neutros
 `EmbeddingModel`/`EmbeddingIdentity`, factory com import tardio e adapter
 OpenAI), `app/retrieval/dense.py` (`PostgresDenseRetriever`),
 `app/evaluation/dense_baseline.py` (união, exclusivos e pedidos de repooling,
-puro, **não** reexportado por `__init__.py`),
-`scripts/embed_pilot_corpus.py`, `scripts/evaluate_dense_baseline.py`, a tabela
-`chunk_embeddings` (migration `c4f7ab19d3e5`, aditiva) e as settings
-`EMBEDDING_PROVIDER` / `OPENAI_EMBEDDING_MODEL`. **Nenhum endpoint HTTP, nenhuma
-alteração a `document_chunks`, ao `search_vector`, ao ranking ou ao answering.**
+puro, **não** reexportado por `__init__.py`), `scripts/embed_pilot_corpus.py`,
+`scripts/evaluate_dense_baseline.py`, a tabela `chunk_embeddings` (migration
+`c4f7ab19d3e5`, aditiva, chave primária `(chunk_id, provider, model)`) e as
+settings `EMBEDDING_PROVIDER` / `OPENAI_EMBEDDING_MODEL`. O que a branch
+acrescenta (D4.8.1): `app/evaluation/lexical_dense_comparison.py`,
+`scripts/evaluate_lexical_dense_comparison.py`, a guarda
+`verify_requests_satisfied` em `app/evaluation/repooling.py` e o *ground truth*
+repooled. **Nenhum endpoint HTTP, nenhuma alteração a `document_chunks`, ao
+`search_vector`, ao ranking ou ao answering.**
 
 Configuração medida: `text-embedding-3-small`, 1536 dimensões, cosseno, sem
 normalização aplicada pela aplicação, sem índice ANN, sem limiar. O texto
@@ -857,74 +871,132 @@ de outra configuração», e não «falta indexar» — e é a **única** a apan
 obsoleto, que satisfaz a identidade e conta como coberto. O SHA do conteúdo é
 recalculado do `content` atual, não comparado com o `content_sha256` persistido.
 
+### O repooling (D4.8.1, branch)
+
+Os 31 resultados que a D4.8 deixou por julgar — **todos de C1** — foram julgados.
+O conjunto novo,
+[`retrieval-ground-truth-p1-lexical-dense-repooled.json`](../evaluation/retrieval-ground-truth-p1-lexical-dense-repooled.json),
+tem `ground_truth_digest` `bbaea746…1b1301` e estende o repooled da D4.6
+(`ada6b388…88586e`) sem remover nem rever julgamento nenhum: **0 removidos, 0
+revistos**, perguntas inalteradas letra a letra, `snapshot_id` e `corpus_digest`
+iguais. Verificado por `verify_repooling` e por `verify_requests_satisfied`, que
+prova que se julgou **exatamente** a lista de pedidos e mais nada.
+
+Acrescentados: **26 de grau 0, 3 de grau 1, 2 de grau 2**. Os dois graus 2
+(Q006/`004-60` e Q007/`007-152`) subiram o denominador do Recall dessas duas
+perguntas de 1 para 2. A união dos dois top 5 passou a estar **inteiramente
+julgada** (`COMPARABLE`).
+
+### Resultados definitivos (D4.8.1, branch)
+
+Doze perguntas medidas, macro-média. **Substituem as métricas provisórias de C1
+na D4.8**; as de C0 não mudaram em nenhuma casa decimal, porque os 31
+julgamentos eram todos de resultados que C0 nunca devolveu.
+
+| Métrica | C0 lexical | C1 denso | Delta |
+| --- | ---: | ---: | ---: |
+| Recall@1 | 0,2500 | **0,5833** | +0,3333 |
+| Recall@3 | 0,4167 | **0,8333** | +0,4167 |
+| Recall@5 | 0,4583 | **0,8750** | +0,4167 |
+| MRR | 0,4167 | **0,8194** | +0,4028 |
+| nDCG@1 | 0,3333 | **0,7778** | +0,4444 |
+| nDCG@3 | 0,3637 | **0,7677** | +0,4040 |
+| nDCG@5 | 0,3867 | **0,7987** | +0,4120 |
+
 Factos que importa não sobredeclarar:
 
-- **C0 é reproduzido em duas frentes**: o ranking posicional é o do D4.2 e as
-  métricas sob o conjunto repooled são as da célula de controlo do D4.7. O
-  comando recusa executar se qualquer uma falhar;
-- **a comparação não é definitiva.** 31 resultados entraram no top 5 sem
-  julgamento, **todos** de C1, em 12 das 14 perguntas: o *ground truth* foi
-  construído a partir de execuções lexicais e não podia tê-los visto. O
-  artefacto está marcado `REPOOLING_REQUIRED` e as métricas de C1 são
-  **provisórias**. O *ground truth* **não** foi alterado;
-- **a complementaridade está estabelecida sobre evidência já julgada**, e essa
-  parte não depende do repooling: C1 recupera **seis** alvos de grau 2 que C0
-  nunca devolveu — incluindo quatro das cinco falhas semânticas — e C0 recupera
-  **um** que C1 não devolve;
+- **os rankings são os da D4.8, posição a posição**, nas duas condições, e o
+  `index_digest` é o mesmo (`451d9f2f…d9370c`, 1834 vetores). A única coisa que
+  mudou foram os julgamentos, e o comando recusa executar se algum ranking
+  divergir. C0 continua a reproduzir também o ranking do D4.2;
+- **a complementaridade é quase toda numa direção.** Dos 19 alvos de grau 2, 8
+  são recuperados por ambas, **8 só por C1** e **1 só por C0** (Q011/`003-37`);
+  2 por nenhuma. Ao nível da pergunta: 5 são resolvidas só por C1, **nenhuma só
+  por C0**, 6 por ambas e 1 por nenhuma. Dos 8 comuns, 6 estão em posições
+  diferentes — isso é **diferença de ranking, não complementaridade**, e o
+  artefacto conta as duas coisas em separado;
 - **C0 não é dominado.** Em Q011 (desambiguação entre os dois calendários) C1
   enche quatro das cinco posições com o ano errado e cai de R@5 1,00 para 0,50;
-- **só C0 se abstém.** C0 devolveu 23 de 70 resultados possíveis e zero em seis
-  perguntas; C1 devolveu 70 de 70, incluindo cinco para a pergunta sem evidência
-  no corpus. Sem elegibilidade de conteúdo e sem limiar, a condição densa nunca
-  devolve vazio, o que contraria o princípio de que ausência de resultados é uma
-  resposta legítima. A **assimetria** está medida e fixada por teste; **se a
-  abstenção de C0 está certa em cada caso não está estabelecido**, porque isso
-  exigiria julgar o que C1 devolveu, e esses resultados estão entre os 31 por
-  julgar;
-- **os embeddings não são reprodutíveis bit a bit**, e isso foi medido: reenviar
-  o mesmo texto ao mesmo modelo alterou 19 de 70 scores, com diferença máxima de
-  3,59 × 10⁻⁴, **sem** alterar nenhuma ordem, métrica ou pedido de repooling. A
-  reprodutibilidade da experiência assenta no índice persistido, não na
-  determinação do fornecedor;
+  por nDCG@5, C0 é favorecida em Q005 e Q011;
+- **C1 nunca devolve vazio, e isso é agora avaliável.** C1 devolveu 70 de 70
+  resultados possíveis; C0 devolveu 23 e zero em seis perguntas. Na única
+  pergunta sem evidência no corpus (Q013), C1 devolveu cinco segmentos, **todos
+  julgados grau 0** — a abstenção de C0 estava certa e os cinco são falsos
+  positivos. Nas outras cinco abstenções, C0 estava **errada**: existia
+  evidência, e em quatro delas C1 encontrou-a. A capacidade de recusar é
+  constitucionalmente necessária; o seu exercício concreto neste corpus acertou
+  **uma vez em seis**;
+- **C1 compra recall com precisão por resultado devolvido**: 43 dos seus 70
+  resultados são grau 0 (61,4 %), contra 12 dos 23 de C0 (52,2 %); em graus 2,
+  16 contra 9. Nenhum limiar denso foi criado, e a ausência de limiar continua
+  fixada por teste;
+- **a experiência é reprodutível, e o artefacto tem dois digests para o poder
+  ser.** Três execuções deram rankings, graus, métricas e `result_digest`
+  (`b708a70e…7a003`) **idênticos**, e **5 das 70 similaridades de C1
+  diferentes**, com desvio máximo de 1,78 × 10⁻³ — a mesma não-determinação do
+  fornecedor que a D4.8 mediu ao reembeber o índice, aqui no *embedding da
+  pergunta*. O `result_digest` é o **canónico** e descreve o **resultado**
+  (âmbito `provider_independent_fields`: sem a similaridade bruta de C1, com o
+  score de C0, as posições, os graus e todas as métricas); o `execution_digest`
+  (âmbito `full_payload`) cobre o *payload* como foi escrito e **muda** com a
+  deriva, que fica assim preservada e visível em vez de arredondada para fora.
+  Com dois digests, o artefacto não é verificável pela guarda genérica de digest
+  único: quem o consumir usa `artefact_digests`;
+- **Q014 continua excluída** das métricas por ambiguidade temporal. Nenhuma
+  interpretação foi inventada, e os dois julgamentos de grau 2 incompatíveis
+  continuam ambos no conjunto;
 - **o BUG-D4.2-01 não foi corrigido.** Q008 é recuperada por C1 na posição 1
   porque a estratégia densa não passa pelo *stemmer* — o defeito do caminho
   lexical continua lá;
-- **nenhuma arquitetura híbrida foi implementada.** A conclusão da fase é que a
-  complementaridade justifica experimentá-la (D4.9), depois do repooling.
+- **nenhuma arquitetura híbrida foi implementada**, e a recomendação mudou. A
+  D4.8 concluiu que a complementaridade justificava experimentar um híbrido
+  (D4.9); com os julgamentos completos, a D4.8.1 concluiu **D** — C1 aumenta o
+  recall de forma inequívoca mas não tem critério de admissibilidade, e uma
+  fusão sobre uma condição que devolve sempre `top_k` herdaria essa
+  incapacidade. O próximo passo recomendado é um **estudo de
+  admissibilidade/limiar denso**, antes do híbrido.
 
-Detalhe, incluindo o mecanismo de Q011, a tabela por tipo de dificuldade e o que
-o repooling pode e não pode mudar, em
-[`docs/relatorios/d4-8-dense-baseline-p1-s1.md`](../relatorios/d4-8-dense-baseline-p1-s1.md);
-artefactos em
-[`docs/evaluation/dense-baseline-p1-s1.json`](../evaluation/dense-baseline-p1-s1.json)
+Detalhe da fase que está na `main` em
+[`docs/relatorios/d4-8-dense-baseline-p1-s1.md`](../relatorios/d4-8-dense-baseline-p1-s1.md),
+incluindo a secção «Correções posteriores» que regista o que a D4.8.1
+substituiu; o repooling, a comparação definitiva e a decisão em
+[`docs/relatorios/d4-8-1-lexical-dense-repooling.md`](../relatorios/d4-8-1-lexical-dense-repooling.md).
+Artefactos em
+[`docs/evaluation/dense-baseline-p1-s1.json`](../evaluation/dense-baseline-p1-s1.json),
+[`docs/evaluation/dense-repooling-requests-p1-s1.json`](../evaluation/dense-repooling-requests-p1-s1.json),
+[`docs/evaluation/retrieval-ground-truth-p1-lexical-dense-repooled.json`](../evaluation/retrieval-ground-truth-p1-lexical-dense-repooled.json)
 e
-[`docs/evaluation/dense-repooling-requests-p1-s1.json`](../evaluation/dense-repooling-requests-p1-s1.json).
+[`docs/evaluation/lexical-dense-comparison-p1-s1.json`](../evaluation/lexical-dense-comparison-p1-s1.json).
 
 ## Testes e verificações
 
 Os testes do backend usam PostgreSQL real numa base dedicada; os do frontend
 usam MSW, sem rede nem backend.
 
-Contagem de execução medida em **2026-08-16**, sobre o conteúdo da baseline
-experimental de dense retrieval na branch `analysis/d4-8-dense-baseline` (base
-`47c1e9c`, antes de qualquer merge): **1883 passed, 1 warning**
+Contagem de execução medida em **2026-08-18**, sobre o conteúdo do repooling e
+da comparação definitiva na branch `analysis/d4-8-dense-baseline` (base
+`22b59fc`, antes de qualquer merge): **1940 passed, 1 warning**
 (`python -m pytest -q`). O warning é o `StarletteDeprecationWarning`
 pré-existente de `fastapi/testclient.py`. Na mesma data e sobre o mesmo
-conteúdo, `mypy app tests scripts` reporta **213 source files** sem erros e
+conteúdo, `mypy app tests scripts` reporta **216 source files** sem erros e
 `ruff check .` passa. O frontend **não foi alterado** por este trabalho.
 
-Os 100 testes adicionais face à `main` distribuem-se por três ficheiros novos —
-`tests/test_retrieval_dense.py` (46),
+Os 57 testes adicionais face à `main` vivem todos num ficheiro novo,
+`tests/test_evaluation_lexical_dense_comparison.py`. **Nenhum teste existente
+foi alterado, enfraquecido ou removido, e nenhum ficheiro de teste existente foi
+tocado.**
+
+Proveniência imediata: sobre o conteúdo da baseline experimental de dense
+retrieval (base `47c1e9c`, hoje na `main` em `22b59fc`) a execução deu **1883
+passed** (2026-08-16, **213 source files** no mypy), dos quais 100 acrescentados
+por `tests/test_retrieval_dense.py` (46),
 `tests/test_evaluation_dense_baseline.py` (30) e
-`tests/test_embeddings_contracts.py` (23) — mais um caso acrescentado a
-`tests/test_migrations.py` para a migration `c4f7ab19d3e5`. **Nenhum teste
-existente foi alterado, enfraquecido ou removido**; as únicas edições a
-ficheiros de teste existentes são aditivas (registo do novo modelo em
-`tests/conftest.py` e o caso de migration).
+`tests/test_embeddings_contracts.py` (23), mais um caso em
+`tests/test_migrations.py` para a migration `c4f7ab19d3e5`.
 
 Proveniência histórica, para leitura das diferenças: sobre o conteúdo das
 variantes de ponderação do ranking (base `1a62016`, hoje na `main` em
-`47c1e9c`) a execução deu **1783 passed** (2026-08-16, **200 source files** no
+`47c1e9c`, integrado em `22b59fc`) a execução deu **1783 passed** (2026-08-16, **200 source files** no
 mypy), dos quais 39 acrescentados por
 `tests/test_evaluation_ranking_variants.py`. Sobre o conteúdo do
 repooling e diagnóstico do ranking (base `85c0055`, hoje na `main` em
@@ -1095,10 +1167,12 @@ de relevância — continuam a colapsar no mesmo estado `insufficient_evidence`.
 
 Continua **não decidida** qualquer mudança na abordagem de recuperação em
 produção. A D4.8 mediu uma condição densa offline e recomendou experimentar uma
-arquitetura híbrida (D4.9), mas **recomendar uma experiência não é adotar uma
-arquitetura**: nada foi integrado, nenhuma rota mudou de estratégia, e a
-comparação que sustenta a recomendação depende de um repooling ainda por fazer.
-Ver [Baseline experimental de dense retrieval](#baseline-experimental-de-dense-retrieval).
+arquitetura híbrida; a D4.8.1, na branch `analysis/d4-8-dense-baseline`,
+completou os julgamentos e **reviu essa recomendação**: o próximo passo passou a
+ser um estudo de admissibilidade/limiar da condição densa, antes de qualquer
+fusão. Em qualquer dos casos, **recomendar uma experiência não é adotar uma
+arquitetura**: nada foi integrado e nenhuma rota mudou de estratégia. Ver
+[Baseline experimental de dense retrieval](#baseline-experimental-de-dense-retrieval).
 
 ## Divergências documentais conhecidas
 
