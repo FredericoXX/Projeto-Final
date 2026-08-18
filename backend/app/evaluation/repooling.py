@@ -170,6 +170,87 @@ def verify_repooling(
     )
 
 
+def verify_requests_satisfied(
+    requests: Sequence[Mapping[str, Any]],
+    historical: Mapping[str, Any],
+    repooled: Mapping[str, Any],
+) -> tuple[str, ...]:
+    """Prova que o repooling tratou **exatamente** os pedidos, e mais nenhum.
+
+    :func:`verify_repooling` prova que o conjunto novo estende o antigo sem o
+    rever. Não prova que estenda pela razão declarada: um repooling que
+    acrescentasse julgamentos escolhidos por outro critério passaria lá e
+    produziria uma comparação diferente da que o artefacto de pedidos descreve.
+
+    Três condições, e as três são necessárias:
+
+    - **completude** — todo o pedido tem julgamento no conjunto novo. Um pedido
+      por tratar deixa um resultado do top 5 a contar grau 0 por omissão, que é
+      exatamente o enviesamento que o repooling existe para remover;
+    - **fidelidade** — nenhum julgamento acrescentado está fora da lista de
+      pedidos. Anotar mais do que o pedido não é ilegítimo em si, mas deixa de
+      ser reproduzível a partir do artefacto que declara o âmbito;
+    - **necessidade** — nenhum pedido já estava julgado no conjunto histórico.
+      Se estivesse, a lista de pedidos descreveria um estado que não existia, e
+      o número «31 por julgar» seria falso.
+    """
+    problems: list[str] = []
+
+    historical_questions = {
+        str(question["question_id"]): question for question in historical["questions"]
+    }
+    repooled_questions = {
+        str(question["question_id"]): question for question in repooled["questions"]
+    }
+
+    requested: set[tuple[str, str, int]] = set()
+    for request in requests:
+        key = (
+            str(request["question_id"]),
+            str(request["corpus_item_id"]),
+            int(request["chunk_index"]),
+        )
+        if key in requested:
+            problems.append(f"duplicate repooling request {key}")
+        requested.add(key)
+
+    added: set[tuple[str, str, int]] = set()
+    for question_id, question in sorted(repooled_questions.items()):
+        before = historical_questions.get(question_id)
+        if before is None:
+            continue
+        before_index = _judgment_index(before, question_id)
+        after_index = _judgment_index(question, question_id)
+        for item, index in after_index:
+            if (item, index) not in before_index:
+                added.add((question_id, item, index))
+
+    for key in sorted(requested - added):
+        question_id, item, index = key
+        question = repooled_questions.get(question_id)
+        judged = question is not None and (item, index) in _judgment_index(
+            question, question_id
+        )
+        if not judged:
+            problems.append(
+                f"{question_id}: {item}/{index} was requested and is still unjudged"
+            )
+        else:
+            problems.append(
+                f"{question_id}: {item}/{index} was requested but was already judged "
+                "in the historical set; the request list describes a state that did "
+                "not exist"
+            )
+
+    for question_id, item, index in sorted(added - requested):
+        problems.append(
+            f"{question_id}: {item}/{index} was judged but was not requested; the "
+            "repooling is not reproducible from the declared scope"
+        )
+
+    return tuple(problems)
+
+
 def relevant_target_count(
     question: Mapping[str, Any], threshold: int
 ) -> int:

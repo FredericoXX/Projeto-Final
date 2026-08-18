@@ -125,7 +125,8 @@ ground truth.
 
 ### 3.3 Armazenamento
 
-Tabela nova `chunk_embeddings`, com chave primária composta `(chunk_id, model)`.
+Tabela nova `chunk_embeddings`, com chave primária composta
+`(chunk_id, provider, model)`.<sup>[correção D4.8.1](#correções-posteriores)</sup>
 Nenhuma coluna de `document_chunks` foi criada, alterada ou removida;
 `search_vector` e o seu índice GIN ficaram como estavam, e há teste de migration
 que o verifica no `upgrade`, no `downgrade` e no `upgrade` seguinte.
@@ -258,7 +259,9 @@ ambiguidade temporal). Macro-média.
 C0 reproduz o controlo `A0`/`current_quota` do D4.7 em todos os valores, e o seu
 ranking posicional é o do D4.2 pergunta a pergunta.
 
-**As métricas de C1 são provisórias** — ver §6.
+**As métricas de C1 são provisórias** — ver §6. Foram **substituídas** pelas da
+[D4.8.1](d4-8-1-lexical-dense-repooling.md) depois do repooling; ver
+[Correções posteriores](#correções-posteriores).
 
 ### 4.1 Por pergunta
 
@@ -603,3 +606,41 @@ o retrieval, o ranking, os pesos, os limiares, a elegibilidade, o planeamento de
 consultas, o orçamento de candidatos, o FTS, a normalização, a API, o answering
 nem o frontend. Não corrigiu o BUG-D4.1-01 nem o BUG-D4.2-01. Não alterou o
 ground truth nem os artefactos das fases D4.2–D4.7.
+
+## Correções posteriores
+
+Esta secção é aditiva. O corpo do relatório **não** foi reescrito: é um
+documento histórico e regista o que foi observado e decidido no momento. O que
+segue nomeia o que ficou errado ou superado, e onde vive a versão válida.
+
+### Erro factual corrigido (D4.8.1)
+
+A §3.3 descrevia a chave primária de `chunk_embeddings` como
+`(chunk_id, model)`. É **`(chunk_id, provider, model)`**, como a §3.3.1 do
+próprio relatório já dizia, como o modelo declara e como a migration
+`c4f7ab19d3e5` cria. A frase da §3.3 foi corrigida; o resto do relatório estava
+certo. A implementação nunca esteve em causa — a divergência era entre duas
+frases do mesmo documento.
+
+### Métricas de C1 substituídas (D4.8.1)
+
+A coluna «C1 denso (provisório)» da §4 e as colunas de C1 da §4.1 mediam contra
+um conjunto em que 31 resultados do top 5 nunca tinham sido julgados, e a §6
+declarava-as provisórias por isso. Esses 31 pares foram julgados na
+[D4.8.1](d4-8-1-lexical-dense-repooling.md), e **as métricas definitivas de C1
+são as de lá**, não as daqui. As de C0 não mudaram.
+
+O sentido da correção é o que a §6.1 dizia ser indeterminado: as métricas de C1
+**subiram**. O `result_digest` `98f521cd…a2c783` continua a descrever esta
+execução, e a execução em si — os rankings — está reproduzida exatamente pela
+D4.8.1.
+
+### Conclusão revista (D4.8.1)
+
+A §9 concluiu **C** (complementaridade suficiente para justificar uma
+experiência híbrida) e a §10 recomendou a D4.9. Com os 31 julgamentos feitos, a
+D4.8.1 concluiu **D**: C1 aumenta o recall de forma inequívoca, mas não tem
+etapa capaz de recusar, e a evidência que faltava para avaliar essa assimetria —
+os resultados que C1 devolveu em Q013 — está agora julgada. A recomendação
+passou a ser um estudo de admissibilidade densa **antes** do híbrido. O
+fundamento está em [`d4-8-1-lexical-dense-repooling.md`](d4-8-1-lexical-dense-repooling.md).
