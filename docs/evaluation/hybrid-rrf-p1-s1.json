@@ -1,0 +1,3096 @@
+{
+  "admission_policy_applied": false,
+  "admission_policy_note": "A politica R1 top1 >= 0,60 da D4.8.2 NAO e aplicada. Fundir e admitir sao dois mecanismos, e altera-los na mesma experiencia tornaria o resultado inatribuivel. A D4.8.2 permanece fechada.",
+  "aggregate": {
+    "C0": {
+      "mrr": 0.416667,
+      "ndcg": {
+        "1": 0.333333,
+        "3": 0.363699,
+        "5": 0.386657
+      },
+      "questions_measured": 12,
+      "recall": {
+        "1": 0.25,
+        "3": 0.416667,
+        "5": 0.458333
+      }
+    },
+    "C1": {
+      "mrr": 0.819444,
+      "ndcg": {
+        "1": 0.777778,
+        "3": 0.767689,
+        "5": 0.798693
+      },
+      "questions_measured": 12,
+      "recall": {
+        "1": 0.583333,
+        "3": 0.833333,
+        "5": 0.875
+      }
+    },
+    "C2": {
+      "mrr": 0.875,
+      "ndcg": {
+        "1": 0.833333,
+        "3": 0.783677,
+        "5": 0.825081
+      },
+      "questions_measured": 12,
+      "recall": {
+        "1": 0.625,
+        "3": 0.833333,
+        "5": 0.916667
+      }
+    }
+  },
+  "aggregate_delta_c2_minus_c0": {
+    "mrr": 0.458333,
+    "ndcg": {
+      "1": 0.5,
+      "3": 0.419978,
+      "5": 0.438424
+    },
+    "recall": {
+      "1": 0.375,
+      "3": 0.416666,
+      "5": 0.458334
+    }
+  },
+  "aggregate_delta_c2_minus_c1": {
+    "mrr": 0.055556,
+    "ndcg": {
+      "1": 0.055555,
+      "3": 0.015988,
+      "5": 0.026388
+    },
+    "recall": {
+      "1": 0.041667,
+      "3": 0.0,
+      "5": 0.041667
+    }
+  },
+  "comparability": "COMPARABLE",
+  "complementarity": {
+    "grade2_targets_c1_missed_and_c2_recovered": [
+      "Q011:P1-DOC-003#37"
+    ],
+    "grade2_targets_demoted_versus_c1": 2,
+    "grade2_targets_exclusive_to_c0": 1,
+    "grade2_targets_exclusive_to_c0_preserved_by_c2": 1,
+    "grade2_targets_exclusive_to_c1": 8,
+    "grade2_targets_exclusive_to_c1_preserved_by_c2": 8,
+    "grade2_targets_promoted_over_c1": 2,
+    "questions_changed_versus_c1": [
+      "Q001",
+      "Q003",
+      "Q005",
+      "Q011"
+    ],
+    "questions_changed_versus_c1_count": 4,
+    "questions_improved_over_c1": 2,
+    "questions_measured": 12,
+    "questions_solved_by_c1_and_lost_by_c2": [],
+    "questions_solved_by_c2_and_not_by_c1": [],
+    "questions_where_fusion_could_act": [
+      "Q001",
+      "Q002",
+      "Q003",
+      "Q004",
+      "Q005",
+      "Q010",
+      "Q011"
+    ],
+    "questions_where_fusion_could_act_count": 7,
+    "questions_worsened_versus_c1": 2
+  },
+  "conditions_reproduced": {
+    "C0": true,
+    "C1": true,
+    "note": "As metricas de C0 e C1 foram recalculadas a partir dos rankings guardados e conferem casa a casa com as da D4.8.1, por pergunta e no agregado. E o que prova que C2 e medido pelo mesmo protocolo e nao por uma segunda implementacao."
+  },
+  "corpus_digest": "e8a0f08b5ecf37821244e62c266a48b1d64c928cabb75e0e23e08f9c895a447e",
+  "corpus_id": "P1",
+  "decision": {
+    "aggregate_metrics_that_decreased": [],
+    "baseline": "C1",
+    "decision": "D_HYBRID_PROMISING_BUT_NEEDS_BROADER_EVALUATION",
+    "decision_rule_source": "scripts.evaluate_hybrid_rrf.DECISION_RULE",
+    "evidence_base_supports_architectural_decision": false,
+    "magnitude_threshold": null,
+    "questions_improved_over_c1": 2,
+    "questions_worsened_versus_c1": 2,
+    "rationale": "beneficio concreto - alvos recuperados ['Q011:P1-DOC-003#37'], perguntas melhoradas 2 - mas com 2 pergunta(s) pioradas face a C1 e base de evidencia insuficiente para promover (ver decision_rule.evidence_base_note)",
+    "reported_delta_ndcg_at_5": 0.026388,
+    "reported_delta_recall_at_5": 0.041667,
+    "reported_metric": "ndcg@5"
+  },
+  "decision_rule": {
+    "baseline": "C1",
+    "evaluated_in_order": [
+      "B_DENSE_REMAINS_PREFERRED: alguma pergunta resolvida por C1 deixa de ser resolvida por C2, OU alguma metrica agregada desce.",
+      "C_EVIDENCE_INSUFFICIENT: nenhuma regressao e nenhum beneficio concreto - a fusao nao produziu efeito observavel.",
+      "A_HYBRID_SUPPORTED: beneficio concreto, nenhuma regressao por pergunta E base de evidencia suficiente para decisao arquitetural.",
+      "D_HYBRID_PROMISING_BUT_NEEDS_BROADER_EVALUATION: ha beneficio concreto de complementaridade, mas com regressoes por pergunta e/ou base de evidencia insuficiente para promover."
+    ],
+    "evidence_base_note": "Propriedade do desenho da fase, nao do resultado: um corpus, um anotador, um modelo de embeddings, 12 perguntas medidas e a fusao so pode agir onde ambas as condicoes devolvem alguma coisa. Torna A_HYBRID_SUPPORTED inalcancavel nesta fase por construcao.",
+    "evidence_base_supports_architectural_decision": false,
+    "magnitude_threshold": null,
+    "magnitude_threshold_note": "Nao existe limiar numerico de ganho suficiente. O enunciado da fase proibia-o - 'descrever magnitude e casos concretos' - e uma versao anterior deste runner violava essa instrucao com um MATERIAL_DELTA de 0.02. A magnitude e reportada em aggregate_delta_c2_minus_c1 para ser lida, nao comparada com um numero.",
+    "reported_metric": "ndcg@5"
+  },
+  "digest_algorithm": "sha256",
+  "embedding": {
+    "approximate_index": false,
+    "configuration_version": "openai_embeddings_v1",
+    "dimension": 1536,
+    "embedded_text_field": "content",
+    "index_digest": "451d9f2fbe07a799ca694026e8238dd9aa3296c15e03d46330bb1d36d3d9370c",
+    "indexed_vectors": 1834,
+    "model": "text-embedding-3-small",
+    "normalization": "none",
+    "provider": "openai",
+    "similarity_metric": "cosine"
+  },
+  "excluded_questions": [
+    {
+      "c2_retrieved": 5,
+      "exclusion_reason": "Pergunta temporalmente ambigua por construcao. O corpus tem dois calendarios simultaneamente elegiveis e nenhum tem vigencia declarada, pelo que existem duas respostas corretas e incompativeis e nenhuma ordenacao entre elas e defensavel. Incluir esta pergunta numa metrica exigiria escolher um ano sem fundamento institucional. Deixa de estar excluida quando a convencao de vigencia (categoria B) for conhecida.",
+      "handling": "Continua excluida de todas as metricas. A D4.9 nao resolve a ambiguidade temporal nem inventa uma convencao de vigencia: fundir rankings nao produz informacao institucional que o corpus nao tem.",
+      "question_id": "Q014"
+    }
+  ],
+  "executed_at": "2026-08-19T16:12:12.934045+00:00",
+  "execution_digest": "b8da059090d3d2ecd49f65755522c78acec56f9bb7e23e108929425b4ea2e759",
+  "execution_digest_scope": "full_payload",
+  "experiment_version": "d4.9-hybrid-rrf-1",
+  "fusion": {
+    "absent_condition_contributes": false,
+    "arithmetic": "exact rational (fractions.Fraction), rounded only for output",
+    "final_top_k": 5,
+    "formula": "sum over conditions of 1 / (k_rrf + rank), ranks 1-based",
+    "k_rrf": 60,
+    "k_rrf_provenance": "Valor usado no artigo original que introduziu o metodo - Cormack, Clarke & Buettcher (2009), SIGIR 2009 - onde e descrito como fixado durante uma investigacao piloto, noutro corpus. Convencao herdada, sem grid search e sem ajuste a P1/S1.",
+    "method": "reciprocal_rank_fusion",
+    "source_depth": 5,
+    "sources": [
+      "C0",
+      "C1"
+    ],
+    "tie_break": [
+      "maior rrf_score, em aritmetica exata",
+      "menor best_rank entre as condicoes que o devolveram",
+      "menor corpus_item_id",
+      "menor chunk_index"
+    ],
+    "uses_original_scores": false
+  },
+  "ground_truth_digest": "bbaea746a1cd58d0392a213fd8fd1c282239ad8d299afb9d78d13728051b1301",
+  "ground_truth_digest_algorithm": "sha256",
+  "ground_truth_digest_scope": "measurement_relevant_fields",
+  "limitations": [
+    "Um unico corpus (P1) e um unico snapshot (S1).",
+    "Doze perguntas medidas: qualquer delta agregado move-se com uma pergunta.",
+    "Um unico anotador, sem medida de concordancia entre anotadores.",
+    "Um unico modelo de embeddings e um unico indice vetorial.",
+    "source_depth = 5: a fusao so pode reordenar o que as condicoes ja viam.",
+    "k_rrf herdado do artigo original e nao afinado - o resultado nao e o melhor RRF possivel neste corpus.",
+    "Ground truth incompleto por construcao (DIRECTED_JUDGMENT_INCOMPLETE).",
+    "Nada aqui demonstra generalizacao para outro corpus ou instituicao.",
+    "O hibrido nao foi avaliado com politica de admissao propria.",
+    "O resultado nao autoriza promocao para producao."
+  ],
+  "no_evidence_questions": [
+    {
+      "C0": {
+        "grade_histogram": {
+          "0": 0,
+          "1": 0,
+          "2": 0
+        },
+        "irrelevant_returned": 0,
+        "retrieved": 0
+      },
+      "C1": {
+        "grade_histogram": {
+          "0": 5,
+          "1": 0,
+          "2": 0
+        },
+        "irrelevant_returned": 5,
+        "retrieved": 5
+      },
+      "C2": {
+        "grade_histogram": {
+          "0": 5,
+          "1": 0,
+          "2": 0
+        },
+        "irrelevant_returned": 5,
+        "retrieved": 5
+      },
+      "excluded_from_metrics": true,
+      "exclusion_basis": "no_relevant_evidence",
+      "note": "Excluida de Recall, MRR e nDCG por indefinicao (nao ha alvo). Nenhum limiar hibrido e proposto ou implementado.",
+      "question_id": "Q013"
+    }
+  ],
+  "primary_k": 5,
+  "question_results": [
+    {
+      "comparison": {
+        "c2_versus_c0": "improves",
+        "c2_versus_c1": "worsens",
+        "solved": {
+          "C0": true,
+          "C1": true,
+          "C2": true
+        }
+      },
+      "conditions": {
+        "C0": {
+          "condition": "C0",
+          "metrics": {
+            "ndcg": {
+              "1": 0.0,
+              "3": 0.350985,
+              "5": 0.350985
+            },
+            "recall": {
+              "1": 0.0,
+              "3": 0.5,
+              "5": 0.5
+            },
+            "reciprocal_rank": 0.5,
+            "total_relevant_judged": 2
+          },
+          "ranking": [
+            {
+              "chunk_index": 89,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "position": 1
+            },
+            {
+              "chunk_index": 14,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 2,
+              "position": 2
+            },
+            {
+              "chunk_index": 31,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "position": 3
+            },
+            {
+              "chunk_index": 2,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "position": 4
+            }
+          ],
+          "retrieved_count": 4
+        },
+        "C1": {
+          "condition": "C1",
+          "metrics": {
+            "ndcg": {
+              "1": 1.0,
+              "3": 0.834448,
+              "5": 0.914309
+            },
+            "recall": {
+              "1": 0.5,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "reciprocal_rank": 1.0,
+            "total_relevant_judged": 2
+          },
+          "ranking": [
+            {
+              "chunk_index": 14,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 2,
+              "position": 1
+            },
+            {
+              "chunk_index": 10,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "position": 2
+            },
+            {
+              "chunk_index": 16,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 2,
+              "position": 3
+            },
+            {
+              "chunk_index": 12,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 1,
+              "position": 4
+            },
+            {
+              "chunk_index": 56,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "position": 5
+            }
+          ],
+          "retrieved_count": 5
+        },
+        "C2": {
+          "condition": "C2",
+          "metrics": {
+            "ndcg": {
+              "1": 1.0,
+              "3": 0.556298,
+              "5": 0.795883
+            },
+            "recall": {
+              "1": 0.5,
+              "3": 0.5,
+              "5": 1.0
+            },
+            "reciprocal_rank": 1.0,
+            "total_relevant_judged": 2
+          },
+          "ranking": [
+            {
+              "chunk_index": 14,
+              "contributing_conditions": [
+                "C0",
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 2,
+              "judged": true,
+              "position": 1,
+              "rank_c0": 2,
+              "rank_c1": 1,
+              "rrf_score": 0.03252247
+            },
+            {
+              "chunk_index": 89,
+              "contributing_conditions": [
+                "C0"
+              ],
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "judged": true,
+              "position": 2,
+              "rank_c0": 1,
+              "rank_c1": null,
+              "rrf_score": 0.01639344
+            },
+            {
+              "chunk_index": 10,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "judged": true,
+              "position": 3,
+              "rank_c0": null,
+              "rank_c1": 2,
+              "rrf_score": 0.01612903
+            },
+            {
+              "chunk_index": 16,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 2,
+              "judged": true,
+              "position": 4,
+              "rank_c0": null,
+              "rank_c1": 3,
+              "rrf_score": 0.01587302
+            },
+            {
+              "chunk_index": 31,
+              "contributing_conditions": [
+                "C0"
+              ],
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "judged": true,
+              "position": 5,
+              "rank_c0": 3,
+              "rank_c1": null,
+              "rrf_score": 0.01587302
+            }
+          ],
+          "retrieved_count": 5
+        }
+      },
+      "excluded_from_metrics": false,
+      "grade2_targets": {
+        "count": 2,
+        "ranks": {
+          "C0": {
+            "P1-DOC-002#14": 2,
+            "P1-DOC-002#16": null
+          },
+          "C1": {
+            "P1-DOC-002#14": 1,
+            "P1-DOC-002#16": 3
+          },
+          "C2": {
+            "P1-DOC-002#14": 1,
+            "P1-DOC-002#16": 4
+          }
+        }
+      },
+      "judged_grades": [
+        2,
+        2,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "measured": true,
+      "no_relevant_evidence": false,
+      "question_id": "Q001",
+      "temporal_scope": "2025/2026",
+      "union_size": 8
+    },
+    {
+      "comparison": {
+        "c2_versus_c0": "improves",
+        "c2_versus_c1": "equal",
+        "solved": {
+          "C0": true,
+          "C1": true,
+          "C2": true
+        }
+      },
+      "conditions": {
+        "C0": {
+          "condition": "C0",
+          "metrics": {
+            "ndcg": {
+              "1": 0.0,
+              "3": 0.521296,
+              "5": 0.521296
+            },
+            "recall": {
+              "1": 0.0,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "reciprocal_rank": 0.5,
+            "total_relevant_judged": 1
+          },
+          "ranking": [
+            {
+              "chunk_index": 89,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "position": 1
+            },
+            {
+              "chunk_index": 24,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 2,
+              "position": 2
+            }
+          ],
+          "retrieved_count": 2
+        },
+        "C1": {
+          "condition": "C1",
+          "metrics": {
+            "ndcg": {
+              "1": 1.0,
+              "3": 0.826235,
+              "5": 0.826235
+            },
+            "recall": {
+              "1": 1.0,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "reciprocal_rank": 1.0,
+            "total_relevant_judged": 1
+          },
+          "ranking": [
+            {
+              "chunk_index": 24,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 2,
+              "position": 1
+            },
+            {
+              "chunk_index": 64,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "position": 2
+            },
+            {
+              "chunk_index": 38,
+              "corpus_item_id": "P1-DOC-003",
+              "grade": 0,
+              "position": 3
+            },
+            {
+              "chunk_index": 50,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "position": 4
+            },
+            {
+              "chunk_index": 44,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "position": 5
+            }
+          ],
+          "retrieved_count": 5
+        },
+        "C2": {
+          "condition": "C2",
+          "metrics": {
+            "ndcg": {
+              "1": 1.0,
+              "3": 0.826235,
+              "5": 0.826235
+            },
+            "recall": {
+              "1": 1.0,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "reciprocal_rank": 1.0,
+            "total_relevant_judged": 1
+          },
+          "ranking": [
+            {
+              "chunk_index": 24,
+              "contributing_conditions": [
+                "C0",
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 2,
+              "judged": true,
+              "position": 1,
+              "rank_c0": 2,
+              "rank_c1": 1,
+              "rrf_score": 0.03252247
+            },
+            {
+              "chunk_index": 89,
+              "contributing_conditions": [
+                "C0"
+              ],
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "judged": true,
+              "position": 2,
+              "rank_c0": 1,
+              "rank_c1": null,
+              "rrf_score": 0.01639344
+            },
+            {
+              "chunk_index": 64,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "judged": true,
+              "position": 3,
+              "rank_c0": null,
+              "rank_c1": 2,
+              "rrf_score": 0.01612903
+            },
+            {
+              "chunk_index": 38,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-003",
+              "grade": 0,
+              "judged": true,
+              "position": 4,
+              "rank_c0": null,
+              "rank_c1": 3,
+              "rrf_score": 0.01587302
+            },
+            {
+              "chunk_index": 50,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "judged": true,
+              "position": 5,
+              "rank_c0": null,
+              "rank_c1": 4,
+              "rrf_score": 0.015625
+            }
+          ],
+          "retrieved_count": 5
+        }
+      },
+      "excluded_from_metrics": false,
+      "grade2_targets": {
+        "count": 1,
+        "ranks": {
+          "C0": {
+            "P1-DOC-002#24": 2
+          },
+          "C1": {
+            "P1-DOC-002#24": 1
+          },
+          "C2": {
+            "P1-DOC-002#24": 1
+          }
+        }
+      },
+      "judged_grades": [
+        2,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "measured": true,
+      "no_relevant_evidence": false,
+      "question_id": "Q002",
+      "temporal_scope": "2025/2026",
+      "union_size": 6
+    },
+    {
+      "comparison": {
+        "c2_versus_c0": "improves",
+        "c2_versus_c1": "worsens",
+        "solved": {
+          "C0": false,
+          "C1": true,
+          "C2": true
+        }
+      },
+      "conditions": {
+        "C0": {
+          "condition": "C0",
+          "metrics": {
+            "ndcg": {
+              "1": 0.0,
+              "3": 0.0,
+              "5": 0.0
+            },
+            "recall": {
+              "1": 0.0,
+              "3": 0.0,
+              "5": 0.0
+            },
+            "reciprocal_rank": 0.0,
+            "total_relevant_judged": 1
+          },
+          "ranking": [
+            {
+              "chunk_index": 12,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "position": 1
+            }
+          ],
+          "retrieved_count": 1
+        },
+        "C1": {
+          "condition": "C1",
+          "metrics": {
+            "ndcg": {
+              "1": 1.0,
+              "3": 0.826235,
+              "5": 0.944848
+            },
+            "recall": {
+              "1": 1.0,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "reciprocal_rank": 1.0,
+            "total_relevant_judged": 1
+          },
+          "ranking": [
+            {
+              "chunk_index": 44,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 2,
+              "position": 1
+            },
+            {
+              "chunk_index": 89,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "position": 2
+            },
+            {
+              "chunk_index": 50,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "position": 3
+            },
+            {
+              "chunk_index": 56,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 1,
+              "position": 4
+            },
+            {
+              "chunk_index": 72,
+              "corpus_item_id": "P1-DOC-003",
+              "grade": 0,
+              "position": 5
+            }
+          ],
+          "retrieved_count": 5
+        },
+        "C2": {
+          "condition": "C2",
+          "metrics": {
+            "ndcg": {
+              "1": 0.0,
+              "3": 0.521296,
+              "5": 0.62784
+            },
+            "recall": {
+              "1": 0.0,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "reciprocal_rank": 0.5,
+            "total_relevant_judged": 1
+          },
+          "ranking": [
+            {
+              "chunk_index": 12,
+              "contributing_conditions": [
+                "C0"
+              ],
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "judged": true,
+              "position": 1,
+              "rank_c0": 1,
+              "rank_c1": null,
+              "rrf_score": 0.01639344
+            },
+            {
+              "chunk_index": 44,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 2,
+              "judged": true,
+              "position": 2,
+              "rank_c0": null,
+              "rank_c1": 1,
+              "rrf_score": 0.01639344
+            },
+            {
+              "chunk_index": 89,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "judged": true,
+              "position": 3,
+              "rank_c0": null,
+              "rank_c1": 2,
+              "rrf_score": 0.01612903
+            },
+            {
+              "chunk_index": 50,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "judged": true,
+              "position": 4,
+              "rank_c0": null,
+              "rank_c1": 3,
+              "rrf_score": 0.01587302
+            },
+            {
+              "chunk_index": 56,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 1,
+              "judged": true,
+              "position": 5,
+              "rank_c0": null,
+              "rank_c1": 4,
+              "rrf_score": 0.015625
+            }
+          ],
+          "retrieved_count": 5
+        }
+      },
+      "excluded_from_metrics": false,
+      "grade2_targets": {
+        "count": 1,
+        "ranks": {
+          "C0": {
+            "P1-DOC-002#44": null
+          },
+          "C1": {
+            "P1-DOC-002#44": 1
+          },
+          "C2": {
+            "P1-DOC-002#44": 2
+          }
+        }
+      },
+      "judged_grades": [
+        2,
+        1,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "measured": true,
+      "no_relevant_evidence": false,
+      "question_id": "Q003",
+      "temporal_scope": "2025/2026",
+      "union_size": 6
+    },
+    {
+      "comparison": {
+        "c2_versus_c0": "equal",
+        "c2_versus_c1": "equal",
+        "solved": {
+          "C0": true,
+          "C1": true,
+          "C2": true
+        }
+      },
+      "conditions": {
+        "C0": {
+          "condition": "C0",
+          "metrics": {
+            "ndcg": {
+              "1": 1.0,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "recall": {
+              "1": 0.5,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "reciprocal_rank": 1.0,
+            "total_relevant_judged": 2
+          },
+          "ranking": [
+            {
+              "chunk_index": 57,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 2,
+              "position": 1
+            },
+            {
+              "chunk_index": 19,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 2,
+              "position": 2
+            },
+            {
+              "chunk_index": 97,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "position": 3
+            }
+          ],
+          "retrieved_count": 3
+        },
+        "C1": {
+          "condition": "C1",
+          "metrics": {
+            "ndcg": {
+              "1": 1.0,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "recall": {
+              "1": 0.5,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "reciprocal_rank": 1.0,
+            "total_relevant_judged": 2
+          },
+          "ranking": [
+            {
+              "chunk_index": 19,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 2,
+              "position": 1
+            },
+            {
+              "chunk_index": 57,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 2,
+              "position": 2
+            },
+            {
+              "chunk_index": 97,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "position": 3
+            },
+            {
+              "chunk_index": 25,
+              "corpus_item_id": "P1-DOC-003",
+              "grade": 0,
+              "position": 4
+            },
+            {
+              "chunk_index": 21,
+              "corpus_item_id": "P1-DOC-003",
+              "grade": 0,
+              "position": 5
+            }
+          ],
+          "retrieved_count": 5
+        },
+        "C2": {
+          "condition": "C2",
+          "metrics": {
+            "ndcg": {
+              "1": 1.0,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "recall": {
+              "1": 0.5,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "reciprocal_rank": 1.0,
+            "total_relevant_judged": 2
+          },
+          "ranking": [
+            {
+              "chunk_index": 19,
+              "contributing_conditions": [
+                "C0",
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 2,
+              "judged": true,
+              "position": 1,
+              "rank_c0": 2,
+              "rank_c1": 1,
+              "rrf_score": 0.03252247
+            },
+            {
+              "chunk_index": 57,
+              "contributing_conditions": [
+                "C0",
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 2,
+              "judged": true,
+              "position": 2,
+              "rank_c0": 1,
+              "rank_c1": 2,
+              "rrf_score": 0.03252247
+            },
+            {
+              "chunk_index": 97,
+              "contributing_conditions": [
+                "C0",
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "judged": true,
+              "position": 3,
+              "rank_c0": 3,
+              "rank_c1": 3,
+              "rrf_score": 0.03174603
+            },
+            {
+              "chunk_index": 25,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-003",
+              "grade": 0,
+              "judged": true,
+              "position": 4,
+              "rank_c0": null,
+              "rank_c1": 4,
+              "rrf_score": 0.015625
+            },
+            {
+              "chunk_index": 21,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-003",
+              "grade": 0,
+              "judged": true,
+              "position": 5,
+              "rank_c0": null,
+              "rank_c1": 5,
+              "rrf_score": 0.01538462
+            }
+          ],
+          "retrieved_count": 5
+        }
+      },
+      "excluded_from_metrics": false,
+      "grade2_targets": {
+        "count": 2,
+        "ranks": {
+          "C0": {
+            "P1-DOC-002#19": 2,
+            "P1-DOC-002#57": 1
+          },
+          "C1": {
+            "P1-DOC-002#19": 1,
+            "P1-DOC-002#57": 2
+          },
+          "C2": {
+            "P1-DOC-002#19": 1,
+            "P1-DOC-002#57": 2
+          }
+        }
+      },
+      "judged_grades": [
+        2,
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "measured": true,
+      "no_relevant_evidence": false,
+      "question_id": "Q004",
+      "temporal_scope": "2025/2026",
+      "union_size": 5
+    },
+    {
+      "comparison": {
+        "c2_versus_c0": "improves",
+        "c2_versus_c1": "improves",
+        "solved": {
+          "C0": true,
+          "C1": true,
+          "C2": true
+        }
+      },
+      "conditions": {
+        "C0": {
+          "condition": "C0",
+          "metrics": {
+            "ndcg": {
+              "1": 1.0,
+              "3": 0.878962,
+              "5": 0.890389
+            },
+            "recall": {
+              "1": 1.0,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "reciprocal_rank": 1.0,
+            "total_relevant_judged": 1
+          },
+          "ranking": [
+            {
+              "chunk_index": 175,
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 2,
+              "position": 1
+            },
+            {
+              "chunk_index": 60,
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 1,
+              "position": 2
+            },
+            {
+              "chunk_index": 310,
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 0,
+              "position": 3
+            },
+            {
+              "chunk_index": 173,
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 1,
+              "position": 4
+            },
+            {
+              "chunk_index": 178,
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 0,
+              "position": 5
+            }
+          ],
+          "retrieved_count": 5
+        },
+        "C1": {
+          "condition": "C1",
+          "metrics": {
+            "ndcg": {
+              "1": 0.333333,
+              "3": 0.757924,
+              "5": 0.686366
+            },
+            "recall": {
+              "1": 0.0,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "reciprocal_rank": 0.333333,
+            "total_relevant_judged": 1
+          },
+          "ranking": [
+            {
+              "chunk_index": 184,
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 1,
+              "position": 1
+            },
+            {
+              "chunk_index": 60,
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 1,
+              "position": 2
+            },
+            {
+              "chunk_index": 175,
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 2,
+              "position": 3
+            },
+            {
+              "chunk_index": 155,
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 0,
+              "position": 4
+            },
+            {
+              "chunk_index": 177,
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 0,
+              "position": 5
+            }
+          ],
+          "retrieved_count": 5
+        },
+        "C2": {
+          "condition": "C2",
+          "metrics": {
+            "ndcg": {
+              "1": 1.0,
+              "3": 1.0,
+              "5": 0.905587
+            },
+            "recall": {
+              "1": 1.0,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "reciprocal_rank": 1.0,
+            "total_relevant_judged": 1
+          },
+          "ranking": [
+            {
+              "chunk_index": 175,
+              "contributing_conditions": [
+                "C0",
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 2,
+              "judged": true,
+              "position": 1,
+              "rank_c0": 1,
+              "rank_c1": 3,
+              "rrf_score": 0.03226646
+            },
+            {
+              "chunk_index": 60,
+              "contributing_conditions": [
+                "C0",
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 1,
+              "judged": true,
+              "position": 2,
+              "rank_c0": 2,
+              "rank_c1": 2,
+              "rrf_score": 0.03225806
+            },
+            {
+              "chunk_index": 184,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 1,
+              "judged": true,
+              "position": 3,
+              "rank_c0": null,
+              "rank_c1": 1,
+              "rrf_score": 0.01639344
+            },
+            {
+              "chunk_index": 310,
+              "contributing_conditions": [
+                "C0"
+              ],
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 0,
+              "judged": true,
+              "position": 4,
+              "rank_c0": 3,
+              "rank_c1": null,
+              "rrf_score": 0.01587302
+            },
+            {
+              "chunk_index": 155,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 0,
+              "judged": true,
+              "position": 5,
+              "rank_c0": null,
+              "rank_c1": 4,
+              "rrf_score": 0.015625
+            }
+          ],
+          "retrieved_count": 5
+        }
+      },
+      "excluded_from_metrics": false,
+      "grade2_targets": {
+        "count": 1,
+        "ranks": {
+          "C0": {
+            "P1-DOC-004#175": 1
+          },
+          "C1": {
+            "P1-DOC-004#175": 3
+          },
+          "C2": {
+            "P1-DOC-004#175": 1
+          }
+        }
+      },
+      "judged_grades": [
+        2,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "measured": true,
+      "no_relevant_evidence": false,
+      "question_id": "Q005",
+      "temporal_scope": "not_time_dependent",
+      "union_size": 8
+    },
+    {
+      "comparison": {
+        "c2_versus_c0": "improves",
+        "c2_versus_c1": "equal",
+        "solved": {
+          "C0": false,
+          "C1": true,
+          "C2": true
+        }
+      },
+      "conditions": {
+        "C0": {
+          "condition": "C0",
+          "metrics": {
+            "ndcg": {
+              "1": 0.0,
+              "3": 0.0,
+              "5": 0.0
+            },
+            "recall": {
+              "1": 0.0,
+              "3": 0.0,
+              "5": 0.0
+            },
+            "reciprocal_rank": 0.0,
+            "total_relevant_judged": 2
+          },
+          "ranking": [],
+          "retrieved_count": 0
+        },
+        "C1": {
+          "condition": "C1",
+          "metrics": {
+            "ndcg": {
+              "1": 1.0,
+              "3": 0.673293,
+              "5": 0.896745
+            },
+            "recall": {
+              "1": 0.5,
+              "3": 0.5,
+              "5": 1.0
+            },
+            "reciprocal_rank": 1.0,
+            "total_relevant_judged": 2
+          },
+          "ranking": [
+            {
+              "chunk_index": 60,
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 2,
+              "position": 1
+            },
+            {
+              "chunk_index": 175,
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 1,
+              "position": 2
+            },
+            {
+              "chunk_index": 178,
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 0,
+              "position": 3
+            },
+            {
+              "chunk_index": 183,
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 1,
+              "position": 4
+            },
+            {
+              "chunk_index": 184,
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 2,
+              "position": 5
+            }
+          ],
+          "retrieved_count": 5
+        },
+        "C2": {
+          "condition": "C2",
+          "metrics": {
+            "ndcg": {
+              "1": 1.0,
+              "3": 0.673293,
+              "5": 0.896745
+            },
+            "recall": {
+              "1": 0.5,
+              "3": 0.5,
+              "5": 1.0
+            },
+            "reciprocal_rank": 1.0,
+            "total_relevant_judged": 2
+          },
+          "ranking": [
+            {
+              "chunk_index": 60,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 2,
+              "judged": true,
+              "position": 1,
+              "rank_c0": null,
+              "rank_c1": 1,
+              "rrf_score": 0.01639344
+            },
+            {
+              "chunk_index": 175,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 1,
+              "judged": true,
+              "position": 2,
+              "rank_c0": null,
+              "rank_c1": 2,
+              "rrf_score": 0.01612903
+            },
+            {
+              "chunk_index": 178,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 0,
+              "judged": true,
+              "position": 3,
+              "rank_c0": null,
+              "rank_c1": 3,
+              "rrf_score": 0.01587302
+            },
+            {
+              "chunk_index": 183,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 1,
+              "judged": true,
+              "position": 4,
+              "rank_c0": null,
+              "rank_c1": 4,
+              "rrf_score": 0.015625
+            },
+            {
+              "chunk_index": 184,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 2,
+              "judged": true,
+              "position": 5,
+              "rank_c0": null,
+              "rank_c1": 5,
+              "rrf_score": 0.01538462
+            }
+          ],
+          "retrieved_count": 5
+        }
+      },
+      "excluded_from_metrics": false,
+      "grade2_targets": {
+        "count": 2,
+        "ranks": {
+          "C0": {
+            "P1-DOC-004#184": null,
+            "P1-DOC-004#60": null
+          },
+          "C1": {
+            "P1-DOC-004#184": 5,
+            "P1-DOC-004#60": 1
+          },
+          "C2": {
+            "P1-DOC-004#184": 5,
+            "P1-DOC-004#60": 1
+          }
+        }
+      },
+      "judged_grades": [
+        2,
+        2,
+        1,
+        1,
+        0
+      ],
+      "measured": true,
+      "no_relevant_evidence": false,
+      "question_id": "Q006",
+      "temporal_scope": "not_time_dependent",
+      "union_size": 5
+    },
+    {
+      "comparison": {
+        "c2_versus_c0": "improves",
+        "c2_versus_c1": "equal",
+        "solved": {
+          "C0": false,
+          "C1": true,
+          "C2": true
+        }
+      },
+      "conditions": {
+        "C0": {
+          "condition": "C0",
+          "metrics": {
+            "ndcg": {
+              "1": 0.0,
+              "3": 0.0,
+              "5": 0.0
+            },
+            "recall": {
+              "1": 0.0,
+              "3": 0.0,
+              "5": 0.0
+            },
+            "reciprocal_rank": 0.0,
+            "total_relevant_judged": 2
+          },
+          "ranking": [],
+          "retrieved_count": 0
+        },
+        "C1": {
+          "condition": "C1",
+          "metrics": {
+            "ndcg": {
+              "1": 1.0,
+              "3": 0.907284,
+              "5": 0.987145
+            },
+            "recall": {
+              "1": 0.5,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "reciprocal_rank": 1.0,
+            "total_relevant_judged": 2
+          },
+          "ranking": [
+            {
+              "chunk_index": 152,
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 2,
+              "position": 1
+            },
+            {
+              "chunk_index": 160,
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 2,
+              "position": 2
+            },
+            {
+              "chunk_index": 177,
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 0,
+              "position": 3
+            },
+            {
+              "chunk_index": 161,
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 1,
+              "position": 4
+            },
+            {
+              "chunk_index": 207,
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 0,
+              "position": 5
+            }
+          ],
+          "retrieved_count": 5
+        },
+        "C2": {
+          "condition": "C2",
+          "metrics": {
+            "ndcg": {
+              "1": 1.0,
+              "3": 0.907284,
+              "5": 0.987145
+            },
+            "recall": {
+              "1": 0.5,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "reciprocal_rank": 1.0,
+            "total_relevant_judged": 2
+          },
+          "ranking": [
+            {
+              "chunk_index": 152,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 2,
+              "judged": true,
+              "position": 1,
+              "rank_c0": null,
+              "rank_c1": 1,
+              "rrf_score": 0.01639344
+            },
+            {
+              "chunk_index": 160,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 2,
+              "judged": true,
+              "position": 2,
+              "rank_c0": null,
+              "rank_c1": 2,
+              "rrf_score": 0.01612903
+            },
+            {
+              "chunk_index": 177,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 0,
+              "judged": true,
+              "position": 3,
+              "rank_c0": null,
+              "rank_c1": 3,
+              "rrf_score": 0.01587302
+            },
+            {
+              "chunk_index": 161,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 1,
+              "judged": true,
+              "position": 4,
+              "rank_c0": null,
+              "rank_c1": 4,
+              "rrf_score": 0.015625
+            },
+            {
+              "chunk_index": 207,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 0,
+              "judged": true,
+              "position": 5,
+              "rank_c0": null,
+              "rank_c1": 5,
+              "rrf_score": 0.01538462
+            }
+          ],
+          "retrieved_count": 5
+        }
+      },
+      "excluded_from_metrics": false,
+      "grade2_targets": {
+        "count": 2,
+        "ranks": {
+          "C0": {
+            "P1-DOC-007#152": null,
+            "P1-DOC-007#160": null
+          },
+          "C1": {
+            "P1-DOC-007#152": 1,
+            "P1-DOC-007#160": 2
+          },
+          "C2": {
+            "P1-DOC-007#152": 1,
+            "P1-DOC-007#160": 2
+          }
+        }
+      },
+      "judged_grades": [
+        2,
+        2,
+        1,
+        0,
+        0
+      ],
+      "measured": true,
+      "no_relevant_evidence": false,
+      "question_id": "Q007",
+      "temporal_scope": "not_time_dependent",
+      "union_size": 5
+    },
+    {
+      "comparison": {
+        "c2_versus_c0": "improves",
+        "c2_versus_c1": "equal",
+        "solved": {
+          "C0": false,
+          "C1": true,
+          "C2": true
+        }
+      },
+      "conditions": {
+        "C0": {
+          "condition": "C0",
+          "metrics": {
+            "ndcg": {
+              "1": 0.0,
+              "3": 0.0,
+              "5": 0.0
+            },
+            "recall": {
+              "1": 0.0,
+              "3": 0.0,
+              "5": 0.0
+            },
+            "reciprocal_rank": 0.0,
+            "total_relevant_judged": 1
+          },
+          "ranking": [],
+          "retrieved_count": 0
+        },
+        "C1": {
+          "condition": "C1",
+          "metrics": {
+            "ndcg": {
+              "1": 1.0,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "recall": {
+              "1": 1.0,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "reciprocal_rank": 1.0,
+            "total_relevant_judged": 1
+          },
+          "ranking": [
+            {
+              "chunk_index": 161,
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 2,
+              "position": 1
+            },
+            {
+              "chunk_index": 152,
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 1,
+              "position": 2
+            },
+            {
+              "chunk_index": 229,
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 0,
+              "position": 3
+            },
+            {
+              "chunk_index": 142,
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 0,
+              "position": 4
+            },
+            {
+              "chunk_index": 160,
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 0,
+              "position": 5
+            }
+          ],
+          "retrieved_count": 5
+        },
+        "C2": {
+          "condition": "C2",
+          "metrics": {
+            "ndcg": {
+              "1": 1.0,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "recall": {
+              "1": 1.0,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "reciprocal_rank": 1.0,
+            "total_relevant_judged": 1
+          },
+          "ranking": [
+            {
+              "chunk_index": 161,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 2,
+              "judged": true,
+              "position": 1,
+              "rank_c0": null,
+              "rank_c1": 1,
+              "rrf_score": 0.01639344
+            },
+            {
+              "chunk_index": 152,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 1,
+              "judged": true,
+              "position": 2,
+              "rank_c0": null,
+              "rank_c1": 2,
+              "rrf_score": 0.01612903
+            },
+            {
+              "chunk_index": 229,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 0,
+              "judged": true,
+              "position": 3,
+              "rank_c0": null,
+              "rank_c1": 3,
+              "rrf_score": 0.01587302
+            },
+            {
+              "chunk_index": 142,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 0,
+              "judged": true,
+              "position": 4,
+              "rank_c0": null,
+              "rank_c1": 4,
+              "rrf_score": 0.015625
+            },
+            {
+              "chunk_index": 160,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 0,
+              "judged": true,
+              "position": 5,
+              "rank_c0": null,
+              "rank_c1": 5,
+              "rrf_score": 0.01538462
+            }
+          ],
+          "retrieved_count": 5
+        }
+      },
+      "excluded_from_metrics": false,
+      "grade2_targets": {
+        "count": 1,
+        "ranks": {
+          "C0": {
+            "P1-DOC-007#161": null
+          },
+          "C1": {
+            "P1-DOC-007#161": 1
+          },
+          "C2": {
+            "P1-DOC-007#161": 1
+          }
+        }
+      },
+      "judged_grades": [
+        2,
+        1,
+        0,
+        0,
+        0
+      ],
+      "measured": true,
+      "no_relevant_evidence": false,
+      "question_id": "Q008",
+      "temporal_scope": "not_time_dependent",
+      "union_size": 5
+    },
+    {
+      "comparison": {
+        "c2_versus_c0": "improves",
+        "c2_versus_c1": "equal",
+        "solved": {
+          "C0": false,
+          "C1": true,
+          "C2": true
+        }
+      },
+      "conditions": {
+        "C0": {
+          "condition": "C0",
+          "metrics": {
+            "ndcg": {
+              "1": 0.0,
+              "3": 0.0,
+              "5": 0.0
+            },
+            "recall": {
+              "1": 0.0,
+              "3": 0.0,
+              "5": 0.0
+            },
+            "reciprocal_rank": 0.0,
+            "total_relevant_judged": 1
+          },
+          "ranking": [],
+          "retrieved_count": 0
+        },
+        "C1": {
+          "condition": "C1",
+          "metrics": {
+            "ndcg": {
+              "1": 1.0,
+              "3": 0.878962,
+              "5": 0.820782
+            },
+            "recall": {
+              "1": 1.0,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "reciprocal_rank": 1.0,
+            "total_relevant_judged": 1
+          },
+          "ranking": [
+            {
+              "chunk_index": 251,
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 2,
+              "position": 1
+            },
+            {
+              "chunk_index": 125,
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 1,
+              "position": 2
+            },
+            {
+              "chunk_index": 177,
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 0,
+              "position": 3
+            },
+            {
+              "chunk_index": 257,
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 1,
+              "position": 4
+            },
+            {
+              "chunk_index": 414,
+              "corpus_item_id": "P1-DOC-005",
+              "grade": 0,
+              "position": 5
+            }
+          ],
+          "retrieved_count": 5
+        },
+        "C2": {
+          "condition": "C2",
+          "metrics": {
+            "ndcg": {
+              "1": 1.0,
+              "3": 0.878962,
+              "5": 0.820782
+            },
+            "recall": {
+              "1": 1.0,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "reciprocal_rank": 1.0,
+            "total_relevant_judged": 1
+          },
+          "ranking": [
+            {
+              "chunk_index": 251,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 2,
+              "judged": true,
+              "position": 1,
+              "rank_c0": null,
+              "rank_c1": 1,
+              "rrf_score": 0.01639344
+            },
+            {
+              "chunk_index": 125,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 1,
+              "judged": true,
+              "position": 2,
+              "rank_c0": null,
+              "rank_c1": 2,
+              "rrf_score": 0.01612903
+            },
+            {
+              "chunk_index": 177,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 0,
+              "judged": true,
+              "position": 3,
+              "rank_c0": null,
+              "rank_c1": 3,
+              "rrf_score": 0.01587302
+            },
+            {
+              "chunk_index": 257,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-007",
+              "grade": 1,
+              "judged": true,
+              "position": 4,
+              "rank_c0": null,
+              "rank_c1": 4,
+              "rrf_score": 0.015625
+            },
+            {
+              "chunk_index": 414,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-005",
+              "grade": 0,
+              "judged": true,
+              "position": 5,
+              "rank_c0": null,
+              "rank_c1": 5,
+              "rrf_score": 0.01538462
+            }
+          ],
+          "retrieved_count": 5
+        }
+      },
+      "excluded_from_metrics": false,
+      "grade2_targets": {
+        "count": 1,
+        "ranks": {
+          "C0": {
+            "P1-DOC-007#251": null
+          },
+          "C1": {
+            "P1-DOC-007#251": 1
+          },
+          "C2": {
+            "P1-DOC-007#251": 1
+          }
+        }
+      },
+      "judged_grades": [
+        2,
+        1,
+        1,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "measured": true,
+      "no_relevant_evidence": false,
+      "question_id": "Q009",
+      "temporal_scope": "not_time_dependent",
+      "union_size": 5
+    },
+    {
+      "comparison": {
+        "c2_versus_c0": "equal",
+        "c2_versus_c1": "equal",
+        "solved": {
+          "C0": true,
+          "C1": true,
+          "C2": true
+        }
+      },
+      "conditions": {
+        "C0": {
+          "condition": "C0",
+          "metrics": {
+            "ndcg": {
+              "1": 1.0,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "recall": {
+              "1": 1.0,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "reciprocal_rank": 1.0,
+            "total_relevant_judged": 1
+          },
+          "ranking": [
+            {
+              "chunk_index": 397,
+              "corpus_item_id": "P1-DOC-005",
+              "grade": 2,
+              "position": 1
+            }
+          ],
+          "retrieved_count": 1
+        },
+        "C1": {
+          "condition": "C1",
+          "metrics": {
+            "ndcg": {
+              "1": 1.0,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "recall": {
+              "1": 1.0,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "reciprocal_rank": 1.0,
+            "total_relevant_judged": 1
+          },
+          "ranking": [
+            {
+              "chunk_index": 397,
+              "corpus_item_id": "P1-DOC-005",
+              "grade": 2,
+              "position": 1
+            },
+            {
+              "chunk_index": 416,
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 0,
+              "position": 2
+            },
+            {
+              "chunk_index": 369,
+              "corpus_item_id": "P1-DOC-005",
+              "grade": 0,
+              "position": 3
+            },
+            {
+              "chunk_index": 375,
+              "corpus_item_id": "P1-DOC-005",
+              "grade": 0,
+              "position": 4
+            },
+            {
+              "chunk_index": 138,
+              "corpus_item_id": "P1-DOC-005",
+              "grade": 0,
+              "position": 5
+            }
+          ],
+          "retrieved_count": 5
+        },
+        "C2": {
+          "condition": "C2",
+          "metrics": {
+            "ndcg": {
+              "1": 1.0,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "recall": {
+              "1": 1.0,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "reciprocal_rank": 1.0,
+            "total_relevant_judged": 1
+          },
+          "ranking": [
+            {
+              "chunk_index": 397,
+              "contributing_conditions": [
+                "C0",
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-005",
+              "grade": 2,
+              "judged": true,
+              "position": 1,
+              "rank_c0": 1,
+              "rank_c1": 1,
+              "rrf_score": 0.03278689
+            },
+            {
+              "chunk_index": 416,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 0,
+              "judged": true,
+              "position": 2,
+              "rank_c0": null,
+              "rank_c1": 2,
+              "rrf_score": 0.01612903
+            },
+            {
+              "chunk_index": 369,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-005",
+              "grade": 0,
+              "judged": true,
+              "position": 3,
+              "rank_c0": null,
+              "rank_c1": 3,
+              "rrf_score": 0.01587302
+            },
+            {
+              "chunk_index": 375,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-005",
+              "grade": 0,
+              "judged": true,
+              "position": 4,
+              "rank_c0": null,
+              "rank_c1": 4,
+              "rrf_score": 0.015625
+            },
+            {
+              "chunk_index": 138,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-005",
+              "grade": 0,
+              "judged": true,
+              "position": 5,
+              "rank_c0": null,
+              "rank_c1": 5,
+              "rrf_score": 0.01538462
+            }
+          ],
+          "retrieved_count": 5
+        }
+      },
+      "excluded_from_metrics": false,
+      "grade2_targets": {
+        "count": 1,
+        "ranks": {
+          "C0": {
+            "P1-DOC-005#397": 1
+          },
+          "C1": {
+            "P1-DOC-005#397": 1
+          },
+          "C2": {
+            "P1-DOC-005#397": 1
+          }
+        }
+      },
+      "judged_grades": [
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "measured": true,
+      "no_relevant_evidence": false,
+      "question_id": "Q010",
+      "temporal_scope": "not_time_dependent",
+      "union_size": 5
+    },
+    {
+      "comparison": {
+        "c2_versus_c0": "improves",
+        "c2_versus_c1": "improves",
+        "solved": {
+          "C0": true,
+          "C1": true,
+          "C2": true
+        }
+      },
+      "conditions": {
+        "C0": {
+          "condition": "C0",
+          "metrics": {
+            "ndcg": {
+              "1": 1.0,
+              "3": 0.613147,
+              "5": 0.877215
+            },
+            "recall": {
+              "1": 0.5,
+              "3": 0.5,
+              "5": 1.0
+            },
+            "reciprocal_rank": 1.0,
+            "total_relevant_judged": 2
+          },
+          "ranking": [
+            {
+              "chunk_index": 37,
+              "corpus_item_id": "P1-DOC-003",
+              "grade": 2,
+              "position": 1
+            },
+            {
+              "chunk_index": 21,
+              "corpus_item_id": "P1-DOC-003",
+              "grade": 0,
+              "position": 2
+            },
+            {
+              "chunk_index": 38,
+              "corpus_item_id": "P1-DOC-003",
+              "grade": 0,
+              "position": 3
+            },
+            {
+              "chunk_index": 72,
+              "corpus_item_id": "P1-DOC-003",
+              "grade": 2,
+              "position": 4
+            }
+          ],
+          "retrieved_count": 4
+        },
+        "C1": {
+          "condition": "C1",
+          "metrics": {
+            "ndcg": {
+              "1": 0.0,
+              "3": 0.386853,
+              "5": 0.386853
+            },
+            "recall": {
+              "1": 0.0,
+              "3": 0.5,
+              "5": 0.5
+            },
+            "reciprocal_rank": 0.5,
+            "total_relevant_judged": 2
+          },
+          "ranking": [
+            {
+              "chunk_index": 16,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "position": 1
+            },
+            {
+              "chunk_index": 72,
+              "corpus_item_id": "P1-DOC-003",
+              "grade": 2,
+              "position": 2
+            },
+            {
+              "chunk_index": 56,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "position": 3
+            },
+            {
+              "chunk_index": 66,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "position": 4
+            },
+            {
+              "chunk_index": 58,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "position": 5
+            }
+          ],
+          "retrieved_count": 5
+        },
+        "C2": {
+          "condition": "C2",
+          "metrics": {
+            "ndcg": {
+              "1": 1.0,
+              "3": 0.919721,
+              "5": 0.919721
+            },
+            "recall": {
+              "1": 0.5,
+              "3": 1.0,
+              "5": 1.0
+            },
+            "reciprocal_rank": 1.0,
+            "total_relevant_judged": 2
+          },
+          "ranking": [
+            {
+              "chunk_index": 72,
+              "contributing_conditions": [
+                "C0",
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-003",
+              "grade": 2,
+              "judged": true,
+              "position": 1,
+              "rank_c0": 4,
+              "rank_c1": 2,
+              "rrf_score": 0.03175403
+            },
+            {
+              "chunk_index": 16,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "judged": true,
+              "position": 2,
+              "rank_c0": null,
+              "rank_c1": 1,
+              "rrf_score": 0.01639344
+            },
+            {
+              "chunk_index": 37,
+              "contributing_conditions": [
+                "C0"
+              ],
+              "corpus_item_id": "P1-DOC-003",
+              "grade": 2,
+              "judged": true,
+              "position": 3,
+              "rank_c0": 1,
+              "rank_c1": null,
+              "rrf_score": 0.01639344
+            },
+            {
+              "chunk_index": 21,
+              "contributing_conditions": [
+                "C0"
+              ],
+              "corpus_item_id": "P1-DOC-003",
+              "grade": 0,
+              "judged": true,
+              "position": 4,
+              "rank_c0": 2,
+              "rank_c1": null,
+              "rrf_score": 0.01612903
+            },
+            {
+              "chunk_index": 56,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "judged": true,
+              "position": 5,
+              "rank_c0": null,
+              "rank_c1": 3,
+              "rrf_score": 0.01587302
+            }
+          ],
+          "retrieved_count": 5
+        }
+      },
+      "excluded_from_metrics": false,
+      "grade2_targets": {
+        "count": 2,
+        "ranks": {
+          "C0": {
+            "P1-DOC-003#37": 1,
+            "P1-DOC-003#72": 4
+          },
+          "C1": {
+            "P1-DOC-003#37": null,
+            "P1-DOC-003#72": 2
+          },
+          "C2": {
+            "P1-DOC-003#37": 3,
+            "P1-DOC-003#72": 1
+          }
+        }
+      },
+      "judged_grades": [
+        2,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "measured": true,
+      "no_relevant_evidence": false,
+      "question_id": "Q011",
+      "temporal_scope": "2023/2024",
+      "union_size": 8
+    },
+    {
+      "comparison": {
+        "c2_versus_c0": "improves",
+        "c2_versus_c1": "equal",
+        "solved": {
+          "C0": false,
+          "C1": false,
+          "C2": false
+        }
+      },
+      "conditions": {
+        "C0": {
+          "condition": "C0",
+          "metrics": {
+            "ndcg": {
+              "1": 0.0,
+              "3": 0.0,
+              "5": 0.0
+            },
+            "recall": {
+              "1": 0.0,
+              "3": 0.0,
+              "5": 0.0
+            },
+            "reciprocal_rank": 0.0,
+            "total_relevant_judged": 1
+          },
+          "ranking": [],
+          "retrieved_count": 0
+        },
+        "C1": {
+          "condition": "C1",
+          "metrics": {
+            "ndcg": {
+              "1": 0.0,
+              "3": 0.121038,
+              "5": 0.121038
+            },
+            "recall": {
+              "1": 0.0,
+              "3": 0.0,
+              "5": 0.0
+            },
+            "reciprocal_rank": 0.0,
+            "total_relevant_judged": 1
+          },
+          "ranking": [
+            {
+              "chunk_index": 10,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "position": 1
+            },
+            {
+              "chunk_index": 12,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "position": 2
+            },
+            {
+              "chunk_index": 56,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 1,
+              "position": 3
+            },
+            {
+              "chunk_index": 14,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "position": 4
+            },
+            {
+              "chunk_index": 41,
+              "corpus_item_id": "P1-DOC-003",
+              "grade": 0,
+              "position": 5
+            }
+          ],
+          "retrieved_count": 5
+        },
+        "C2": {
+          "condition": "C2",
+          "metrics": {
+            "ndcg": {
+              "1": 0.0,
+              "3": 0.121038,
+              "5": 0.121038
+            },
+            "recall": {
+              "1": 0.0,
+              "3": 0.0,
+              "5": 0.0
+            },
+            "reciprocal_rank": 0.0,
+            "total_relevant_judged": 1
+          },
+          "ranking": [
+            {
+              "chunk_index": 10,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "judged": true,
+              "position": 1,
+              "rank_c0": null,
+              "rank_c1": 1,
+              "rrf_score": 0.01639344
+            },
+            {
+              "chunk_index": 12,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "judged": true,
+              "position": 2,
+              "rank_c0": null,
+              "rank_c1": 2,
+              "rrf_score": 0.01612903
+            },
+            {
+              "chunk_index": 56,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 1,
+              "judged": true,
+              "position": 3,
+              "rank_c0": null,
+              "rank_c1": 3,
+              "rrf_score": 0.01587302
+            },
+            {
+              "chunk_index": 14,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "judged": true,
+              "position": 4,
+              "rank_c0": null,
+              "rank_c1": 4,
+              "rrf_score": 0.015625
+            },
+            {
+              "chunk_index": 41,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-003",
+              "grade": 0,
+              "judged": true,
+              "position": 5,
+              "rank_c0": null,
+              "rank_c1": 5,
+              "rrf_score": 0.01538462
+            }
+          ],
+          "retrieved_count": 5
+        }
+      },
+      "excluded_from_metrics": false,
+      "grade2_targets": {
+        "count": 0,
+        "ranks": {
+          "C0": {},
+          "C1": {},
+          "C2": {}
+        }
+      },
+      "judged_grades": [
+        2,
+        1,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "measured": true,
+      "no_relevant_evidence": false,
+      "question_id": "Q012",
+      "temporal_scope": "2025/2026",
+      "union_size": 5
+    },
+    {
+      "comparison": null,
+      "conditions": {
+        "C0": {
+          "condition": "C0",
+          "metrics": null,
+          "ranking": [],
+          "retrieved_count": 0
+        },
+        "C1": {
+          "condition": "C1",
+          "metrics": null,
+          "ranking": [
+            {
+              "chunk_index": 213,
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 0,
+              "position": 1
+            },
+            {
+              "chunk_index": 227,
+              "corpus_item_id": "P1-DOC-005",
+              "grade": 0,
+              "position": 2
+            },
+            {
+              "chunk_index": 142,
+              "corpus_item_id": "P1-DOC-005",
+              "grade": 0,
+              "position": 3
+            },
+            {
+              "chunk_index": 290,
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 0,
+              "position": 4
+            },
+            {
+              "chunk_index": 229,
+              "corpus_item_id": "P1-DOC-005",
+              "grade": 0,
+              "position": 5
+            }
+          ],
+          "retrieved_count": 5
+        },
+        "C2": {
+          "condition": "C2",
+          "metrics": null,
+          "ranking": [
+            {
+              "chunk_index": 213,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 0,
+              "judged": true,
+              "position": 1,
+              "rank_c0": null,
+              "rank_c1": 1,
+              "rrf_score": 0.01639344
+            },
+            {
+              "chunk_index": 227,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-005",
+              "grade": 0,
+              "judged": true,
+              "position": 2,
+              "rank_c0": null,
+              "rank_c1": 2,
+              "rrf_score": 0.01612903
+            },
+            {
+              "chunk_index": 142,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-005",
+              "grade": 0,
+              "judged": true,
+              "position": 3,
+              "rank_c0": null,
+              "rank_c1": 3,
+              "rrf_score": 0.01587302
+            },
+            {
+              "chunk_index": 290,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-004",
+              "grade": 0,
+              "judged": true,
+              "position": 4,
+              "rank_c0": null,
+              "rank_c1": 4,
+              "rrf_score": 0.015625
+            },
+            {
+              "chunk_index": 229,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-005",
+              "grade": 0,
+              "judged": true,
+              "position": 5,
+              "rank_c0": null,
+              "rank_c1": 5,
+              "rrf_score": 0.01538462
+            }
+          ],
+          "retrieved_count": 5
+        }
+      },
+      "excluded_from_metrics": false,
+      "grade2_targets": {
+        "count": 0,
+        "ranks": {
+          "C0": {},
+          "C1": {},
+          "C2": {}
+        }
+      },
+      "judged_grades": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "measured": false,
+      "no_relevant_evidence": true,
+      "question_id": "Q013",
+      "temporal_scope": "not_time_dependent",
+      "union_size": 5
+    },
+    {
+      "comparison": null,
+      "conditions": {
+        "C0": {
+          "condition": "C0",
+          "metrics": null,
+          "ranking": [
+            {
+              "chunk_index": 24,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 2,
+              "position": 1
+            },
+            {
+              "chunk_index": 64,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "position": 2
+            },
+            {
+              "chunk_index": 38,
+              "corpus_item_id": "P1-DOC-003",
+              "grade": 0,
+              "position": 3
+            }
+          ],
+          "retrieved_count": 3
+        },
+        "C1": {
+          "condition": "C1",
+          "metrics": null,
+          "ranking": [
+            {
+              "chunk_index": 24,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 2,
+              "position": 1
+            },
+            {
+              "chunk_index": 64,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "position": 2
+            },
+            {
+              "chunk_index": 38,
+              "corpus_item_id": "P1-DOC-003",
+              "grade": 0,
+              "position": 3
+            },
+            {
+              "chunk_index": 44,
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "position": 4
+            },
+            {
+              "chunk_index": 72,
+              "corpus_item_id": "P1-DOC-003",
+              "grade": 0,
+              "position": 5
+            }
+          ],
+          "retrieved_count": 5
+        },
+        "C2": {
+          "condition": "C2",
+          "metrics": null,
+          "ranking": [
+            {
+              "chunk_index": 24,
+              "contributing_conditions": [
+                "C0",
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 2,
+              "judged": true,
+              "position": 1,
+              "rank_c0": 1,
+              "rank_c1": 1,
+              "rrf_score": 0.03278689
+            },
+            {
+              "chunk_index": 64,
+              "contributing_conditions": [
+                "C0",
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "judged": true,
+              "position": 2,
+              "rank_c0": 2,
+              "rank_c1": 2,
+              "rrf_score": 0.03225806
+            },
+            {
+              "chunk_index": 38,
+              "contributing_conditions": [
+                "C0",
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-003",
+              "grade": 0,
+              "judged": true,
+              "position": 3,
+              "rank_c0": 3,
+              "rank_c1": 3,
+              "rrf_score": 0.03174603
+            },
+            {
+              "chunk_index": 44,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-002",
+              "grade": 0,
+              "judged": true,
+              "position": 4,
+              "rank_c0": null,
+              "rank_c1": 4,
+              "rrf_score": 0.015625
+            },
+            {
+              "chunk_index": 72,
+              "contributing_conditions": [
+                "C1"
+              ],
+              "corpus_item_id": "P1-DOC-003",
+              "grade": 0,
+              "judged": true,
+              "position": 5,
+              "rank_c0": null,
+              "rank_c1": 5,
+              "rrf_score": 0.01538462
+            }
+          ],
+          "retrieved_count": 5
+        }
+      },
+      "excluded_from_metrics": true,
+      "grade2_targets": {
+        "count": 1,
+        "ranks": {
+          "C0": {
+            "P1-DOC-002#24": 1
+          },
+          "C1": {
+            "P1-DOC-002#24": 1
+          },
+          "C2": {
+            "P1-DOC-002#24": 1
+          }
+        }
+      },
+      "judged_grades": [
+        2,
+        2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "measured": false,
+      "no_relevant_evidence": false,
+      "question_id": "Q014",
+      "temporal_scope": "unscoped",
+      "union_size": 5
+    }
+  ],
+  "reference_date": "2026-08-15",
+  "reproducibility_note": "A fase consome rankings persistidos e nao contacta o fornecedor: result_digest e execution_digest sao ambos estaveis entre execucoes.",
+  "result_digest": "9ce33d93c29a54c30cdb03929664ba79ae20960ffd602042dd2f43d99a109c51",
+  "result_digest_scope": "full_payload_without_run_fields",
+  "retrieval": {
+    "candidate_limit": 25,
+    "comparable_across_queries": false,
+    "fts_config": "portuguese",
+    "language": "pt",
+    "min_relevance_score": 0.05,
+    "official_only": true,
+    "pipeline_version": "lexical_pipeline_v1",
+    "score_kind": "lexical_relevance",
+    "scoring_version": "lexical_composite_v1",
+    "strategy": "lexical",
+    "top_k": 5
+  },
+  "scope_note": "Experiencia offline de fusao de rankings. Nao altera o retrieval de producao, nao liga a condicao densa a API, nao aplica politica de admissao e nao e uma medida de answerability.",
+  "snapshot_id": "a94f940229152a3b61860b370df8cb3ea8fe1a0e7236d65e86fe4b5118baf4c1",
+  "source_conditions": {
+    "C0": {
+      "can_return_empty": true,
+      "label": "lexical",
+      "query_preprocessing": "normalize_text",
+      "relevance_threshold": "settings.retrieval_min_relevance_score",
+      "retriever": "app.retrieval.lexical.PostgresLexicalRetriever",
+      "score_kind": "lexical_relevance",
+      "score_version": "lexical_composite_v1"
+    },
+    "C1": {
+      "can_return_empty": false,
+      "label": "dense",
+      "pipeline_version": "dense_pipeline_v1",
+      "query_preprocessing": "none",
+      "relevance_threshold": null,
+      "retriever": "app.retrieval.dense.PostgresDenseRetriever",
+      "score_kind": "dense_similarity",
+      "score_version": "dense_pipeline_v1/openai:text-embedding-3-small/openai_embeddings_v1"
+    }
+  },
+  "source_execution_digest": "8136f6cfc6b925dc1a2c5d66526c0c97e7c5e0d56d3417c7ef42dacc4eac07a4",
+  "source_experiment_version": "d4.8.1-lexical-dense-comparison-1",
+  "source_result_digest": "b708a70ed922c2937903033b1a3847457dffa3d682934d8e2e6b73e525f7a003",
+  "unjudged_in_top_k_total": 0
+}
