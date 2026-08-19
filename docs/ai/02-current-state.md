@@ -1,25 +1,25 @@
 # Estado atual
 
 **Observação:** 2026-08-19 · `main` em
-`7b85b5057507725acd572d9e801009fd16f9839c` (merge do Pull Request #57) ·
+`adb332bf8f1cf04d762efafacf2d7397337bc634` (merge do Pull Request #58) ·
 repositório `FredericoXX/Projeto-Final`
 
 Os factos abaixo descrevem a `main` em
-`7b85b5057507725acd572d9e801009fd16f9839c`, merge do Pull Request #57 que
-integrou o repooling e a comparação definitiva C0 × C1 sobre P1/S1. Trabalho em
-curso noutras branches não é estado deste snapshot e, quando referido, é
-identificado como tal.
+`adb332bf8f1cf04d762efafacf2d7397337bc634`, merge do Pull Request #58 que
+integrou a calibração e a avaliação held-out da admissão densa (D4.8.2).
+Trabalho em curso noutras branches não é estado deste snapshot e, quando
+referido, é identificado como tal.
 
-**Exceção declarada:** a **calibração e avaliação held-out da admissão densa**
-(D4.8.2) vive na branch `analysis/d4-8-2-dense-admission` e ainda **não está na
-`main`**. O que é trabalho de branch está identificado como tal em cada
-afirmação; ver
-[Admissão e abstenção da condição densa](#admissão-e-abstenção-da-condição-densa-d482-branch).
+**Exceção declarada:** a **fusão lexical + densa por RRF** (D4.9) vive na branch
+`analysis/d4-9-hybrid-rrf` e ainda **não está na `main`**. O que é trabalho de
+branch está identificado como tal em cada afirmação; ver
+[Fusão lexical + densa por RRF](#fusão-lexical--densa-por-rrf-d49-branch).
 
 A baseline experimental de dense retrieval (D4.8) **está na `main`** desde o
-Pull Request #56, e o repooling com a comparação definitiva (D4.8.1) desde o
-Pull Request #57; as ressalvas anteriores, que os descreviam como trabalho de
-branch, deixaram de ser verdadeiras e foram removidas. O repooling dirigido e o
+Pull Request #56, o repooling com a comparação definitiva (D4.8.1) desde o
+Pull Request #57 e a admissão densa (D4.8.2) desde o Pull Request #58; as
+ressalvas anteriores, que os descreviam como trabalho de branch, deixaram de ser
+verdadeiras e foram removidas. O repooling dirigido e o
 diagnóstico do ranking (D4.6) estão na `main` desde o Pull Request #54, e as
 variantes de ponderação (D4.7) desde o Pull Request #55.
 
@@ -832,10 +832,11 @@ artefacto da execução em
 
 ## Baseline experimental de dense retrieval
 
-**Estado:** a **D4.8** está na `main` desde o Pull Request #56 e o **repooling
-com a comparação definitiva** (D4.8.1) desde o Pull Request #57. A **calibração
-da admissão densa** (D4.8.2) vive na branch `analysis/d4-8-2-dense-admission` e
-**não está na `main`**. Em todos os casos é um **experimento offline**: o
+**Estado:** a **D4.8** está na `main` desde o Pull Request #56, o **repooling com
+a comparação definitiva** (D4.8.1) desde o Pull Request #57 e a **calibração da
+admissão densa** (D4.8.2) desde o Pull Request #58. A **fusão lexical + densa
+por RRF** (D4.9) vive na branch `analysis/d4-9-hybrid-rrf` e **não está na
+`main`**. Em todos os casos é um **experimento offline**: o
 retrieval de produção não foi alterado e
 `app.retrieval.dependencies.get_retriever` continua a devolver
 `PostgresLexicalRetriever`, fixado por teste.
@@ -851,8 +852,10 @@ settings `EMBEDDING_PROVIDER` / `OPENAI_EMBEDDING_MODEL`; e, desde o Pull
 Request #57 (D4.8.1), `app/evaluation/lexical_dense_comparison.py`,
 `scripts/evaluate_lexical_dense_comparison.py`, a guarda
 `verify_requests_satisfied` em `app/evaluation/repooling.py` e o *ground truth*
-repooled. O que a branch acrescenta (D4.8.2) está descrito em
-[Admissão e abstenção da condição densa](#admissão-e-abstenção-da-condição-densa-d482-branch).
+repooled; e, desde o Pull Request #58 (D4.8.2), `app/evaluation/dense_admission.py`,
+`app/evaluation/dense_admission_vectors.py` e os quatro comandos da fase. O que a
+branch acrescenta (D4.9) está descrito em
+[Fusão lexical + densa por RRF](#fusão-lexical--densa-por-rrf-d49-branch).
 **Nenhum endpoint HTTP, nenhuma alteração a `document_chunks`, ao
 `search_vector`, ao ranking ou ao answering.**
 
@@ -956,8 +959,11 @@ Factos que importa não sobredeclarar:
   (D4.9); com os julgamentos completos, a D4.8.1 concluiu **D** — C1 aumenta o
   recall de forma inequívoca mas não tem critério de admissibilidade, e uma
   fusão sobre uma condição que devolve sempre `top_k` herdaria essa
-  incapacidade. O próximo passo recomendado é um **estudo de
-  admissibilidade/limiar denso**, antes do híbrido.
+  incapacidade. O próximo passo recomendado passou a ser um **estudo de
+  admissibilidade/limiar denso**, antes do híbrido — feito pela D4.8.2. A fusão
+  em si foi medida depois, pela D4.9, e confirmou a previsão: C2 herda de C1 a
+  incapacidade de se abster (ver
+  [Fusão lexical + densa por RRF](#fusão-lexical--densa-por-rrf-d49-branch)).
 
 Detalhe da fase que está na `main` em
 [`docs/relatorios/d4-8-dense-baseline-p1-s1.md`](../relatorios/d4-8-dense-baseline-p1-s1.md),
@@ -971,19 +977,18 @@ Artefactos em
 e
 [`docs/evaluation/lexical-dense-comparison-p1-s1.json`](../evaluation/lexical-dense-comparison-p1-s1.json).
 
-## Admissão e abstenção da condição densa (D4.8.2, branch)
+## Admissão e abstenção da condição densa (D4.8.2, integrada pelo PR #58)
 
-**Estado:** trabalho de branch (`analysis/d4-8-2-dense-admission`), **não está na
-`main`**. Experimento offline: a política existe como artefacto medido e **não**
-como comportamento do sistema. O retrieval de produção e o *answering* não foram
-alterados.
+**Estado:** na `main` desde o Pull Request #58. Experimento offline: a política
+existe como artefacto medido e **não** como comportamento do sistema. O
+retrieval de produção e o *answering* não foram alterados.
 
 A D4.8.1 recomendou um estudo de admissibilidade antes do híbrido. Esta fase
 fê-lo, e não como procura do melhor limiar: pergunta se uma regra escolhida
 **apenas em DEV**, sob critério pré-registado, se transporta para cenários
 independentes.
 
-O que a branch acrescenta: `app/evaluation/dense_admission.py` e
+O que o PR #58 integrou: `app/evaluation/dense_admission.py` e
 `app/evaluation/dense_admission_vectors.py` (puros, **não** reexportados por
 `__init__.py`), `scripts/freeze_dense_admission_vectors.py`,
 `scripts/seal_dense_admission_split.py`, `scripts/calibrate_dense_admission.py`,
@@ -1031,21 +1036,98 @@ corpus para outro ano: produz as similaridades mais altas de todo o conjunto.
 Detalhe em
 [`docs/relatorios/d4-8-2-dense-admission.md`](../relatorios/d4-8-2-dense-admission.md).
 
+## Fusão lexical + densa por RRF (D4.9, branch)
+
+**Estado:** trabalho de branch (`analysis/d4-9-hybrid-rrf`), **não está na
+`main`**. Experimento offline de fusão de rankings. Não existe
+`PostgresHybridRetriever`, não há endpoint, e
+`app.retrieval.dependencies.get_retriever` continua a devolver
+`PostgresLexicalRetriever`, fixado por teste.
+
+A fase **não executa retrieval**: consome os rankings já versionados pela D4.8.1
+e reordena-os. Não precisa de base de dados, do fornecedor de embeddings nem de
+rede, e há teste em subprocesso que o confirma.
+
+O que a branch acrescenta: `app/evaluation/hybrid_rrf.py` (puro, **não**
+reexportado por `__init__.py`), `scripts/evaluate_hybrid_rrf.py` e o artefacto
+[`docs/evaluation/hybrid-rrf-p1-s1.json`](../evaluation/hybrid-rrf-p1-s1.json).
+
+Configuração: Reciprocal Rank Fusion com `k_rrf = 60` — o valor usado no artigo
+que introduziu o método, Cormack, Clarke & Buettcher (2009), onde é descrito
+como fixado durante uma investigação piloto noutro corpus, e não como valor
+derivado — `source_depth = 5`, `final_top_k = 5`, soma em aritmética racional
+exata, e desempate declarado sem preferência por condição. **Não houve grid
+search de `k_rrf`.**
+
+A fusão trabalha sobre **posições**, não sobre scores: `reciprocal_rank_fusion`
+recebe sequências de identidades e o score é descartado antes da fronteira do
+módulo. Somar `lexical_composite_v1` com similaridade do cosseno produziria um
+número sem unidade — as duas grandezas declaram `comparable_across_queries`
+`False`. Um segmento ausente de uma condição soma **um termo só**: não recebe
+rank sintético, porque um retriever que não devolveu um segmento não se
+pronunciou sobre ele.
+
+Resultado sobre as 12 perguntas medidas, macro-média:
+
+| Métrica | C0 | C1 | C2 | C2 − C1 |
+| --- | --- | --- | --- | --- |
+| Recall@5 | 0,4583 | 0,8750 | 0,9167 | +0,0417 |
+| MRR | 0,4167 | 0,8194 | 0,8750 | +0,0556 |
+| nDCG@5 | 0,3867 | 0,7987 | 0,8251 | +0,0264 |
+
+Nenhuma métrica desce e nenhuma pergunta resolvida por C1 se perde. C2 preserva
+o único alvo de grau 2 exclusivo de C0 e os oito exclusivos de C1.
+
+A leitura honesta do agregado é a sua estrutura: em **cinco** das doze perguntas
+C0 devolve zero resultados e a fusão é a identidade; das sete restantes, quatro
+mudaram — Q011 (+0,533 de nDCG@5) e Q005 (+0,220) contra Q001 (−0,118) e Q003
+(−0,317). O ganho agregado é a soma desses quatro.
+
+Q003 é o caso a reter sobre o **método**: C0 devolveu um único resultado, de
+grau 0, que por estar em primeiro lugar do seu ranking soma exatamente o mesmo
+termo que o alvo de grau 2 que C1 tinha em primeiro. O RRF é indiferente à
+espessura do ranking, e o desempate — arbitrário, mas fixado antes de medir —
+resolveu o empate a favor do distrator.
+
+Q013 mostra que fundir **não** resolve abster-se: C0 devolve zero, C1 devolve
+cinco irrelevâncias, C2 devolve as mesmas cinco. A política `top1 >= 0,60` da
+D4.8.2 **não** foi aplicada — fundir e admitir são dois mecanismos, e alterá-los
+na mesma experiência tornaria o resultado inatribuível.
+
+Decisão: **A — HYBRID_SUPPORTED**, que nesta amostra significa «justifica
+investigar mais», não «está provado». Não autoriza promoção para produção.
+
+Uma ressalva que distingue esta fase da D4.8.2: o critério de decisão foi
+**declarado na implementação e registado como fixado antes da execução**, mas
+não é pré-registo auditável — a regra e o resultado vivem na mesma árvore de
+trabalho e nenhum commit os separa, pelo que o histórico não prova a ordem
+temporal. A D4.8.2 tinha essa garantia, com o protocolo selado por
+`protocol_digest` antes da calibração; a D4.9 não a repetiu. A margem é
+apertada (ganho 0,0264 contra um limiar de 0,02), e o artefacto transporta a
+reserva em `decision_rule.pre_registration_caveat`.
+
+Detalhe em
+[`docs/relatorios/d4-9-hybrid-rrf-p1-s1.md`](../relatorios/d4-9-hybrid-rrf-p1-s1.md).
+
 ## Testes e verificações
 
 Os testes do backend usam PostgreSQL real numa base dedicada; os do frontend
 usam MSW, sem rede nem backend.
 
-Contagem de execução medida em **2026-08-19**, sobre o conteúdo da calibração
-da admissão densa na branch `analysis/d4-8-2-dense-admission` (base `7b85b50`,
-antes de qualquer merge): **2003 passed, 1 warning** (`python -m pytest -q`). O
-warning é o `StarletteDeprecationWarning` pré-existente de
-`fastapi/testclient.py`. Na mesma data e sobre o mesmo conteúdo,
-`mypy app tests scripts` reporta **223 source files** sem erros e `ruff check` passa
-sobre `app`, `scripts` e `tests`. O frontend **não foi alterado** por este
-trabalho.
+Contagem de execução medida em **2026-08-19**, sobre o conteúdo da fusão por RRF
+na branch `analysis/d4-9-hybrid-rrf` (base `adb332b`, antes de qualquer merge):
+**2047 passed, 1 warning** (`python -m pytest -q`). O warning é o
+`StarletteDeprecationWarning` pré-existente de `fastapi/testclient.py`. Na mesma
+data e sobre o mesmo conteúdo, `mypy app tests scripts` reporta **226 source
+files** sem erros e `ruff check` passa sobre `app`, `scripts` e `tests`. O
+frontend **não foi alterado** por este trabalho.
 
-Os 63 testes adicionais face à `main` vivem todos num ficheiro novo,
+Os 44 testes adicionais face à `main` vivem todos num ficheiro novo,
+`tests/test_evaluation_hybrid_rrf.py`, e nenhum teste existente foi editado. A
+contagem anterior, medida sobre a D4.8.2 em `7b85b50`, era de **2003 passed** e
+**223 source files**.
+
+Os 63 testes que a D4.8.2 acrescentou vivem todos num ficheiro novo,
 `tests/test_evaluation_dense_admission.py`. **Nenhum teste existente
 foi alterado, enfraquecido ou removido, e nenhum ficheiro de teste existente foi
 tocado.**
@@ -1232,15 +1314,18 @@ de relevância — continuam a colapsar no mesmo estado `insufficient_evidence`.
 Continua **não decidida** qualquer mudança na abordagem de recuperação em
 produção. A D4.8 mediu uma condição densa offline e recomendou experimentar uma
 arquitetura híbrida; a D4.8.1 completou os julgamentos e **reviu essa
-recomendação**, pedindo primeiro um estudo de admissibilidade; a D4.8.2, na
-branch `analysis/d4-8-2-dense-admission`, fez esse estudo e mediu que uma regra de
-limiar único calibrada só em DEV generaliza para cenários independentes deste
-corpus. Nada disso alterou o sistema: **recomendar ou medir uma experiência não
-é adotar uma arquitetura**, nenhuma política de abstenção existe no *answering*
-e nenhuma rota mudou de estratégia. Ver
-[Baseline experimental de dense retrieval](#baseline-experimental-de-dense-retrieval)
+recomendação**, pedindo primeiro um estudo de admissibilidade; a D4.8.2 fez esse
+estudo e mediu que uma regra de limiar único calibrada só em DEV generaliza para
+cenários independentes deste corpus; a D4.9, na branch
+`analysis/d4-9-hybrid-rrf`, mediu a fusão por RRF e concluiu **A**, que nesta
+amostra significa «justifica investigar mais». Nada disso alterou o sistema:
+**recomendar ou medir uma experiência não é adotar uma arquitetura**, nenhuma
+política de abstenção existe no *answering*, nenhum retriever híbrido existe e
+nenhuma rota mudou de estratégia. Ver
+[Baseline experimental de dense retrieval](#baseline-experimental-de-dense-retrieval),
+[Admissão e abstenção da condição densa](#admissão-e-abstenção-da-condição-densa-d482-integrada-pelo-pr-58)
 e
-[Admissão e abstenção da condição densa](#admissão-e-abstenção-da-condição-densa-d482-branch).
+[Fusão lexical + densa por RRF](#fusão-lexical--densa-por-rrf-d49-branch).
 
 ## Divergências documentais conhecidas
 
