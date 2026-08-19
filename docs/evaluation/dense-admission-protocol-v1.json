@@ -1,0 +1,157 @@
+{
+  "schema_version": "1",
+  "contract": "dense_admission_protocol",
+  "protocol_version": "v1",
+  "dataset_version": "v1",
+  "dataset_questions_digest": "19ab87b11fd64cd223ebaa8cbe4669837d621c9c50f571ffc1afc58f8d1d395b",
+  "scenario_digest": "9334a8f1a05ef9777d18459a652a780cb6d9f4303432cf531be593afd585516e",
+  "split_version": "v1",
+  "split_digest": "72aa7295c1766ea2d7da07bf4674fc6bde272f9738badafa6c8f151c67d0d567",
+  "dev_questions_digest": "320d9fd2e72382e4322c673073fad0be107f75aa89ababd383532af5d721dfe6",
+  "dev_vectors_digest": "ce8bcebc858f199579201d704c362c6cdfca4ae806c5de431726728ea1ac17d8",
+  "heldout_manifest_digest": "479b8e59023d020158131ff5e2f94a1190a68296f99904dbf8641ff5faa77b35",
+  "frozen_vectors_digest": "b7ee0ec7474237c8faa5ef10c9635c0bac6d3a7a1909317604f591075e7df48a",
+  "scope_note": "Protocolo pre-registado da D4.8.2: regras candidatas, espaco de parametros, criterio de selecao, metricas e regra de decisao final. Fica fixado ANTES de qualquer politica ser avaliada. A pergunta da fase nao e 'qual e o melhor limiar' - e se uma regra de admissao escolhida exclusivamente em DEV se transporta para cenarios independentes. Um resultado negativo e um resultado.",
+  "pre_registration_note": "Escrito depois de o dataset estar anotado e o split selado, e antes de a primeira politica ser avaliada sobre qualquer split. O anotador viu as similaridades ao julgar os segmentos - e inevitavel, porque e a mesma pessoa que anota e que conduz a experiencia. E por isso que a grelha e grosseira e declarada aqui: cinco limiares espacados de 0,05 sobre a gama plausivel do cosseno deste modelo e tres margens, sem ajuste fino e sem valores escolhidos por proximidade a um caso concreto. O que a pre-registacao garante nao e ignorancia; e que o criterio de escolha nao pode ser alterado depois de se ver quem ganha.",
+  "retrieval": {
+    "corpus_id": "P1",
+    "snapshot_id": "a94f940229152a3b61860b370df8cb3ea8fe1a0e7236d65e86fe4b5118baf4c1",
+    "corpus_digest": "e8a0f08b5ecf37821244e62c266a48b1d64c928cabb75e0e23e08f9c895a447e",
+    "condition": "C1_DENSE",
+    "retriever": "PostgresDenseRetriever",
+    "language": "pt",
+    "top_k": 5,
+    "official_only": true,
+    "reference_date": "2026-08-15",
+    "embedding": {
+      "provider": "openai",
+      "model": "text-embedding-3-small",
+      "dimension": 1536,
+      "normalization": "none",
+      "similarity_metric": "cosine",
+      "configuration_version": "openai_embeddings_v1",
+      "index_digest": "451d9f2fbe07a799ca694026e8238dd9aa3296c15e03d46330bb1d36d3d9370c"
+    },
+    "frozen_vectors_digest": "b7ee0ec7474237c8faa5ef10c9635c0bac6d3a7a1909317604f591075e7df48a",
+    "note": "Mesmas condicoes da C1 da D4.8.1: mesmo indice, mesmo top_k, mesma data de referencia e a mesma elegibilidade C1-C11 aplicada em PostgreSQL. A similaridade densa nunca contorna a admissibilidade. Os vetores das perguntas estao congelados: o fornecedor devolve vetores diferentes para o mesmo texto entre chamadas, e uma decisao de admissao que dependesse disso nao seria reprodutivel."
+  },
+  "signals": {
+    "top1": "similaridade do cosseno do primeiro resultado devolvido",
+    "top2": "similaridade do cosseno do segundo resultado devolvido; indefinida com menos de dois resultados",
+    "margin": "top1 - top2; indefinida quando top2 e indefinida",
+    "note": "Sao similaridades, NAO sao confianca. ScoreSemantics.comparable_across_queries e False para a condicao densa: a similaridade depende de onde a pergunta cai no espaco de embeddings e nenhuma calibracao probabilistica foi feita. Uma regra construida sobre elas e uma heuristica sobre uma quantidade nao calibrada - e a razao de ser desta fase."
+  },
+  "candidate_rules": [
+    {
+      "rule": "R0",
+      "parameters": [],
+      "description": "Controlo: admite sempre, como a condicao densa faz hoje. Nao e uma politica escolhivel - existe para que 'a politica nao piorou nada' seja verificavel.",
+      "abstains_when": "apenas quando a recuperacao devolve zero resultados"
+    },
+    {
+      "rule": "R1",
+      "parameters": [
+        "min_top1"
+      ],
+      "description": "Admite se top1 >= min_top1. O sinal mais simples possivel.",
+      "abstains_when": "top1 abaixo do limiar, ou recuperacao vazia"
+    },
+    {
+      "rule": "R2",
+      "parameters": [
+        "min_top1",
+        "min_margin"
+      ],
+      "description": "Admite se top1 >= min_top1 E top1 - top2 >= min_margin. A hipotese e que uma pergunta sem resposta produz um topo indistinto - varios vizinhos igualmente mornos - enquanto uma pergunta com resposta destaca um segmento.",
+      "abstains_when": "top1 abaixo do limiar, margem abaixo do minimo, margem indefinida, ou recuperacao vazia"
+    }
+  ],
+  "parameter_space": {
+    "min_top1": [
+      0.5,
+      0.55,
+      0.6,
+      0.65,
+      0.7
+    ],
+    "min_margin": [
+      0.02,
+      0.05,
+      0.1
+    ],
+    "note": "Grelha grosseira e fechada. min_margin nao inclui 0.0 porque R2 com margem nula e exatamente R1, e duas entradas para a mesma politica falseariam a contagem de candidatas."
+  },
+  "candidate_policies": {
+    "R0": 1,
+    "R1": 5,
+    "R2": 15,
+    "total": 21
+  },
+  "selection": {
+    "max_false_abstention_rate": 0.2,
+    "max_false_abstention_rate_note": "Orcamento de erro. Uma abstencao falsa recusa evidencia que existia e e, para quem pergunta, indistinguivel de o corpus nao a ter. Com 13 perguntas ANSWERABLE em DEV, 0.2 admite no maximo 2 abstencoes falsas (2/13 = 0.1538; 3/13 = 0.2308 excede).",
+    "eligibility": "false_abstention_rate <= max_false_abstention_rate, medida em DEV",
+    "primary_selection_metric": "correct_abstention_rate",
+    "objective": "maximise",
+    "tie_break_rule": [
+      "menor false_abstention_rate",
+      "menor complexidade da regra (R0 < R1 < R2)",
+      "menor min_top1",
+      "menor min_margin, tratando a ausencia de parametro como menor"
+    ],
+    "tie_break_note": "Determinista e total: nao ha empate que sobreviva aos quatro criterios, porque o ultimo ordena tuplos de parametros distintos. Nenhum criterio olha para o HELD-OUT.",
+    "fallback": "R0",
+    "fallback_note": "R0 esta sempre no conjunto candidato e e sempre elegivel (nunca se abstem numa pergunta com resultados, logo false_abstention_rate = 0). Se nenhuma politica com limiar o superar no criterio primario, o selecionado e R0 - e isso significa que nada foi calibrado, o que leva a decisao C na D4.8.2c."
+  },
+  "metrics": {
+    "admission": {
+      "correct_abstention_rate": "abstencoes em perguntas NO_EVIDENCE / perguntas NO_EVIDENCE",
+      "false_abstention_rate": "abstencoes em perguntas ANSWERABLE / perguntas ANSWERABLE",
+      "coverage": "perguntas admitidas / perguntas totais",
+      "coverage_answerable": "perguntas ANSWERABLE admitidas / perguntas ANSWERABLE",
+      "risk": "perguntas admitidas sem evidencia no corpus / perguntas admitidas",
+      "answerable_with_relevant_preserved": "perguntas ANSWERABLE admitidas com pelo menos um grau 2 devolvido / perguntas ANSWERABLE"
+    },
+    "retrieval_after_admission": {
+      "measured_on": "apenas perguntas ANSWERABLE admitidas",
+      "recall": "recall@k com limiar binario de relevancia no grau 2, k em {1, 3, 5}",
+      "mrr": "reciprocal rank medio",
+      "ndcg": "nDCG@k com ganhos {0: 0, 1: 1, 2: 3}, k em {1, 3, 5}",
+      "grade_shares": "fracao de graus 0, 1 e 2 no total devolvido pelas perguntas admitidas",
+      "mean_irrelevant_per_admitted_question": "segmentos de grau 0 devolvidos por pergunta admitida",
+      "note": "Numa pergunta NO_EVIDENCE nao ha alvo e as tres metricas de ranking sao indefinidas - mesma regra do metric_protocol de P1. Medir admissao e qualidade em conjunto esconderia a troca central: uma politica que se abstenha muito melhora a qualidade do que devolve destruindo a cobertura."
+    }
+  },
+  "reproducibility": {
+    "runs_required": 2,
+    "must_match": [
+      "decisoes por pergunta",
+      "result_digest"
+    ],
+    "on_divergence": "PARAR e reportar; nao escolher a execucao favoravel",
+    "note": "Os vetores congelados removem a unica fonte conhecida de nao determinismo do lado do fornecedor. Se as execucoes divergirem, a causa esta noutro sitio e tem de ser encontrada antes de qualquer conclusao."
+  },
+  "heldout_decision_rule": {
+    "generalisation_retention_floor": 0.5,
+    "A": "GENERALIZOU: no HELD-OUT, false_abstention_rate <= 0.2 E correct_abstention_rate > 0 E correct_abstention_rate >= 0.5 x correct_abstention_rate medido em DEV.",
+    "B": "NAO GENERALIZOU: no HELD-OUT, false_abstention_rate > 0.2 OU correct_abstention_rate < 0.5 x correct_abstention_rate medido em DEV.",
+    "C": "EVIDENCIA INSUFICIENTE: a politica selecionada foi R0 (nada foi calibrado), ou as duas execucoes divergiram, ou alguma guarda falhou.",
+    "retention_floor_note": "Metade do beneficio medido em DEV e o minimo para dizer que a politica se transporta. Abaixo disso, o que se mediu em DEV era em boa parte especifico do DEV. O valor e arbitrario no sentido em que qualquer limiar o e; o que nao e arbitrario e estar fixado antes de se ver o resultado.",
+    "mandatory_comparison": "R0 contra a politica selecionada, sobre o HELD-OUT, seja qual for a decisao"
+  },
+  "forbidden": [
+    "recalibrar depois de ver o HELD-OUT",
+    "alterar o split depois de observar resultados",
+    "transformar um resultado negativo em nova ronda de afinacao",
+    "usar ausencia de retrieval como prova de ausencia documental",
+    "chamar confianca a similaridade",
+    "afirmar validade universal de um limiar"
+  ],
+  "digest_algorithm": "sha256",
+  "protocol_digest_scope": "pre_registered_fields",
+  "candidate_rules_digest": "8bec09f20ac148fe1a49a795091af8ebecb1412918af7b2cd25f3f41fb39ea1a",
+  "parameter_space_digest": "f8ab7b7110ea6a313d65f296189c77dd229d8a1ae10531a7bfd9bdbccfce78f5",
+  "selection_policy_digest": "e3f095258d2aac858df0eba83c919c7a6cb51697742730e6848acc1d2c346066",
+  "protocol_digest": "f0b21d4abe859760787f83ccf0aec8976a314eb0bb18bb1c54f76d65d5008e53",
+  "registered_at": "2026-08-19T00:49:45.166152+00:00"
+}
