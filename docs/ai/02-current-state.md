@@ -1,24 +1,25 @@
 # Estado atual
 
-**Observação:** 2026-08-18 · `main` em
-`22b59fc4d2f3ddf7d1e79231d5c3b1fff5971f8d` (merge do Pull Request #56) ·
+**Observação:** 2026-08-19 · `main` em
+`7b85b5057507725acd572d9e801009fd16f9839c` (merge do Pull Request #57) ·
 repositório `FredericoXX/Projeto-Final`
 
 Os factos abaixo descrevem a `main` em
-`22b59fc4d2f3ddf7d1e79231d5c3b1fff5971f8d`, merge do Pull Request #56 que
-integrou a baseline experimental de dense retrieval sobre P1/S1. Trabalho em
+`7b85b5057507725acd572d9e801009fd16f9839c`, merge do Pull Request #57 que
+integrou o repooling e a comparação definitiva C0 × C1 sobre P1/S1. Trabalho em
 curso noutras branches não é estado deste snapshot e, quando referido, é
 identificado como tal.
 
-**Exceção declarada:** o **repooling e a comparação definitiva C0 × C1**
-(D4.8.1) vivem na branch `analysis/d4-8-dense-baseline` e ainda **não estão na
+**Exceção declarada:** a **calibração e avaliação held-out da admissão densa**
+(D4.8.2) vive na branch `analysis/d4-8-2-dense-admission` e ainda **não está na
 `main`**. O que é trabalho de branch está identificado como tal em cada
 afirmação; ver
-[Baseline experimental de dense retrieval](#baseline-experimental-de-dense-retrieval).
+[Admissão e abstenção da condição densa](#admissão-e-abstenção-da-condição-densa-d482-branch).
 
 A baseline experimental de dense retrieval (D4.8) **está na `main`** desde o
-Pull Request #56; a ressalva anterior, que a descrevia inteira como trabalho de
-branch, deixou de ser verdadeira e foi removida. O repooling dirigido e o
+Pull Request #56, e o repooling com a comparação definitiva (D4.8.1) desde o
+Pull Request #57; as ressalvas anteriores, que os descreviam como trabalho de
+branch, deixaram de ser verdadeiras e foram removidas. O repooling dirigido e o
 diagnóstico do ranking (D4.6) estão na `main` desde o Pull Request #54, e as
 variantes de ponderação (D4.7) desde o Pull Request #55.
 
@@ -123,9 +124,8 @@ Em `app/evaluation/`, e fora do que `__init__.py` reexporta, vivem também
 `results.py` (canonicalização e digest do Momento 5), `snapshot.py`,
 `snapshot_builder.py`, `retrieval_metrics.py`, `lexical_variants.py`,
 `ground_truth_identity.py`, `candidate_budget.py`, `repooling.py`,
-`ranking_variants.py`, `dense_baseline.py` e, na branch
-`analysis/d4-8-dense-baseline`, `lexical_dense_comparison.py`. A exclusão do
-`__init__.py` é deliberada: importar
+`ranking_variants.py`, `dense_baseline.py` e `lexical_dense_comparison.py`. A
+exclusão do `__init__.py` é deliberada: importar
 `app.evaluation.assets` não pode carregar `sqlalchemy` nem as Settings, e essa
 garantia está fixada por um teste em subprocesso.
 
@@ -138,9 +138,9 @@ determinística), `build_moment05_baseline` (composição da baseline),
 `evaluate_candidate_budget_experiment` (políticas de orçamento),
 `diagnose_ranking_signals` (repooling e sinais de ranking),
 `evaluate_ranking_variants` (ablação e reponderação do ranking),
-`embed_pilot_corpus` e `evaluate_dense_baseline` (condição densa) e, na branch
-`analysis/d4-8-dense-baseline`, `evaluate_lexical_dense_comparison` (comparação
-definitiva depois do repooling).
+`embed_pilot_corpus` e `evaluate_dense_baseline` (condição densa) e
+`evaluate_lexical_dense_comparison` (comparação definitiva depois do repooling,
+integrada pelo PR #57).
 
 ## Superfície da API
 
@@ -832,9 +832,10 @@ artefacto da execução em
 
 ## Baseline experimental de dense retrieval
 
-**Estado:** a **D4.8** está na `main` desde o Pull Request #56. O **repooling e a
-comparação definitiva** (D4.8.1) vivem na branch `analysis/d4-8-dense-baseline` e
-**não estão na `main`**. Em ambos os casos é um **experimento offline**: o
+**Estado:** a **D4.8** está na `main` desde o Pull Request #56 e o **repooling
+com a comparação definitiva** (D4.8.1) desde o Pull Request #57. A **calibração
+da admissão densa** (D4.8.2) vive na branch `analysis/d4-8-2-dense-admission` e
+**não está na `main`**. Em todos os casos é um **experimento offline**: o
 retrieval de produção não foi alterado e
 `app.retrieval.dependencies.get_retriever` continua a devolver
 `PostgresLexicalRetriever`, fixado por teste.
@@ -846,11 +847,13 @@ OpenAI), `app/retrieval/dense.py` (`PostgresDenseRetriever`),
 puro, **não** reexportado por `__init__.py`), `scripts/embed_pilot_corpus.py`,
 `scripts/evaluate_dense_baseline.py`, a tabela `chunk_embeddings` (migration
 `c4f7ab19d3e5`, aditiva, chave primária `(chunk_id, provider, model)`) e as
-settings `EMBEDDING_PROVIDER` / `OPENAI_EMBEDDING_MODEL`. O que a branch
-acrescenta (D4.8.1): `app/evaluation/lexical_dense_comparison.py`,
+settings `EMBEDDING_PROVIDER` / `OPENAI_EMBEDDING_MODEL`; e, desde o Pull
+Request #57 (D4.8.1), `app/evaluation/lexical_dense_comparison.py`,
 `scripts/evaluate_lexical_dense_comparison.py`, a guarda
 `verify_requests_satisfied` em `app/evaluation/repooling.py` e o *ground truth*
-repooled. **Nenhum endpoint HTTP, nenhuma alteração a `document_chunks`, ao
+repooled. O que a branch acrescenta (D4.8.2) está descrito em
+[Admissão e abstenção da condição densa](#admissão-e-abstenção-da-condição-densa-d482-branch).
+**Nenhum endpoint HTTP, nenhuma alteração a `document_chunks`, ao
 `search_vector`, ao ranking ou ao answering.**
 
 Configuração medida: `text-embedding-3-small`, 1536 dimensões, cosseno, sem
@@ -871,7 +874,7 @@ de outra configuração», e não «falta indexar» — e é a **única** a apan
 obsoleto, que satisfaz a identidade e conta como coberto. O SHA do conteúdo é
 recalculado do `content` atual, não comparado com o `content_sha256` persistido.
 
-### O repooling (D4.8.1, branch)
+### O repooling (D4.8.1, integrado pelo PR #57)
 
 Os 31 resultados que a D4.8 deixou por julgar — **todos de C1** — foram julgados.
 O conjunto novo,
@@ -887,7 +890,7 @@ Acrescentados: **26 de grau 0, 3 de grau 1, 2 de grau 2**. Os dois graus 2
 perguntas de 1 para 2. A união dos dois top 5 passou a estar **inteiramente
 julgada** (`COMPARABLE`).
 
-### Resultados definitivos (D4.8.1, branch)
+### Resultados definitivos (D4.8.1, integrado pelo PR #57)
 
 Doze perguntas medidas, macro-média. **Substituem as métricas provisórias de C1
 na D4.8**; as de C0 não mudaram em nenhuma casa decimal, porque os 31
@@ -968,21 +971,82 @@ Artefactos em
 e
 [`docs/evaluation/lexical-dense-comparison-p1-s1.json`](../evaluation/lexical-dense-comparison-p1-s1.json).
 
+## Admissão e abstenção da condição densa (D4.8.2, branch)
+
+**Estado:** trabalho de branch (`analysis/d4-8-2-dense-admission`), **não está na
+`main`**. Experimento offline: a política existe como artefacto medido e **não**
+como comportamento do sistema. O retrieval de produção e o *answering* não foram
+alterados.
+
+A D4.8.1 recomendou um estudo de admissibilidade antes do híbrido. Esta fase
+fê-lo, e não como procura do melhor limiar: pergunta se uma regra escolhida
+**apenas em DEV**, sob critério pré-registado, se transporta para cenários
+independentes.
+
+O que a branch acrescenta: `app/evaluation/dense_admission.py` e
+`app/evaluation/dense_admission_vectors.py` (puros, **não** reexportados por
+`__init__.py`), `scripts/freeze_dense_admission_vectors.py`,
+`scripts/seal_dense_admission_split.py`, `scripts/calibrate_dense_admission.py`,
+`scripts/evaluate_dense_admission_heldout.py` e sete artefactos versionados em
+`docs/evaluation/dense-admission-*.json`.
+
+Desenho, resumido:
+
+- **conjunto novo e complementar** — 30 cenários, 49 perguntas (25 respondíveis,
+  24 sem evidência no corpus), 258 julgamentos na rubrica de três graus. O
+  conjunto da D4.8.1 e o seu *ground truth* **não foram tocados**;
+- **cada NO_EVIDENCE validado contra o corpus completo** por busca normalizada
+  (o OCR espaçado torna o `grep` literal incapaz de provar ausência) e leitura.
+  A validação reclassificou **três** candidatos como respondíveis;
+- **split por cenário**, determinístico e sem gerador aleatório — DEV 16
+  cenários / 27 perguntas, HELD-OUT 14 / 22;
+- **barreira de leakage operacional**: a calibração lê um ficheiro que não
+  contém uma única pergunta, rótulo ou cenário selado; não tem argumento para o
+  dataset completo; e a sua porta de entrada levanta `LeakageError` se lhe
+  apontarem o dataset. Cinco testes fixam-no, um deles lendo o ficheiro DEV como
+  texto;
+- **vetores de pergunta congelados** com identidade completa, `content_sha256` e
+  `vector_digest`, servidos por um `EmbeddingModel` que recusa texto
+  desconhecido — o que torna as decisões reprodutíveis apesar da deriva do
+  fornecedor;
+- **protocolo pré-registado** com 21 políticas candidatas, orçamento de
+  abstenção falsa de 0,20, métrica primária e desempate fixados antes de
+  qualquer medição.
+
+Resultado: a calibração selecionou `R1, min_top1 = 0,60` (as 15 variantes com
+margem `top1 - top2` foram todas excluídas pelo orçamento). No HELD-OUT a
+política reteve **0,84** do benefício medido em DEV — abstenção correta 0,60
+contra 0,71 — com abstenção falsa de 0,083, dentro do orçamento: **decisão A, a
+política generalizou**. Risco de responder sem evidência caiu de 0,45 para 0,27
+e o ruído de 3,36 para 2,80 segmentos irrelevantes por pergunta admitida, ao
+preço de uma pergunta respondível em doze — que no HELD-OUT custou evidência
+real.
+
+Duas ressalvas que o relatório desenvolve: **a similaridade não é confiança** —
+`comparable_across_queries` continua `False` — e 0,60 é uma propriedade desta
+distribuição de perguntas contra este índice, não um limiar transportável. O
+modo de falha que a política **não** cobre é a pergunta cuja resposta existe no
+corpus para outro ano: produz as similaridades mais altas de todo o conjunto.
+
+Detalhe em
+[`docs/relatorios/d4-8-2-dense-admission.md`](../relatorios/d4-8-2-dense-admission.md).
+
 ## Testes e verificações
 
 Os testes do backend usam PostgreSQL real numa base dedicada; os do frontend
 usam MSW, sem rede nem backend.
 
-Contagem de execução medida em **2026-08-18**, sobre o conteúdo do repooling e
-da comparação definitiva na branch `analysis/d4-8-dense-baseline` (base
-`22b59fc`, antes de qualquer merge): **1940 passed, 1 warning**
-(`python -m pytest -q`). O warning é o `StarletteDeprecationWarning`
-pré-existente de `fastapi/testclient.py`. Na mesma data e sobre o mesmo
-conteúdo, `mypy app tests scripts` reporta **216 source files** sem erros e
-`ruff check .` passa. O frontend **não foi alterado** por este trabalho.
+Contagem de execução medida em **2026-08-19**, sobre o conteúdo da calibração
+da admissão densa na branch `analysis/d4-8-2-dense-admission` (base `7b85b50`,
+antes de qualquer merge): **2003 passed, 1 warning** (`python -m pytest -q`). O
+warning é o `StarletteDeprecationWarning` pré-existente de
+`fastapi/testclient.py`. Na mesma data e sobre o mesmo conteúdo,
+`mypy app tests scripts` reporta **223 source files** sem erros e `ruff check` passa
+sobre `app`, `scripts` e `tests`. O frontend **não foi alterado** por este
+trabalho.
 
-Os 57 testes adicionais face à `main` vivem todos num ficheiro novo,
-`tests/test_evaluation_lexical_dense_comparison.py`. **Nenhum teste existente
+Os 63 testes adicionais face à `main` vivem todos num ficheiro novo,
+`tests/test_evaluation_dense_admission.py`. **Nenhum teste existente
 foi alterado, enfraquecido ou removido, e nenhum ficheiro de teste existente foi
 tocado.**
 
@@ -1167,12 +1231,16 @@ de relevância — continuam a colapsar no mesmo estado `insufficient_evidence`.
 
 Continua **não decidida** qualquer mudança na abordagem de recuperação em
 produção. A D4.8 mediu uma condição densa offline e recomendou experimentar uma
-arquitetura híbrida; a D4.8.1, na branch `analysis/d4-8-dense-baseline`,
-completou os julgamentos e **reviu essa recomendação**: o próximo passo passou a
-ser um estudo de admissibilidade/limiar da condição densa, antes de qualquer
-fusão. Em qualquer dos casos, **recomendar uma experiência não é adotar uma
-arquitetura**: nada foi integrado e nenhuma rota mudou de estratégia. Ver
-[Baseline experimental de dense retrieval](#baseline-experimental-de-dense-retrieval).
+arquitetura híbrida; a D4.8.1 completou os julgamentos e **reviu essa
+recomendação**, pedindo primeiro um estudo de admissibilidade; a D4.8.2, na
+branch `analysis/d4-8-2-dense-admission`, fez esse estudo e mediu que uma regra de
+limiar único calibrada só em DEV generaliza para cenários independentes deste
+corpus. Nada disso alterou o sistema: **recomendar ou medir uma experiência não
+é adotar uma arquitetura**, nenhuma política de abstenção existe no *answering*
+e nenhuma rota mudou de estratégia. Ver
+[Baseline experimental de dense retrieval](#baseline-experimental-de-dense-retrieval)
+e
+[Admissão e abstenção da condição densa](#admissão-e-abstenção-da-condição-densa-d482-branch).
 
 ## Divergências documentais conhecidas
 

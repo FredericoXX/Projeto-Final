@@ -1,0 +1,3238 @@
+{
+  "schema_version": "1",
+  "contract": "dense_admission_calibration",
+  "phase": "D4.8.2b",
+  "calibration_version": "d4.8.2b-calibration-1",
+  "split_scope": "DEV",
+  "scope_note": "Calibracao feita exclusivamente sobre DEV. O comando nao tem argumento para o dataset completo e a sua unica porta de entrada de dados recusa qualquer payload que nao seja a projecao DEV. Nenhuma metrica deste artefacto foi calculada sobre o HELD-OUT.",
+  "protocol_version": "v1",
+  "protocol_digest": "f0b21d4abe859760787f83ccf0aec8976a314eb0bb18bb1c54f76d65d5008e53",
+  "dataset_version": "v1",
+  "dataset_questions_digest": "19ab87b11fd64cd223ebaa8cbe4669837d621c9c50f571ffc1afc58f8d1d395b",
+  "scenario_digest": "9334a8f1a05ef9777d18459a652a780cb6d9f4303432cf531be593afd585516e",
+  "split_version": "v1",
+  "split_digest": "72aa7295c1766ea2d7da07bf4674fc6bde272f9738badafa6c8f151c67d0d567",
+  "dev_vectors_digest": "ce8bcebc858f199579201d704c362c6cdfca4ae806c5de431726728ea1ac17d8",
+  "heldout_manifest_digest": "479b8e59023d020158131ff5e2f94a1190a68296f99904dbf8641ff5faa77b35",
+  "heldout_labels_digest": "4e34bec17a348d9e4774bd598a82274d2a3201ac99436bd343dcd0f9e2eb60de",
+  "heldout_untouched_note": "Os dois digests do HELD-OUT ficam registados aqui sem que um unico rotulo selado tenha sido lido: sao copiados do split e servem para a D4.8.2c provar que o conjunto final nao mudou no intervalo.",
+  "dev_questions_digest": "320d9fd2e72382e4322c673073fad0be107f75aa89ababd383532af5d721dfe6",
+  "questions_evaluated": 27,
+  "questions_by_label": {
+    "ANSWERABLE": 13,
+    "NO_EVIDENCE": 14
+  },
+  "retrieval": {
+    "condition": "C1",
+    "language": "pt",
+    "top_k": 5,
+    "official_only": true,
+    "reference_date": "2026-08-15",
+    "snapshot_id": "a94f940229152a3b61860b370df8cb3ea8fe1a0e7236d65e86fe4b5118baf4c1",
+    "index_digest": "451d9f2fbe07a799ca694026e8238dd9aa3296c15e03d46330bb1d36d3d9370c",
+    "indexed_vectors": 1834,
+    "frozen_vectors_digest": "b7ee0ec7474237c8faa5ef10c9635c0bac6d3a7a1909317604f591075e7df48a",
+    "embedding": {
+      "provider": "openai",
+      "model": "text-embedding-3-small",
+      "dimension": 1536,
+      "normalization": "none",
+      "similarity_metric": "cosine",
+      "configuration_version": "openai_embeddings_v1"
+    }
+  },
+  "question_signals": [
+    {
+      "question_id": "DA001",
+      "scenario_id": "SC-A01",
+      "label": "ANSWERABLE",
+      "returned": 5,
+      "top1": 0.752023,
+      "top2": 0.745775,
+      "margin": 0.006248,
+      "grades": [
+        1,
+        1,
+        2,
+        1,
+        0
+      ],
+      "judged_grades": [
+        2,
+        1,
+        1,
+        1,
+        0
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 140,
+          "grade": 1
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 137,
+          "grade": 1
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 138,
+          "grade": 2
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 136,
+          "grade": 1
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 24,
+          "grade": 0
+        }
+      ]
+    },
+    {
+      "question_id": "DA002",
+      "scenario_id": "SC-A01",
+      "label": "ANSWERABLE",
+      "returned": 5,
+      "top1": 0.664681,
+      "top2": 0.657792,
+      "margin": 0.006889,
+      "grades": [
+        1,
+        2,
+        1,
+        0,
+        1
+      ],
+      "judged_grades": [
+        2,
+        1,
+        1,
+        1,
+        0
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 140,
+          "grade": 1
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 138,
+          "grade": 2
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 137,
+          "grade": 1
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 45,
+          "grade": 0
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 42,
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "question_id": "DA003",
+      "scenario_id": "SC-A02",
+      "label": "ANSWERABLE",
+      "returned": 5,
+      "top1": 0.778794,
+      "top2": 0.682635,
+      "margin": 0.096159,
+      "grades": [
+        1,
+        1,
+        0,
+        0,
+        0
+      ],
+      "judged_grades": [
+        2,
+        1,
+        1,
+        0,
+        0,
+        0
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 73,
+          "grade": 1
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 70,
+          "grade": 1
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 37,
+          "grade": 0
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 24,
+          "grade": 0
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 72,
+          "grade": 0
+        }
+      ]
+    },
+    {
+      "question_id": "DA006",
+      "scenario_id": "SC-A04",
+      "label": "ANSWERABLE",
+      "returned": 5,
+      "top1": 0.656124,
+      "top2": 0.625058,
+      "margin": 0.031066,
+      "grades": [
+        0,
+        0,
+        0,
+        1,
+        2
+      ],
+      "judged_grades": [
+        2,
+        1,
+        0,
+        0,
+        0
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 207,
+          "grade": 0
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 209,
+          "grade": 0
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 192,
+          "grade": 0
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 218,
+          "grade": 1
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 219,
+          "grade": 2
+        }
+      ]
+    },
+    {
+      "question_id": "DA007",
+      "scenario_id": "SC-A04",
+      "label": "ANSWERABLE",
+      "returned": 5,
+      "top1": 0.584471,
+      "top2": 0.581834,
+      "margin": 0.002637,
+      "grades": [
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "judged_grades": [
+        2,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 218,
+          "grade": 1
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 192,
+          "grade": 0
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 207,
+          "grade": 0
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 209,
+          "grade": 0
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 208,
+          "grade": 0
+        }
+      ]
+    },
+    {
+      "question_id": "DA011",
+      "scenario_id": "SC-A07",
+      "label": "ANSWERABLE",
+      "returned": 5,
+      "top1": 0.730462,
+      "top2": 0.606406,
+      "margin": 0.124056,
+      "grades": [
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "judged_grades": [
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 182,
+          "grade": 2
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 308,
+          "grade": 0
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 366,
+          "grade": 0
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 542,
+          "grade": 0
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 66,
+          "grade": 0
+        }
+      ]
+    },
+    {
+      "question_id": "DA012",
+      "scenario_id": "SC-A07",
+      "label": "ANSWERABLE",
+      "returned": 5,
+      "top1": 0.751126,
+      "top2": 0.626855,
+      "margin": 0.124271,
+      "grades": [
+        2,
+        1,
+        0,
+        0,
+        0
+      ],
+      "judged_grades": [
+        2,
+        1,
+        0,
+        0,
+        0
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 177,
+          "grade": 2
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 178,
+          "grade": 1
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 60,
+          "grade": 0
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 310,
+          "grade": 0
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 175,
+          "grade": 0
+        }
+      ]
+    },
+    {
+      "question_id": "DA015",
+      "scenario_id": "SC-A09",
+      "label": "ANSWERABLE",
+      "returned": 5,
+      "top1": 0.625944,
+      "top2": 0.608906,
+      "margin": 0.017038,
+      "grades": [
+        2,
+        0,
+        0,
+        1,
+        0
+      ],
+      "judged_grades": [
+        2,
+        1,
+        0,
+        0,
+        0
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 31,
+          "grade": 2
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 26,
+          "grade": 0
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 10,
+          "grade": 0
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 37,
+          "grade": 1
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 14,
+          "grade": 0
+        }
+      ]
+    },
+    {
+      "question_id": "DA017",
+      "scenario_id": "SC-A11",
+      "label": "ANSWERABLE",
+      "returned": 5,
+      "top1": 0.632169,
+      "top2": 0.596512,
+      "margin": 0.035657,
+      "grades": [
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "judged_grades": [
+        2,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 365,
+          "grade": 2
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 347,
+          "grade": 0
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 372,
+          "grade": 0
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 383,
+          "grade": 0
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 450,
+          "grade": 0
+        }
+      ]
+    },
+    {
+      "question_id": "DA018",
+      "scenario_id": "SC-A12",
+      "label": "ANSWERABLE",
+      "returned": 5,
+      "top1": 0.725001,
+      "top2": 0.670759,
+      "margin": 0.054242,
+      "grades": [
+        2,
+        1,
+        1,
+        0,
+        0
+      ],
+      "judged_grades": [
+        2,
+        1,
+        1,
+        0,
+        0
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 145,
+          "grade": 2
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 87,
+          "grade": 1
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 142,
+          "grade": 1
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 24,
+          "grade": 0
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 34,
+          "grade": 0
+        }
+      ]
+    },
+    {
+      "question_id": "DA020",
+      "scenario_id": "SC-A14",
+      "label": "ANSWERABLE",
+      "returned": 5,
+      "top1": 0.661431,
+      "top2": 0.604117,
+      "margin": 0.057314,
+      "grades": [
+        2,
+        2,
+        0,
+        1,
+        1
+      ],
+      "judged_grades": [
+        2,
+        2,
+        1,
+        1,
+        0
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 207,
+          "grade": 2
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 251,
+          "grade": 2
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 142,
+          "grade": 0
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 208,
+          "grade": 1
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 209,
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "question_id": "DA022",
+      "scenario_id": "SC-A16",
+      "label": "ANSWERABLE",
+      "returned": 5,
+      "top1": 0.607706,
+      "top2": 0.593086,
+      "margin": 0.01462,
+      "grades": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "judged_grades": [
+        2,
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 36,
+          "grade": 0
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 264,
+          "grade": 0
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 25,
+          "grade": 0
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 410,
+          "grade": 0
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 56,
+          "grade": 0
+        }
+      ]
+    },
+    {
+      "question_id": "DA023",
+      "scenario_id": "SC-A16",
+      "label": "ANSWERABLE",
+      "returned": 5,
+      "top1": 0.667257,
+      "top2": 0.558338,
+      "margin": 0.108919,
+      "grades": [
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "judged_grades": [
+        2,
+        2,
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 272,
+          "grade": 1
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 254,
+          "grade": 0
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 300,
+          "grade": 0
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 315,
+          "grade": 0
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 255,
+          "grade": 0
+        }
+      ]
+    },
+    {
+      "question_id": "DA026",
+      "scenario_id": "SC-N01",
+      "label": "NO_EVIDENCE",
+      "returned": 5,
+      "top1": 0.624879,
+      "top2": 0.600766,
+      "margin": 0.024113,
+      "grades": [
+        1,
+        1,
+        0,
+        0,
+        0
+      ],
+      "judged_grades": [
+        1,
+        1,
+        0,
+        0,
+        0
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 42,
+          "grade": 1
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 192,
+          "grade": 1
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 209,
+          "grade": 0
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 251,
+          "grade": 0
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 207,
+          "grade": 0
+        }
+      ]
+    },
+    {
+      "question_id": "DA027",
+      "scenario_id": "SC-N01",
+      "label": "NO_EVIDENCE",
+      "returned": 5,
+      "top1": 0.610042,
+      "top2": 0.502766,
+      "margin": 0.107276,
+      "grades": [
+        1,
+        0,
+        0,
+        0,
+        1
+      ],
+      "judged_grades": [
+        1,
+        1,
+        0,
+        0,
+        0
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 192,
+          "grade": 1
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 209,
+          "grade": 0
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 207,
+          "grade": 0
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 179,
+          "grade": 0
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 42,
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "question_id": "DA030",
+      "scenario_id": "SC-N03",
+      "label": "NO_EVIDENCE",
+      "returned": 5,
+      "top1": 0.550473,
+      "top2": 0.520174,
+      "margin": 0.030299,
+      "grades": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "judged_grades": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 246,
+          "grade": 0
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 220,
+          "grade": 0
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 155,
+          "grade": 0
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 32,
+          "grade": 0
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 13,
+          "grade": 0
+        }
+      ]
+    },
+    {
+      "question_id": "DA031",
+      "scenario_id": "SC-N03",
+      "label": "NO_EVIDENCE",
+      "returned": 5,
+      "top1": 0.518681,
+      "top2": 0.506082,
+      "margin": 0.012599,
+      "grades": [
+        0,
+        0,
+        0,
+        1,
+        0
+      ],
+      "judged_grades": [
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 247,
+          "grade": 0
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 28,
+          "grade": 0
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 246,
+          "grade": 0
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 197,
+          "grade": 1
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 308,
+          "grade": 0
+        }
+      ]
+    },
+    {
+      "question_id": "DA032",
+      "scenario_id": "SC-N04",
+      "label": "NO_EVIDENCE",
+      "returned": 5,
+      "top1": 0.491635,
+      "top2": 0.489249,
+      "margin": 0.002386,
+      "grades": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "judged_grades": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 192,
+          "grade": 0
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 365,
+          "grade": 0
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 466,
+          "grade": 0
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 391,
+          "grade": 0
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 123,
+          "grade": 0
+        }
+      ]
+    },
+    {
+      "question_id": "DA033",
+      "scenario_id": "SC-N04",
+      "label": "NO_EVIDENCE",
+      "returned": 5,
+      "top1": 0.460257,
+      "top2": 0.453847,
+      "margin": 0.00641,
+      "grades": [
+        0,
+        0,
+        0,
+        0,
+        1
+      ],
+      "judged_grades": [
+        1,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 365,
+          "grade": 0
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 450,
+          "grade": 0
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 391,
+          "grade": 0
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 192,
+          "grade": 0
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 180,
+          "grade": 1
+        }
+      ]
+    },
+    {
+      "question_id": "DA036",
+      "scenario_id": "SC-N06",
+      "label": "NO_EVIDENCE",
+      "returned": 5,
+      "top1": 0.741162,
+      "top2": 0.702525,
+      "margin": 0.038637,
+      "grades": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "judged_grades": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 16,
+          "grade": 0
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 14,
+          "grade": 0
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 12,
+          "grade": 0
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 72,
+          "grade": 0
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 56,
+          "grade": 0
+        }
+      ]
+    },
+    {
+      "question_id": "DA037",
+      "scenario_id": "SC-N06",
+      "label": "NO_EVIDENCE",
+      "returned": 5,
+      "top1": 0.737153,
+      "top2": 0.657287,
+      "margin": 0.079866,
+      "grades": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "judged_grades": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 14,
+          "grade": 0
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 10,
+          "grade": 0
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 12,
+          "grade": 0
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 56,
+          "grade": 0
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 16,
+          "grade": 0
+        }
+      ]
+    },
+    {
+      "question_id": "DA042",
+      "scenario_id": "SC-N09",
+      "label": "NO_EVIDENCE",
+      "returned": 5,
+      "top1": 0.47773,
+      "top2": 0.47339,
+      "margin": 0.00434,
+      "grades": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "judged_grades": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 209,
+          "grade": 0
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 147,
+          "grade": 0
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 502,
+          "grade": 0
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 43,
+          "grade": 0
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 293,
+          "grade": 0
+        }
+      ]
+    },
+    {
+      "question_id": "DA043",
+      "scenario_id": "SC-N09",
+      "label": "NO_EVIDENCE",
+      "returned": 5,
+      "top1": 0.526802,
+      "top2": 0.507155,
+      "margin": 0.019647,
+      "grades": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "judged_grades": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 13,
+          "grade": 0
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 359,
+          "grade": 0
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 12,
+          "grade": 0
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 228,
+          "grade": 0
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 146,
+          "grade": 0
+        }
+      ]
+    },
+    {
+      "question_id": "DA046",
+      "scenario_id": "SC-N11",
+      "label": "NO_EVIDENCE",
+      "returned": 5,
+      "top1": 0.578735,
+      "top2": 0.561277,
+      "margin": 0.017458,
+      "grades": [
+        0,
+        0,
+        1,
+        1,
+        0
+      ],
+      "judged_grades": [
+        1,
+        1,
+        0,
+        0,
+        0
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 528,
+          "grade": 0
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 370,
+          "grade": 0
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 542,
+          "grade": 1
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 304,
+          "grade": 1
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 348,
+          "grade": 0
+        }
+      ]
+    },
+    {
+      "question_id": "DA047",
+      "scenario_id": "SC-N11",
+      "label": "NO_EVIDENCE",
+      "returned": 5,
+      "top1": 0.548186,
+      "top2": 0.491505,
+      "margin": 0.056681,
+      "grades": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "judged_grades": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 520,
+          "grade": 0
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 353,
+          "grade": 0
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 352,
+          "grade": 0
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 407,
+          "grade": 0
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 58,
+          "grade": 0
+        }
+      ]
+    },
+    {
+      "question_id": "DA048",
+      "scenario_id": "SC-N12",
+      "label": "NO_EVIDENCE",
+      "returned": 5,
+      "top1": 0.578924,
+      "top2": 0.5582,
+      "margin": 0.020724,
+      "grades": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "judged_grades": [
+        0,
+        0,
+        0,
+        0,
+        0
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 391,
+          "grade": 0
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 49,
+          "grade": 0
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 147,
+          "grade": 0
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 350,
+          "grade": 0
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 77,
+          "grade": 0
+        }
+      ]
+    },
+    {
+      "question_id": "DA049",
+      "scenario_id": "SC-N12",
+      "label": "NO_EVIDENCE",
+      "returned": 5,
+      "top1": 0.547643,
+      "top2": 0.544962,
+      "margin": 0.002681,
+      "grades": [
+        0,
+        1,
+        1,
+        1,
+        1
+      ],
+      "judged_grades": [
+        1,
+        1,
+        1,
+        1,
+        0
+      ],
+      "ranking": [
+        {
+          "position": 1,
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 109,
+          "grade": 0
+        },
+        {
+          "position": 2,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 271,
+          "grade": 1
+        },
+        {
+          "position": 3,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 274,
+          "grade": 1
+        },
+        {
+          "position": 4,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 285,
+          "grade": 1
+        },
+        {
+          "position": 5,
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 269,
+          "grade": 1
+        }
+      ]
+    }
+  ],
+  "policies": [
+    {
+      "policy": {
+        "rule": "R0",
+        "min_top1": null,
+        "min_margin": null
+      },
+      "admission": {
+        "total_questions": 27,
+        "answerable_questions": 13,
+        "no_evidence_questions": 14,
+        "admitted": 27,
+        "abstained": 0,
+        "correct_abstentions": 0,
+        "incorrect_abstentions": 0,
+        "correct_abstention_rate": 0.0,
+        "false_abstention_rate": 0.0,
+        "coverage": 1.0,
+        "coverage_answerable": 1.0,
+        "risk": 0.518519,
+        "answerable_with_relevant_preserved": 0.692308
+      },
+      "retrieval": {
+        "measured_questions": 13,
+        "recall": {
+          "1": 0.423077,
+          "3": 0.615385,
+          "5": 0.692308
+        },
+        "mrr": 0.541026,
+        "ndcg": {
+          "1": 0.589744,
+          "3": 0.628339,
+          "5": 0.679129
+        },
+        "returned_total": 135,
+        "grade_histogram": {
+          "0": 96,
+          "1": 29,
+          "2": 10
+        },
+        "grade0_share": 0.711111,
+        "grade1_share": 0.214815,
+        "grade2_share": 0.074074,
+        "irrelevant_returned_total": 96,
+        "mean_irrelevant_per_admitted_question": 3.555556
+      },
+      "decisions": {
+        "DA001": "ADMIT",
+        "DA002": "ADMIT",
+        "DA003": "ADMIT",
+        "DA006": "ADMIT",
+        "DA007": "ADMIT",
+        "DA011": "ADMIT",
+        "DA012": "ADMIT",
+        "DA015": "ADMIT",
+        "DA017": "ADMIT",
+        "DA018": "ADMIT",
+        "DA020": "ADMIT",
+        "DA022": "ADMIT",
+        "DA023": "ADMIT",
+        "DA026": "ADMIT",
+        "DA027": "ADMIT",
+        "DA030": "ADMIT",
+        "DA031": "ADMIT",
+        "DA032": "ADMIT",
+        "DA033": "ADMIT",
+        "DA036": "ADMIT",
+        "DA037": "ADMIT",
+        "DA042": "ADMIT",
+        "DA043": "ADMIT",
+        "DA046": "ADMIT",
+        "DA047": "ADMIT",
+        "DA048": "ADMIT",
+        "DA049": "ADMIT"
+      }
+    },
+    {
+      "policy": {
+        "rule": "R1",
+        "min_top1": 0.5,
+        "min_margin": null
+      },
+      "admission": {
+        "total_questions": 27,
+        "answerable_questions": 13,
+        "no_evidence_questions": 14,
+        "admitted": 24,
+        "abstained": 3,
+        "correct_abstentions": 3,
+        "incorrect_abstentions": 0,
+        "correct_abstention_rate": 0.214286,
+        "false_abstention_rate": 0.0,
+        "coverage": 0.888889,
+        "coverage_answerable": 1.0,
+        "risk": 0.458333,
+        "answerable_with_relevant_preserved": 0.692308
+      },
+      "retrieval": {
+        "measured_questions": 13,
+        "recall": {
+          "1": 0.423077,
+          "3": 0.615385,
+          "5": 0.692308
+        },
+        "mrr": 0.541026,
+        "ndcg": {
+          "1": 0.589744,
+          "3": 0.628339,
+          "5": 0.679129
+        },
+        "returned_total": 120,
+        "grade_histogram": {
+          "0": 82,
+          "1": 28,
+          "2": 10
+        },
+        "grade0_share": 0.683333,
+        "grade1_share": 0.233333,
+        "grade2_share": 0.083333,
+        "irrelevant_returned_total": 82,
+        "mean_irrelevant_per_admitted_question": 3.416667
+      },
+      "decisions": {
+        "DA001": "ADMIT",
+        "DA002": "ADMIT",
+        "DA003": "ADMIT",
+        "DA006": "ADMIT",
+        "DA007": "ADMIT",
+        "DA011": "ADMIT",
+        "DA012": "ADMIT",
+        "DA015": "ADMIT",
+        "DA017": "ADMIT",
+        "DA018": "ADMIT",
+        "DA020": "ADMIT",
+        "DA022": "ADMIT",
+        "DA023": "ADMIT",
+        "DA026": "ADMIT",
+        "DA027": "ADMIT",
+        "DA030": "ADMIT",
+        "DA031": "ADMIT",
+        "DA032": "ABSTAIN",
+        "DA033": "ABSTAIN",
+        "DA036": "ADMIT",
+        "DA037": "ADMIT",
+        "DA042": "ABSTAIN",
+        "DA043": "ADMIT",
+        "DA046": "ADMIT",
+        "DA047": "ADMIT",
+        "DA048": "ADMIT",
+        "DA049": "ADMIT"
+      }
+    },
+    {
+      "policy": {
+        "rule": "R1",
+        "min_top1": 0.55,
+        "min_margin": null
+      },
+      "admission": {
+        "total_questions": 27,
+        "answerable_questions": 13,
+        "no_evidence_questions": 14,
+        "admitted": 20,
+        "abstained": 7,
+        "correct_abstentions": 7,
+        "incorrect_abstentions": 0,
+        "correct_abstention_rate": 0.5,
+        "false_abstention_rate": 0.0,
+        "coverage": 0.740741,
+        "coverage_answerable": 1.0,
+        "risk": 0.35,
+        "answerable_with_relevant_preserved": 0.692308
+      },
+      "retrieval": {
+        "measured_questions": 13,
+        "recall": {
+          "1": 0.423077,
+          "3": 0.615385,
+          "5": 0.692308
+        },
+        "mrr": 0.541026,
+        "ndcg": {
+          "1": 0.589744,
+          "3": 0.628339,
+          "5": 0.679129
+        },
+        "returned_total": 100,
+        "grade_histogram": {
+          "0": 67,
+          "1": 23,
+          "2": 10
+        },
+        "grade0_share": 0.67,
+        "grade1_share": 0.23,
+        "grade2_share": 0.1,
+        "irrelevant_returned_total": 67,
+        "mean_irrelevant_per_admitted_question": 3.35
+      },
+      "decisions": {
+        "DA001": "ADMIT",
+        "DA002": "ADMIT",
+        "DA003": "ADMIT",
+        "DA006": "ADMIT",
+        "DA007": "ADMIT",
+        "DA011": "ADMIT",
+        "DA012": "ADMIT",
+        "DA015": "ADMIT",
+        "DA017": "ADMIT",
+        "DA018": "ADMIT",
+        "DA020": "ADMIT",
+        "DA022": "ADMIT",
+        "DA023": "ADMIT",
+        "DA026": "ADMIT",
+        "DA027": "ADMIT",
+        "DA030": "ADMIT",
+        "DA031": "ABSTAIN",
+        "DA032": "ABSTAIN",
+        "DA033": "ABSTAIN",
+        "DA036": "ADMIT",
+        "DA037": "ADMIT",
+        "DA042": "ABSTAIN",
+        "DA043": "ABSTAIN",
+        "DA046": "ADMIT",
+        "DA047": "ABSTAIN",
+        "DA048": "ADMIT",
+        "DA049": "ABSTAIN"
+      }
+    },
+    {
+      "policy": {
+        "rule": "R1",
+        "min_top1": 0.6,
+        "min_margin": null
+      },
+      "admission": {
+        "total_questions": 27,
+        "answerable_questions": 13,
+        "no_evidence_questions": 14,
+        "admitted": 16,
+        "abstained": 11,
+        "correct_abstentions": 10,
+        "incorrect_abstentions": 1,
+        "correct_abstention_rate": 0.714286,
+        "false_abstention_rate": 0.076923,
+        "coverage": 0.592593,
+        "coverage_answerable": 0.923077,
+        "risk": 0.25,
+        "answerable_with_relevant_preserved": 0.692308
+      },
+      "retrieval": {
+        "measured_questions": 12,
+        "recall": {
+          "1": 0.458333,
+          "3": 0.666667,
+          "5": 0.75
+        },
+        "mrr": 0.586111,
+        "ndcg": {
+          "1": 0.611111,
+          "3": 0.65775,
+          "5": 0.712772
+        },
+        "returned_total": 80,
+        "grade_histogram": {
+          "0": 50,
+          "1": 20,
+          "2": 10
+        },
+        "grade0_share": 0.625,
+        "grade1_share": 0.25,
+        "grade2_share": 0.125,
+        "irrelevant_returned_total": 50,
+        "mean_irrelevant_per_admitted_question": 3.125
+      },
+      "decisions": {
+        "DA001": "ADMIT",
+        "DA002": "ADMIT",
+        "DA003": "ADMIT",
+        "DA006": "ADMIT",
+        "DA007": "ABSTAIN",
+        "DA011": "ADMIT",
+        "DA012": "ADMIT",
+        "DA015": "ADMIT",
+        "DA017": "ADMIT",
+        "DA018": "ADMIT",
+        "DA020": "ADMIT",
+        "DA022": "ADMIT",
+        "DA023": "ADMIT",
+        "DA026": "ADMIT",
+        "DA027": "ADMIT",
+        "DA030": "ABSTAIN",
+        "DA031": "ABSTAIN",
+        "DA032": "ABSTAIN",
+        "DA033": "ABSTAIN",
+        "DA036": "ADMIT",
+        "DA037": "ADMIT",
+        "DA042": "ABSTAIN",
+        "DA043": "ABSTAIN",
+        "DA046": "ABSTAIN",
+        "DA047": "ABSTAIN",
+        "DA048": "ABSTAIN",
+        "DA049": "ABSTAIN"
+      }
+    },
+    {
+      "policy": {
+        "rule": "R1",
+        "min_top1": 0.65,
+        "min_margin": null
+      },
+      "admission": {
+        "total_questions": 27,
+        "answerable_questions": 13,
+        "no_evidence_questions": 14,
+        "admitted": 11,
+        "abstained": 16,
+        "correct_abstentions": 12,
+        "incorrect_abstentions": 4,
+        "correct_abstention_rate": 0.857143,
+        "false_abstention_rate": 0.307692,
+        "coverage": 0.407407,
+        "coverage_answerable": 0.692308,
+        "risk": 0.181818,
+        "answerable_with_relevant_preserved": 0.538462
+      },
+      "retrieval": {
+        "measured_questions": 9,
+        "recall": {
+          "1": 0.388889,
+          "3": 0.666667,
+          "5": 0.777778
+        },
+        "mrr": 0.559259,
+        "ndcg": {
+          "1": 0.592593,
+          "3": 0.674085,
+          "5": 0.734268
+        },
+        "returned_total": 55,
+        "grade_histogram": {
+          "0": 32,
+          "1": 15,
+          "2": 8
+        },
+        "grade0_share": 0.581818,
+        "grade1_share": 0.272727,
+        "grade2_share": 0.145455,
+        "irrelevant_returned_total": 32,
+        "mean_irrelevant_per_admitted_question": 2.909091
+      },
+      "decisions": {
+        "DA001": "ADMIT",
+        "DA002": "ADMIT",
+        "DA003": "ADMIT",
+        "DA006": "ADMIT",
+        "DA007": "ABSTAIN",
+        "DA011": "ADMIT",
+        "DA012": "ADMIT",
+        "DA015": "ABSTAIN",
+        "DA017": "ABSTAIN",
+        "DA018": "ADMIT",
+        "DA020": "ADMIT",
+        "DA022": "ABSTAIN",
+        "DA023": "ADMIT",
+        "DA026": "ABSTAIN",
+        "DA027": "ABSTAIN",
+        "DA030": "ABSTAIN",
+        "DA031": "ABSTAIN",
+        "DA032": "ABSTAIN",
+        "DA033": "ABSTAIN",
+        "DA036": "ADMIT",
+        "DA037": "ADMIT",
+        "DA042": "ABSTAIN",
+        "DA043": "ABSTAIN",
+        "DA046": "ABSTAIN",
+        "DA047": "ABSTAIN",
+        "DA048": "ABSTAIN",
+        "DA049": "ABSTAIN"
+      }
+    },
+    {
+      "policy": {
+        "rule": "R1",
+        "min_top1": 0.7,
+        "min_margin": null
+      },
+      "admission": {
+        "total_questions": 27,
+        "answerable_questions": 13,
+        "no_evidence_questions": 14,
+        "admitted": 7,
+        "abstained": 20,
+        "correct_abstentions": 12,
+        "incorrect_abstentions": 8,
+        "correct_abstention_rate": 0.857143,
+        "false_abstention_rate": 0.615385,
+        "coverage": 0.259259,
+        "coverage_answerable": 0.384615,
+        "risk": 0.285714,
+        "answerable_with_relevant_preserved": 0.307692
+      },
+      "retrieval": {
+        "measured_questions": 5,
+        "recall": {
+          "1": 0.6,
+          "3": 0.8,
+          "5": 0.8
+        },
+        "mrr": 0.666667,
+        "ndcg": {
+          "1": 0.733333,
+          "3": 0.830547,
+          "5": 0.835118
+        },
+        "returned_total": 35,
+        "grade_histogram": {
+          "0": 23,
+          "1": 8,
+          "2": 4
+        },
+        "grade0_share": 0.657143,
+        "grade1_share": 0.228571,
+        "grade2_share": 0.114286,
+        "irrelevant_returned_total": 23,
+        "mean_irrelevant_per_admitted_question": 3.285714
+      },
+      "decisions": {
+        "DA001": "ADMIT",
+        "DA002": "ABSTAIN",
+        "DA003": "ADMIT",
+        "DA006": "ABSTAIN",
+        "DA007": "ABSTAIN",
+        "DA011": "ADMIT",
+        "DA012": "ADMIT",
+        "DA015": "ABSTAIN",
+        "DA017": "ABSTAIN",
+        "DA018": "ADMIT",
+        "DA020": "ABSTAIN",
+        "DA022": "ABSTAIN",
+        "DA023": "ABSTAIN",
+        "DA026": "ABSTAIN",
+        "DA027": "ABSTAIN",
+        "DA030": "ABSTAIN",
+        "DA031": "ABSTAIN",
+        "DA032": "ABSTAIN",
+        "DA033": "ABSTAIN",
+        "DA036": "ADMIT",
+        "DA037": "ADMIT",
+        "DA042": "ABSTAIN",
+        "DA043": "ABSTAIN",
+        "DA046": "ABSTAIN",
+        "DA047": "ABSTAIN",
+        "DA048": "ABSTAIN",
+        "DA049": "ABSTAIN"
+      }
+    },
+    {
+      "policy": {
+        "rule": "R2",
+        "min_top1": 0.5,
+        "min_margin": 0.02
+      },
+      "admission": {
+        "total_questions": 27,
+        "answerable_questions": 13,
+        "no_evidence_questions": 14,
+        "admitted": 15,
+        "abstained": 12,
+        "correct_abstentions": 7,
+        "incorrect_abstentions": 5,
+        "correct_abstention_rate": 0.5,
+        "false_abstention_rate": 0.384615,
+        "coverage": 0.555556,
+        "coverage_answerable": 0.615385,
+        "risk": 0.466667,
+        "answerable_with_relevant_preserved": 0.461538
+      },
+      "retrieval": {
+        "measured_questions": 8,
+        "recall": {
+          "1": 0.5625,
+          "3": 0.625,
+          "5": 0.75
+        },
+        "mrr": 0.65,
+        "ndcg": {
+          "1": 0.708333,
+          "3": 0.685941,
+          "5": 0.749882
+        },
+        "returned_total": 75,
+        "grade_histogram": {
+          "0": 55,
+          "1": 13,
+          "2": 7
+        },
+        "grade0_share": 0.733333,
+        "grade1_share": 0.173333,
+        "grade2_share": 0.093333,
+        "irrelevant_returned_total": 55,
+        "mean_irrelevant_per_admitted_question": 3.666667
+      },
+      "decisions": {
+        "DA001": "ABSTAIN",
+        "DA002": "ABSTAIN",
+        "DA003": "ADMIT",
+        "DA006": "ADMIT",
+        "DA007": "ABSTAIN",
+        "DA011": "ADMIT",
+        "DA012": "ADMIT",
+        "DA015": "ABSTAIN",
+        "DA017": "ADMIT",
+        "DA018": "ADMIT",
+        "DA020": "ADMIT",
+        "DA022": "ABSTAIN",
+        "DA023": "ADMIT",
+        "DA026": "ADMIT",
+        "DA027": "ADMIT",
+        "DA030": "ADMIT",
+        "DA031": "ABSTAIN",
+        "DA032": "ABSTAIN",
+        "DA033": "ABSTAIN",
+        "DA036": "ADMIT",
+        "DA037": "ADMIT",
+        "DA042": "ABSTAIN",
+        "DA043": "ABSTAIN",
+        "DA046": "ABSTAIN",
+        "DA047": "ADMIT",
+        "DA048": "ADMIT",
+        "DA049": "ABSTAIN"
+      }
+    },
+    {
+      "policy": {
+        "rule": "R2",
+        "min_top1": 0.5,
+        "min_margin": 0.05
+      },
+      "admission": {
+        "total_questions": 27,
+        "answerable_questions": 13,
+        "no_evidence_questions": 14,
+        "admitted": 9,
+        "abstained": 18,
+        "correct_abstentions": 11,
+        "incorrect_abstentions": 7,
+        "correct_abstention_rate": 0.785714,
+        "false_abstention_rate": 0.538462,
+        "coverage": 0.333333,
+        "coverage_answerable": 0.461538,
+        "risk": 0.333333,
+        "answerable_with_relevant_preserved": 0.307692
+      },
+      "retrieval": {
+        "measured_questions": 6,
+        "recall": {
+          "1": 0.583333,
+          "3": 0.666667,
+          "5": 0.666667
+        },
+        "mrr": 0.666667,
+        "ndcg": {
+          "1": 0.777778,
+          "3": 0.747921,
+          "5": 0.760135
+        },
+        "returned_total": 45,
+        "grade_histogram": {
+          "0": 30,
+          "1": 10,
+          "2": 5
+        },
+        "grade0_share": 0.666667,
+        "grade1_share": 0.222222,
+        "grade2_share": 0.111111,
+        "irrelevant_returned_total": 30,
+        "mean_irrelevant_per_admitted_question": 3.333333
+      },
+      "decisions": {
+        "DA001": "ABSTAIN",
+        "DA002": "ABSTAIN",
+        "DA003": "ADMIT",
+        "DA006": "ABSTAIN",
+        "DA007": "ABSTAIN",
+        "DA011": "ADMIT",
+        "DA012": "ADMIT",
+        "DA015": "ABSTAIN",
+        "DA017": "ABSTAIN",
+        "DA018": "ADMIT",
+        "DA020": "ADMIT",
+        "DA022": "ABSTAIN",
+        "DA023": "ADMIT",
+        "DA026": "ABSTAIN",
+        "DA027": "ADMIT",
+        "DA030": "ABSTAIN",
+        "DA031": "ABSTAIN",
+        "DA032": "ABSTAIN",
+        "DA033": "ABSTAIN",
+        "DA036": "ABSTAIN",
+        "DA037": "ADMIT",
+        "DA042": "ABSTAIN",
+        "DA043": "ABSTAIN",
+        "DA046": "ABSTAIN",
+        "DA047": "ADMIT",
+        "DA048": "ABSTAIN",
+        "DA049": "ABSTAIN"
+      }
+    },
+    {
+      "policy": {
+        "rule": "R2",
+        "min_top1": 0.5,
+        "min_margin": 0.1
+      },
+      "admission": {
+        "total_questions": 27,
+        "answerable_questions": 13,
+        "no_evidence_questions": 14,
+        "admitted": 4,
+        "abstained": 23,
+        "correct_abstentions": 13,
+        "incorrect_abstentions": 10,
+        "correct_abstention_rate": 0.928571,
+        "false_abstention_rate": 0.769231,
+        "coverage": 0.148148,
+        "coverage_answerable": 0.230769,
+        "risk": 0.25,
+        "answerable_with_relevant_preserved": 0.153846
+      },
+      "retrieval": {
+        "measured_questions": 3,
+        "recall": {
+          "1": 0.666667,
+          "3": 0.666667,
+          "5": 0.666667
+        },
+        "mrr": 0.666667,
+        "ndcg": {
+          "1": 0.777778,
+          "3": 0.728478,
+          "5": 0.728478
+        },
+        "returned_total": 20,
+        "grade_histogram": {
+          "0": 14,
+          "1": 4,
+          "2": 2
+        },
+        "grade0_share": 0.7,
+        "grade1_share": 0.2,
+        "grade2_share": 0.1,
+        "irrelevant_returned_total": 14,
+        "mean_irrelevant_per_admitted_question": 3.5
+      },
+      "decisions": {
+        "DA001": "ABSTAIN",
+        "DA002": "ABSTAIN",
+        "DA003": "ABSTAIN",
+        "DA006": "ABSTAIN",
+        "DA007": "ABSTAIN",
+        "DA011": "ADMIT",
+        "DA012": "ADMIT",
+        "DA015": "ABSTAIN",
+        "DA017": "ABSTAIN",
+        "DA018": "ABSTAIN",
+        "DA020": "ABSTAIN",
+        "DA022": "ABSTAIN",
+        "DA023": "ADMIT",
+        "DA026": "ABSTAIN",
+        "DA027": "ADMIT",
+        "DA030": "ABSTAIN",
+        "DA031": "ABSTAIN",
+        "DA032": "ABSTAIN",
+        "DA033": "ABSTAIN",
+        "DA036": "ABSTAIN",
+        "DA037": "ABSTAIN",
+        "DA042": "ABSTAIN",
+        "DA043": "ABSTAIN",
+        "DA046": "ABSTAIN",
+        "DA047": "ABSTAIN",
+        "DA048": "ABSTAIN",
+        "DA049": "ABSTAIN"
+      }
+    },
+    {
+      "policy": {
+        "rule": "R2",
+        "min_top1": 0.55,
+        "min_margin": 0.02
+      },
+      "admission": {
+        "total_questions": 27,
+        "answerable_questions": 13,
+        "no_evidence_questions": 14,
+        "admitted": 14,
+        "abstained": 13,
+        "correct_abstentions": 8,
+        "incorrect_abstentions": 5,
+        "correct_abstention_rate": 0.571429,
+        "false_abstention_rate": 0.384615,
+        "coverage": 0.518519,
+        "coverage_answerable": 0.615385,
+        "risk": 0.428571,
+        "answerable_with_relevant_preserved": 0.461538
+      },
+      "retrieval": {
+        "measured_questions": 8,
+        "recall": {
+          "1": 0.5625,
+          "3": 0.625,
+          "5": 0.75
+        },
+        "mrr": 0.65,
+        "ndcg": {
+          "1": 0.708333,
+          "3": 0.685941,
+          "5": 0.749882
+        },
+        "returned_total": 70,
+        "grade_histogram": {
+          "0": 50,
+          "1": 13,
+          "2": 7
+        },
+        "grade0_share": 0.714286,
+        "grade1_share": 0.185714,
+        "grade2_share": 0.1,
+        "irrelevant_returned_total": 50,
+        "mean_irrelevant_per_admitted_question": 3.571429
+      },
+      "decisions": {
+        "DA001": "ABSTAIN",
+        "DA002": "ABSTAIN",
+        "DA003": "ADMIT",
+        "DA006": "ADMIT",
+        "DA007": "ABSTAIN",
+        "DA011": "ADMIT",
+        "DA012": "ADMIT",
+        "DA015": "ABSTAIN",
+        "DA017": "ADMIT",
+        "DA018": "ADMIT",
+        "DA020": "ADMIT",
+        "DA022": "ABSTAIN",
+        "DA023": "ADMIT",
+        "DA026": "ADMIT",
+        "DA027": "ADMIT",
+        "DA030": "ADMIT",
+        "DA031": "ABSTAIN",
+        "DA032": "ABSTAIN",
+        "DA033": "ABSTAIN",
+        "DA036": "ADMIT",
+        "DA037": "ADMIT",
+        "DA042": "ABSTAIN",
+        "DA043": "ABSTAIN",
+        "DA046": "ABSTAIN",
+        "DA047": "ABSTAIN",
+        "DA048": "ADMIT",
+        "DA049": "ABSTAIN"
+      }
+    },
+    {
+      "policy": {
+        "rule": "R2",
+        "min_top1": 0.55,
+        "min_margin": 0.05
+      },
+      "admission": {
+        "total_questions": 27,
+        "answerable_questions": 13,
+        "no_evidence_questions": 14,
+        "admitted": 8,
+        "abstained": 19,
+        "correct_abstentions": 12,
+        "incorrect_abstentions": 7,
+        "correct_abstention_rate": 0.857143,
+        "false_abstention_rate": 0.538462,
+        "coverage": 0.296296,
+        "coverage_answerable": 0.461538,
+        "risk": 0.25,
+        "answerable_with_relevant_preserved": 0.307692
+      },
+      "retrieval": {
+        "measured_questions": 6,
+        "recall": {
+          "1": 0.583333,
+          "3": 0.666667,
+          "5": 0.666667
+        },
+        "mrr": 0.666667,
+        "ndcg": {
+          "1": 0.777778,
+          "3": 0.747921,
+          "5": 0.760135
+        },
+        "returned_total": 40,
+        "grade_histogram": {
+          "0": 25,
+          "1": 10,
+          "2": 5
+        },
+        "grade0_share": 0.625,
+        "grade1_share": 0.25,
+        "grade2_share": 0.125,
+        "irrelevant_returned_total": 25,
+        "mean_irrelevant_per_admitted_question": 3.125
+      },
+      "decisions": {
+        "DA001": "ABSTAIN",
+        "DA002": "ABSTAIN",
+        "DA003": "ADMIT",
+        "DA006": "ABSTAIN",
+        "DA007": "ABSTAIN",
+        "DA011": "ADMIT",
+        "DA012": "ADMIT",
+        "DA015": "ABSTAIN",
+        "DA017": "ABSTAIN",
+        "DA018": "ADMIT",
+        "DA020": "ADMIT",
+        "DA022": "ABSTAIN",
+        "DA023": "ADMIT",
+        "DA026": "ABSTAIN",
+        "DA027": "ADMIT",
+        "DA030": "ABSTAIN",
+        "DA031": "ABSTAIN",
+        "DA032": "ABSTAIN",
+        "DA033": "ABSTAIN",
+        "DA036": "ABSTAIN",
+        "DA037": "ADMIT",
+        "DA042": "ABSTAIN",
+        "DA043": "ABSTAIN",
+        "DA046": "ABSTAIN",
+        "DA047": "ABSTAIN",
+        "DA048": "ABSTAIN",
+        "DA049": "ABSTAIN"
+      }
+    },
+    {
+      "policy": {
+        "rule": "R2",
+        "min_top1": 0.55,
+        "min_margin": 0.1
+      },
+      "admission": {
+        "total_questions": 27,
+        "answerable_questions": 13,
+        "no_evidence_questions": 14,
+        "admitted": 4,
+        "abstained": 23,
+        "correct_abstentions": 13,
+        "incorrect_abstentions": 10,
+        "correct_abstention_rate": 0.928571,
+        "false_abstention_rate": 0.769231,
+        "coverage": 0.148148,
+        "coverage_answerable": 0.230769,
+        "risk": 0.25,
+        "answerable_with_relevant_preserved": 0.153846
+      },
+      "retrieval": {
+        "measured_questions": 3,
+        "recall": {
+          "1": 0.666667,
+          "3": 0.666667,
+          "5": 0.666667
+        },
+        "mrr": 0.666667,
+        "ndcg": {
+          "1": 0.777778,
+          "3": 0.728478,
+          "5": 0.728478
+        },
+        "returned_total": 20,
+        "grade_histogram": {
+          "0": 14,
+          "1": 4,
+          "2": 2
+        },
+        "grade0_share": 0.7,
+        "grade1_share": 0.2,
+        "grade2_share": 0.1,
+        "irrelevant_returned_total": 14,
+        "mean_irrelevant_per_admitted_question": 3.5
+      },
+      "decisions": {
+        "DA001": "ABSTAIN",
+        "DA002": "ABSTAIN",
+        "DA003": "ABSTAIN",
+        "DA006": "ABSTAIN",
+        "DA007": "ABSTAIN",
+        "DA011": "ADMIT",
+        "DA012": "ADMIT",
+        "DA015": "ABSTAIN",
+        "DA017": "ABSTAIN",
+        "DA018": "ABSTAIN",
+        "DA020": "ABSTAIN",
+        "DA022": "ABSTAIN",
+        "DA023": "ADMIT",
+        "DA026": "ABSTAIN",
+        "DA027": "ADMIT",
+        "DA030": "ABSTAIN",
+        "DA031": "ABSTAIN",
+        "DA032": "ABSTAIN",
+        "DA033": "ABSTAIN",
+        "DA036": "ABSTAIN",
+        "DA037": "ABSTAIN",
+        "DA042": "ABSTAIN",
+        "DA043": "ABSTAIN",
+        "DA046": "ABSTAIN",
+        "DA047": "ABSTAIN",
+        "DA048": "ABSTAIN",
+        "DA049": "ABSTAIN"
+      }
+    },
+    {
+      "policy": {
+        "rule": "R2",
+        "min_top1": 0.6,
+        "min_margin": 0.02
+      },
+      "admission": {
+        "total_questions": 27,
+        "answerable_questions": 13,
+        "no_evidence_questions": 14,
+        "admitted": 12,
+        "abstained": 15,
+        "correct_abstentions": 10,
+        "incorrect_abstentions": 5,
+        "correct_abstention_rate": 0.714286,
+        "false_abstention_rate": 0.384615,
+        "coverage": 0.444444,
+        "coverage_answerable": 0.615385,
+        "risk": 0.333333,
+        "answerable_with_relevant_preserved": 0.461538
+      },
+      "retrieval": {
+        "measured_questions": 8,
+        "recall": {
+          "1": 0.5625,
+          "3": 0.625,
+          "5": 0.75
+        },
+        "mrr": 0.65,
+        "ndcg": {
+          "1": 0.708333,
+          "3": 0.685941,
+          "5": 0.749882
+        },
+        "returned_total": 60,
+        "grade_histogram": {
+          "0": 40,
+          "1": 13,
+          "2": 7
+        },
+        "grade0_share": 0.666667,
+        "grade1_share": 0.216667,
+        "grade2_share": 0.116667,
+        "irrelevant_returned_total": 40,
+        "mean_irrelevant_per_admitted_question": 3.333333
+      },
+      "decisions": {
+        "DA001": "ABSTAIN",
+        "DA002": "ABSTAIN",
+        "DA003": "ADMIT",
+        "DA006": "ADMIT",
+        "DA007": "ABSTAIN",
+        "DA011": "ADMIT",
+        "DA012": "ADMIT",
+        "DA015": "ABSTAIN",
+        "DA017": "ADMIT",
+        "DA018": "ADMIT",
+        "DA020": "ADMIT",
+        "DA022": "ABSTAIN",
+        "DA023": "ADMIT",
+        "DA026": "ADMIT",
+        "DA027": "ADMIT",
+        "DA030": "ABSTAIN",
+        "DA031": "ABSTAIN",
+        "DA032": "ABSTAIN",
+        "DA033": "ABSTAIN",
+        "DA036": "ADMIT",
+        "DA037": "ADMIT",
+        "DA042": "ABSTAIN",
+        "DA043": "ABSTAIN",
+        "DA046": "ABSTAIN",
+        "DA047": "ABSTAIN",
+        "DA048": "ABSTAIN",
+        "DA049": "ABSTAIN"
+      }
+    },
+    {
+      "policy": {
+        "rule": "R2",
+        "min_top1": 0.6,
+        "min_margin": 0.05
+      },
+      "admission": {
+        "total_questions": 27,
+        "answerable_questions": 13,
+        "no_evidence_questions": 14,
+        "admitted": 8,
+        "abstained": 19,
+        "correct_abstentions": 12,
+        "incorrect_abstentions": 7,
+        "correct_abstention_rate": 0.857143,
+        "false_abstention_rate": 0.538462,
+        "coverage": 0.296296,
+        "coverage_answerable": 0.461538,
+        "risk": 0.25,
+        "answerable_with_relevant_preserved": 0.307692
+      },
+      "retrieval": {
+        "measured_questions": 6,
+        "recall": {
+          "1": 0.583333,
+          "3": 0.666667,
+          "5": 0.666667
+        },
+        "mrr": 0.666667,
+        "ndcg": {
+          "1": 0.777778,
+          "3": 0.747921,
+          "5": 0.760135
+        },
+        "returned_total": 40,
+        "grade_histogram": {
+          "0": 25,
+          "1": 10,
+          "2": 5
+        },
+        "grade0_share": 0.625,
+        "grade1_share": 0.25,
+        "grade2_share": 0.125,
+        "irrelevant_returned_total": 25,
+        "mean_irrelevant_per_admitted_question": 3.125
+      },
+      "decisions": {
+        "DA001": "ABSTAIN",
+        "DA002": "ABSTAIN",
+        "DA003": "ADMIT",
+        "DA006": "ABSTAIN",
+        "DA007": "ABSTAIN",
+        "DA011": "ADMIT",
+        "DA012": "ADMIT",
+        "DA015": "ABSTAIN",
+        "DA017": "ABSTAIN",
+        "DA018": "ADMIT",
+        "DA020": "ADMIT",
+        "DA022": "ABSTAIN",
+        "DA023": "ADMIT",
+        "DA026": "ABSTAIN",
+        "DA027": "ADMIT",
+        "DA030": "ABSTAIN",
+        "DA031": "ABSTAIN",
+        "DA032": "ABSTAIN",
+        "DA033": "ABSTAIN",
+        "DA036": "ABSTAIN",
+        "DA037": "ADMIT",
+        "DA042": "ABSTAIN",
+        "DA043": "ABSTAIN",
+        "DA046": "ABSTAIN",
+        "DA047": "ABSTAIN",
+        "DA048": "ABSTAIN",
+        "DA049": "ABSTAIN"
+      }
+    },
+    {
+      "policy": {
+        "rule": "R2",
+        "min_top1": 0.6,
+        "min_margin": 0.1
+      },
+      "admission": {
+        "total_questions": 27,
+        "answerable_questions": 13,
+        "no_evidence_questions": 14,
+        "admitted": 4,
+        "abstained": 23,
+        "correct_abstentions": 13,
+        "incorrect_abstentions": 10,
+        "correct_abstention_rate": 0.928571,
+        "false_abstention_rate": 0.769231,
+        "coverage": 0.148148,
+        "coverage_answerable": 0.230769,
+        "risk": 0.25,
+        "answerable_with_relevant_preserved": 0.153846
+      },
+      "retrieval": {
+        "measured_questions": 3,
+        "recall": {
+          "1": 0.666667,
+          "3": 0.666667,
+          "5": 0.666667
+        },
+        "mrr": 0.666667,
+        "ndcg": {
+          "1": 0.777778,
+          "3": 0.728478,
+          "5": 0.728478
+        },
+        "returned_total": 20,
+        "grade_histogram": {
+          "0": 14,
+          "1": 4,
+          "2": 2
+        },
+        "grade0_share": 0.7,
+        "grade1_share": 0.2,
+        "grade2_share": 0.1,
+        "irrelevant_returned_total": 14,
+        "mean_irrelevant_per_admitted_question": 3.5
+      },
+      "decisions": {
+        "DA001": "ABSTAIN",
+        "DA002": "ABSTAIN",
+        "DA003": "ABSTAIN",
+        "DA006": "ABSTAIN",
+        "DA007": "ABSTAIN",
+        "DA011": "ADMIT",
+        "DA012": "ADMIT",
+        "DA015": "ABSTAIN",
+        "DA017": "ABSTAIN",
+        "DA018": "ABSTAIN",
+        "DA020": "ABSTAIN",
+        "DA022": "ABSTAIN",
+        "DA023": "ADMIT",
+        "DA026": "ABSTAIN",
+        "DA027": "ADMIT",
+        "DA030": "ABSTAIN",
+        "DA031": "ABSTAIN",
+        "DA032": "ABSTAIN",
+        "DA033": "ABSTAIN",
+        "DA036": "ABSTAIN",
+        "DA037": "ABSTAIN",
+        "DA042": "ABSTAIN",
+        "DA043": "ABSTAIN",
+        "DA046": "ABSTAIN",
+        "DA047": "ABSTAIN",
+        "DA048": "ABSTAIN",
+        "DA049": "ABSTAIN"
+      }
+    },
+    {
+      "policy": {
+        "rule": "R2",
+        "min_top1": 0.65,
+        "min_margin": 0.02
+      },
+      "admission": {
+        "total_questions": 27,
+        "answerable_questions": 13,
+        "no_evidence_questions": 14,
+        "admitted": 9,
+        "abstained": 18,
+        "correct_abstentions": 12,
+        "incorrect_abstentions": 6,
+        "correct_abstention_rate": 0.857143,
+        "false_abstention_rate": 0.461538,
+        "coverage": 0.333333,
+        "coverage_answerable": 0.538462,
+        "risk": 0.222222,
+        "answerable_with_relevant_preserved": 0.384615
+      },
+      "retrieval": {
+        "measured_questions": 7,
+        "recall": {
+          "1": 0.5,
+          "3": 0.571429,
+          "5": 0.714286
+        },
+        "mrr": 0.6,
+        "ndcg": {
+          "1": 0.666667,
+          "3": 0.641075,
+          "5": 0.714151
+        },
+        "returned_total": 45,
+        "grade_histogram": {
+          "0": 30,
+          "1": 9,
+          "2": 6
+        },
+        "grade0_share": 0.666667,
+        "grade1_share": 0.2,
+        "grade2_share": 0.133333,
+        "irrelevant_returned_total": 30,
+        "mean_irrelevant_per_admitted_question": 3.333333
+      },
+      "decisions": {
+        "DA001": "ABSTAIN",
+        "DA002": "ABSTAIN",
+        "DA003": "ADMIT",
+        "DA006": "ADMIT",
+        "DA007": "ABSTAIN",
+        "DA011": "ADMIT",
+        "DA012": "ADMIT",
+        "DA015": "ABSTAIN",
+        "DA017": "ABSTAIN",
+        "DA018": "ADMIT",
+        "DA020": "ADMIT",
+        "DA022": "ABSTAIN",
+        "DA023": "ADMIT",
+        "DA026": "ABSTAIN",
+        "DA027": "ABSTAIN",
+        "DA030": "ABSTAIN",
+        "DA031": "ABSTAIN",
+        "DA032": "ABSTAIN",
+        "DA033": "ABSTAIN",
+        "DA036": "ADMIT",
+        "DA037": "ADMIT",
+        "DA042": "ABSTAIN",
+        "DA043": "ABSTAIN",
+        "DA046": "ABSTAIN",
+        "DA047": "ABSTAIN",
+        "DA048": "ABSTAIN",
+        "DA049": "ABSTAIN"
+      }
+    },
+    {
+      "policy": {
+        "rule": "R2",
+        "min_top1": 0.65,
+        "min_margin": 0.05
+      },
+      "admission": {
+        "total_questions": 27,
+        "answerable_questions": 13,
+        "no_evidence_questions": 14,
+        "admitted": 7,
+        "abstained": 20,
+        "correct_abstentions": 13,
+        "incorrect_abstentions": 7,
+        "correct_abstention_rate": 0.928571,
+        "false_abstention_rate": 0.538462,
+        "coverage": 0.259259,
+        "coverage_answerable": 0.461538,
+        "risk": 0.142857,
+        "answerable_with_relevant_preserved": 0.307692
+      },
+      "retrieval": {
+        "measured_questions": 6,
+        "recall": {
+          "1": 0.583333,
+          "3": 0.666667,
+          "5": 0.666667
+        },
+        "mrr": 0.666667,
+        "ndcg": {
+          "1": 0.777778,
+          "3": 0.747921,
+          "5": 0.760135
+        },
+        "returned_total": 35,
+        "grade_histogram": {
+          "0": 22,
+          "1": 8,
+          "2": 5
+        },
+        "grade0_share": 0.628571,
+        "grade1_share": 0.228571,
+        "grade2_share": 0.142857,
+        "irrelevant_returned_total": 22,
+        "mean_irrelevant_per_admitted_question": 3.142857
+      },
+      "decisions": {
+        "DA001": "ABSTAIN",
+        "DA002": "ABSTAIN",
+        "DA003": "ADMIT",
+        "DA006": "ABSTAIN",
+        "DA007": "ABSTAIN",
+        "DA011": "ADMIT",
+        "DA012": "ADMIT",
+        "DA015": "ABSTAIN",
+        "DA017": "ABSTAIN",
+        "DA018": "ADMIT",
+        "DA020": "ADMIT",
+        "DA022": "ABSTAIN",
+        "DA023": "ADMIT",
+        "DA026": "ABSTAIN",
+        "DA027": "ABSTAIN",
+        "DA030": "ABSTAIN",
+        "DA031": "ABSTAIN",
+        "DA032": "ABSTAIN",
+        "DA033": "ABSTAIN",
+        "DA036": "ABSTAIN",
+        "DA037": "ADMIT",
+        "DA042": "ABSTAIN",
+        "DA043": "ABSTAIN",
+        "DA046": "ABSTAIN",
+        "DA047": "ABSTAIN",
+        "DA048": "ABSTAIN",
+        "DA049": "ABSTAIN"
+      }
+    },
+    {
+      "policy": {
+        "rule": "R2",
+        "min_top1": 0.65,
+        "min_margin": 0.1
+      },
+      "admission": {
+        "total_questions": 27,
+        "answerable_questions": 13,
+        "no_evidence_questions": 14,
+        "admitted": 3,
+        "abstained": 24,
+        "correct_abstentions": 14,
+        "incorrect_abstentions": 10,
+        "correct_abstention_rate": 1.0,
+        "false_abstention_rate": 0.769231,
+        "coverage": 0.111111,
+        "coverage_answerable": 0.230769,
+        "risk": 0.0,
+        "answerable_with_relevant_preserved": 0.153846
+      },
+      "retrieval": {
+        "measured_questions": 3,
+        "recall": {
+          "1": 0.666667,
+          "3": 0.666667,
+          "5": 0.666667
+        },
+        "mrr": 0.666667,
+        "ndcg": {
+          "1": 0.777778,
+          "3": 0.728478,
+          "5": 0.728478
+        },
+        "returned_total": 15,
+        "grade_histogram": {
+          "0": 11,
+          "1": 2,
+          "2": 2
+        },
+        "grade0_share": 0.733333,
+        "grade1_share": 0.133333,
+        "grade2_share": 0.133333,
+        "irrelevant_returned_total": 11,
+        "mean_irrelevant_per_admitted_question": 3.666667
+      },
+      "decisions": {
+        "DA001": "ABSTAIN",
+        "DA002": "ABSTAIN",
+        "DA003": "ABSTAIN",
+        "DA006": "ABSTAIN",
+        "DA007": "ABSTAIN",
+        "DA011": "ADMIT",
+        "DA012": "ADMIT",
+        "DA015": "ABSTAIN",
+        "DA017": "ABSTAIN",
+        "DA018": "ABSTAIN",
+        "DA020": "ABSTAIN",
+        "DA022": "ABSTAIN",
+        "DA023": "ADMIT",
+        "DA026": "ABSTAIN",
+        "DA027": "ABSTAIN",
+        "DA030": "ABSTAIN",
+        "DA031": "ABSTAIN",
+        "DA032": "ABSTAIN",
+        "DA033": "ABSTAIN",
+        "DA036": "ABSTAIN",
+        "DA037": "ABSTAIN",
+        "DA042": "ABSTAIN",
+        "DA043": "ABSTAIN",
+        "DA046": "ABSTAIN",
+        "DA047": "ABSTAIN",
+        "DA048": "ABSTAIN",
+        "DA049": "ABSTAIN"
+      }
+    },
+    {
+      "policy": {
+        "rule": "R2",
+        "min_top1": 0.7,
+        "min_margin": 0.02
+      },
+      "admission": {
+        "total_questions": 27,
+        "answerable_questions": 13,
+        "no_evidence_questions": 14,
+        "admitted": 6,
+        "abstained": 21,
+        "correct_abstentions": 12,
+        "incorrect_abstentions": 9,
+        "correct_abstention_rate": 0.857143,
+        "false_abstention_rate": 0.692308,
+        "coverage": 0.222222,
+        "coverage_answerable": 0.307692,
+        "risk": 0.333333,
+        "answerable_with_relevant_preserved": 0.230769
+      },
+      "retrieval": {
+        "measured_questions": 4,
+        "recall": {
+          "1": 0.75,
+          "3": 0.75,
+          "5": 0.75
+        },
+        "mrr": 0.75,
+        "ndcg": {
+          "1": 0.833333,
+          "3": 0.848702,
+          "5": 0.848702
+        },
+        "returned_total": 30,
+        "grade_histogram": {
+          "0": 22,
+          "1": 5,
+          "2": 3
+        },
+        "grade0_share": 0.733333,
+        "grade1_share": 0.166667,
+        "grade2_share": 0.1,
+        "irrelevant_returned_total": 22,
+        "mean_irrelevant_per_admitted_question": 3.666667
+      },
+      "decisions": {
+        "DA001": "ABSTAIN",
+        "DA002": "ABSTAIN",
+        "DA003": "ADMIT",
+        "DA006": "ABSTAIN",
+        "DA007": "ABSTAIN",
+        "DA011": "ADMIT",
+        "DA012": "ADMIT",
+        "DA015": "ABSTAIN",
+        "DA017": "ABSTAIN",
+        "DA018": "ADMIT",
+        "DA020": "ABSTAIN",
+        "DA022": "ABSTAIN",
+        "DA023": "ABSTAIN",
+        "DA026": "ABSTAIN",
+        "DA027": "ABSTAIN",
+        "DA030": "ABSTAIN",
+        "DA031": "ABSTAIN",
+        "DA032": "ABSTAIN",
+        "DA033": "ABSTAIN",
+        "DA036": "ADMIT",
+        "DA037": "ADMIT",
+        "DA042": "ABSTAIN",
+        "DA043": "ABSTAIN",
+        "DA046": "ABSTAIN",
+        "DA047": "ABSTAIN",
+        "DA048": "ABSTAIN",
+        "DA049": "ABSTAIN"
+      }
+    },
+    {
+      "policy": {
+        "rule": "R2",
+        "min_top1": 0.7,
+        "min_margin": 0.05
+      },
+      "admission": {
+        "total_questions": 27,
+        "answerable_questions": 13,
+        "no_evidence_questions": 14,
+        "admitted": 5,
+        "abstained": 22,
+        "correct_abstentions": 13,
+        "incorrect_abstentions": 9,
+        "correct_abstention_rate": 0.928571,
+        "false_abstention_rate": 0.692308,
+        "coverage": 0.185185,
+        "coverage_answerable": 0.307692,
+        "risk": 0.2,
+        "answerable_with_relevant_preserved": 0.230769
+      },
+      "retrieval": {
+        "measured_questions": 4,
+        "recall": {
+          "1": 0.75,
+          "3": 0.75,
+          "5": 0.75
+        },
+        "mrr": 0.75,
+        "ndcg": {
+          "1": 0.833333,
+          "3": 0.848702,
+          "5": 0.848702
+        },
+        "returned_total": 25,
+        "grade_histogram": {
+          "0": 17,
+          "1": 5,
+          "2": 3
+        },
+        "grade0_share": 0.68,
+        "grade1_share": 0.2,
+        "grade2_share": 0.12,
+        "irrelevant_returned_total": 17,
+        "mean_irrelevant_per_admitted_question": 3.4
+      },
+      "decisions": {
+        "DA001": "ABSTAIN",
+        "DA002": "ABSTAIN",
+        "DA003": "ADMIT",
+        "DA006": "ABSTAIN",
+        "DA007": "ABSTAIN",
+        "DA011": "ADMIT",
+        "DA012": "ADMIT",
+        "DA015": "ABSTAIN",
+        "DA017": "ABSTAIN",
+        "DA018": "ADMIT",
+        "DA020": "ABSTAIN",
+        "DA022": "ABSTAIN",
+        "DA023": "ABSTAIN",
+        "DA026": "ABSTAIN",
+        "DA027": "ABSTAIN",
+        "DA030": "ABSTAIN",
+        "DA031": "ABSTAIN",
+        "DA032": "ABSTAIN",
+        "DA033": "ABSTAIN",
+        "DA036": "ABSTAIN",
+        "DA037": "ADMIT",
+        "DA042": "ABSTAIN",
+        "DA043": "ABSTAIN",
+        "DA046": "ABSTAIN",
+        "DA047": "ABSTAIN",
+        "DA048": "ABSTAIN",
+        "DA049": "ABSTAIN"
+      }
+    },
+    {
+      "policy": {
+        "rule": "R2",
+        "min_top1": 0.7,
+        "min_margin": 0.1
+      },
+      "admission": {
+        "total_questions": 27,
+        "answerable_questions": 13,
+        "no_evidence_questions": 14,
+        "admitted": 2,
+        "abstained": 25,
+        "correct_abstentions": 14,
+        "incorrect_abstentions": 11,
+        "correct_abstention_rate": 1.0,
+        "false_abstention_rate": 0.846154,
+        "coverage": 0.074074,
+        "coverage_answerable": 0.153846,
+        "risk": 0.0,
+        "answerable_with_relevant_preserved": 0.153846
+      },
+      "retrieval": {
+        "measured_questions": 2,
+        "recall": {
+          "1": 1.0,
+          "3": 1.0,
+          "5": 1.0
+        },
+        "mrr": 1.0,
+        "ndcg": {
+          "1": 1.0,
+          "3": 1.0,
+          "5": 1.0
+        },
+        "returned_total": 10,
+        "grade_histogram": {
+          "0": 7,
+          "1": 1,
+          "2": 2
+        },
+        "grade0_share": 0.7,
+        "grade1_share": 0.1,
+        "grade2_share": 0.2,
+        "irrelevant_returned_total": 7,
+        "mean_irrelevant_per_admitted_question": 3.5
+      },
+      "decisions": {
+        "DA001": "ABSTAIN",
+        "DA002": "ABSTAIN",
+        "DA003": "ABSTAIN",
+        "DA006": "ABSTAIN",
+        "DA007": "ABSTAIN",
+        "DA011": "ADMIT",
+        "DA012": "ADMIT",
+        "DA015": "ABSTAIN",
+        "DA017": "ABSTAIN",
+        "DA018": "ABSTAIN",
+        "DA020": "ABSTAIN",
+        "DA022": "ABSTAIN",
+        "DA023": "ABSTAIN",
+        "DA026": "ABSTAIN",
+        "DA027": "ABSTAIN",
+        "DA030": "ABSTAIN",
+        "DA031": "ABSTAIN",
+        "DA032": "ABSTAIN",
+        "DA033": "ABSTAIN",
+        "DA036": "ABSTAIN",
+        "DA037": "ABSTAIN",
+        "DA042": "ABSTAIN",
+        "DA043": "ABSTAIN",
+        "DA046": "ABSTAIN",
+        "DA047": "ABSTAIN",
+        "DA048": "ABSTAIN",
+        "DA049": "ABSTAIN"
+      }
+    }
+  ],
+  "selection": {
+    "candidates_evaluated": 21,
+    "eligible": 4,
+    "excluded_by_budget": 17,
+    "max_false_abstention_rate": 0.2,
+    "ranking": [
+      {
+        "policy": {
+          "rule": "R1",
+          "min_top1": 0.6,
+          "min_margin": null
+        },
+        "correct_abstention_rate": 0.714286,
+        "false_abstention_rate": 0.076923
+      },
+      {
+        "policy": {
+          "rule": "R1",
+          "min_top1": 0.55,
+          "min_margin": null
+        },
+        "correct_abstention_rate": 0.5,
+        "false_abstention_rate": 0.0
+      },
+      {
+        "policy": {
+          "rule": "R1",
+          "min_top1": 0.5,
+          "min_margin": null
+        },
+        "correct_abstention_rate": 0.214286,
+        "false_abstention_rate": 0.0
+      },
+      {
+        "policy": {
+          "rule": "R0",
+          "min_top1": null,
+          "min_margin": null
+        },
+        "correct_abstention_rate": 0.0,
+        "false_abstention_rate": 0.0
+      }
+    ],
+    "selected_policy": {
+      "rule": "R1",
+      "min_top1": 0.6,
+      "min_margin": null
+    }
+  },
+  "selected_policy": {
+    "rule": "R1",
+    "min_top1": 0.6,
+    "min_margin": null
+  },
+  "selected_policy_metrics": {
+    "admission": {
+      "total_questions": 27,
+      "answerable_questions": 13,
+      "no_evidence_questions": 14,
+      "admitted": 16,
+      "abstained": 11,
+      "correct_abstentions": 10,
+      "incorrect_abstentions": 1,
+      "correct_abstention_rate": 0.714286,
+      "false_abstention_rate": 0.076923,
+      "coverage": 0.592593,
+      "coverage_answerable": 0.923077,
+      "risk": 0.25,
+      "answerable_with_relevant_preserved": 0.692308
+    },
+    "retrieval": {
+      "measured_questions": 12,
+      "recall": {
+        "1": 0.458333,
+        "3": 0.666667,
+        "5": 0.75
+      },
+      "mrr": 0.586111,
+      "ndcg": {
+        "1": 0.611111,
+        "3": 0.65775,
+        "5": 0.712772
+      },
+      "returned_total": 80,
+      "grade_histogram": {
+        "0": 50,
+        "1": 20,
+        "2": 10
+      },
+      "grade0_share": 0.625,
+      "grade1_share": 0.25,
+      "grade2_share": 0.125,
+      "irrelevant_returned_total": 50,
+      "mean_irrelevant_per_admitted_question": 3.125
+    }
+  },
+  "policy_frozen": true,
+  "policy_frozen_note": "A politica esta congelada. A D4.8.2c aplica-a tal e qual ao HELD-OUT e nao recalibra: qualquer reajuste depois de ver o conjunto final transformaria a avaliacao final noutra calibracao, e a fase deixaria de medir generalizacao.",
+  "digest_algorithm": "sha256",
+  "result_digest_scope": "decision_relevant_fields",
+  "execution_digest_scope": "full_payload",
+  "result_digest": "2f4560532d4f3afbd77a8356e3275550782cec9807b0b1f2f459b7da65e49b71",
+  "execution_digest": "01ad014a72a584cfcf2edc573518cf8828fa0797af3af6766bb435af7208b135",
+  "executed_at": "2026-08-19T00:55:10.572993+00:00"
+}

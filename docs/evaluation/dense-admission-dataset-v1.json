@@ -1,0 +1,2836 @@
+{
+  "schema_version": "1",
+  "contract": "dense_admission_dataset",
+  "dataset_version": "v1",
+  "scope_note": "Conjunto COMPLEMENTAR para avaliar admissao/abstencao da condicao densa sobre o Pilot Corpus P1. NAO substitui P1, S1, o ground truth lexical+dense repooled da D4.8.1 nem as 14 perguntas historicas, e nenhum desses artefactos foi alterado. As perguntas sao novas e os julgamentos aplicam a mesma rubrica de tres graus do D4.1.",
+  "corpus_id": "P1",
+  "annotation_mode": "SINGLE_ANNOTATOR_PILOT",
+  "relevance_scale": {
+    "0": "irrelevante (inclui distractor: mesmo assunto, ano/publico/procedimento errado)",
+    "1": "parcialmente util: contexto relevante mas insuficiente sozinho",
+    "2": "evidencia diretamente relevante para responder ao pedido"
+  },
+  "label_definitions": {
+    "ANSWERABLE": "O corpus contem evidencia que responde ao pedido, localizada por leitura.",
+    "NO_EVIDENCE": "O corpus NAO contem evidencia que responda ao pedido, verificado por busca normalizada sobre o corpus completo e leitura das ocorrencias."
+  },
+  "no_evidence_validation_note": "Cada NO_EVIDENCE foi validado contra o corpus COMPLETO por busca normalizada (sem acentos, sem caixa, sem espacos - varios documentos vieram de OCR com caracteres espacados, pelo que um grep literal nao provaria ausencia) seguida de leitura das ocorrencias. 'Nenhum retriever encontrou' NAO foi aceite como metodo: tres candidatos iniciais a NO_EVIDENCE foram reclassificados como ANSWERABLE por esta validacao (prazo de reclamacao da nota, contacto dos Servicos Academicos e requisitos do premio de merito).",
+  "scenarios": [
+    {
+      "scenario_id": "SC-A01",
+      "label": "ANSWERABLE",
+      "difficulty": "easy",
+      "topic": "outorga_convidados",
+      "question_count": 2
+    },
+    {
+      "scenario_id": "SC-A02",
+      "label": "ANSWERABLE",
+      "difficulty": "hard",
+      "topic": "outorga_confirmacao",
+      "question_count": 1
+    },
+    {
+      "scenario_id": "SC-A03",
+      "label": "ANSWERABLE",
+      "difficulty": "easy",
+      "topic": "propina_liquidacao_antecipada",
+      "question_count": 2
+    },
+    {
+      "scenario_id": "SC-A04",
+      "label": "ANSWERABLE",
+      "difficulty": "easy",
+      "topic": "residencia_pagamentos",
+      "question_count": 2
+    },
+    {
+      "scenario_id": "SC-A05",
+      "label": "ANSWERABLE",
+      "difficulty": "easy",
+      "topic": "residencia_horarios",
+      "question_count": 2
+    },
+    {
+      "scenario_id": "SC-A06",
+      "label": "ANSWERABLE",
+      "difficulty": "hard",
+      "topic": "residencia_vistorias",
+      "question_count": 1
+    },
+    {
+      "scenario_id": "SC-A07",
+      "label": "ANSWERABLE",
+      "difficulty": "hard",
+      "topic": "aulas_tolerancia_turmas",
+      "question_count": 2
+    },
+    {
+      "scenario_id": "SC-A08",
+      "label": "ANSWERABLE",
+      "difficulty": "hard",
+      "topic": "calendario_2526_inicio_2sem",
+      "question_count": 2
+    },
+    {
+      "scenario_id": "SC-A09",
+      "label": "ANSWERABLE",
+      "difficulty": "easy",
+      "topic": "calendario_2526_recesso",
+      "question_count": 1
+    },
+    {
+      "scenario_id": "SC-A10",
+      "label": "ANSWERABLE",
+      "difficulty": "easy",
+      "topic": "dia_universidade",
+      "question_count": 1
+    },
+    {
+      "scenario_id": "SC-A11",
+      "label": "ANSWERABLE",
+      "difficulty": "hard",
+      "topic": "emolumento_matricula_graduacao",
+      "question_count": 1
+    },
+    {
+      "scenario_id": "SC-A12",
+      "label": "ANSWERABLE",
+      "difficulty": "easy",
+      "topic": "outorga_traje",
+      "question_count": 1
+    },
+    {
+      "scenario_id": "SC-A13",
+      "label": "ANSWERABLE",
+      "difficulty": "hard",
+      "topic": "outorga_requisitos",
+      "question_count": 1
+    },
+    {
+      "scenario_id": "SC-A14",
+      "label": "ANSWERABLE",
+      "difficulty": "hard",
+      "topic": "residencia_caucao",
+      "question_count": 1
+    },
+    {
+      "scenario_id": "SC-A15",
+      "label": "ANSWERABLE",
+      "difficulty": "hard",
+      "topic": "exame_recurso_limite",
+      "question_count": 1
+    },
+    {
+      "scenario_id": "SC-A16",
+      "label": "ANSWERABLE",
+      "difficulty": "hard",
+      "topic": "premio_merito_requisitos",
+      "question_count": 2
+    },
+    {
+      "scenario_id": "SC-A17",
+      "label": "ANSWERABLE",
+      "difficulty": "hard",
+      "topic": "reclamacao_nota",
+      "question_count": 1
+    },
+    {
+      "scenario_id": "SC-A18",
+      "label": "ANSWERABLE",
+      "difficulty": "easy",
+      "topic": "contacto_servicos_academicos",
+      "question_count": 1
+    },
+    {
+      "scenario_id": "SC-N01",
+      "label": "NO_EVIDENCE",
+      "difficulty": "hard",
+      "topic": "renda_valor",
+      "question_count": 2
+    },
+    {
+      "scenario_id": "SC-N02",
+      "label": "NO_EVIDENCE",
+      "difficulty": "hard",
+      "topic": "premio_merito_valor",
+      "question_count": 2
+    },
+    {
+      "scenario_id": "SC-N03",
+      "label": "NO_EVIDENCE",
+      "difficulty": "easy",
+      "topic": "biblioteca_horario",
+      "question_count": 2
+    },
+    {
+      "scenario_id": "SC-N04",
+      "label": "NO_EVIDENCE",
+      "difficulty": "hard",
+      "topic": "cantina_precos",
+      "question_count": 2
+    },
+    {
+      "scenario_id": "SC-N05",
+      "label": "NO_EVIDENCE",
+      "difficulty": "hard",
+      "topic": "seminario_presencas",
+      "question_count": 2
+    },
+    {
+      "scenario_id": "SC-N06",
+      "label": "NO_EVIDENCE",
+      "difficulty": "hard",
+      "topic": "calendario_2425",
+      "question_count": 2
+    },
+    {
+      "scenario_id": "SC-N07",
+      "label": "NO_EVIDENCE",
+      "difficulty": "easy",
+      "topic": "medicina_nota_acesso",
+      "question_count": 2
+    },
+    {
+      "scenario_id": "SC-N08",
+      "label": "NO_EVIDENCE",
+      "difficulty": "hard",
+      "topic": "erasmus",
+      "question_count": 2
+    },
+    {
+      "scenario_id": "SC-N09",
+      "label": "NO_EVIDENCE",
+      "difficulty": "easy",
+      "topic": "estacionamento",
+      "question_count": 2
+    },
+    {
+      "scenario_id": "SC-N10",
+      "label": "NO_EVIDENCE",
+      "difficulty": "easy",
+      "topic": "seguro_escolar",
+      "question_count": 2
+    },
+    {
+      "scenario_id": "SC-N11",
+      "label": "NO_EVIDENCE",
+      "difficulty": "hard",
+      "topic": "ects",
+      "question_count": 2
+    },
+    {
+      "scenario_id": "SC-N12",
+      "label": "NO_EVIDENCE",
+      "difficulty": "easy",
+      "topic": "divida_pessoal",
+      "question_count": 2
+    }
+  ],
+  "questions": [
+    {
+      "question_id": "DA001",
+      "scenario_id": "SC-A01",
+      "label": "ANSWERABLE",
+      "difficulty": "easy",
+      "topic": "outorga_convidados",
+      "question": "Quantos convidados pode levar cada graduando a cerimonia academica de outorga de grau?",
+      "language": "pt",
+      "expected_evidence": [
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 138
+        }
+      ],
+      "evidence_note": "Artigo 14 do regulamento da outorga: ate 100 graduandos, 3 convidados; mais de 100, 2.",
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 24,
+          "relevance": 0,
+          "note": "descricao geral da solenidade; nao trata do numero de convidados"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 136,
+          "relevance": 1,
+          "note": "titulo do artigo que contem a regra"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 137,
+          "relevance": 1,
+          "note": "inicio do n.1 do artigo 14; o numero fica no segmento seguinte"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 138,
+          "relevance": 2,
+          "note": "fixa 3 convidados ate 100 graduandos e 2 acima de 100"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 140,
+          "relevance": 1,
+          "note": "alargamento excecional ate 4 convidados; nao fixa a regra geral"
+        }
+      ]
+    },
+    {
+      "question_id": "DA002",
+      "scenario_id": "SC-A01",
+      "label": "ANSWERABLE",
+      "difficulty": "easy",
+      "topic": "outorga_convidados",
+      "question": "Na outorga de grau, quantos acompanhantes sao permitidos a cada finalista?",
+      "language": "pt",
+      "expected_evidence": [
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 138
+        }
+      ],
+      "evidence_note": "Artigo 14 do regulamento da outorga: ate 100 graduandos, 3 convidados; mais de 100, 2.",
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 42,
+          "relevance": 1,
+          "note": "alinea do protocolo com 2 convidados, remetendo para o numero estipulado"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 45,
+          "relevance": 0,
+          "note": "horarios da cerimonia; assunto diferente"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 137,
+          "relevance": 1,
+          "note": "inicio do n.1 do artigo 14; o numero fica no segmento seguinte"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 138,
+          "relevance": 2,
+          "note": "fixa 3 convidados ate 100 graduandos e 2 acima de 100"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 140,
+          "relevance": 1,
+          "note": "alargamento excecional ate 4 convidados; nao fixa a regra geral"
+        }
+      ]
+    },
+    {
+      "question_id": "DA003",
+      "scenario_id": "SC-A02",
+      "label": "ANSWERABLE",
+      "difficulty": "hard",
+      "topic": "outorga_confirmacao",
+      "question": "Com que antecedencia tem de ser confirmada ao Gabinete do Reitor a cerimonia academica?",
+      "language": "pt",
+      "expected_evidence": [
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 74
+        }
+      ],
+      "evidence_note": "Artigo 7 n.2: programa e lista de participantes entregues com 10 dias uteis de antecedencia.",
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 24,
+          "relevance": 0,
+          "note": "descricao geral da solenidade"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 37,
+          "relevance": 0,
+          "note": "definicao da cerimonia academica"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 70,
+          "relevance": 1,
+          "note": "titulo do artigo que contem o prazo"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 72,
+          "relevance": 0,
+          "note": "distractor: prazo da proposta de datas ao Reitor, procedimento diferente"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 73,
+          "relevance": 1,
+          "note": "inicio do n.2 do artigo 7; o prazo fica no segmento seguinte"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 74,
+          "relevance": 2,
+          "note": "entrega do programa e da lista com 10 dias uteis de antecedencia"
+        }
+      ]
+    },
+    {
+      "question_id": "DA004",
+      "scenario_id": "SC-A03",
+      "label": "ANSWERABLE",
+      "difficulty": "easy",
+      "topic": "propina_liquidacao_antecipada",
+      "question": "Que desconto tenho se pagar a propina anual toda de uma vez?",
+      "language": "pt",
+      "expected_evidence": [
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 113
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 115
+        }
+      ],
+      "evidence_note": "Artigo 12: liquidacao antecipada do valor anual da 10% de reducao; metade do valor anual da 5%.",
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 52,
+          "relevance": 0,
+          "note": "titulo do artigo sobre fixacao do valor"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 58,
+          "relevance": 0,
+          "note": "revisao bienal do valor da propina"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 77,
+          "relevance": 0,
+          "note": "distractor: pagamento fora do prazo e juros de mora"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 112,
+          "relevance": 1,
+          "note": "inicio do artigo 12; a percentagem fica no segmento seguinte"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 113,
+          "relevance": 2,
+          "note": "reducao de 10% pela liquidacao antecipada do valor anual"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 115,
+          "relevance": 1,
+          "note": "reducao de 5%, mas para metade do valor anual; caso diferente do perguntado"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 256,
+          "relevance": 0,
+          "note": "isencao de propina por premio de merito; procedimento diferente"
+        }
+      ]
+    },
+    {
+      "question_id": "DA005",
+      "scenario_id": "SC-A03",
+      "label": "ANSWERABLE",
+      "difficulty": "easy",
+      "topic": "propina_liquidacao_antecipada",
+      "question": "A liquidacao antecipada da propina da direito a alguma reducao?",
+      "language": "pt",
+      "expected_evidence": [
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 113
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 115
+        }
+      ],
+      "evidence_note": "Artigo 12: liquidacao antecipada do valor anual da 10% de reducao; metade do valor anual da 5%.",
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 111,
+          "relevance": 1,
+          "note": "titulo do artigo que contem a regra"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 112,
+          "relevance": 1,
+          "note": "inicio do artigo 12; a percentagem fica no segmento seguinte"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 113,
+          "relevance": 2,
+          "note": "reducao de 10% pela liquidacao antecipada do valor anual"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 114,
+          "relevance": 1,
+          "note": "inicio do n.2; a percentagem fica no segmento seguinte"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 115,
+          "relevance": 2,
+          "note": "reducao de 5% pela liquidacao antecipada de metade do valor anual"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 196,
+          "relevance": 0,
+          "note": "distractor: recurso do despacho sobre reducao de propina por carencia"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 220,
+          "relevance": 0,
+          "note": "distractor: recurso do despacho sobre reducao de propina por carencia"
+        }
+      ]
+    },
+    {
+      "question_id": "DA006",
+      "scenario_id": "SC-A04",
+      "label": "ANSWERABLE",
+      "difficulty": "easy",
+      "topic": "residencia_pagamentos",
+      "question": "Ate que dia do mes tenho de pagar a mensalidade da residencia universitaria?",
+      "language": "pt",
+      "expected_evidence": [
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 219
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 231
+        }
+      ],
+      "evidence_note": "Artigo 10: mensalidade ate ao dia 10 de cada mes; juros de mora a taxa de 10%.",
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 192,
+          "relevance": 0,
+          "note": "valor da renda; nao trata do prazo de pagamento"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 207,
+          "relevance": 0,
+          "note": "caucao; pagamento diferente do perguntado"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 209,
+          "relevance": 0,
+          "note": "taxa de manutencao e responsabilidade por danos"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 218,
+          "relevance": 1,
+          "note": "inicio do artigo 10; os prazos ficam nas alineas seguintes"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 219,
+          "relevance": 2,
+          "note": "pagamento pelo proprio residente ate ao dia 10 de cada mes"
+        }
+      ]
+    },
+    {
+      "question_id": "DA007",
+      "scenario_id": "SC-A04",
+      "label": "ANSWERABLE",
+      "difficulty": "easy",
+      "topic": "residencia_pagamentos",
+      "question": "Que juros se pagam por atraso no pagamento do alojamento?",
+      "language": "pt",
+      "expected_evidence": [
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 219
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 231
+        }
+      ],
+      "evidence_note": "Artigo 10: mensalidade ate ao dia 10 de cada mes; juros de mora a taxa de 10%.",
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 192,
+          "relevance": 0,
+          "note": "valor da renda"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 207,
+          "relevance": 0,
+          "note": "caucao"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 208,
+          "relevance": 0,
+          "note": "reembolso da caucao"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 209,
+          "relevance": 0,
+          "note": "taxa de manutencao e danos"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 218,
+          "relevance": 1,
+          "note": "introduz os prazos de pagamento; nao trata de juros"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 231,
+          "relevance": 2,
+          "note": "juros de mora a taxa de 10% sobre o valor em divida"
+        }
+      ]
+    },
+    {
+      "question_id": "DA008",
+      "scenario_id": "SC-A05",
+      "label": "ANSWERABLE",
+      "difficulty": "easy",
+      "topic": "residencia_horarios",
+      "question": "A que horas tenho de deixar o quarto no dia em que termina o alojamento?",
+      "language": "pt",
+      "expected_evidence": [
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 247
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 248
+        }
+      ],
+      "evidence_note": "Artigo 12: check-in 9h-16h, check-out ate as 12h, recolha das 22h as 5h.",
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 160,
+          "relevance": 0,
+          "note": "duracao e renovacao do alojamento"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 161,
+          "relevance": 0,
+          "note": "prorrogacao do periodo de alojamento"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 247,
+          "relevance": 2,
+          "note": "check-out ate as 12:00h do dia em que termina o alojamento"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 352,
+          "relevance": 1,
+          "note": "dever de retirar bens ate ao ultimo dia; sem hora"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 353,
+          "relevance": 1,
+          "note": "continuacao do dever de entrega do quarto; sem hora"
+        }
+      ]
+    },
+    {
+      "question_id": "DA009",
+      "scenario_id": "SC-A05",
+      "label": "ANSWERABLE",
+      "difficulty": "easy",
+      "topic": "residencia_horarios",
+      "question": "Qual e o horario de recolha nas residencias universitarias?",
+      "language": "pt",
+      "expected_evidence": [
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 247
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 248
+        }
+      ],
+      "evidence_note": "Artigo 12: check-in 9h-16h, check-out ate as 12h, recolha das 22h as 5h.",
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 26,
+          "relevance": 0,
+          "note": "titulo do regulamento"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 111,
+          "relevance": 0,
+          "note": "visitas quinzenais de inspecao; competencia de outro orgao"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 160,
+          "relevance": 0,
+          "note": "duracao e renovacao do alojamento"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 247,
+          "relevance": 1,
+          "note": "mesmo artigo, horarios de check-in e check-out; nao fixa a recolha"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 248,
+          "relevance": 2,
+          "note": "horario de recolha das 22h as 5h da manha seguinte"
+        }
+      ]
+    },
+    {
+      "question_id": "DA010",
+      "scenario_id": "SC-A06",
+      "label": "ANSWERABLE",
+      "difficulty": "hard",
+      "topic": "residencia_vistorias",
+      "question": "Com que antecedencia os SAS avisam antes de uma vistoria ao alojamento?",
+      "language": "pt",
+      "expected_evidence": [
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 238
+        }
+      ],
+      "evidence_note": "Artigo 11 n.5: vistorias aleatorias com aviso previo minimo de 48 horas.",
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 229,
+          "relevance": 0,
+          "note": "notificacao para desocupar o alojamento; procedimento diferente"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 238,
+          "relevance": 2,
+          "note": "vistorias aleatorias com aviso previo minimo de 48 horas"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 239,
+          "relevance": 1,
+          "note": "excecao que dispensa o aviso previo; pressupoe o prazo sem o fixar"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 325,
+          "relevance": 0,
+          "note": "deveres de identificacao do residente"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 382,
+          "relevance": 0,
+          "note": "ata para conhecimento do Diretor dos SAS"
+        }
+      ]
+    },
+    {
+      "question_id": "DA011",
+      "scenario_id": "SC-A07",
+      "label": "ANSWERABLE",
+      "difficulty": "hard",
+      "topic": "aulas_tolerancia_turmas",
+      "question": "Quanto tempo se espera pelo docente antes de a aula nao ter lugar?",
+      "language": "pt",
+      "expected_evidence": [
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 182
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 177
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 178
+        }
+      ],
+      "evidence_note": "Artigo 16: tolerancia de 15 minutos; teorico-praticas ate 40; laboratoriais ate 20 por grupo.",
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 66,
+          "relevance": 0,
+          "note": "prazo de publicacao antes do periodo lectivo"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 182,
+          "relevance": 2,
+          "note": "tolerancia de 15 minutos, findos os quais a aula nao tem lugar"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 308,
+          "relevance": 0,
+          "note": "distractor: atraso superior a dez minutos em horarios formais, regra diferente"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 366,
+          "relevance": 0,
+          "note": "prazo entre publicacao de notas e provas orais"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 542,
+          "relevance": 0,
+          "note": "elementos do plano da unidade curricular"
+        }
+      ]
+    },
+    {
+      "question_id": "DA012",
+      "scenario_id": "SC-A07",
+      "label": "ANSWERABLE",
+      "difficulty": "hard",
+      "topic": "aulas_tolerancia_turmas",
+      "question": "Qual e o numero maximo de estudantes numa aula teorico-pratica?",
+      "language": "pt",
+      "expected_evidence": [
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 182
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 177
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 178
+        }
+      ],
+      "evidence_note": "Artigo 16: tolerancia de 15 minutos; teorico-praticas ate 40; laboratoriais ate 20 por grupo.",
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 60,
+          "relevance": 0,
+          "note": "frequencia minima; assunto diferente"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 175,
+          "relevance": 0,
+          "note": "obrigatoriedade de frequencia; assunto diferente"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 177,
+          "relevance": 2,
+          "note": "fixa 40 estudantes, em regra, nas teorico-praticas"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 178,
+          "relevance": 1,
+          "note": "continuacao da regra; sozinho cobre praticas nao laboratoriais e seminarios"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 310,
+          "relevance": 0,
+          "note": "limite de horas lectivas seguidas"
+        }
+      ]
+    },
+    {
+      "question_id": "DA013",
+      "scenario_id": "SC-A08",
+      "label": "ANSWERABLE",
+      "difficulty": "hard",
+      "topic": "calendario_2526_inicio_2sem",
+      "question": "Quando comecam as aulas do segundo semestre do ano letivo 2025/2026?",
+      "language": "pt",
+      "expected_evidence": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 58
+        }
+      ],
+      "evidence_note": "Calendario 2025/2026: primeiro dia de aulas do 2.o semestre em 09 de marco de 2026.",
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 12,
+          "relevance": 0,
+          "note": "distractor: titulo do 1. semestre"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 14,
+          "relevance": 0,
+          "note": "distractor: inicio do ano letivo, nao do 2. semestre"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 16,
+          "relevance": 0,
+          "note": "distractor: primeiro dia de aulas do 1. semestre"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 56,
+          "relevance": 1,
+          "note": "titulo da seccao do 2. semestre que contem a data"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 58,
+          "relevance": 2,
+          "note": "primeiro dia de aulas do 2. semestre a 09 de marco de 2026"
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 72,
+          "relevance": 0,
+          "note": "distractor: calendario do ano letivo 2023/2024"
+        }
+      ]
+    },
+    {
+      "question_id": "DA014",
+      "scenario_id": "SC-A08",
+      "label": "ANSWERABLE",
+      "difficulty": "hard",
+      "topic": "calendario_2526_inicio_2sem",
+      "question": "Qual e a data do primeiro dia de aulas do 2.o semestre em 2025/2026?",
+      "language": "pt",
+      "expected_evidence": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 58
+        }
+      ],
+      "evidence_note": "Calendario 2025/2026: primeiro dia de aulas do 2.o semestre em 09 de marco de 2026.",
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 12,
+          "relevance": 0,
+          "note": "distractor: titulo do 1. semestre"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 16,
+          "relevance": 0,
+          "note": "distractor: primeiro dia de aulas do 1. semestre"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 56,
+          "relevance": 1,
+          "note": "titulo da seccao do 2. semestre que contem a data"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 58,
+          "relevance": 2,
+          "note": "primeiro dia de aulas do 2. semestre a 09 de marco de 2026"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 66,
+          "relevance": 1,
+          "note": "ultimo dia de aulas do mesmo semestre; delimita mas nao responde"
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 72,
+          "relevance": 0,
+          "note": "distractor: calendario do ano letivo 2023/2024"
+        }
+      ]
+    },
+    {
+      "question_id": "DA015",
+      "scenario_id": "SC-A09",
+      "label": "ANSWERABLE",
+      "difficulty": "easy",
+      "topic": "calendario_2526_recesso",
+      "question": "Quando e a pausa de Natal no ano letivo 2025/2026?",
+      "language": "pt",
+      "expected_evidence": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 31
+        }
+      ],
+      "evidence_note": "Calendario 2025/2026: recesso do Natal e Ano Novo de 22 de dezembro de 2025 a 02 de janeiro de 2026.",
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 10,
+          "relevance": 0,
+          "note": "titulo do documento"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 14,
+          "relevance": 0,
+          "note": "inicio do ano letivo"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 31,
+          "relevance": 2,
+          "note": "recesso de 22 de dezembro de 2025 a 02 de janeiro de 2026"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 37,
+          "relevance": 1,
+          "note": "regresso as aulas a 05 de janeiro de 2026; delimita o fim da pausa"
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 26,
+          "relevance": 0,
+          "note": "distractor: recesso do ano letivo 2023/2024"
+        }
+      ]
+    },
+    {
+      "question_id": "DA016",
+      "scenario_id": "SC-A10",
+      "label": "ANSWERABLE",
+      "difficulty": "easy",
+      "topic": "dia_universidade",
+      "question": "Em que dia se comemora o Dia da Universidade?",
+      "language": "pt",
+      "expected_evidence": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 22
+        }
+      ],
+      "evidence_note": "Calendario 2025/2026: Dia da Universidade a 21 de novembro.",
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 6,
+          "relevance": 0,
+          "note": "cabecalho do documento"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 22,
+          "relevance": 2,
+          "note": "Dia da Universidade a 21 de novembro de 2025"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 0,
+          "relevance": 0,
+          "note": "cabecalho do documento"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 72,
+          "relevance": 2,
+          "note": "identifica 21 de novembro como Dia da Universidade"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 234,
+          "relevance": 0,
+          "note": "cabecalho do documento"
+        }
+      ]
+    },
+    {
+      "question_id": "DA017",
+      "scenario_id": "SC-A11",
+      "label": "ANSWERABLE",
+      "difficulty": "hard",
+      "topic": "emolumento_matricula_graduacao",
+      "question": "Quanto custa a matricula pela primeira vez num curso de graduacao?",
+      "language": "pt",
+      "expected_evidence": [
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 365
+        }
+      ],
+      "evidence_note": "Anexo II, linha 1.1: matricula (1.a vez) em curso de graduacao semestral, 500$00.",
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 347,
+          "relevance": 0,
+          "note": "unidade curricular na modalidade de curso livre"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 365,
+          "relevance": 2,
+          "note": "linha 1.1 do anexo: matricula 1a vez em graduacao semestral, 500$00"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 372,
+          "relevance": 0,
+          "note": "distractor: linha 1.5.1, outro servico, 2.000$00"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 383,
+          "relevance": 0,
+          "note": "distractor: unidade curricular em atraso"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 450,
+          "relevance": 0,
+          "note": "declaracao sobre o custo do curso"
+        }
+      ]
+    },
+    {
+      "question_id": "DA018",
+      "scenario_id": "SC-A12",
+      "label": "ANSWERABLE",
+      "difficulty": "easy",
+      "topic": "outorga_traje",
+      "question": "Onde e que os finalistas compram o traje academico para a outorga de grau?",
+      "language": "pt",
+      "expected_evidence": [
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 145
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 146
+        }
+      ],
+      "evidence_note": "Artigo 15 n.2: o traje academico e adquirido nas lojas da Uni-CV mediante pagamento.",
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 24,
+          "relevance": 0,
+          "note": "descricao geral da solenidade"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 34,
+          "relevance": 0,
+          "note": "titulo de outro artigo"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 87,
+          "relevance": 1,
+          "note": "dever de comparecer com traje academico; nao indica onde adquirir"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 142,
+          "relevance": 1,
+          "note": "titulo do artigo que contem a regra"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 145,
+          "relevance": 2,
+          "note": "o traje e adquirido nas lojas da Uni-CV"
+        }
+      ]
+    },
+    {
+      "question_id": "DA019",
+      "scenario_id": "SC-A13",
+      "label": "ANSWERABLE",
+      "difficulty": "hard",
+      "topic": "outorga_requisitos",
+      "question": "Posso participar na cerimonia de outorga de grau se ainda tiver uma cadeira por fazer?",
+      "language": "pt",
+      "expected_evidence": [
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 30
+        }
+      ],
+      "evidence_note": "Artigo 3 n.1: participa quem concluiu tudo ou tem 1 disciplina por concluir ate a Epoca Especial.",
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 30,
+          "relevance": 2,
+          "note": "participa quem tem no maximo 1 disciplina por concluir ate a Epoca Especial"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 34,
+          "relevance": 0,
+          "note": "titulo sobre realizacao da cerimonia"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 55,
+          "relevance": 0,
+          "note": "comissao organizadora"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 87,
+          "relevance": 0,
+          "note": "traje na cerimonia"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 116,
+          "relevance": 0,
+          "note": "datas, locais e horario da cerimonia"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 145,
+          "relevance": 0,
+          "note": "aquisicao do traje"
+        }
+      ]
+    },
+    {
+      "question_id": "DA020",
+      "scenario_id": "SC-A14",
+      "label": "ANSWERABLE",
+      "difficulty": "hard",
+      "topic": "residencia_caucao",
+      "question": "Tenho de pagar caucao para entrar na residencia universitaria?",
+      "language": "pt",
+      "expected_evidence": [
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 207
+        }
+      ],
+      "evidence_note": "Artigo 9: caucao reembolsavel correspondente ao valor de uma mensalidade.",
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 142,
+          "relevance": 0,
+          "note": "regularizacao de dividas de propinas"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 207,
+          "relevance": 2,
+          "note": "caucao reembolsavel correspondente ao valor de uma mensalidade"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 208,
+          "relevance": 1,
+          "note": "regime de reembolso da caucao; pressupoe o pagamento sem o impor"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 209,
+          "relevance": 1,
+          "note": "taxa de manutencao no check-in; pagamento distinto da caucao"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 251,
+          "relevance": 2,
+          "note": "a candidatura implica o compromisso de pagar renda, caucao e taxa"
+        }
+      ]
+    },
+    {
+      "question_id": "DA021",
+      "scenario_id": "SC-A15",
+      "label": "ANSWERABLE",
+      "difficulty": "hard",
+      "topic": "exame_recurso_limite",
+      "question": "Em quantas unidades curriculares posso fazer exame de recurso?",
+      "language": "pt",
+      "expected_evidence": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 104
+        }
+      ],
+      "evidence_note": "Calendario 2025/2026, processos academicos: exame de recurso em ate tres unidades curriculares.",
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 79,
+          "relevance": 1,
+          "note": "prazo de inscricao no recurso; mesmo assunto, campo diferente"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 104,
+          "relevance": 2,
+          "note": "exame de recurso em ate tres unidades curriculares"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 174,
+          "relevance": 0,
+          "note": "dispensa de frequencia para inscritos no recurso"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 410,
+          "relevance": 0,
+          "note": "distractor: epoca especial, maximo de duas unidades curriculares"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 429,
+          "relevance": 0,
+          "note": "constituicao do juri de exame"
+        }
+      ]
+    },
+    {
+      "question_id": "DA022",
+      "scenario_id": "SC-A16",
+      "label": "ANSWERABLE",
+      "difficulty": "hard",
+      "topic": "premio_merito_requisitos",
+      "question": "Que media e precisa para receber um premio de merito na Uni-CV?",
+      "language": "pt",
+      "expected_evidence": [
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 276
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 273
+        }
+      ],
+      "evidence_note": "Artigo 30: elegivel quem teve aproveitamento em todas as disciplinas e media igual ou superior a 16 valores.",
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 25,
+          "relevance": 0,
+          "note": "ambito de aplicacao"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 36,
+          "relevance": 0,
+          "note": "ambito do capitulo"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 56,
+          "relevance": 0,
+          "note": "aprovacao do montante das propinas"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 264,
+          "relevance": 0,
+          "note": "numero anual de premios fixado pelo Reitor"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 276,
+          "relevance": 2,
+          "note": "media igual ou superior a 16 valores no ano imediatamente anterior"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 410,
+          "relevance": 0,
+          "note": "concurso para provimento de vaga"
+        }
+      ]
+    },
+    {
+      "question_id": "DA023",
+      "scenario_id": "SC-A16",
+      "label": "ANSWERABLE",
+      "difficulty": "hard",
+      "topic": "premio_merito_requisitos",
+      "question": "Quais sao as condicoes para me candidatar a um premio de merito?",
+      "language": "pt",
+      "expected_evidence": [
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 276
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 273
+        }
+      ],
+      "evidence_note": "Artigo 30: elegivel quem teve aproveitamento em todas as disciplinas e media igual ou superior a 16 valores.",
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 254,
+          "relevance": 0,
+          "note": "titulo sobre natureza dos premios"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 255,
+          "relevance": 0,
+          "note": "natureza financeira dos premios"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 272,
+          "relevance": 1,
+          "note": "anuncia condicoes cumulativas; a lista fica nos segmentos seguintes"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 273,
+          "relevance": 2,
+          "note": "aproveitamento em todas as disciplinas do ano anterior"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 276,
+          "relevance": 2,
+          "note": "media igual ou superior a 16 valores"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 300,
+          "relevance": 0,
+          "note": "procedimento de atribuicao"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 315,
+          "relevance": 0,
+          "note": "efeitos da atribuicao do premio"
+        }
+      ]
+    },
+    {
+      "question_id": "DA024",
+      "scenario_id": "SC-A17",
+      "label": "ANSWERABLE",
+      "difficulty": "hard",
+      "topic": "reclamacao_nota",
+      "question": "Qual e o prazo para reclamar da nota de um exame?",
+      "language": "pt",
+      "expected_evidence": [
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 457
+        }
+      ],
+      "evidence_note": "Artigo 49: reclamacao da classificacao nos dias uteis subsequentes a divulgacao do resultado.",
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 42,
+          "relevance": 0,
+          "note": "distractor: prazo de inscricao no exame de recurso"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 452,
+          "relevance": 0,
+          "note": "final do artigo 48"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 453,
+          "relevance": 1,
+          "note": "titulo do artigo 49, que contem o prazo"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 457,
+          "relevance": 2,
+          "note": "prazo maximo de tres dias uteis subsequentes a divulgacao do resultado"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 487,
+          "relevance": 0,
+          "note": "exames para melhoria de nota"
+        }
+      ]
+    },
+    {
+      "question_id": "DA025",
+      "scenario_id": "SC-A18",
+      "label": "ANSWERABLE",
+      "difficulty": "easy",
+      "topic": "contacto_servicos_academicos",
+      "question": "Qual e o contacto dos Servicos Academicos da Uni-CV?",
+      "language": "pt",
+      "expected_evidence": [
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 35
+        }
+      ],
+      "evidence_note": "Rodape do calendario 2023/2024: telefone e email dos Servicos Academicos.",
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 13,
+          "relevance": 1,
+          "note": "contacto da Reitoria; servico diferente do pedido"
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 35,
+          "relevance": 2,
+          "note": "rodape com telefone e email dos Servicos Academicos"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 23,
+          "relevance": 1,
+          "note": "contacto da Reitoria; servico diferente do pedido"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 241,
+          "relevance": 1,
+          "note": "contacto da Reitoria; servico diferente do pedido"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 275,
+          "relevance": 1,
+          "note": "contacto da Reitoria; servico diferente do pedido"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 359,
+          "relevance": 1,
+          "note": "contacto da Reitoria; servico diferente do pedido"
+        }
+      ]
+    },
+    {
+      "question_id": "DA026",
+      "scenario_id": "SC-N01",
+      "label": "NO_EVIDENCE",
+      "difficulty": "hard",
+      "topic": "renda_valor",
+      "question": "Quanto custa por mes um quarto individual numa residencia da Uni-CV?",
+      "language": "pt",
+      "no_evidence_validation": {
+        "validation_status": "CONFIRMED_ABSENT",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "annotator": "author",
+        "note": "O artigo 8 remete o valor da renda para tabela anexa; o corpus NAO contem essa tabela. Procurado: 'renda mensal', 'tabela anexa', 'tipologia', 'ANEXO' - nenhum anexo de rendas existe em P1-DOC-007, que termina no artigo 20 e na assinatura. Existem apenas os descontos de 10% a 15% sobre um valor que o corpus nao fixa.",
+        "nearest_related_evidence": [
+          {
+            "corpus_item_id": "P1-DOC-007",
+            "chunk_index": 192
+          }
+        ]
+      },
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 42,
+          "relevance": 1,
+          "note": "confirma a tipologia individual, duplo e triplo; nao fixa preco"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 192,
+          "relevance": 1,
+          "note": "remete o valor da renda para tabela anexa ausente do corpus"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 207,
+          "relevance": 0,
+          "note": "caucao"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 209,
+          "relevance": 0,
+          "note": "taxa de manutencao e danos"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 251,
+          "relevance": 0,
+          "note": "candidatura as residencias"
+        }
+      ]
+    },
+    {
+      "question_id": "DA027",
+      "scenario_id": "SC-N01",
+      "label": "NO_EVIDENCE",
+      "difficulty": "hard",
+      "topic": "renda_valor",
+      "question": "Qual e o valor da renda mensal de um quarto duplo na residencia?",
+      "language": "pt",
+      "no_evidence_validation": {
+        "validation_status": "CONFIRMED_ABSENT",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "annotator": "author",
+        "note": "O artigo 8 remete o valor da renda para tabela anexa; o corpus NAO contem essa tabela. Procurado: 'renda mensal', 'tabela anexa', 'tipologia', 'ANEXO' - nenhum anexo de rendas existe em P1-DOC-007, que termina no artigo 20 e na assinatura. Existem apenas os descontos de 10% a 15% sobre um valor que o corpus nao fixa.",
+        "nearest_related_evidence": [
+          {
+            "corpus_item_id": "P1-DOC-007",
+            "chunk_index": 192
+          }
+        ]
+      },
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 42,
+          "relevance": 1,
+          "note": "confirma a tipologia individual, duplo e triplo; nao fixa preco"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 179,
+          "relevance": 0,
+          "note": "reafectacao de quarto individual"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 192,
+          "relevance": 1,
+          "note": "remete o valor da renda para tabela anexa ausente do corpus"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 207,
+          "relevance": 0,
+          "note": "caucao"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 209,
+          "relevance": 0,
+          "note": "taxa de manutencao e danos"
+        }
+      ]
+    },
+    {
+      "question_id": "DA028",
+      "scenario_id": "SC-N02",
+      "label": "NO_EVIDENCE",
+      "difficulty": "hard",
+      "topic": "premio_merito_valor",
+      "question": "Qual e o valor em escudos do premio de merito da Uni-CV?",
+      "language": "pt",
+      "no_evidence_validation": {
+        "validation_status": "CONFIRMED_ABSENT",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "annotator": "author",
+        "note": "O capitulo IV descreve os premios de merito - natureza (isencao de propina), criterios e juri - mas NAO fixa valor monetario: o numero de premios e fixado anualmente por decisao do Reitor. Procurado: 'premio de merito', 'bolsa de merito', 'valor do premio'.",
+        "nearest_related_evidence": [
+          {
+            "corpus_item_id": "P1-DOC-005",
+            "chunk_index": 255
+          },
+          {
+            "corpus_item_id": "P1-DOC-005",
+            "chunk_index": 264
+          }
+        ]
+      },
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 25,
+          "relevance": 0,
+          "note": "ambito de aplicacao"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 36,
+          "relevance": 0,
+          "note": "ambito do capitulo"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 264,
+          "relevance": 1,
+          "note": "numero anual de premios fixado por decisao do Reitor; nao fixa valor"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 382,
+          "relevance": 0,
+          "note": "distractor: tabela de propinas de doutoramento"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 146,
+          "relevance": 0,
+          "note": "pagamento do traje academico"
+        }
+      ]
+    },
+    {
+      "question_id": "DA029",
+      "scenario_id": "SC-N02",
+      "label": "NO_EVIDENCE",
+      "difficulty": "hard",
+      "topic": "premio_merito_valor",
+      "question": "Quanto dinheiro recebe um estudante premiado por merito?",
+      "language": "pt",
+      "no_evidence_validation": {
+        "validation_status": "CONFIRMED_ABSENT",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "annotator": "author",
+        "note": "O capitulo IV descreve os premios de merito - natureza (isencao de propina), criterios e juri - mas NAO fixa valor monetario: o numero de premios e fixado anualmente por decisao do Reitor. Procurado: 'premio de merito', 'bolsa de merito', 'valor do premio'.",
+        "nearest_related_evidence": [
+          {
+            "corpus_item_id": "P1-DOC-005",
+            "chunk_index": 255
+          },
+          {
+            "corpus_item_id": "P1-DOC-005",
+            "chunk_index": 264
+          }
+        ]
+      },
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 25,
+          "relevance": 0,
+          "note": "ambito de aplicacao"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 258,
+          "relevance": 1,
+          "note": "admite pagamento em dinheiro ou especie; nao fixa montante"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 264,
+          "relevance": 1,
+          "note": "numero anual de premios fixado por decisao do Reitor; nao fixa valor"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 315,
+          "relevance": 0,
+          "note": "efeitos da atribuicao do premio"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 382,
+          "relevance": 0,
+          "note": "distractor: tabela de propinas de doutoramento"
+        }
+      ]
+    },
+    {
+      "question_id": "DA030",
+      "scenario_id": "SC-N03",
+      "label": "NO_EVIDENCE",
+      "difficulty": "easy",
+      "topic": "biblioteca_horario",
+      "question": "Qual e o horario de funcionamento da biblioteca da Uni-CV?",
+      "language": "pt",
+      "no_evidence_validation": {
+        "validation_status": "CONFIRMED_ABSENT",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "annotator": "author",
+        "note": "Procurado 'biblioteca': uma unica ocorrencia (P1-DOC-004/197), sobre envio de copia de relatorio para arquivo. Nenhum horario, servico ou regulamento de biblioteca no corpus.",
+        "nearest_related_evidence": []
+      },
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 13,
+          "relevance": 0,
+          "note": "rodape institucional"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 32,
+          "relevance": 0,
+          "note": "periodos lectivos dos cursos"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 155,
+          "relevance": 0,
+          "note": "periodo do alojamento letivo"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 220,
+          "relevance": 0,
+          "note": "prazo de pagamento por instituicoes parceiras"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 246,
+          "relevance": 0,
+          "note": "distractor: titulo sobre horarios das residencias estudantis"
+        }
+      ]
+    },
+    {
+      "question_id": "DA031",
+      "scenario_id": "SC-N03",
+      "label": "NO_EVIDENCE",
+      "difficulty": "easy",
+      "topic": "biblioteca_horario",
+      "question": "A que horas abre a biblioteca da universidade?",
+      "language": "pt",
+      "no_evidence_validation": {
+        "validation_status": "CONFIRMED_ABSENT",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "annotator": "author",
+        "note": "Procurado 'biblioteca': uma unica ocorrencia (P1-DOC-004/197), sobre envio de copia de relatorio para arquivo. Nenhum horario, servico ou regulamento de biblioteca no corpus.",
+        "nearest_related_evidence": []
+      },
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 28,
+          "relevance": 0,
+          "note": "distractor: periodo lectivo da tarde"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 197,
+          "relevance": 1,
+          "note": "unica mencao a Biblioteca no corpus; envio de copia de relatorio"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 308,
+          "relevance": 0,
+          "note": "tolerancia de atraso em horarios formais"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 246,
+          "relevance": 0,
+          "note": "distractor: titulo sobre horarios das residencias"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 247,
+          "relevance": 0,
+          "note": "distractor: horarios de check-in nas residencias"
+        }
+      ]
+    },
+    {
+      "question_id": "DA032",
+      "scenario_id": "SC-N04",
+      "label": "NO_EVIDENCE",
+      "difficulty": "hard",
+      "topic": "cantina_precos",
+      "question": "Quanto custa uma refeicao na cantina da universidade?",
+      "language": "pt",
+      "no_evidence_validation": {
+        "validation_status": "CONFIRMED_ABSENT",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "annotator": "author",
+        "note": "Procurado 'cantina': uma unica ocorrencia (P1-DOC-007/180), sobre acordo com a entidade gestora da Cantina Estudantil para servico completo. Nenhum preco de refeicao no corpus.",
+        "nearest_related_evidence": [
+          {
+            "corpus_item_id": "P1-DOC-007",
+            "chunk_index": 180
+          }
+        ]
+      },
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 365,
+          "relevance": 0,
+          "note": "distractor: tabela de taxas de matricula"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 391,
+          "relevance": 0,
+          "note": "distractor: taxa de exame de 2a chamada"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 466,
+          "relevance": 0,
+          "note": "distractor: taxa de fornecimento de programa"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 123,
+          "relevance": 0,
+          "note": "custos dos trajes academicos"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 192,
+          "relevance": 0,
+          "note": "valor da renda das residencias"
+        }
+      ]
+    },
+    {
+      "question_id": "DA033",
+      "scenario_id": "SC-N04",
+      "label": "NO_EVIDENCE",
+      "difficulty": "hard",
+      "topic": "cantina_precos",
+      "question": "Qual e o preco do almoco na cantina estudantil?",
+      "language": "pt",
+      "no_evidence_validation": {
+        "validation_status": "CONFIRMED_ABSENT",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "annotator": "author",
+        "note": "Procurado 'cantina': uma unica ocorrencia (P1-DOC-007/180), sobre acordo com a entidade gestora da Cantina Estudantil para servico completo. Nenhum preco de refeicao no corpus.",
+        "nearest_related_evidence": [
+          {
+            "corpus_item_id": "P1-DOC-007",
+            "chunk_index": 180
+          }
+        ]
+      },
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 365,
+          "relevance": 0,
+          "note": "distractor: tabela de taxas de matricula"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 391,
+          "relevance": 0,
+          "note": "distractor: taxa de exame de 2a chamada"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 450,
+          "relevance": 0,
+          "note": "distractor: declaracao sobre o custo do curso"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 180,
+          "relevance": 1,
+          "note": "unica mencao a Cantina Estudantil; servico completo por acordo"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 192,
+          "relevance": 0,
+          "note": "valor da renda das residencias"
+        }
+      ]
+    },
+    {
+      "question_id": "DA034",
+      "scenario_id": "SC-N05",
+      "label": "NO_EVIDENCE",
+      "difficulty": "hard",
+      "topic": "seminario_presencas",
+      "question": "Qual e a percentagem minima de presencas exigida nos seminarios?",
+      "language": "pt",
+      "no_evidence_validation": {
+        "validation_status": "CONFIRMED_ABSENT",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "annotator": "author",
+        "note": "Procurado 'seminario': tres ocorrencias (P1-DOC-004/147 tipologia, /178 dimensao de turma, /199 relatorio). Nenhum segmento fixa uma percentagem de presencas para seminarios. E o NO_EVIDENCE mais contestavel do conjunto e a objecao fica registada: o artigo 15 n.2 classifica os seminarios como forma que as atividades teoricas E teorico-praticas podem assumir, e o corpus fixa 50% para teoricas e 75% para teorico-praticas e praticas laboratoriais. A inferencia nao produz resposta determinada - daria 50% ou 75% consoante a forma que o seminario assumisse - pelo que nenhum segmento responde ao pedido.",
+        "nearest_related_evidence": [
+          {
+            "corpus_item_id": "P1-DOC-004",
+            "chunk_index": 178
+          },
+          {
+            "corpus_item_id": "P1-DOC-004",
+            "chunk_index": 147
+          },
+          {
+            "corpus_item_id": "P1-DOC-004",
+            "chunk_index": 176
+          }
+        ]
+      },
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 59,
+          "relevance": 1,
+          "note": "define o item frequencia minima"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 60,
+          "relevance": 1,
+          "note": "minimos de 50% nas teoricas e 75% nas praticas; nao nomeia seminarios"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 176,
+          "relevance": 1,
+          "note": "75% nas teorico-praticas e praticas laboratoriais; nao nomeia seminarios"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 178,
+          "relevance": 1,
+          "note": "menciona seminarios, mas sobre dimensao de turma"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 184,
+          "relevance": 1,
+          "note": "75% na componente pratica laboratorial"
+        }
+      ]
+    },
+    {
+      "question_id": "DA035",
+      "scenario_id": "SC-N05",
+      "label": "NO_EVIDENCE",
+      "difficulty": "hard",
+      "topic": "seminario_presencas",
+      "question": "Quantas faltas posso dar aos seminarios antes de reprovar por faltas?",
+      "language": "pt",
+      "no_evidence_validation": {
+        "validation_status": "CONFIRMED_ABSENT",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "annotator": "author",
+        "note": "Procurado 'seminario': tres ocorrencias (P1-DOC-004/147 tipologia, /178 dimensao de turma, /199 relatorio). Nenhum segmento fixa uma percentagem de presencas para seminarios. E o NO_EVIDENCE mais contestavel do conjunto e a objecao fica registada: o artigo 15 n.2 classifica os seminarios como forma que as atividades teoricas E teorico-praticas podem assumir, e o corpus fixa 50% para teoricas e 75% para teorico-praticas e praticas laboratoriais. A inferencia nao produz resposta determinada - daria 50% ou 75% consoante a forma que o seminario assumisse - pelo que nenhum segmento responde ao pedido.",
+        "nearest_related_evidence": [
+          {
+            "corpus_item_id": "P1-DOC-004",
+            "chunk_index": 178
+          },
+          {
+            "corpus_item_id": "P1-DOC-004",
+            "chunk_index": 147
+          },
+          {
+            "corpus_item_id": "P1-DOC-004",
+            "chunk_index": 176
+          }
+        ]
+      },
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 370,
+          "relevance": 0,
+          "note": "falta a prova de avaliacao por motivo de forca maior"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 410,
+          "relevance": 0,
+          "note": "epoca especial de exames"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 495,
+          "relevance": 0,
+          "note": "transicao de ano por reprovacao em unidades curriculares"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 84,
+          "relevance": 0,
+          "note": "multas e suspensao da inscricao"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 104,
+          "relevance": 0,
+          "note": "incumprimento no final do semestre"
+        }
+      ]
+    },
+    {
+      "question_id": "DA036",
+      "scenario_id": "SC-N06",
+      "label": "NO_EVIDENCE",
+      "difficulty": "hard",
+      "topic": "calendario_2425",
+      "question": "Quando comecaram as aulas do primeiro semestre do ano letivo 2024/2025?",
+      "language": "pt",
+      "no_evidence_validation": {
+        "validation_status": "CONFIRMED_ABSENT",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "annotator": "author",
+        "note": "O corpus tem os calendarios de 2025/2026 e 2023/2024. Procurado '2024/2025': duas ocorrencias, uma sobre entrega de UCT em atraso e outra sobre matriculas e inscricoes para 2024/2025 na seccao final do calendario de 2023/2024. Nenhuma data de inicio de aulas de 2024/2025 consta do corpus.",
+        "nearest_related_evidence": [
+          {
+            "corpus_item_id": "P1-DOC-003",
+            "chunk_index": 45
+          }
+        ]
+      },
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 12,
+          "relevance": 0,
+          "note": "distractor: 1. semestre de 2025/2026"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 14,
+          "relevance": 0,
+          "note": "distractor: inicio do ano letivo de 2025/2026"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 16,
+          "relevance": 0,
+          "note": "distractor: primeiro dia de aulas de 2025/2026"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 56,
+          "relevance": 0,
+          "note": "distractor: 2. semestre de 2025/2026"
+        },
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 72,
+          "relevance": 0,
+          "note": "distractor: inicio das aulas de 2023/2024"
+        }
+      ]
+    },
+    {
+      "question_id": "DA037",
+      "scenario_id": "SC-N06",
+      "label": "NO_EVIDENCE",
+      "difficulty": "hard",
+      "topic": "calendario_2425",
+      "question": "Qual foi a data de inicio do ano letivo 2024/2025?",
+      "language": "pt",
+      "no_evidence_validation": {
+        "validation_status": "CONFIRMED_ABSENT",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "annotator": "author",
+        "note": "O corpus tem os calendarios de 2025/2026 e 2023/2024. Procurado '2024/2025': duas ocorrencias, uma sobre entrega de UCT em atraso e outra sobre matriculas e inscricoes para 2024/2025 na seccao final do calendario de 2023/2024. Nenhuma data de inicio de aulas de 2024/2025 consta do corpus.",
+        "nearest_related_evidence": [
+          {
+            "corpus_item_id": "P1-DOC-003",
+            "chunk_index": 45
+          }
+        ]
+      },
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 10,
+          "relevance": 0,
+          "note": "distractor: titulo do calendario de 2025/2026"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 12,
+          "relevance": 0,
+          "note": "distractor: 1. semestre de 2025/2026"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 14,
+          "relevance": 0,
+          "note": "distractor: inicio do ano letivo de 2025/2026"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 16,
+          "relevance": 0,
+          "note": "distractor: primeiro dia de aulas de 2025/2026"
+        },
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 56,
+          "relevance": 0,
+          "note": "distractor: 2. semestre de 2025/2026"
+        }
+      ]
+    },
+    {
+      "question_id": "DA038",
+      "scenario_id": "SC-N07",
+      "label": "NO_EVIDENCE",
+      "difficulty": "easy",
+      "topic": "medicina_nota_acesso",
+      "question": "Qual e a nota minima de entrada no curso de Medicina da Uni-CV?",
+      "language": "pt",
+      "no_evidence_validation": {
+        "validation_status": "CONFIRMED_ABSENT",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "annotator": "author",
+        "note": "Procurado 'medicina' e 'nota minima': zero ocorrencias. O corpus nao contem notas de acesso nem regras de seriacao por curso.",
+        "nearest_related_evidence": []
+      },
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 87,
+          "relevance": 0,
+          "note": "fragmento sobre cursos ministrados"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 132,
+          "relevance": 0,
+          "note": "distractor: media de 7 valores para inscricao noutra unidade curricular"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 228,
+          "relevance": 0,
+          "note": "fragmento sobre cursos de graduacao"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 232,
+          "relevance": 0,
+          "note": "conclusao anterior de curso na Uni-CV"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 279,
+          "relevance": 0,
+          "note": "regime de ingresso anterior"
+        }
+      ]
+    },
+    {
+      "question_id": "DA039",
+      "scenario_id": "SC-N07",
+      "label": "NO_EVIDENCE",
+      "difficulty": "easy",
+      "topic": "medicina_nota_acesso",
+      "question": "Quantos valores preciso para entrar em Medicina na Uni-CV?",
+      "language": "pt",
+      "no_evidence_validation": {
+        "validation_status": "CONFIRMED_ABSENT",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "annotator": "author",
+        "note": "Procurado 'medicina' e 'nota minima': zero ocorrencias. O corpus nao contem notas de acesso nem regras de seriacao por curso.",
+        "nearest_related_evidence": []
+      },
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 228,
+          "relevance": 0,
+          "note": "fragmento sobre cursos de graduacao"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 232,
+          "relevance": 0,
+          "note": "conclusao anterior de curso na Uni-CV"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 279,
+          "relevance": 0,
+          "note": "regime de ingresso anterior"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 291,
+          "relevance": 0,
+          "note": "fragmento sobre relacao com a Uni-CV"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 410,
+          "relevance": 0,
+          "note": "concurso para provimento de vaga"
+        }
+      ]
+    },
+    {
+      "question_id": "DA040",
+      "scenario_id": "SC-N08",
+      "label": "NO_EVIDENCE",
+      "difficulty": "hard",
+      "topic": "erasmus",
+      "question": "Como funciona o programa Erasmus na Uni-CV?",
+      "language": "pt",
+      "no_evidence_validation": {
+        "validation_status": "CONFIRMED_ABSENT",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "annotator": "author",
+        "note": "Procurado 'erasmus': zero ocorrencias. O corpus refere mobilidade estudantil de forma generica (propinas de estudantes em mobilidade, P1-DOC-005/131) sem descrever programa, candidatura ou financiamento.",
+        "nearest_related_evidence": [
+          {
+            "corpus_item_id": "P1-DOC-005",
+            "chunk_index": 131
+          }
+        ]
+      },
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 291,
+          "relevance": 0,
+          "note": "fragmento sobre relacao com a Uni-CV"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 36,
+          "relevance": 0,
+          "note": "premios de merito"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 131,
+          "relevance": 1,
+          "note": "unica referencia proxima: propinas de estudantes em mobilidade"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 148,
+          "relevance": 0,
+          "note": "programa social da Uni-CV"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 251,
+          "relevance": 0,
+          "note": "candidatura as residencias"
+        }
+      ]
+    },
+    {
+      "question_id": "DA041",
+      "scenario_id": "SC-N08",
+      "label": "NO_EVIDENCE",
+      "difficulty": "hard",
+      "topic": "erasmus",
+      "question": "Como me candidato a uma bolsa Erasmus na Uni-CV?",
+      "language": "pt",
+      "no_evidence_validation": {
+        "validation_status": "CONFIRMED_ABSENT",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "annotator": "author",
+        "note": "Procurado 'erasmus': zero ocorrencias. O corpus refere mobilidade estudantil de forma generica (propinas de estudantes em mobilidade, P1-DOC-005/131) sem descrever programa, candidatura ou financiamento.",
+        "nearest_related_evidence": [
+          {
+            "corpus_item_id": "P1-DOC-005",
+            "chunk_index": 131
+          }
+        ]
+      },
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 36,
+          "relevance": 0,
+          "note": "premios de merito"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 131,
+          "relevance": 1,
+          "note": "unica referencia proxima: propinas de estudantes em mobilidade"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 414,
+          "relevance": 0,
+          "note": "distractor: taxa de candidatura"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 127,
+          "relevance": 1,
+          "note": "estudante em mobilidade ao abrigo de protocolos; sem programa nem bolsa"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 251,
+          "relevance": 0,
+          "note": "distractor: candidatura as residencias"
+        }
+      ]
+    },
+    {
+      "question_id": "DA042",
+      "scenario_id": "SC-N09",
+      "label": "NO_EVIDENCE",
+      "difficulty": "easy",
+      "topic": "estacionamento",
+      "question": "Ha estacionamento gratuito no campus para estudantes?",
+      "language": "pt",
+      "no_evidence_validation": {
+        "validation_status": "CONFIRMED_ABSENT",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "annotator": "author",
+        "note": "Procurado 'estacionamento' e 'parque': zero ocorrencias no corpus.",
+        "nearest_related_evidence": []
+      },
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 293,
+          "relevance": 0,
+          "note": "uso obrigatorio do cartao de estudante"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 502,
+          "relevance": 0,
+          "note": "titulo sobre mobilidade de estudantes"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 43,
+          "relevance": 0,
+          "note": "definicao de propina"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 147,
+          "relevance": 0,
+          "note": "regime especial de pagamento de propinas"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 209,
+          "relevance": 0,
+          "note": "taxa de manutencao e danos"
+        }
+      ]
+    },
+    {
+      "question_id": "DA043",
+      "scenario_id": "SC-N09",
+      "label": "NO_EVIDENCE",
+      "difficulty": "easy",
+      "topic": "estacionamento",
+      "question": "Onde posso estacionar o carro no campus da Uni-CV?",
+      "language": "pt",
+      "no_evidence_validation": {
+        "validation_status": "CONFIRMED_ABSENT",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "annotator": "author",
+        "note": "Procurado 'estacionamento' e 'parque': zero ocorrencias no corpus.",
+        "nearest_related_evidence": []
+      },
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 13,
+          "relevance": 0,
+          "note": "morada do campus no rodape; nao trata de estacionamento"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 228,
+          "relevance": 0,
+          "note": "fragmento sobre cursos de graduacao"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 12,
+          "relevance": 0,
+          "note": "morada do campus no rodape"
+        },
+        {
+          "corpus_item_id": "P1-DOC-006",
+          "chunk_index": 146,
+          "relevance": 0,
+          "note": "pagamento do traje academico"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 359,
+          "relevance": 0,
+          "note": "rodape institucional"
+        }
+      ]
+    },
+    {
+      "question_id": "DA044",
+      "scenario_id": "SC-N10",
+      "label": "NO_EVIDENCE",
+      "difficulty": "easy",
+      "topic": "seguro_escolar",
+      "question": "O seguro escolar esta incluido na propina?",
+      "language": "pt",
+      "no_evidence_validation": {
+        "validation_status": "CONFIRMED_ABSENT",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "annotator": "author",
+        "note": "Procurado 'seguro': zero ocorrencias. Nenhuma referencia a seguro escolar ou de acidentes pessoais no corpus.",
+        "nearest_related_evidence": []
+      },
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 38,
+          "relevance": 0,
+          "note": "titulo do capitulo das propinas"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 43,
+          "relevance": 0,
+          "note": "definicao de propina"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 71,
+          "relevance": 0,
+          "note": "propina devida no ato da matricula"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 158,
+          "relevance": 0,
+          "note": "propina de unidade curricular isolada"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 256,
+          "relevance": 0,
+          "note": "isencao de propina"
+        }
+      ]
+    },
+    {
+      "question_id": "DA045",
+      "scenario_id": "SC-N10",
+      "label": "NO_EVIDENCE",
+      "difficulty": "easy",
+      "topic": "seguro_escolar",
+      "question": "A universidade tem seguro de acidentes pessoais para os estudantes?",
+      "language": "pt",
+      "no_evidence_validation": {
+        "validation_status": "CONFIRMED_ABSENT",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "annotator": "author",
+        "note": "Procurado 'seguro': zero ocorrencias. Nenhuma referencia a seguro escolar ou de acidentes pessoais no corpus.",
+        "nearest_related_evidence": []
+      },
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-002",
+          "chunk_index": 6,
+          "relevance": 0,
+          "note": "cabecalho do documento"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 142,
+          "relevance": 0,
+          "note": "regularizacao de dividas de propinas"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 207,
+          "relevance": 0,
+          "note": "caucao"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 208,
+          "relevance": 0,
+          "note": "reembolso da caucao"
+        },
+        {
+          "corpus_item_id": "P1-DOC-007",
+          "chunk_index": 209,
+          "relevance": 0,
+          "note": "responsabilidade por danos no alojamento"
+        }
+      ]
+    },
+    {
+      "question_id": "DA046",
+      "scenario_id": "SC-N11",
+      "label": "NO_EVIDENCE",
+      "difficulty": "hard",
+      "topic": "ects",
+      "question": "Quantos creditos ECTS vale cada unidade curricular?",
+      "language": "pt",
+      "no_evidence_validation": {
+        "validation_status": "CONFIRMED_ABSENT",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "annotator": "author",
+        "note": "Procurado 'ects' e 'creditos ects': zero ocorrencias. O regulamento de graduacao descreve unidades curriculares e horas letivas, nunca creditos ECTS.",
+        "nearest_related_evidence": []
+      },
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 304,
+          "relevance": 1,
+          "note": "creditacao da unidade curricular; sem sistema de creditos quantificado"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 528,
+          "relevance": 0,
+          "note": "equivalencias de unidades curriculares concluidas"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 542,
+          "relevance": 1,
+          "note": "elementos do plano: horas/aula, nunca creditos"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 348,
+          "relevance": 0,
+          "note": "distractor: taxa de unidade curricular em atraso"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 370,
+          "relevance": 0,
+          "note": "distractor: taxa de unidade curricular isolada"
+        }
+      ]
+    },
+    {
+      "question_id": "DA047",
+      "scenario_id": "SC-N11",
+      "label": "NO_EVIDENCE",
+      "difficulty": "hard",
+      "topic": "ects",
+      "question": "Quantos ECTS sao precisos para concluir a licenciatura?",
+      "language": "pt",
+      "no_evidence_validation": {
+        "validation_status": "CONFIRMED_ABSENT",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "annotator": "author",
+        "note": "Procurado 'ects' e 'creditos ects': zero ocorrencias. O regulamento de graduacao descreve unidades curriculares e horas letivas, nunca creditos ECTS.",
+        "nearest_related_evidence": []
+      },
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-003",
+          "chunk_index": 58,
+          "relevance": 0,
+          "note": "epoca especial para finalistas com ate duas unidades curriculares"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 520,
+          "relevance": 0,
+          "note": "equivalencia para conclusao de licenciatura na mesma area"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 352,
+          "relevance": 0,
+          "note": "distractor: taxa de unidade curricular isolada de graduacao"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 353,
+          "relevance": 0,
+          "note": "distractor: taxa de unidade curricular isolada de pos-graduacao"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 407,
+          "relevance": 0,
+          "note": "distractor: taxa de acesso para maiores de 25 anos"
+        }
+      ]
+    },
+    {
+      "question_id": "DA048",
+      "scenario_id": "SC-N12",
+      "label": "NO_EVIDENCE",
+      "difficulty": "easy",
+      "topic": "divida_pessoal",
+      "question": "Quanto e que eu devo de propinas neste momento?",
+      "language": "pt",
+      "no_evidence_validation": {
+        "validation_status": "CONFIRMED_ABSENT",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "annotator": "author",
+        "note": "Pedido de dado pessoal e estruturado. O corpus e documental e normativo: descreve o regime de propinas e as consequencias do incumprimento, mas nao contem saldos, matriculas nem processos individuais de nenhum estudante.",
+        "nearest_related_evidence": []
+      },
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 49,
+          "relevance": 0,
+          "note": "periodo a que a propina se reporta"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 77,
+          "relevance": 0,
+          "note": "pagamento fora do prazo"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 147,
+          "relevance": 0,
+          "note": "regime especial de pagamento de propinas"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 350,
+          "relevance": 0,
+          "note": "distractor: propina de estagio e trabalho de fim de curso"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 391,
+          "relevance": 0,
+          "note": "distractor: taxa de exame de 2a chamada"
+        }
+      ]
+    },
+    {
+      "question_id": "DA049",
+      "scenario_id": "SC-N12",
+      "label": "NO_EVIDENCE",
+      "difficulty": "easy",
+      "topic": "divida_pessoal",
+      "question": "Qual e o meu numero de estudante?",
+      "language": "pt",
+      "no_evidence_validation": {
+        "validation_status": "CONFIRMED_ABSENT",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "annotator": "author",
+        "note": "Pedido de dado pessoal e estruturado. O corpus e documental e normativo: descreve o regime de propinas e as consequencias do incumprimento, mas nao contem saldos, matriculas nem processos individuais de nenhum estudante.",
+        "nearest_related_evidence": []
+      },
+      "judgments": [
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 269,
+          "relevance": 1,
+          "note": "composicao do numero de registo academico; nao contem o numero de ninguem"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 271,
+          "relevance": 1,
+          "note": "composicao do numero de registo academico; nao contem o numero de ninguem"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 274,
+          "relevance": 1,
+          "note": "composicao do numero de registo academico; nao contem o numero de ninguem"
+        },
+        {
+          "corpus_item_id": "P1-DOC-004",
+          "chunk_index": 285,
+          "relevance": 1,
+          "note": "cartao com o numero de registo academico; nao contem o numero de ninguem"
+        },
+        {
+          "corpus_item_id": "P1-DOC-005",
+          "chunk_index": 109,
+          "relevance": 0,
+          "note": "fragmento sem conteudo util"
+        }
+      ]
+    }
+  ],
+  "split_rule": {
+    "split_version": "v1",
+    "rule": "stratified_alternating_over_sorted_scenario_id",
+    "seed": null,
+    "note": "Deterministico e sem gerador aleatorio: dentro de cada estrato (label, difficulty) os cenarios sao ordenados por scenario_id e atribuidos alternadamente a DEV e HELD_OUT. Nao ha semente porque nao ha sorteio, e um sorteio com semente seria menos verificavel, nao mais.",
+    "assignments": {
+      "SC-A01": "DEV",
+      "SC-A02": "DEV",
+      "SC-A03": "HELD_OUT",
+      "SC-A04": "DEV",
+      "SC-A05": "HELD_OUT",
+      "SC-A06": "HELD_OUT",
+      "SC-A07": "DEV",
+      "SC-A08": "HELD_OUT",
+      "SC-A09": "DEV",
+      "SC-A10": "HELD_OUT",
+      "SC-A11": "DEV",
+      "SC-A12": "DEV",
+      "SC-A13": "HELD_OUT",
+      "SC-A14": "DEV",
+      "SC-A15": "HELD_OUT",
+      "SC-A16": "DEV",
+      "SC-A17": "HELD_OUT",
+      "SC-A18": "HELD_OUT",
+      "SC-N01": "DEV",
+      "SC-N02": "HELD_OUT",
+      "SC-N03": "DEV",
+      "SC-N04": "DEV",
+      "SC-N05": "HELD_OUT",
+      "SC-N06": "DEV",
+      "SC-N07": "HELD_OUT",
+      "SC-N08": "HELD_OUT",
+      "SC-N09": "DEV",
+      "SC-N10": "HELD_OUT",
+      "SC-N11": "DEV",
+      "SC-N12": "DEV"
+    }
+  }
+}
