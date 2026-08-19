@@ -82,9 +82,27 @@
     "grade2_targets_exclusive_to_c1": 8,
     "grade2_targets_exclusive_to_c1_preserved_by_c2": 8,
     "grade2_targets_promoted_over_c1": 2,
+    "questions_changed_versus_c1": [
+      "Q001",
+      "Q003",
+      "Q005",
+      "Q011"
+    ],
+    "questions_changed_versus_c1_count": 4,
     "questions_improved_over_c1": 2,
+    "questions_measured": 12,
     "questions_solved_by_c1_and_lost_by_c2": [],
     "questions_solved_by_c2_and_not_by_c1": [],
+    "questions_where_fusion_could_act": [
+      "Q001",
+      "Q002",
+      "Q003",
+      "Q004",
+      "Q005",
+      "Q010",
+      "Q011"
+    ],
+    "questions_where_fusion_could_act_count": 7,
     "questions_worsened_versus_c1": 2
   },
   "conditions_reproduced": {
@@ -95,27 +113,32 @@
   "corpus_digest": "e8a0f08b5ecf37821244e62c266a48b1d64c928cabb75e0e23e08f9c895a447e",
   "corpus_id": "P1",
   "decision": {
+    "aggregate_metrics_that_decreased": [],
     "baseline": "C1",
-    "decision": "A_HYBRID_SUPPORTED",
+    "decision": "D_HYBRID_PROMISING_BUT_NEEDS_BROADER_EVALUATION",
     "decision_rule_source": "scripts.evaluate_hybrid_rrf.DECISION_RULE",
-    "delta_ndcg_at_5": 0.026388,
-    "delta_recall_at_5": 0.041667,
-    "material_delta": 0.02,
-    "primary_metric": "ndcg@5",
-    "rationale": "delta nDCG@5 0.026388 >= 0.02, Recall@5 nao desce (0.041667) e os alvos exclusivos de C0 foram preservados"
+    "evidence_base_supports_architectural_decision": false,
+    "magnitude_threshold": null,
+    "questions_improved_over_c1": 2,
+    "questions_worsened_versus_c1": 2,
+    "rationale": "beneficio concreto - alvos recuperados ['Q011:P1-DOC-003#37'], perguntas melhoradas 2 - mas com 2 pergunta(s) pioradas face a C1 e base de evidencia insuficiente para promover (ver decision_rule.evidence_base_note)",
+    "reported_delta_ndcg_at_5": 0.026388,
+    "reported_delta_recall_at_5": 0.041667,
+    "reported_metric": "ndcg@5"
   },
   "decision_rule": {
     "baseline": "C1",
     "evaluated_in_order": [
-      "B_DENSE_REMAINS_PREFERRED: alguma pergunta resolvida por C1 deixa de ser resolvida por C2, OU Recall@5 desce, OU nDCG@5 desce pelo menos material_delta.",
-      "A_HYBRID_SUPPORTED: nDCG@5 sobe pelo menos material_delta, Recall@5 nao desce, nenhuma pergunta e perdida e os alvos exclusivos de C0 preservados por C2 nao sao menos do que os que C1 preservava.",
-      "D_HYBRID_PROMISING_BUT_NEEDS_BROADER_EVALUATION: ha beneficio concreto de complementaridade - um alvo de grau 2 que C1 nao tinha no top 5 passa a estar, ou alguma pergunta melhora - mas o ganho agregado fica abaixo de material_delta.",
-      "C_EVIDENCE_INSUFFICIENT: sem regressao, sem beneficio concreto e com |delta| abaixo de material_delta - o efeito e demasiado pequeno para sustentar decisao arquitetural nesta amostra."
+      "B_DENSE_REMAINS_PREFERRED: alguma pergunta resolvida por C1 deixa de ser resolvida por C2, OU alguma metrica agregada desce.",
+      "C_EVIDENCE_INSUFFICIENT: nenhuma regressao e nenhum beneficio concreto - a fusao nao produziu efeito observavel.",
+      "A_HYBRID_SUPPORTED: beneficio concreto, nenhuma regressao por pergunta E base de evidencia suficiente para decisao arquitetural.",
+      "D_HYBRID_PROMISING_BUT_NEEDS_BROADER_EVALUATION: ha beneficio concreto de complementaridade, mas com regressoes por pergunta e/ou base de evidencia insuficiente para promover."
     ],
-    "material_delta": 0.02,
-    "note": "Declarado na implementacao e registado como fixado antes da execucao. Nenhum criterio foi acrescentado, removido ou reordenado depois de observar os resultados.",
-    "pre_registration_caveat": "A ordem temporal NAO tem prova independente: a regra e o resultado vivem na mesma arvore de trabalho e nenhum commit os separa. Tratar como criterio declarado na implementacao, nao como pre-registo auditavel. Ver MATERIAL_DELTA em scripts.evaluate_hybrid_rrf.",
-    "primary_metric": "ndcg@5"
+    "evidence_base_note": "Propriedade do desenho da fase, nao do resultado: um corpus, um anotador, um modelo de embeddings, 12 perguntas medidas e a fusao so pode agir onde ambas as condicoes devolvem alguma coisa. Torna A_HYBRID_SUPPORTED inalcancavel nesta fase por construcao.",
+    "evidence_base_supports_architectural_decision": false,
+    "magnitude_threshold": null,
+    "magnitude_threshold_note": "Nao existe limiar numerico de ganho suficiente. O enunciado da fase proibia-o - 'descrever magnitude e casos concretos' - e uma versao anterior deste runner violava essa instrucao com um MATERIAL_DELTA de 0.02. A magnitude e reportada em aggregate_delta_c2_minus_c1 para ser lida, nao comparada com um numero.",
+    "reported_metric": "ndcg@5"
   },
   "digest_algorithm": "sha256",
   "embedding": {
@@ -138,8 +161,8 @@
       "question_id": "Q014"
     }
   ],
-  "executed_at": "2026-08-19T15:02:26.931516+00:00",
-  "execution_digest": "636609d71312725ca386ba859c316b00b7c66e338f15131ed92d4ffd0cebcd10",
+  "executed_at": "2026-08-19T16:12:12.934045+00:00",
+  "execution_digest": "b8da059090d3d2ecd49f65755522c78acec56f9bb7e23e108929425b4ea2e759",
   "execution_digest_scope": "full_payload",
   "experiment_version": "d4.9-hybrid-rrf-1",
   "fusion": {
@@ -3028,7 +3051,7 @@
   ],
   "reference_date": "2026-08-15",
   "reproducibility_note": "A fase consome rankings persistidos e nao contacta o fornecedor: result_digest e execution_digest sao ambos estaveis entre execucoes.",
-  "result_digest": "16171d6c6bf6ebcebac289a321e22c6d34ff8abcf1d50854566e0fc2d88112c6",
+  "result_digest": "9ce33d93c29a54c30cdb03929664ba79ae20960ffd602042dd2f43d99a109c51",
   "result_digest_scope": "full_payload_without_run_fields",
   "retrieval": {
     "candidate_limit": 25,

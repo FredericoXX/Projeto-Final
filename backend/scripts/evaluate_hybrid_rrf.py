@@ -82,74 +82,93 @@ SOURCE_RESULT_DIGEST: Final = (
 )
 
 # ---------------------------------------------------------------------------
-# Critério de decisão — fixado antes de qualquer medição
+# Critério de decisão — qualitativo, sem limiar de "ganho suficiente"
 # ---------------------------------------------------------------------------
 
-#: Métrica principal da comparação. nDCG@5 e não Recall@5 porque a fusão altera
-#: sobretudo **posições**, e o Recall com limiar binário no grau 2 é cego a
-#: reordenações dentro do top 5.
+#: Métrica de leitura principal da comparação. nDCG@5 e não Recall@5 porque a
+#: fusão altera sobretudo **posições**, e o Recall com limiar binário no grau 2
+#: é cego a reordenações dentro do top 5. É uma métrica **reportada**, não um
+#: critério: nenhuma decisão depende do seu valor ultrapassar um número.
 PRIMARY_METRIC: Final = "ndcg@5"
-
-#: Diferença a partir da qual um efeito é considerado material. É arbitrário no
-#: sentido em que qualquer limiar o é. Com 12 perguntas, 0,02 de nDCG@5
-#: macro-médio é aproximadamente o que uma única pergunta produz ao trocar uma
-#: posição no meio do top 5 — abaixo disso, a amostra não distingue efeito de
-#: ruído.
-#:
-#: **Sobre a ordem temporal, com precisão:** este valor foi escrito antes de a
-#: experiência correr, mas vive na mesma árvore de trabalho que o resultado e
-#: não há commit que separe um do outro. O histórico do repositório **não prova**
-#: que precedeu a medição — só o testemunho de quem o escreveu o afirma. Quem
-#: auditar deve tratar o limiar como *declarado na implementação*, não como
-#: pré-registo verificável, e ler a decisão com essa reserva. Uma fase futura que
-#: queira a garantia forte tem de commitar o protocolo antes de medir, como a
-#: D4.8.2 fez com o seu `protocol_digest`.
-MATERIAL_DELTA: Final = 0.02
 
 #: A comparação que decide é **C2 contra C1**. C1 já é muito superior a C0, pelo
 #: que «C2 > C0» não é informação: seria satisfeito por qualquer fusão que
 #: preservasse a ordem densa.
 DECISION_BASELINE: Final = CONDITION_DENSE
 
+#: **Não existe limiar numérico de «ganho suficiente», e a ausência é
+#: deliberada.**
+#:
+#: Uma versão anterior desta fase tinha um ``MATERIAL_DELTA = 0.02`` e decidia
+#: comparando o delta de nDCG@5 com esse valor. Estava errado por duas razões
+#: independentes, e a segunda é a que basta:
+#:
+#: 1. o limiar vivia na mesma árvore de trabalho que o resultado, sem commit que
+#:    os separasse — não havia como provar que precedeu a medição;
+#: 2. o enunciado da fase proibia-o explicitamente: *«Não definir posteriormente
+#:    um threshold numérico de "ganho suficiente". Descrever magnitude e casos
+#:    concretos.»* O instrumento não devia ter existido.
+#:
+#: A decisão passa a assentar em **factos qualitativos** — houve benefício
+#: concreto de complementaridade? houve regressão por pergunta? a base de
+#: evidência suporta uma decisão arquitetural? — e a magnitude é **reportada**,
+#: para ser lida, não comparada com um número.
+DECISION_HAS_NO_MAGNITUDE_THRESHOLD: Final = True
+
+#: Se o desenho desta fase produz uma base de evidência capaz de sustentar uma
+#: **decisão arquitetural**, e não apenas de registar sinal.
+#:
+#: É ``False``, e é uma propriedade do **desenho**, não do resultado: um único
+#: corpus, um único anotador, um único modelo de embeddings, 12 perguntas
+#: medidas e — o número que mais pesa — apenas aquelas em que **ambas** as
+#: condições devolvem alguma coisa é que permitem à fusão agir. Isto era
+#: verdade antes de a experiência correr e não depende de como correu.
+#:
+#: A consequência é que ``A_HYBRID_SUPPORTED`` é **inalcançável nesta fase por
+#: construção**. Não é um veredicto sobre o híbrido: é o reconhecimento de que
+#: esta experiência nunca foi dimensionada para o promover.
+EVIDENCE_BASE_SUPPORTS_ARCHITECTURAL_DECISION: Final = False
+
 DECISION_RULE: Final = {
-    "primary_metric": PRIMARY_METRIC,
     "baseline": DECISION_BASELINE,
-    "material_delta": MATERIAL_DELTA,
+    "reported_metric": PRIMARY_METRIC,
+    "magnitude_threshold": None,
+    "magnitude_threshold_note": (
+        "Nao existe limiar numerico de ganho suficiente. O enunciado da fase "
+        "proibia-o - 'descrever magnitude e casos concretos' - e uma versao "
+        "anterior deste runner violava essa instrucao com um MATERIAL_DELTA de "
+        "0.02. A magnitude e reportada em aggregate_delta_c2_minus_c1 para ser "
+        "lida, nao comparada com um numero."
+    ),
+    "evidence_base_supports_architectural_decision": (
+        EVIDENCE_BASE_SUPPORTS_ARCHITECTURAL_DECISION
+    ),
+    "evidence_base_note": (
+        "Propriedade do desenho da fase, nao do resultado: um corpus, um "
+        "anotador, um modelo de embeddings, 12 perguntas medidas e a fusao so "
+        "pode agir onde ambas as condicoes devolvem alguma coisa. Torna "
+        "A_HYBRID_SUPPORTED inalcancavel nesta fase por construcao."
+    ),
     "evaluated_in_order": [
         (
             "B_DENSE_REMAINS_PREFERRED: alguma pergunta resolvida por C1 deixa "
-            "de ser resolvida por C2, OU Recall@5 desce, OU nDCG@5 desce pelo "
-            "menos material_delta."
+            "de ser resolvida por C2, OU alguma metrica agregada desce."
         ),
         (
-            "A_HYBRID_SUPPORTED: nDCG@5 sobe pelo menos material_delta, "
-            "Recall@5 nao desce, nenhuma pergunta e perdida e os alvos "
-            "exclusivos de C0 preservados por C2 nao sao menos do que os que C1 "
-            "preservava."
+            "C_EVIDENCE_INSUFFICIENT: nenhuma regressao e nenhum beneficio "
+            "concreto - a fusao nao produziu efeito observavel."
+        ),
+        (
+            "A_HYBRID_SUPPORTED: beneficio concreto, nenhuma regressao por "
+            "pergunta E base de evidencia suficiente para decisao "
+            "arquitetural."
         ),
         (
             "D_HYBRID_PROMISING_BUT_NEEDS_BROADER_EVALUATION: ha beneficio "
-            "concreto de complementaridade - um alvo de grau 2 que C1 nao tinha "
-            "no top 5 passa a estar, ou alguma pergunta melhora - mas o ganho "
-            "agregado fica abaixo de material_delta."
-        ),
-        (
-            "C_EVIDENCE_INSUFFICIENT: sem regressao, sem beneficio concreto e "
-            "com |delta| abaixo de material_delta - o efeito e demasiado "
-            "pequeno para sustentar decisao arquitetural nesta amostra."
+            "concreto de complementaridade, mas com regressoes por pergunta "
+            "e/ou base de evidencia insuficiente para promover."
         ),
     ],
-    "note": (
-        "Declarado na implementacao e registado como fixado antes da execucao. "
-        "Nenhum criterio foi acrescentado, removido ou reordenado depois de "
-        "observar os resultados."
-    ),
-    "pre_registration_caveat": (
-        "A ordem temporal NAO tem prova independente: a regra e o resultado "
-        "vivem na mesma arvore de trabalho e nenhum commit os separa. Tratar "
-        "como criterio declarado na implementacao, nao como pre-registo "
-        "auditavel. Ver MATERIAL_DELTA em scripts.evaluate_hybrid_rrf."
-    ),
 }
 
 DECISION_A: Final = "A_HYBRID_SUPPORTED"
@@ -563,7 +582,29 @@ def complementarity(records: Sequence[Mapping[str, Any]]) -> dict[str, Any]:
                 elif rank_c2 > rank_c1:
                     demoted += 1
 
+    # Quantas perguntas a fusão podia sequer mexer. É o denominador honesto
+    # desta fase: onde C0 devolve zero, C2 é a identidade de C1, e incluir essas
+    # perguntas na leitura do efeito dilui-o com casos onde não houve fusão
+    # nenhuma.
+    measured_records = [record for record in records if record["measured"]]
+    could_act = [
+        record["question_id"]
+        for record in measured_records
+        if record["conditions"][CONDITION_LEXICAL]["retrieved_count"] > 0
+        and record["conditions"][CONDITION_DENSE]["retrieved_count"] > 0
+    ]
+    changed = [
+        record["question_id"]
+        for record in measured_records
+        if record["comparison"]["c2_versus_c1"] != "equal"
+    ]
+
     return {
+        "questions_measured": len(measured_records),
+        "questions_where_fusion_could_act": sorted(could_act),
+        "questions_where_fusion_could_act_count": len(could_act),
+        "questions_changed_versus_c1": sorted(changed),
+        "questions_changed_versus_c1_count": len(changed),
         "grade2_targets_exclusive_to_c0": c0_only_total,
         "grade2_targets_exclusive_to_c0_preserved_by_c2": c0_only_preserved,
         "grade2_targets_exclusive_to_c1": c1_only_total,
@@ -603,54 +644,68 @@ def decide(
 ) -> dict[str, Any]:
     """Aplica o critério declarado em :data:`DECISION_RULE`, sem interpretação.
 
-    «Declarado», e não «pré-registado»: ver a ressalva em
-    :data:`MATERIAL_DELTA` sobre o que o histórico do repositório prova e o que
-    não prova quanto à ordem temporal.
+    **Nenhum ramo compara uma magnitude com um limiar.** Os deltas entram no
+    resultado para serem lidos; o que decide são factos qualitativos — houve
+    regressão, houve benefício concreto, a base de evidência suporta uma decisão
+    arquitetural. Ver :data:`DECISION_HAS_NO_MAGNITUDE_THRESHOLD`.
     """
-    delta_ndcg5 = delta["ndcg"][str(PRIMARY_K)]
-    delta_recall5 = delta["recall"][str(PRIMARY_K)]
     lost = analysis["questions_solved_by_c1_and_lost_by_c2"]
+    worsened = analysis["questions_worsened_versus_c1"]
     recovered = analysis["grade2_targets_c1_missed_and_c2_recovered"]
     improved = analysis["questions_improved_over_c1"]
-    preserved_c0_only = (
-        analysis["grade2_targets_exclusive_to_c0_preserved_by_c2"]
-        == analysis["grade2_targets_exclusive_to_c0"]
+    metrics_decreased = sorted(
+        name
+        for name, value in (
+            *((f"recall@{k}", delta["recall"][str(k)]) for k in K_VALUES),
+            ("mrr", delta["mrr"]),
+            *((f"ndcg@{k}", delta["ndcg"][str(k)]) for k in K_VALUES),
+        )
+        if value < 0
     )
+    benefit = bool(recovered or improved)
 
-    if lost or delta_recall5 < 0 or delta_ndcg5 <= -MATERIAL_DELTA:
+    if lost or metrics_decreased:
         decision = DECISION_B
         rationale = (
-            f"perguntas perdidas: {lost or 'nenhuma'}; delta Recall@5 "
-            f"{delta_recall5}; delta nDCG@5 {delta_ndcg5}"
+            f"perguntas resolvidas por C1 e perdidas por C2: {lost or 'nenhuma'}; "
+            f"metricas agregadas que descem: {metrics_decreased or 'nenhuma'}"
         )
-    elif delta_ndcg5 >= MATERIAL_DELTA and delta_recall5 >= 0 and preserved_c0_only:
+    elif not benefit:
+        decision = DECISION_C
+        rationale = (
+            "sem regressao e sem beneficio concreto: nenhum alvo recuperado e "
+            "nenhuma pergunta melhorada face a C1"
+        )
+    elif not worsened and EVIDENCE_BASE_SUPPORTS_ARCHITECTURAL_DECISION:
         decision = DECISION_A
         rationale = (
-            f"delta nDCG@5 {delta_ndcg5} >= {MATERIAL_DELTA}, Recall@5 nao desce "
-            f"({delta_recall5}) e os alvos exclusivos de C0 foram preservados"
+            f"beneficio concreto (alvos recuperados {recovered or 'nenhum'}, "
+            f"perguntas melhoradas {improved}), sem regressao por pergunta e "
+            "com base de evidencia suficiente"
         )
-    elif recovered or improved:
+    else:
         decision = DECISION_D
         rationale = (
             f"beneficio concreto - alvos recuperados {recovered or 'nenhum'}, "
-            f"perguntas melhoradas {improved} - mas delta nDCG@5 {delta_ndcg5} "
-            f"fica abaixo de {MATERIAL_DELTA}"
-        )
-    else:
-        decision = DECISION_C
-        rationale = (
-            f"sem regressao, sem beneficio concreto e delta nDCG@5 {delta_ndcg5} "
-            f"abaixo de {MATERIAL_DELTA}"
+            f"perguntas melhoradas {improved} - mas com {worsened} pergunta(s) "
+            "pioradas face a C1 e base de evidencia insuficiente para promover "
+            "(ver decision_rule.evidence_base_note)"
         )
 
     return {
         "decision": decision,
         "rationale": rationale,
-        "primary_metric": PRIMARY_METRIC,
         "baseline": DECISION_BASELINE,
-        "material_delta": MATERIAL_DELTA,
-        "delta_ndcg_at_5": delta_ndcg5,
-        "delta_recall_at_5": delta_recall5,
+        "reported_metric": PRIMARY_METRIC,
+        "magnitude_threshold": None,
+        "evidence_base_supports_architectural_decision": (
+            EVIDENCE_BASE_SUPPORTS_ARCHITECTURAL_DECISION
+        ),
+        "reported_delta_ndcg_at_5": delta["ndcg"][str(PRIMARY_K)],
+        "reported_delta_recall_at_5": delta["recall"][str(PRIMARY_K)],
+        "aggregate_metrics_that_decreased": metrics_decreased,
+        "questions_improved_over_c1": improved,
+        "questions_worsened_versus_c1": worsened,
         "decision_rule_source": "scripts.evaluate_hybrid_rrf.DECISION_RULE",
     }
 

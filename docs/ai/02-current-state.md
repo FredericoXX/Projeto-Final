@@ -1094,17 +1094,24 @@ cinco irrelevâncias, C2 devolve as mesmas cinco. A política `top1 >= 0,60` da
 D4.8.2 **não** foi aplicada — fundir e admitir são dois mecanismos, e alterá-los
 na mesma experiência tornaria o resultado inatribuível.
 
-Decisão: **A — HYBRID_SUPPORTED**, que nesta amostra significa «justifica
-investigar mais», não «está provado». Não autoriza promoção para produção.
+Decisão: **D — HYBRID_PROMISING_BUT_NEEDS_BROADER_EVALUATION.** Há benefício
+concreto — o alvo de grau 2 que C1 não via passa a estar no top 5, duas
+perguntas melhoram, nenhuma se perde, nenhuma métrica agregada desce — e há, ao
+mesmo tempo, duas perguntas pioradas e uma base de evidência que não sustenta
+decisão arquitetural. Não autoriza promoção para produção.
 
-Uma ressalva que distingue esta fase da D4.8.2: o critério de decisão foi
-**declarado na implementação e registado como fixado antes da execução**, mas
-não é pré-registo auditável — a regra e o resultado vivem na mesma árvore de
-trabalho e nenhum commit os separa, pelo que o histórico não prova a ordem
-temporal. A D4.8.2 tinha essa garantia, com o protocolo selado por
-`protocol_digest` antes da calibração; a D4.9 não a repetiu. A margem é
-apertada (ganho 0,0264 contra um limiar de 0,02), e o artefacto transporta a
-reserva em `decision_rule.pre_registration_caveat`.
+**Não existe limiar numérico de «ganho suficiente» na decisão.** Uma versão
+anterior desta fase tinha um `MATERIAL_DELTA = 0,02` e concluía `A` por o ganho
+de 0,0264 o ultrapassar. O instrumento foi removido por duas razões
+independentes: o enunciado da fase proibia-o explicitamente («descrever
+magnitude e casos concretos»), e o limiar vivia na mesma árvore de trabalho que
+o resultado, sem commit que os separasse. A decisão passou a assentar em factos
+qualitativos, e a magnitude é reportada para ser lida.
+
+A D4.8.2 tinha a garantia que esta fase não teve — protocolo selado por
+`protocol_digest` antes da calibração, verificado pelo avaliador. É a lição
+metodológica da D4.9, registada no relatório e no campo
+`decision_rule.evidence_base_note` do artefacto.
 
 Detalhe em
 [`docs/relatorios/d4-9-hybrid-rrf-p1-s1.md`](../relatorios/d4-9-hybrid-rrf-p1-s1.md).
@@ -1317,8 +1324,9 @@ arquitetura híbrida; a D4.8.1 completou os julgamentos e **reviu essa
 recomendação**, pedindo primeiro um estudo de admissibilidade; a D4.8.2 fez esse
 estudo e mediu que uma regra de limiar único calibrada só em DEV generaliza para
 cenários independentes deste corpus; a D4.9, na branch
-`analysis/d4-9-hybrid-rrf`, mediu a fusão por RRF e concluiu **A**, que nesta
-amostra significa «justifica investigar mais». Nada disso alterou o sistema:
+`analysis/d4-9-hybrid-rrf`, mediu a fusão por RRF e concluiu **D** — há
+complementaridade concreta, mas a amostra não sustenta promoção. Nada disso
+alterou o sistema:
 **recomendar ou medir uma experiência não é adotar uma arquitetura**, nenhuma
 política de abstenção existe no *answering*, nenhum retriever híbrido existe e
 nenhuma rota mudou de estratégia. Ver

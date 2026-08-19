@@ -21,9 +21,9 @@ Esta fase mede exatamente isso, e só isso.
 > aproveita a complementaridade observada e melhora a recuperação de evidência
 > relevante, sem degradação desproporcionada de ranking ou de ruído.
 
-A hipótese podia ser rejeitada, e o critério que a rejeitaria foi escrito antes
-de a experiência correr. Sobre o alcance dessa afirmação, ver §16 — não é
-pré-registo auditável, e o relatório não a usa como se fosse.
+A hipótese podia ser rejeitada. O critério que a avalia é **qualitativo** e não
+compara o ganho com nenhum limiar numérico — ver §16, incluindo o instrumento
+que esta fase teve de remover.
 
 ## 3. Contexto experimental
 
@@ -36,8 +36,8 @@ pré-registo auditável, e o relatório não a usa como se fosse.
 | `ground_truth_digest` | `bbaea746…1b1301` — o repooled lexical+denso da D4.8.1, inalterado |
 | Fonte | `lexical-dense-comparison-p1-s1.json`, `result_digest` `b708a70e…f7a003` |
 | Perguntas medidas | 12 (Q013 e Q014 fora, pelas razões herdadas) |
-| `result_digest` D4.9 | `16171d6c6bf6ebcebac289a321e22c6d34ff8abcf1d50854566e0fc2d88112c6` |
-| `execution_digest` D4.9 | `636609d71312725ca386ba859c316b00b7c66e338f15131ed92d4ffd0cebcd10` |
+| `result_digest` D4.9 | `9ce33d93c29a54c30cdb03929664ba79ae20960ffd602042dd2f43d99a109c51` |
+| `execution_digest` D4.9 | `b8da059090d3d2ecd49f65755522c78acec56f9bb7e23e108929425b4ea2e759` |
 
 A fase **não executou retrieval**. Não contactou a base de dados, o fornecedor
 de embeddings nem a rede: leu os rankings persistidos e reordenou-os. Há teste
@@ -282,63 +282,78 @@ informação institucional que o corpus não tem.
    o sentido do enviesamento difere por métrica e está documentado no protocolo.
 9. **O híbrido não foi avaliado com política de admissão própria.** Q013 mostra
    que continua sem saber recusar.
-10. **O resultado não autoriza promoção para produção.**
+10. **Não houve protocolo selado antes da execução.** A D4.8.2 fixou o seu
+    desenho num artefacto com `protocol_digest` próprio, verificado pelo
+    avaliador; a D4.9 não repetiu esse desenho, e é a lição metodológica da fase.
+11. **O resultado não autoriza promoção para produção.**
 
 ## 15. Decisão
 
-**A — HYBRID_SUPPORTED**, pelo critério declarado na implementação e aplicado
-sem interpretação (sobre o estatuto desse critério, ver §16):
+**D — HYBRID_PROMISING_BUT_NEEDS_BROADER_EVALUATION.**
 
-- nenhuma pergunta resolvida por C1 foi perdida por C2;
-- `Recall@5` não desce (+0,0417);
-- `nDCG@5` sobe 0,0264, acima do `material_delta` de 0,02;
-- o único alvo de grau 2 exclusivo de C0 foi preservado, e os oito exclusivos de
-  C1 também.
+Há **benefício concreto** e não há regressão agregada:
 
-O que isto autoriza a dizer: **a fusão por posição aproveitou a
-complementaridade que a D4.8.1 tinha observado — recuperou, num caso concreto,
-evidência que a condição densa perdia — sem perder nenhuma pergunta e sem
-degradar nenhuma métrica agregada.**
+- o alvo de grau 2 que C1 não tinha no top 5 (`Q011:P1-DOC-003#37`) passa a
+  estar;
+- duas perguntas melhoram face a C1;
+- nenhuma pergunta resolvida por C1 deixa de o ser;
+- nenhuma métrica agregada desce.
 
-O que isto **não** autoriza a dizer: que o híbrido é melhor do que o denso de
-uma forma que sustente uma mudança de arquitetura. O ganho agregado é a soma de
-duas melhorias grandes e duas degradações grandes sobre quatro perguntas, e uma
-das degradações (Q003) foi decidida por um critério de desempate arbitrário. Com
-esta amostra, «A» significa «vale a pena investigar mais», e não «está provado».
+E há, ao mesmo tempo, **duas perguntas pioradas** (Q001 e Q003) e uma base de
+evidência que não sustenta uma decisão arquitetural: doze perguntas medidas,
+**sete** em que a fusão podia sequer agir, **quatro** que mudaram.
 
-`A` também não diz nada sobre answerability. C2 é uma experiência de
+O que isto autoriza a dizer: **a fusão por posição aproveitou a complementaridade
+que a D4.8.1 tinha observado — recuperou, num caso concreto, evidência que a
+condição densa perdia.** É sinal favorável e justifica continuar a investigar.
+
+O que isto **não** autoriza a dizer: que o híbrido está suportado de forma geral.
+O ganho agregado é a soma de duas melhorias grandes contra duas degradações
+grandes, sobre quatro perguntas, e uma das degradações foi decidida por um
+critério de desempate sem significado de relevância (§11).
+
+`D` também não diz nada sobre answerability. C2 é uma experiência de
 recuperação: não sabe quando deve responder, e Q013 mostra-o.
 
-## 16. O estatuto do critério de decisão
+## 16. Porque não há limiar de «ganho suficiente»
 
-A decisão depende de `MATERIAL_DELTA = 0,02` contra um ganho observado de
-0,026388 — uma margem de 0,0064. Vale a pena ser exato sobre o que sustenta esse
-limiar.
+Uma versão anterior desta fase decidia comparando o delta de nDCG@5 com um
+`MATERIAL_DELTA = 0,02`. Com o ganho observado de 0,026388, o veredicto
+`A_HYBRID_SUPPORTED` assentava numa margem de 0,0064. **Esse instrumento foi
+removido**, e a razão principal não é a margem ser apertada.
 
-O valor foi escrito antes de a experiência correr. Mas vive na **mesma árvore de
-trabalho** que o resultado, e **nenhum commit separa um do outro**: o histórico
-do repositório não prova a ordem temporal. Quem auditar tem o meu testemunho e
-não tem mais nada. Por isso o relatório diz «declarado na implementação e
-registado como fixado antes da execução», e não «pré-registado» — a segunda
-formulação afirma uma garantia que o Git aqui não dá. O artefacto transporta a
-mesma reserva no campo `decision_rule.pre_registration_caveat`.
+**O enunciado da fase proibia-o.** «Não definir posteriormente um threshold
+numérico de "ganho suficiente". Descrever magnitude e casos concretos.» Eu
+introduzi exatamente esse limiar. A instrução existia porque um número escolhido
+por quem mede, para o comparar com o que mediu, não distingue efeito de desejo —
+e nenhuma justificação sobre a sua origem repara isso.
 
-A D4.8.2 tinha essa garantia e esta não tem: lá, o protocolo, o espaço de
-parâmetros e o critério de seleção foram selados num artefacto com
-`protocol_digest` próprio **antes** da calibração, e o comando de avaliação
-verificava-o. A D4.9 não repetiu esse desenho, e devia — é a lição metodológica
-desta fase e fica registada como tal.
+Há uma segunda razão, independente: o limiar vivia na mesma árvore de trabalho
+que o resultado, sem commit que os separasse, pelo que o histórico não provava
+que precedia a medição. A D4.8.2 **tinha** essa garantia — protocolo, espaço de
+parâmetros e critério de seleção selados num artefacto com `protocol_digest`
+próprio, verificado pelo avaliador — e a D4.9 não a repetiu.
 
-**Considerei descer para `D`** — `HYBRID_PROMISING_BUT_NEEDS_BROADER_EVALUATION`
-descreveria melhor a cautela que o resto do relatório exprime. Não o fiz, e a
-razão é que seria pior: a regra implementada, aplicada aos números medidos, dá
-`A`. Trocá-la para `D` depois de ver que a margem é apertada é exatamente a
-afinação pós-hoc que esta fase se comprometeu a não fazer — e seria uma segunda
-decisão sem regra nenhuma por trás, o oposto do que o problema pede. Mantenho
-`A` com a reserva declarada, e note-se que, nesta amostra, `A` e `D` conduzem ao
-**mesmo próximo passo** (§20): uma avaliação independente mais ampla, sem
-promoção para produção. A diferença entre os dois rótulos não altera nenhuma
-ação.
+Numa versão anterior deste relatório argumentei que descer de `A` para `D` seria
+afinação pós-hoc. O argumento estava errado, e vale a pena dizer porquê: pressupõe
+que a regra era legítima. Não era. Remover um instrumento que não devia ter
+existido não é afinar o resultado — **mantê-lo é que era o erro**, e `A` só
+existia porque ele existia.
+
+A decisão passa a assentar em **factos qualitativos**: houve regressão? houve
+benefício concreto? a base de evidência suporta uma decisão arquitetural? A
+magnitude é reportada em `aggregate_delta_c2_minus_c1` para ser lida, não
+comparada com um número. Há teste que o verifica pela propriedade que interessa:
+**escalar todos os deltas por qualquer fator positivo não muda a decisão** — se
+algum ramo tivesse um limiar, escalar atravessá-lo-ia.
+
+`EVIDENCE_BASE_SUPPORTS_ARCHITECTURAL_DECISION` é `False` e é uma propriedade do
+**desenho**, não do resultado: um corpus, um anotador, um modelo de embeddings,
+doze perguntas medidas e a fusão só age onde ambas as condições devolvem alguma
+coisa. Isto era verdade antes de a experiência correr. A consequência é que `A`
+era **inalcançável nesta fase por construção** — o que não é um veredicto sobre o
+híbrido, é o reconhecimento de que esta experiência nunca foi dimensionada para o
+promover.
 
 ## 17. Reprodutibilidade
 
@@ -373,7 +388,10 @@ continua a devolver `PostgresLexicalRetriever`, fixado por teste. Não criou
 D4.8.2. Não implementou reranking, cross-encoder, fusão de scores, novo modelo
 de embeddings, reescrita de consultas nem alteração de profundidade.
 
-Não foi feito commit, push nem Pull Request.
+Durante a execução experimental — medição, reprodução e verificação — não foi
+feito commit, push nem Pull Request. O trabalho foi publicado depois, na
+branch `analysis/d4-9-hybrid-rrf` e no Pull Request #59, que à data desta
+revisão continua aberto como *draft* e fora da `main`.
 
 ## 20. Próximo passo
 
@@ -387,6 +405,9 @@ produção. O que ela precisa de ter, e esta fase não teve:
 - **profundidade de fonte como variável separada**, com o repooling que ela
   exige;
 - **a hipótese `hybrid + admission`** como experiência distinta, porque Q013
-  deixa claro que fundir não resolve abster-se.
+  deixa claro que fundir não resolve abster-se;
+- **protocolo selado e commitado antes de medir**, como a D4.8.2 fez — condições,
+  critério de decisão e desempate fixados num artefacto com digest próprio, para
+  que a ordem temporal deixe de depender do testemunho de quem mede.
 
 Nada disto foi implementado.

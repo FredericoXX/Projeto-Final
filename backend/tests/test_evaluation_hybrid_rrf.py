@@ -37,7 +37,6 @@ from scripts.evaluate_hybrid_rrf import (
     DECISION_B,
     DECISION_C,
     DECISION_D,
-    MATERIAL_DELTA,
     SOURCE_RESULT_DIGEST,
     GuardError,
     build_payload,
@@ -504,53 +503,119 @@ def _analysis(**overrides: Any) -> dict[str, Any]:
         "questions_solved_by_c1_and_lost_by_c2": [],
         "grade2_targets_c1_missed_and_c2_recovered": [],
         "questions_improved_over_c1": 0,
-        "grade2_targets_exclusive_to_c0": 1,
-        "grade2_targets_exclusive_to_c0_preserved_by_c2": 1,
+        "questions_worsened_versus_c1": 0,
     }
     base.update(overrides)
     return base
 
 
-def _delta(ndcg5: float, recall5: float = 0.0) -> dict[str, Any]:
-    return {"ndcg": {"5": ndcg5}, "recall": {"5": recall5}}
+def _delta(ndcg5: float = 0.0, recall5: float = 0.0) -> dict[str, Any]:
+    """Deltas completos, com zero em tudo o que o teste não estiver a variar."""
+    return {
+        "ndcg": {"1": 0.0, "3": 0.0, "5": ndcg5},
+        "recall": {"1": 0.0, "3": 0.0, "5": recall5},
+        "mrr": 0.0,
+    }
 
 
 def test_losing_a_question_forces_b_whatever_the_aggregate_says() -> None:
-    outcome = decide(_delta(0.5, 0.5), _analysis(questions_solved_by_c1_and_lost_by_c2=["Q003"]))
+    outcome = decide(
+        _delta(0.5, 0.5), _analysis(questions_solved_by_c1_and_lost_by_c2=["Q003"])
+    )
     assert outcome["decision"] == DECISION_B
 
 
-def test_a_recall_drop_forces_b() -> None:
-    assert decide(_delta(0.5, -0.01), _analysis())["decision"] == DECISION_B
+def test_any_aggregate_metric_dropping_forces_b() -> None:
+    outcome = decide(_delta(0.5, -0.01), _analysis(questions_improved_over_c1=3))
+    assert outcome["decision"] == DECISION_B
+    assert outcome["aggregate_metrics_that_decreased"] == ["recall@5"]
 
 
-def test_a_material_gain_without_regression_is_a() -> None:
-    assert decide(_delta(MATERIAL_DELTA, 0.0), _analysis())["decision"] == DECISION_A
+def test_no_regression_and_no_concrete_benefit_is_c() -> None:
+    """Nada aconteceu: a fusão não recuperou nem melhorou coisa nenhuma."""
+    assert decide(_delta(), _analysis())["decision"] == DECISION_C
 
 
-def test_a_gain_below_the_budget_with_concrete_benefit_is_d() -> None:
-    outcome = decide(
-        _delta(MATERIAL_DELTA / 2, 0.0),
-        _analysis(grade2_targets_c1_missed_and_c2_recovered=["Q011:x"]),
-    )
-    assert outcome["decision"] == DECISION_D
-
-
-def test_no_regression_no_benefit_and_no_material_gain_is_c() -> None:
-    assert decide(_delta(0.0, 0.0), _analysis())["decision"] == DECISION_C
-
-
-def test_a_lost_c0_exclusive_target_prevents_a() -> None:
-    """Perder a evidência que só o lexical via anula a razão de existir da fusão."""
+def test_concrete_benefit_with_per_question_regressions_is_d() -> None:
     outcome = decide(
         _delta(0.5, 0.5),
         _analysis(
-            grade2_targets_exclusive_to_c0=1,
-            grade2_targets_exclusive_to_c0_preserved_by_c2=0,
-            questions_improved_over_c1=1,
+            grade2_targets_c1_missed_and_c2_recovered=["Q011:x"],
+            questions_improved_over_c1=2,
+            questions_worsened_versus_c1=2,
         ),
     )
     assert outcome["decision"] == DECISION_D
+
+
+def test_concrete_benefit_without_regressions_is_still_d_in_this_phase() -> None:
+    """Mesmo o caso limpo não chega a `A`, e isso é uma propriedade do desenho.
+
+    A base de evidência desta fase — um corpus, um anotador, 12 perguntas — não
+    sustenta uma decisão arquitetural, e isso era verdade antes de a experiência
+    correr. `A` é inalcançável aqui por construção, não por o resultado ter sido
+    fraco.
+    """
+    outcome = decide(
+        _delta(0.9, 0.9),
+        _analysis(
+            grade2_targets_c1_missed_and_c2_recovered=["Q011:x"],
+            questions_improved_over_c1=5,
+            questions_worsened_versus_c1=0,
+        ),
+    )
+    assert outcome["decision"] == DECISION_D
+    assert outcome["evidence_base_supports_architectural_decision"] is False
+
+
+def test_a_is_reachable_only_with_a_sufficient_evidence_base(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """`A` existe na regra e é alcançável — mas não com este desenho.
+
+    O teste liga o interruptor que descreve a base de evidência para mostrar que
+    o ramo funciona. Nenhuma execução real desta fase o liga.
+    """
+    import scripts.evaluate_hybrid_rrf as runner
+
+    monkeypatch.setattr(runner, "EVIDENCE_BASE_SUPPORTS_ARCHITECTURAL_DECISION", True)
+    outcome = runner.decide(
+        _delta(0.9, 0.9),
+        _analysis(
+            grade2_targets_c1_missed_and_c2_recovered=["Q011:x"],
+            questions_improved_over_c1=5,
+            questions_worsened_versus_c1=0,
+        ),
+    )
+    assert outcome["decision"] == DECISION_A
+
+
+def test_no_branch_of_the_decision_compares_a_magnitude_to_a_threshold() -> None:
+    """A instrução da fase era «descrever magnitude», não compará-la com um número.
+
+    Uma versão anterior tinha um `MATERIAL_DELTA = 0,02` e decidia por ele. Este
+    teste existe para que essa construção não volte sem se dar por isso.
+    """
+    import scripts.evaluate_hybrid_rrf as runner
+
+    assert runner.DECISION_HAS_NO_MAGNITUDE_THRESHOLD is True
+    assert not hasattr(runner, "MATERIAL_DELTA")
+    assert runner.DECISION_RULE["magnitude_threshold"] is None
+
+    # A prova operacional, e não uma leitura do código-fonte: **escalar todos os
+    # deltas por qualquer fator positivo não pode mudar a decisão.** Se algum
+    # ramo comparasse uma magnitude com um limiar, escalar atravessá-lo-ia e o
+    # veredicto mudava. O sinal continua a contar — é o que distingue subir de
+    # descer — mas a grandeza não.
+    analysis = _analysis(
+        grade2_targets_c1_missed_and_c2_recovered=["Q011:x"],
+        questions_improved_over_c1=2,
+        questions_worsened_versus_c1=2,
+    )
+    baseline = decide(_delta(0.026388, 0.041667), analysis)["decision"]
+    for factor in (0.001, 0.1, 1.0, 10.0, 1000.0):
+        scaled = _delta(0.026388 * factor, 0.041667 * factor)
+        assert decide(scaled, analysis)["decision"] == baseline, factor
 
 
 def test_the_recorded_decision_follows_the_rule(artefact: dict[str, Any]) -> None:
