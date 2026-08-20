@@ -1,19 +1,23 @@
 # Estado atual
 
-**Observação:** 2026-08-19 · `main` em
-`cce62fbb856a9346cb7f903f17a505666d55a4d5` (merge do Pull Request #59) ·
+**Observação:** 2026-08-20 · `main` em
+`bc703e1981d34af5e000dae2370d815d5deeca9f` (merge do Pull Request #60) ·
 repositório `FredericoXX/Projeto-Final`
 
 Os factos abaixo descrevem a `main` em
-`cce62fbb856a9346cb7f903f17a505666d55a4d5`, merge do Pull Request #59 que
-integrou a fusão lexical + densa por RRF (D4.9). Trabalho em curso noutras
-branches não é estado deste snapshot e, quando referido, é identificado como tal.
+`bc703e1981d34af5e000dae2370d815d5deeca9f`, merge do Pull Request #60 que
+integrou a infraestrutura de pré-registo da avaliação independente (D4.10a).
+Trabalho em curso noutras branches não é estado deste snapshot e, quando
+referido, é identificado como tal.
 
-**Exceção declarada:** o **pré-registo da avaliação independente e ampliada**
-(D4.10a) vive na branch `analysis/d4-10a-evaluation-protocol` e ainda **não está
-na `main`**. O que é trabalho de branch está identificado como tal em cada
-afirmação; ver
-[Pré-registo da D4.10](#pré-registo-da-avaliação-independente-de-retrieval-d410a-branch).
+**Ressalva metodológica, não documental:** o Pull Request #60 **está integrado**,
+e a D4.10a **não está concluída**. O PR declarava, e continua verdade, que a
+validação humana está por fazer. O que entrou na `main` é infraestrutura de
+pré-registo, painel proposto, digests provisórios e guardas — **não** um
+pré-registo congelado. `human_confirmed` é 0, `pending_human_review` é 50,
+`freeze_ready` é `false`, o protocolo está em `DRAFT` e a **D4.10b permanece
+bloqueada**. Ver
+[Pré-registo da D4.10](#pré-registo-da-avaliação-independente-de-retrieval-d410a).
 
 A baseline experimental de dense retrieval (D4.8) **está na `main`** desde o
 Pull Request #56, o repooling com a comparação definitiva (D4.8.1) desde o
@@ -1117,23 +1121,33 @@ metodológica da D4.9, registada no relatório e no campo
 Detalhe em
 [`docs/relatorios/d4-9-hybrid-rrf-p1-s1.md`](../relatorios/d4-9-hybrid-rrf-p1-s1.md).
 
-## Pré-registo da avaliação independente de retrieval (D4.10a, branch)
+## Pré-registo da avaliação independente de retrieval (D4.10a)
 
-**Estado:** trabalho de branch (`analysis/d4-10a-evaluation-protocol`), **não
-está na `main`**. Esta fase **não executou experiência nenhuma**: não gerou
-embeddings, não correu retrieval, não construiu pool, não observou rankings, não
-julgou relevância e não calculou métricas.
+**Estado:** infraestrutura integrada na `main` pelo Pull Request #60; **a fase
+não está concluída**. O protocolo está em `DRAFT`, a revisão humana está por
+fazer e a D4.10b está bloqueada. Esta fase **não executou experiência nenhuma**:
+não gerou embeddings, não correu retrieval, não construiu pool, não observou
+rankings, não julgou relevância e não calculou métricas.
+
+O PR #60 pedia explicitamente que não fosse feito merge antes da validação
+humana e foi integrado à mesma. Isso não se esconde nem se usa como prova: o que
+está na `main` é uma proposta auditável, e o pré-registo que autoriza a execução
+é uma selagem futura — `SEALED`, com revisão humana feita, num commit anterior
+ao do primeiro embedding.
 
 Existe porque o problema da D4.9 não foi só a amostra pequena: foi que a regra de
 decisão e o resultado nasceram no mesmo commit, e nada no histórico provava a
 ordem. A D4.10 separa desenho e execução em fases distintas — e em commits
 distintos.
 
-O que a branch acrescenta: `app/evaluation/d4_10_protocol.py` (puro, **não**
-reexportado por `__init__.py`), `scripts/stamp_d4_10_question_set.py`,
-`scripts/seal_d4_10_protocol.py`,
+O que existe: `app/evaluation/d4_10_protocol.py` e
+`app/evaluation/d4_10_statistics.py` (puros, **não** reexportados por
+`__init__.py`), `scripts/stamp_d4_10_question_set.py`,
+`scripts/seal_d4_10_protocol.py`, `scripts/build_d4_10_review_workbook.py`,
 [`docs/evaluation/d4-10-question-set-v1.json`](../evaluation/d4-10-question-set-v1.json)
-e [`docs/evaluation/d4-10-protocol-v1.json`](../evaluation/d4-10-protocol-v1.json).
+e [`docs/evaluation/d4-10-protocol-v1.json`](../evaluation/d4-10-protocol-v1.json),
+mais a folha de revisão
+[`docs/evaluation/d4-10-human-review-workbook.md`](../evaluation/d4-10-human-review-workbook.md).
 
 O painel novo: **32 cenários, 50 perguntas** (42 ANSWERABLE, 8 NO_EVIDENCE),
 identificadores com prefixo `DX`, sobreposição zero de identificadores e de texto
@@ -1145,18 +1159,64 @@ desempate da D4.9**: a sensibilidade observada em Q003 é hipótese a observar, 
 autorização para corrigir o algoritmo dentro do mesmo teste. Não entra política
 de admissão — a D4.8.2 continua fechada.
 
-A decisão A/B/C está pré-registada e **não tem limiar de ganho material**: `A`
-exige que o intervalo de confiança de 95%, reamostrado por cenário, não inclua
-zero. O bootstrap reamostra `scenario_id` e não perguntas, porque paráfrases da
-mesma família não são observações independentes.
+**O bootstrap e a decisão são código, não prosa.** Fixar `unit=scenario_id`,
+10000 réplicas, IC de 95% e uma seed não determina um resultado: faltava dizer o
+método do intervalo, o peso de cada cenário e quem participa. Estão congelados em
+`app/evaluation/d4_10_statistics.py`, com testes sobre dados sintéticos — o
+estimador é a macro-média **por cenário** (cada cenário pesa um, tenha uma ou
+três paráfrases), o intervalo é *percentile* com quantil linear tipo 7, o PRNG é
+`random.Random(20260819)` sobre identificadores ordenados, e só perguntas
+ANSWERABLE entram. O protocolo transporta essa descrição gerada pelo próprio
+módulo, para que descrição e cálculo não possam divergir.
+
+A regra A/B/C é **total e determinística**: `A` exige `CI95_lower > 0` **e**
+Recall@5 e `solved_question_rate` de C2 não inferiores aos de C1; `B` exige
+`CI95_upper < 0`; **tudo o resto é `C`**. Saíram as formulações interpretativas
+(«degradação consistente», «resultados mistos»), que abriam espaço para escolher
+o ramo depois de ver os números. Não há limiar de ganho material — multiplicar
+todos os efeitos por um fator positivo não muda a decisão, e há teste que o
+fixa. As métricas secundárias são reportadas e discutidas, e não reclassificam.
 
 **A fase não está fechada.** Os rótulos ANSWERABLE/NO_EVIDENCE foram trabalhados
 contra os 1834 chunks indexados — 48 âncoras localizadas e verificadas, e para
 cada NO_EVIDENCE os termos procurados e o que apareceu — mas a validação exigida
 é **humana**, e uma máquina não assina por um humano. As 50 perguntas estão
-pendentes de revisão, `annotator` é nulo e `human_review.freeze_ready` é `false`.
-Um cenário (`SC-N04`) está marcado `HUMAN_REVIEW_REQUIRED` por proximidade
-semântica com DA036/DA037.
+pendentes de revisão e `annotator` é nulo em todas.
+
+**Confirmação humana coerente.** Marcar `review_status = HUMAN_CONFIRMED` com um
+nome já não basta: o `validation_status` do bloco de validação tem de dizer o
+mesmo, o anotador tem de ser um nome real, e a justificação e a evidência (ou os
+termos procurados) têm de existir. Dois campos que descrevem o mesmo facto não
+podem discordar, em nenhuma das duas direções, e o resumo lê os três — antes,
+contava pelo `review_status` e uma pergunta com o bloco ainda pendente passava
+por confirmada.
+
+**Independência semântica é decidida por humano, cenário a cenário.**
+Sobreposição zero de identificadores e de texto normalizado é o que o código
+prova sozinho, e não é independência. Cada um dos 32 cenários tem agora um bloco
+`historical_overlap_review` — `PENDING_HUMAN_REVIEW` em todos —, com os estados
+finais `INDEPENDENT`, `RELATED_BUT_DISTINCT` (exige referências e justificação) e
+`EXCLUDE`. Um cenário `EXCLUDE` bloqueia o congelamento enquanto estiver no
+conjunto: sai antes da execução, não depois de se ver o que produziu. O
+`freeze_ready` verifica perguntas **e** cenários.
+
+A folha de revisão lista, por cenário, as históricas mais parecidas — e mostra
+onde esse auxílio falha: em `SC-N04`, DA036 e DA037, que a nota do conjunto já
+identifica como a preocupação real, ficam em sexto lugar e abaixo por
+sobreposição de palavras. Por isso o que o registo já cita aparece sempre, à
+margem da ordenação. Gerar a folha não é tê-la preenchido.
+
+**As garantias valem em qualquer caminho, não só no habitual.** Uma segunda
+auditoria mostrou três sítios onde não valiam: o resumo contava um cenário como
+revisto pelo rótulo do estado enquanto a guarda o recusava — bastava um
+`INDEPENDENT` sem anotador para `freeze_ready` ficar verdadeiro e o protocolo
+sair `SEALED`; `historical_refs: ["Q999"]` passava, porque só o formato era
+verificado; e «apenas ANSWERABLE» era uma frase no protocolo que nada impunha. As
+três estão fechadas: o resumo passa pela mesma verificação que levanta o erro,
+`build_protocol` valida internamente em vez de confiar no chamador, o manifesto
+enumera os 63 identificadores históricos reais contra os quais as referências são
+validadas, e a seleção do bootstrap passa por `eligible_scenario_deltas`, que
+recusa uma NO_EVIDENCE em vez de a ignorar.
 
 **Três digests, não um.** Uma auditoria independente mostrou que confirmar
 `DX001` com um anotador ou `DX002` com outro produzia digests idênticos: a
@@ -1164,22 +1224,34 @@ validação humana ficava fora de toda a selagem e seria reescrevível sem rasto
 depois de feita. O `question_set_digest` continua a cobrir só a substância das
 perguntas — se cobrisse a revisão, validar invalidaria o conjunto validado — e
 juntam-se-lhe o `scenario_digest`, agora com os metadados dos cenários (tipo,
-tópico, documento alvo, intenção), e o `human_review_digest`, que cobre o estado
-de revisão e o bloco de validação inteiro de cada pergunta. Os três entram no
-`protocol_digest` e os três são precondição da D4.10b. Carimbar
-(`stamp_d4_10_question_set`) e selar (`seal_d4_10_protocol`) são comandos
-separados para que a selagem **verifique** a identidade declarada em vez de a
-recalcular e concordar consigo própria.
+tópico, documento alvo, intenção), e o `human_review_digest`, que cobre **toda**
+a revisão humana: por pergunta, o estado e o bloco de validação inteiro; por
+cenário, a decisão de independência. Os três entram no `protocol_digest` e os
+três são precondição da D4.10b. Carimbar (`stamp_d4_10_question_set`) e selar
+(`seal_d4_10_protocol`) são comandos separados para que a selagem **verifique** a
+identidade declarada em vez de a recalcular e concordar consigo própria.
 
-Digests em vigor — **não finais**, porque o `human_review_digest` mudará com a
+**`DRAFT` e `SEALED` estão separados operacionalmente.** `seal_d4_10_protocol`
+sem argumentos extra **recusa** produzir um protocolo enquanto `freeze_ready` for
+falso — sai com código 5 e não escreve ficheiro. Quem quiser o artefacto
+provisório pede-o pelo nome, com `--draft`; a opção autoriza produzir com revisão
+pendente, não escolhe o estado, que é derivado da revisão real. Só `SEALED`
+desbloqueia a D4.10b.
+
+Digests em vigor — **provisórios**, porque o `human_review_digest` mudará com a
 revisão humana e o `protocol_digest` com ele:
 
 ```
-protocol_digest      6b066812d5c4ab7e8dc5d5095daad409549f6c0d71585bd782f25512d66e9b2a
+protocol_status      DRAFT
+protocol_digest      73522360acfe00e5d965f92b81eaee6e10e15333cd6ab12cbf587b9b44590fab
 question_set_digest  666ddb6f41e805f24dd885ef709527ad21ef11144c89638ac4488b126a77d093
 scenario_digest      1900150ef10729f85fee2d863fab612f0eb4cbc8ee8226257cb5d3efa686bb29
-human_review_digest  dccdb73a5722b0ed1513b67afd9eeca16be95b1d03dcddf02c5613735cbf3845
+human_review_digest  0fbc06e5bf916c294aa8d5996b2b6c74013ea224b7924f1cd838a6a076c0f670
 ```
+
+O `question_set_digest` e o `scenario_digest` não mudaram com esta correção: o
+conteúdo das perguntas e os metadados dos cenários são os mesmos. Mudou o
+`human_review_digest`, porque passou a cobrir a revisão de independência.
 
 Detalhe em
 [`docs/relatorios/d4-10a-evaluation-protocol.md`](../relatorios/d4-10a-evaluation-protocol.md).
@@ -1189,20 +1261,23 @@ Detalhe em
 Os testes do backend usam PostgreSQL real numa base dedicada; os do frontend
 usam MSW, sem rede nem backend.
 
-Contagem de execução medida em **2026-08-19**, sobre o conteúdo do pré-registo
-da D4.10a na branch `analysis/d4-10a-evaluation-protocol` (base `cce62fb`, antes
-de qualquer merge): **2099 passed, 1 warning** (`python -m pytest -q`). O warning
-é o `StarletteDeprecationWarning` pré-existente de `fastapi/testclient.py`. Na mesma
-data e sobre o mesmo conteúdo, `mypy app tests scripts` reporta **230 source
+Contagem de execução medida em **2026-08-20**, sobre o conteúdo da correção da
+D4.10a na branch `analysis/d4-10a-corretiva` (base `bc703e1`, antes de qualquer
+merge): **2165 passed, 1 warning** (`python -m pytest -q`). O warning é o
+`StarletteDeprecationWarning` pré-existente de `fastapi/testclient.py`. Na mesma
+data e sobre o mesmo conteúdo, `mypy app tests scripts` reporta **232 source
 files** sem erros e `ruff check` passa sobre `app`, `scripts` e `tests`. O
 frontend **não foi alterado** por este trabalho.
 
-Os 51 testes adicionais face à `main` vivem todos num ficheiro novo,
-`tests/test_evaluation_d4_10_protocol.py`, e nenhum teste existente foi editado.
-A contagem anterior, medida sobre a D4.9, era de **2048 passed**. Dos 51, 16
-entraram com a correção dos digests descrita acima — incluindo a reprodução do
-achado da auditoria: duas revisões diferentes do mesmo painel têm de produzir
-`protocol_digest` diferentes.
+Os testes da D4.10a vivem todos num ficheiro novo,
+`tests/test_evaluation_d4_10_protocol.py`, hoje com **117**; nenhum teste
+existente de outra fase foi editado. A progressão: **2048** sobre a D4.9,
+**2099** com o pré-registo integrado pelo PR #60, **2165** com esta correção. Os
+66 acrescentados agora cobrem a coerência da confirmação humana, a revisão de
+independência dos cenários, a separação `DRAFT`/`SEALED`, o bootstrap e a regra
+A/B/C — esta última exercitada sobre dados sintéticos, porque a decisão tem de
+ser testável antes de existirem resultados para decidir —, mais os três achados
+da segunda auditoria, cada um com o seu teste negativo.
 
 Os 63 testes que a D4.8.2 acrescentou vivem todos num ficheiro novo,
 `tests/test_evaluation_dense_admission.py`. **Nenhum teste existente
@@ -1395,8 +1470,9 @@ recomendação**, pedindo primeiro um estudo de admissibilidade; a D4.8.2 fez es
 estudo e mediu que uma regra de limiar único calibrada só em DEV generaliza para
 cenários independentes deste corpus; a D4.9 mediu a fusão por RRF e
 concluiu **D** — há complementaridade concreta, mas a amostra não sustenta
-promoção; a D4.10a, na branch `analysis/d4-10a-evaluation-protocol`, prepara o
-painel independente que a D4.9 pediu, ainda sem executar coisa nenhuma. Nada disso
+promoção; a D4.10a prepara o
+painel independente que a D4.9 pediu, ainda sem executar coisa nenhuma e ainda
+em `DRAFT`, à espera de revisão humana. Nada disso
 alterou o sistema:
 **recomendar ou medir uma experiência não é adotar uma arquitetura**, nenhuma
 política de abstenção existe no *answering*, nenhum retriever híbrido existe e

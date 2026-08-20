@@ -34,6 +34,8 @@ from app.evaluation.d4_10_protocol import (
     verify_protocol_has_no_results,
     verify_question_set,
 )
+from app.evaluation.d4_10_statistics import decision_block as statistics_decision_block
+from app.evaluation.d4_10_statistics import protocol_block as statistics_protocol_block
 
 PROTOCOL_VERSION: Final = "d4.10-protocol-v1"
 QUESTION_SET_VERSION: Final = "d4.10-question-set-v1"
@@ -41,6 +43,15 @@ QUESTION_SET_VERSION: Final = "d4.10-question-set-v1"
 EXIT_OK: Final = 0
 EXIT_OUTPUT_EXISTS: Final = 3
 EXIT_GUARD_FAILED: Final = 4
+#: Selagem final pedida com revisão humana por concluir. Código próprio para
+#: que a diferença entre «o conjunto está mal» e «o conjunto está por rever»
+#: seja legível por um script de CI sem ler a mensagem.
+EXIT_HUMAN_REVIEW_REQUIRED: Final = 5
+
+#: Um protocolo produzido antes da revisão humana é uma proposta; só um
+#: protocolo com toda a revisão feita desbloqueia a D4.10b.
+PROTOCOL_DRAFT: Final = "DRAFT"
+PROTOCOL_SEALED: Final = "SEALED"
 
 #: Identidade das três condições, copiada das fases que as mediram e **não**
 #: reinventada aqui. A D4.10 mede generalização sobre perguntas novas: alterar
@@ -193,54 +204,12 @@ EMBEDDING_FREEZE_PROTOCOL: Final[dict[str, Any]] = {
     "generated_in_d4_10a": False,
 }
 
-BOOTSTRAP_PROTOCOL: Final[dict[str, Any]] = {
-    "unit": "scenario_id",
-    "unit_rationale": (
-        "Perguntas do mesmo cenario sao parafrases da mesma familia semantica e "
-        "nao sao observacoes independentes. Reamostrar por pergunta duplicaria "
-        "evidencia estatistica que nao existe."
-    ),
-    "replicates": 10000,
-    "confidence_interval": 0.95,
-    "seed": 20260819,
-    "intervals_for": [
-        "delta_ndcg_at_5_c2_minus_c1",
-        "delta_mrr_c2_minus_c1",
-        "delta_recall_at_5_c2_minus_c1",
-        "delta_solved_question_rate_c2_minus_c1",
-    ],
-    "forbidden": [
-        "usar o bootstrap para escolher configuracao",
-        "alterar a seed depois de observar resultados",
-    ],
-}
+#: O bootstrap e a regra de decisão vivem em ``app/evaluation/d4_10_statistics``,
+#: junto do código que os implementa: uma descrição que não pode divergir do
+#: cálculo é melhor pré-registo do que uma descrição bem escrita ao lado dele.
+BOOTSTRAP_PROTOCOL: Final[dict[str, Any]] = statistics_protocol_block()
 
-DECISION_PROTOCOL: Final[dict[str, Any]] = {
-    "magnitude_threshold": None,
-    "magnitude_threshold_note": (
-        "NAO existe limiar de 'ganho material'. A D4.9 introduziu um "
-        "MATERIAL_DELTA = 0.02 contra a instrucao explicita da fase e teve de o "
-        "remover. A magnitude e reportada como estimativa, intervalo, casos e "
-        "cenarios."
-    ),
-    "A_EVIDENCE_FOR_HYBRID": (
-        "delta nDCG@5 C2-C1 positivo E o intervalo de confianca de 95% agrupado "
-        "por cenario NAO inclui zero E Recall@5 de C2 nao inferior ao de C1 E "
-        "solved_question_rate de C2 nao inferior ao de C1. Significa evidencia "
-        "no painel independente de que C2 melhora C1 - NAO significa producao."
-    ),
-    "B_EVIDENCE_FOR_DENSE": (
-        "o intervalo de delta nDCG@5 fica integralmente abaixo de zero, OU ha "
-        "degradacao consistente das metricas secundarias essenciais que torne a "
-        "fusao injustificavel. A causa tem de ser documentada."
-    ),
-    "C_INCONCLUSIVE": (
-        "o intervalo inclui zero, OU os resultados sao mistos, OU o ganho nao e "
-        "robusto entre cenarios, OU a amostra continua insuficiente para "
-        "distinguir C1 de C2. Um resultado inconclusivo e valido e NAO autoriza "
-        "novo tuning sobre o mesmo conjunto."
-    ),
-}
+DECISION_PROTOCOL: Final[dict[str, Any]] = statistics_decision_block()
 
 FORBIDDEN_CHANGES: Final = [
     "alterar o conjunto de perguntas depois de observar rankings",
@@ -267,7 +236,18 @@ def load_json(path: Path) -> dict[str, Any]:
 def build_protocol(
     question_set: dict[str, Any], snapshot: dict[str, Any]
 ) -> dict[str, Any]:
-    """Constrói o protocolo a partir do conjunto validado. Não mede nada."""
+    """Constrói o protocolo a partir do conjunto validado. Não mede nada.
+
+    O ``protocol_status`` sai daqui derivado do estado real da revisão, e não de
+    uma opção da linha de comandos: quem sela não escolhe se o que produz é
+    definitivo.
+
+    A validação é refeita aqui, e não assumida do chamador. O CLI já a faz, mas
+    a garantia não pode depender de por onde se entra: quem chame esta função
+    diretamente não pode obter um protocolo ``SEALED`` a partir de um conjunto
+    que ``verify_question_set`` recusaria.
+    """
+    verify_question_set(question_set)
     questions = question_set["questions"]
     # A identidade do corpus tem de bater certo dos dois lados. Sem isto, o
     # painel podia ter sido desenhado contra um snapshot e medido contra outro.
@@ -278,11 +258,20 @@ def build_protocol(
                 f"e o snapshot {snapshot[field]!r}"
             )
             raise ProtocolError(msg)
+    review = human_review_summary(question_set)
+    status = PROTOCOL_SEALED if review["freeze_ready"] else PROTOCOL_DRAFT
     protocol: dict[str, Any] = {
         "schema_version": 1,
         "contract": "d4_10_pre_registered_protocol",
         "protocol_version": PROTOCOL_VERSION,
         "phase": "D4.10a",
+        "protocol_status": status,
+        "protocol_status_note": (
+            "DRAFT: proposta auditavel, produzida antes de a revisao humana "
+            "estar completa. NAO satisfaz as precondicoes da D4.10b. SEALED: "
+            "toda a revisao humana concluida - perguntas e independencia dos "
+            "cenarios - e so este estado desbloqueia a D4.10b."
+        ),
         "scope_note": (
             "Protocolo pre-registado da D4.10. Nao contem resultados: nenhum "
             "embedding foi gerado, nenhum retrieval executado, nenhum ranking "
@@ -302,11 +291,11 @@ def build_protocol(
         "question_set_version": QUESTION_SET_VERSION,
         "question_set_digest": question_set_digest(questions),
         "scenario_digest": scenario_digest(question_set),
-        "human_review_digest": human_review_digest(questions),
+        "human_review_digest": human_review_digest(question_set),
         "distribution": distribution(question_set),
         "scenario_distribution": scenario_distribution(question_set),
         "document_distribution": document_distribution(question_set),
-        "human_review": human_review_summary(question_set),
+        "human_review": review,
         "conditions": CONDITIONS,
         "metric_protocol": METRIC_PROTOCOL,
         "pooling_protocol": POOLING_PROTOCOL,
@@ -315,13 +304,21 @@ def build_protocol(
         "decision_protocol": DECISION_PROTOCOL,
         "forbidden_changes": FORBIDDEN_CHANGES,
         "d4_10b_preconditions": [
+            "protocol_status igual a SEALED",
             "protocol_digest desta selagem",
             "question_set_digest identico",
             "scenario_digest identico",
             "human_review_digest identico",
             "human_review.freeze_ready verdadeiro",
+            "nenhum cenario marcado EXCLUDE presente no conjunto",
             "identidade de C0, C1 e C2 identica a declarada aqui",
         ],
+        "d4_10b_preconditions_note": (
+            "Um protocolo DRAFT nao satisfaz estas precondicoes, por mais "
+            "correto que seja o resto do artefacto. A selagem que autoriza a "
+            "execucao e a que existir depois da revisao humana, e tem de estar "
+            "num commit anterior ao do primeiro embedding ou ranking."
+        ),
         "digest_scope": {
             "question_set_digest": (
                 "substancia das perguntas: identificador, cenario, texto, "
@@ -333,11 +330,14 @@ def build_protocol(
                 "intencao, contagem - e as perguntas que o compoem."
             ),
             "human_review_digest": (
-                "estado de revisao e bloco de validacao inteiro de cada "
-                "pergunta: anotador, metodo, estado, racional e ancoras ou "
-                "termos procurados. Existe porque o question_set_digest nao "
-                "cobre nada disto; sem ele, a validacao humana ficaria fora da "
-                "selagem e seria editavel sem rasto."
+                "toda a revisao humana. Por pergunta: estado de revisao e bloco "
+                "de validacao inteiro - anotador, metodo, estado, racional e "
+                "ancoras ou termos procurados. Por cenario: a revisao de "
+                "independencia semantica face as fases historicas - estado, "
+                "referencias, justificacao e anotador. Existe porque nem o "
+                "question_set_digest nem o scenario_digest cobrem isto; sem "
+                "ele, a revisao humana ficaria fora da selagem e seria "
+                "editavel sem rasto."
             ),
         },
         "digest_algorithm": DIGEST_ALGORITHM,
@@ -360,6 +360,14 @@ def build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--snapshot", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--overwrite", action="store_true")
+    parser.add_argument(
+        "--draft",
+        action="store_true",
+        help=(
+            "produz um protocolo DRAFT com a revisao humana por concluir; "
+            "sem esta opcao, a selagem recusa"
+        ),
+    )
     return parser
 
 
@@ -382,13 +390,33 @@ def main(argv: Sequence[str] | None = None) -> int:
         print(f"error: {exc}", file=sys.stderr)
         return EXIT_GUARD_FAILED
 
+    # Um comando chamado «seal» que aceite selar o que ainda não está revisto
+    # não sela nada: produz um ficheiro com ar de definitivo. Quem quiser o
+    # artefacto provisório tem de o pedir pelo nome.
+    review = protocol["human_review"]
+    if protocol["protocol_status"] != PROTOCOL_SEALED and not args.draft:
+        overlap = review["scenario_overlap_review"]
+        print(
+            "error: revisão humana incompleta; a selagem final foi recusada.\n"
+            f"  perguntas por confirmar : {review['pending_human_review']}"
+            f" de {review['total_questions']}\n"
+            f"  cenários por rever      : {overlap['pending_or_inadmissible']}"
+            f" de {overlap['total_scenarios']}\n"
+            f"  cenários marcados EXCLUDE ainda presentes: "
+            f"{overlap['marked_exclude_still_present']}\n"
+            "  use --draft para produzir explicitamente um protocolo DRAFT.",
+            file=sys.stderr,
+        )
+        return EXIT_HUMAN_REVIEW_REQUIRED
+
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w", encoding="utf-8", newline="\n") as handle:
         json.dump(protocol, handle, ensure_ascii=False, indent=2, sort_keys=True)
         handle.write("\n")
 
-    review = protocol["human_review"]
     dist = protocol["distribution"]
+    overlap = review["scenario_overlap_review"]
+    print(f"protocol_status       : {protocol['protocol_status']}")
     print(f"cenarios              : {dist['scenario_count']}")
     print(f"perguntas             : {dist['question_count']}")
     print(f"  por intencao        : {dist['by_answerability_intent']}")
@@ -396,9 +424,14 @@ def main(argv: Sequence[str] | None = None) -> int:
     print(f"scenario_digest       : {protocol['scenario_digest']}")
     print(f"human_review_digest   : {protocol['human_review_digest']}")
     print(f"protocol_digest       : {protocol['protocol_digest']}")
-    print(f"revisao humana pendente: {review['pending_human_review']}")
+    print(f"perguntas confirmadas : {review['human_confirmed']}"
+          f" de {review['total_questions']}")
+    print(f"cenarios por rever    : {overlap['pending_or_inadmissible']}"
+          f" de {overlap['total_scenarios']}")
     print(f"pronto para congelar  : {review['freeze_ready']}")
     print(f"escrito               : {args.output}")
+    if protocol["protocol_status"] != PROTOCOL_SEALED:
+        print("aviso                 : DRAFT nao desbloqueia a D4.10b")
     return EXIT_OK
 
 
