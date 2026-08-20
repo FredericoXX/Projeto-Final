@@ -1,0 +1,1981 @@
+{
+  "contract": "d4_10_question_set",
+  "corpus_digest": "e8a0f08b5ecf37821244e62c266a48b1d64c928cabb75e0e23e08f9c895a447e",
+  "corpus_id": "P1",
+  "document_distribution": {
+    "NO_TARGET_DOCUMENT": {
+      "by_answerability_intent": {
+        "NO_EVIDENCE": 8
+      },
+      "by_scenario_type": {
+        "near_miss_negative": 2,
+        "plausible_absent": 6
+      },
+      "question_count": 8,
+      "scenario_count": 5,
+      "scenario_ids": [
+        "SC-N01",
+        "SC-N02",
+        "SC-N03",
+        "SC-N04",
+        "SC-N05"
+      ],
+      "topics": [
+        "calendario_2627_aulas",
+        "greve_interrupcao",
+        "residencia_internet",
+        "residencia_lavandaria",
+        "residencias_numero_vagas"
+      ]
+    },
+    "P1-DOC-002": {
+      "by_answerability_intent": {
+        "ANSWERABLE": 8
+      },
+      "by_scenario_type": {
+        "numeric_fee_deadline": 5,
+        "procedural": 3
+      },
+      "question_count": 8,
+      "scenario_count": 5,
+      "scenario_ids": [
+        "SC-A08",
+        "SC-A09",
+        "SC-A10",
+        "SC-A11",
+        "SC-A12"
+      ],
+      "topics": [
+        "epoca_especial_inscricao_2526",
+        "epoca_especial_realizacao_2526",
+        "regime_avaliacao_2526",
+        "reingresso_prazos_2627",
+        "transferencias_2fase_2627"
+      ]
+    },
+    "P1-DOC-003": {
+      "by_answerability_intent": {
+        "ANSWERABLE": 4
+      },
+      "by_scenario_type": {
+        "numeric_fee_deadline": 4
+      },
+      "question_count": 4,
+      "scenario_count": 3,
+      "scenario_ids": [
+        "SC-A13",
+        "SC-A14",
+        "SC-A15"
+      ],
+      "topics": [
+        "melhoria_notas_2324",
+        "regime_avaliacao_2324",
+        "segunda_chamada_2324"
+      ]
+    },
+    "P1-DOC-004": {
+      "by_answerability_intent": {
+        "ANSWERABLE": 15
+      },
+      "by_scenario_type": {
+        "exact_institutional_terms": 4,
+        "procedural": 5,
+        "semantic_interpretation": 3,
+        "semantic_reformulation": 2,
+        "strong_lexical_cue": 1
+      },
+      "question_count": 15,
+      "scenario_count": 9,
+      "scenario_ids": [
+        "SC-A01",
+        "SC-A02",
+        "SC-A03",
+        "SC-A16",
+        "SC-A17",
+        "SC-A18",
+        "SC-A19",
+        "SC-A20",
+        "SC-A25"
+      ],
+      "topics": [
+        "cartao_estudante_emissao",
+        "creditacao_uc",
+        "cursos_ferias",
+        "documentos_emitidos",
+        "escala_classificacao",
+        "limites_horario_plano",
+        "nota_minima_aprovacao",
+        "provas_avaliacao_continua",
+        "recurso_juri_prazo"
+      ]
+    },
+    "P1-DOC-005": {
+      "by_answerability_intent": {
+        "ANSWERABLE": 8
+      },
+      "by_scenario_type": {
+        "numeric_fee_deadline": 4,
+        "procedural": 3,
+        "semantic_reformulation": 1
+      },
+      "question_count": 8,
+      "scenario_count": 5,
+      "scenario_ids": [
+        "SC-A04",
+        "SC-A05",
+        "SC-A06",
+        "SC-A07",
+        "SC-A26"
+      ],
+      "topics": [
+        "multa_prestacoes",
+        "propina_prestacoes",
+        "propina_tfc",
+        "reclamacao_listas_ordenacao",
+        "reducao_protocolo"
+      ]
+    },
+    "P1-DOC-006": {
+      "by_answerability_intent": {
+        "ANSWERABLE": 1
+      },
+      "by_scenario_type": {
+        "semantic_reformulation": 1
+      },
+      "question_count": 1,
+      "scenario_count": 1,
+      "scenario_ids": [
+        "SC-A27"
+      ],
+      "topics": [
+        "outorga_tipos_cerimonia"
+      ]
+    },
+    "P1-DOC-007": {
+      "by_answerability_intent": {
+        "ANSWERABLE": 6
+      },
+      "by_scenario_type": {
+        "exact_institutional_terms": 2,
+        "numeric_fee_deadline": 1,
+        "semantic_interpretation": 1,
+        "strong_lexical_cue": 2
+      },
+      "question_count": 6,
+      "scenario_count": 4,
+      "scenario_ids": [
+        "SC-A21",
+        "SC-A22",
+        "SC-A23",
+        "SC-A24"
+      ],
+      "topics": [
+        "comissao_residentes",
+        "proibicoes_residencia",
+        "responsabilidade_quarto_partilhado",
+        "visitas_quinzenais"
+      ]
+    }
+  },
+  "human_review_digest": "dccdb73a5722b0ed1513b67afd9eeca16be95b1d03dcddf02c5613735cbf3845",
+  "independence_manifest": {
+    "flagged_for_human_review": [
+      "SC-N04: familia semantica proxima de DA036/DA037"
+    ],
+    "historical_sets_reviewed": [
+      "Q001-Q014 (retrieval-ground-truth-p1-lexical-dense-repooled.json)",
+      "DA001-DA049 (dense-admission-dataset-v1.json)"
+    ],
+    "id_overlap": 0,
+    "id_prefix": "DX",
+    "method": "Os topicos dos dois conjuntos historicos foram enumerados e excluidos do desenho. Cada cenario novo assenta num facto diferente do corpus, localizado por busca normalizada."
+  },
+  "question_set_digest": "666ddb6f41e805f24dd885ef709527ad21ef11144c89638ac4488b126a77d093",
+  "question_set_version": "d4.10-question-set-v1",
+  "questions": [
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 333,
+            "corpus_item_id": "P1-DOC-004"
+          }
+        ],
+        "rationale": "Artigo sobre nota/classificacao: escala numerica de 0 a 20 valores.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Em que escala sao expressas as classificacoes na Uni-CV?",
+      "question_id": "DX001",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A01",
+      "scenario_type": "exact_institutional_terms",
+      "target_document": "P1-DOC-004",
+      "topic": "escala_classificacao"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 333,
+            "corpus_item_id": "P1-DOC-004"
+          }
+        ],
+        "rationale": "Artigo sobre nota/classificacao: escala numerica de 0 a 20 valores.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "As notas vao de zero a quanto?",
+      "question_id": "DX002",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A01",
+      "scenario_type": "exact_institutional_terms",
+      "target_document": "P1-DOC-004",
+      "topic": "escala_classificacao"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 335,
+            "corpus_item_id": "P1-DOC-004"
+          },
+          {
+            "chunk_index": 452,
+            "corpus_item_id": "P1-DOC-004"
+          }
+        ],
+        "rationale": "Aprovacao exige classificacao final igual ou superior a 10 valores.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Qual e a nota minima para ser aprovado numa unidade curricular?",
+      "question_id": "DX003",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A02",
+      "scenario_type": "exact_institutional_terms",
+      "target_document": "P1-DOC-004",
+      "topic": "nota_minima_aprovacao"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 335,
+            "corpus_item_id": "P1-DOC-004"
+          },
+          {
+            "chunk_index": 452,
+            "corpus_item_id": "P1-DOC-004"
+          }
+        ],
+        "rationale": "Aprovacao exige classificacao final igual ou superior a 10 valores.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "A partir de que classificacao se considera aprovado?",
+      "question_id": "DX004",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A02",
+      "scenario_type": "exact_institutional_terms",
+      "target_document": "P1-DOC-004",
+      "topic": "nota_minima_aprovacao"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 348,
+            "corpus_item_id": "P1-DOC-004"
+          }
+        ],
+        "rationale": "Minimo de duas provas por semestre; quatro nas unidades anuais.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Quantos momentos de avaliacao tem de haver por semestre numa unidade curricular?",
+      "question_id": "DX005",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A03",
+      "scenario_type": "semantic_reformulation",
+      "target_document": "P1-DOC-004",
+      "topic": "provas_avaliacao_continua"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 348,
+            "corpus_item_id": "P1-DOC-004"
+          }
+        ],
+        "rationale": "Minimo de duas provas por semestre; quatro nas unidades anuais.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Numa cadeira anual, qual e o numero minimo de provas de avaliacao?",
+      "question_id": "DX006",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A03",
+      "scenario_type": "semantic_reformulation",
+      "target_document": "P1-DOC-004",
+      "topic": "provas_avaliacao_continua"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 72,
+            "corpus_item_id": "P1-DOC-005"
+          }
+        ],
+        "rationale": "Pagamento em prestacoes de igual montante, maximo de doze por ano letivo.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Posso pagar a propina em prestacoes?",
+      "question_id": "DX007",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A04",
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-005",
+      "topic": "propina_prestacoes"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 72,
+            "corpus_item_id": "P1-DOC-005"
+          }
+        ],
+        "rationale": "Pagamento em prestacoes de igual montante, maximo de doze por ano letivo.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Qual e o numero maximo de prestacoes da propina num ano letivo?",
+      "question_id": "DX008",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A04",
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-005",
+      "topic": "propina_prestacoes"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 78,
+            "corpus_item_id": "P1-DOC-005"
+          }
+        ],
+        "rationale": "Multa de 10% do valor das prestacoes em divida.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Que multa se paga por prestacoes de propina em atraso?",
+      "question_id": "DX009",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A05",
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-005",
+      "topic": "multa_prestacoes"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 78,
+            "corpus_item_id": "P1-DOC-005"
+          }
+        ],
+        "rationale": "Multa de 10% do valor das prestacoes em divida.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Qual e a penalizacao por nao pagar uma prestacao da propina a tempo?",
+      "question_id": "DX010",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A05",
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-005",
+      "topic": "multa_prestacoes"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 224,
+            "corpus_item_id": "P1-DOC-005"
+          }
+        ],
+        "rationale": "Reducao de propina ate 50% ao abrigo de protocolos institucionais.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Que reducao de propina existe para candidatos abrangidos por protocolos com a Uni-CV?",
+      "question_id": "DX011",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A06",
+      "scenario_type": "semantic_reformulation",
+      "target_document": "P1-DOC-005",
+      "topic": "reducao_protocolo"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 351,
+            "corpus_item_id": "P1-DOC-005"
+          }
+        ],
+        "rationale": "Propina para quem so tem o trabalho de fim de curso por realizar: 27.000$00.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Quanto pago de propina se so me falta o trabalho de fim de curso?",
+      "question_id": "DX012",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A07",
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-005",
+      "topic": "propina_tfc"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 351,
+            "corpus_item_id": "P1-DOC-005"
+          }
+        ],
+        "rationale": "Propina para quem so tem o trabalho de fim de curso por realizar: 27.000$00.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Qual e o valor da propina para estudantes a quem falta apenas o TFC?",
+      "question_id": "DX013",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A07",
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-005",
+      "topic": "propina_tfc"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 28,
+            "corpus_item_id": "P1-DOC-002"
+          }
+        ],
+        "rationale": "Inscricao em exames da epoca especial: 03 a 09 de novembro de 2025.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Quando me inscrevo nos exames da epoca especial em 2025/2026?",
+      "question_id": "DX014",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A08",
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-002",
+      "topic": "epoca_especial_inscricao_2526"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 28,
+            "corpus_item_id": "P1-DOC-002"
+          }
+        ],
+        "rationale": "Inscricao em exames da epoca especial: 03 a 09 de novembro de 2025.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Qual e o prazo de inscricao para a epoca especial do ano letivo 2025/2026?",
+      "question_id": "DX015",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A08",
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-002",
+      "topic": "epoca_especial_inscricao_2526"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 30,
+            "corpus_item_id": "P1-DOC-002"
+          }
+        ],
+        "rationale": "Realizacao dos exames da epoca especial: 01 a 12 de dezembro de 2025.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Em que datas se realizam os exames da epoca especial em 2025/2026?",
+      "question_id": "DX016",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A09",
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-002",
+      "topic": "epoca_especial_realizacao_2526"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 21,
+            "corpus_item_id": "P1-DOC-002"
+          }
+        ],
+        "rationale": "Mudanca do regime de avaliacao: ate 7 de novembro de 2025.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Ate quando posso mudar de regime de avaliacao em 2025/2026?",
+      "question_id": "DX017",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A10",
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-002",
+      "topic": "regime_avaliacao_2526"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 21,
+            "corpus_item_id": "P1-DOC-002"
+          }
+        ],
+        "rationale": "Mudanca do regime de avaliacao: ate 7 de novembro de 2025.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Qual e a data limite para alterar o regime de avaliacao no ano letivo 2025/2026?",
+      "question_id": "DX018",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A10",
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-002",
+      "topic": "regime_avaliacao_2526"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 87,
+            "corpus_item_id": "P1-DOC-002"
+          }
+        ],
+        "rationale": "1a fase de entrega dos pedidos de reingresso e mudanca de curso: 02 maio a 30 junho 2026.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Quando entrego o pedido de reingresso para o ano letivo 2026/2027?",
+      "question_id": "DX019",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A11",
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-002",
+      "topic": "reingresso_prazos_2627"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 87,
+            "corpus_item_id": "P1-DOC-002"
+          }
+        ],
+        "rationale": "1a fase de entrega dos pedidos de reingresso e mudanca de curso: 02 maio a 30 junho 2026.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Qual e a primeira fase de entrega dos pedidos de mudanca de curso?",
+      "question_id": "DX020",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A11",
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-002",
+      "topic": "reingresso_prazos_2627"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 88,
+            "corpus_item_id": "P1-DOC-002"
+          }
+        ],
+        "rationale": "2a fase de transferencias e mudancas horizontais: 01 a 30 de setembro de 2026.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Qual e a segunda fase para pedidos de transferencia em 2026/2027?",
+      "question_id": "DX021",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A12",
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-002",
+      "topic": "transferencias_2fase_2627"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 30,
+            "corpus_item_id": "P1-DOC-003"
+          },
+          {
+            "chunk_index": 31,
+            "corpus_item_id": "P1-DOC-003"
+          }
+        ],
+        "rationale": "2023/2024: inscricao 05 a 16 fev 2024; realizacao 19 fev a 02 mar 2024.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Quando foram os exames de 2a chamada do primeiro semestre em 2023/2024?",
+      "question_id": "DX022",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A13",
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-003",
+      "topic": "segunda_chamada_2324"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 30,
+            "corpus_item_id": "P1-DOC-003"
+          },
+          {
+            "chunk_index": 31,
+            "corpus_item_id": "P1-DOC-003"
+          }
+        ],
+        "rationale": "2023/2024: inscricao 05 a 16 fev 2024; realizacao 19 fev a 02 mar 2024.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Qual foi o prazo de inscricao para a 2a chamada em fevereiro de 2024?",
+      "question_id": "DX023",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A13",
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-003",
+      "topic": "segunda_chamada_2324"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 73,
+            "corpus_item_id": "P1-DOC-003"
+          }
+        ],
+        "rationale": "Inscricao em exames de melhoria de notas e recuperacao: 1 a 14 de agosto de 2024.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Quando foi possivel inscrever-se em melhoria de nota no final de 2023/2024?",
+      "question_id": "DX024",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A14",
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-003",
+      "topic": "melhoria_notas_2324"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 23,
+            "corpus_item_id": "P1-DOC-003"
+          }
+        ],
+        "rationale": "Mudanca do regime de avaliacao em 2023/2024: ate 3 de novembro de 2023.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Ate quando se podia mudar o regime de avaliacao no ano letivo 2023/2024?",
+      "question_id": "DX025",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A15",
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-003",
+      "topic": "regime_avaliacao_2324"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 284,
+            "corpus_item_id": "P1-DOC-004"
+          }
+        ],
+        "rationale": "A expedicao do cartao de estudante cabe a Direccao dos Servicos Academicos.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Que servico emite o cartao de estudante?",
+      "question_id": "DX026",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A16",
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-004",
+      "topic": "cartao_estudante_emissao"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 284,
+            "corpus_item_id": "P1-DOC-004"
+          }
+        ],
+        "rationale": "A expedicao do cartao de estudante cabe a Direccao dos Servicos Academicos.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Quem trata da emissao do cartao de estudante na Uni-CV?",
+      "question_id": "DX027",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A16",
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-004",
+      "topic": "cartao_estudante_emissao"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 568,
+            "corpus_item_id": "P1-DOC-004"
+          }
+        ],
+        "rationale": "Lista de documentos emitidos: atestados e certidoes, cartao, declaracao de frequencia, historico escolar, certificado de conclusao.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Que documentos academicos posso pedir aos servicos da universidade?",
+      "question_id": "DX028",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A17",
+      "scenario_type": "strong_lexical_cue",
+      "target_document": "P1-DOC-004",
+      "topic": "documentos_emitidos"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 310,
+            "corpus_item_id": "P1-DOC-004"
+          }
+        ],
+        "rationale": "Plano com nao mais de seis unidades curriculares; nao mais de quatro horas letivas seguidas nas aulas teoricas da mesma area cientifica.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Quantas horas seguidas de aulas teoricas da mesma area posso ter?",
+      "question_id": "DX029",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A18",
+      "scenario_type": "semantic_interpretation",
+      "target_document": "P1-DOC-004",
+      "topic": "limites_horario_plano"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 310,
+            "corpus_item_id": "P1-DOC-004"
+          }
+        ],
+        "rationale": "Plano com nao mais de seis unidades curriculares; nao mais de quatro horas letivas seguidas nas aulas teoricas da mesma area cientifica.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Ha um limite de unidades curriculares no plano proposto ao estudante?",
+      "question_id": "DX030",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A18",
+      "scenario_type": "semantic_interpretation",
+      "target_document": "P1-DOC-004",
+      "topic": "limites_horario_plano"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 304,
+            "corpus_item_id": "P1-DOC-004"
+          }
+        ],
+        "rationale": "A coordenacao do curso propoe ao Conselho Cientifico a creditacao ou nao da unidade curricular.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Que orgao decide a creditacao de uma unidade curricular?",
+      "question_id": "DX031",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A19",
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-004",
+      "topic": "creditacao_uc"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 534,
+            "corpus_item_id": "P1-DOC-004"
+          },
+          {
+            "chunk_index": 544,
+            "corpus_item_id": "P1-DOC-004"
+          }
+        ],
+        "rationale": "Existe um capitulo sobre cursos de ferias e o numero de vagas nesses periodos e fixado internamente.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "A universidade tem cursos no periodo de ferias?",
+      "question_id": "DX032",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A20",
+      "scenario_type": "semantic_interpretation",
+      "target_document": "P1-DOC-004",
+      "topic": "cursos_ferias"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 307,
+            "corpus_item_id": "P1-DOC-007"
+          },
+          {
+            "chunk_index": 369,
+            "corpus_item_id": "P1-DOC-007"
+          }
+        ],
+        "rationale": "Direito de eleger e ser eleito para a Comissao de Residentes.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Os residentes podem eleger representantes?",
+      "question_id": "DX033",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A21",
+      "scenario_type": "exact_institutional_terms",
+      "target_document": "P1-DOC-007",
+      "topic": "comissao_residentes"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 307,
+            "corpus_item_id": "P1-DOC-007"
+          },
+          {
+            "chunk_index": 369,
+            "corpus_item_id": "P1-DOC-007"
+          }
+        ],
+        "rationale": "Direito de eleger e ser eleito para a Comissao de Residentes.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "O que e a Comissao de Residentes?",
+      "question_id": "DX034",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A21",
+      "scenario_type": "exact_institutional_terms",
+      "target_document": "P1-DOC-007",
+      "topic": "comissao_residentes"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 111,
+            "corpus_item_id": "P1-DOC-007"
+          }
+        ],
+        "rationale": "Realizar visitas periodicas quinzenais as Residencias Estudantis para inspecao.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Com que frequencia sao feitas as visitas de inspecao as residencias?",
+      "question_id": "DX035",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A22",
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-007",
+      "topic": "visitas_quinzenais"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 209,
+            "corpus_item_id": "P1-DOC-007"
+          }
+        ],
+        "rationale": "Nos quartos partilhados todos os ocupantes respondem pelos danos.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Se houver um estrago num quarto partilhado, quem paga?",
+      "question_id": "DX036",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A23",
+      "scenario_type": "semantic_interpretation",
+      "target_document": "P1-DOC-007",
+      "topic": "responsabilidade_quarto_partilhado"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 337,
+            "corpus_item_id": "P1-DOC-007"
+          }
+        ],
+        "rationale": "Proibicoes: animais domesticos, jogos de azar, fumar, consumir bebidas.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Posso ter um animal de estimacao na residencia universitaria?",
+      "question_id": "DX037",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A24",
+      "scenario_type": "strong_lexical_cue",
+      "target_document": "P1-DOC-007",
+      "topic": "proibicoes_residencia"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 337,
+            "corpus_item_id": "P1-DOC-007"
+          }
+        ],
+        "rationale": "Proibicoes: animais domesticos, jogos de azar, fumar, consumir bebidas.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "E permitido fumar dentro da residencia estudantil?",
+      "question_id": "DX038",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A24",
+      "scenario_type": "strong_lexical_cue",
+      "target_document": "P1-DOC-007",
+      "topic": "proibicoes_residencia"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 457,
+            "corpus_item_id": "P1-DOC-004"
+          }
+        ],
+        "rationale": "Recurso ao presidente do juri no prazo maximo de tres dias uteis apos a divulgacao do resultado.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Qual e o prazo para interpor recurso do resultado junto do juri?",
+      "question_id": "DX039",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A25",
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-004",
+      "topic": "recurso_juri_prazo"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 457,
+            "corpus_item_id": "P1-DOC-004"
+          }
+        ],
+        "rationale": "Recurso ao presidente do juri no prazo maximo de tres dias uteis apos a divulgacao do resultado.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Quantos dias tenho para recorrer depois de sair o resultado?",
+      "question_id": "DX040",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A25",
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-004",
+      "topic": "recurso_juri_prazo"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 34,
+            "corpus_item_id": "P1-DOC-006"
+          },
+          {
+            "chunk_index": 36,
+            "corpus_item_id": "P1-DOC-006"
+          }
+        ],
+        "rationale": "A realizacao da outorga de grau reveste duas formas: cerimonia academica e cerimonia familiar.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Que tipos de cerimonia de outorga de grau existem na Uni-CV?",
+      "question_id": "DX041",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A27",
+      "scenario_type": "semantic_reformulation",
+      "target_document": "P1-DOC-006",
+      "topic": "outorga_tipos_cerimonia"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "answerable_validation": {
+        "annotator": null,
+        "located_evidence": [
+          {
+            "chunk_index": 318,
+            "corpus_item_id": "P1-DOC-005"
+          }
+        ],
+        "rationale": "Reclamacao das listas definitivas de ordenacao, dirigida ao Reitor, no prazo de 5 dias uteis.",
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "language": "pt",
+      "question": "Como reclamo da lista definitiva de ordenacao e em que prazo?",
+      "question_id": "DX042",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-A26",
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-005",
+      "topic": "reclamacao_listas_ordenacao"
+    },
+    {
+      "answerability_intent": "NO_EVIDENCE",
+      "language": "pt",
+      "no_evidence_validation": {
+        "annotator": null,
+        "search_result": "Zero ocorrencias de 'wifi'. 'internet' aparece duas vezes e nenhuma sobre acesso a rede nas residencias: P1-DOC-004#171 descreve ensino por mediacao tecnologica e P1-DOC-007#251 refere edital publicado na pagina oficial.",
+        "terms_searched": [
+          "wifi",
+          "wi fi",
+          "internet"
+        ],
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_SEARCHED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "question": "Ha wi-fi nos quartos das residencias universitarias?",
+      "question_id": "DX043",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-N01",
+      "scenario_type": "plausible_absent",
+      "target_document": null,
+      "topic": "residencia_internet"
+    },
+    {
+      "answerability_intent": "NO_EVIDENCE",
+      "language": "pt",
+      "no_evidence_validation": {
+        "annotator": null,
+        "search_result": "Zero ocorrencias de 'wifi'. 'internet' aparece duas vezes e nenhuma sobre acesso a rede nas residencias: P1-DOC-004#171 descreve ensino por mediacao tecnologica e P1-DOC-007#251 refere edital publicado na pagina oficial.",
+        "terms_searched": [
+          "wifi",
+          "wi fi",
+          "internet"
+        ],
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_SEARCHED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "question": "As residencias da Uni-CV tem acesso a internet incluido?",
+      "question_id": "DX044",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-N01",
+      "scenario_type": "plausible_absent",
+      "target_document": null,
+      "topic": "residencia_internet"
+    },
+    {
+      "answerability_intent": "NO_EVIDENCE",
+      "language": "pt",
+      "no_evidence_validation": {
+        "annotator": null,
+        "search_result": "Zero ocorrencias em todo o corpus.",
+        "terms_searched": [
+          "lavandaria",
+          "lavanderia",
+          "maquina de lavar"
+        ],
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_SEARCHED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "question": "As residencias tem lavandaria para os estudantes?",
+      "question_id": "DX045",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-N02",
+      "scenario_type": "plausible_absent",
+      "target_document": null,
+      "topic": "residencia_lavandaria"
+    },
+    {
+      "answerability_intent": "NO_EVIDENCE",
+      "language": "pt",
+      "no_evidence_validation": {
+        "annotator": null,
+        "search_result": "'numero de vagas' ocorre uma vez e e sobre unidades curriculares em periodo de ferias (P1-DOC-004#544), nao sobre alojamento. O regulamento das residencias regula candidatura e ocupacao sem fixar quantas residencias ou camas existem.",
+        "terms_searched": [
+          "numero de vagas",
+          "quantas residencias",
+          "capacidade"
+        ],
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_SEARCHED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "question": "Quantas residencias universitarias tem a Uni-CV?",
+      "question_id": "DX046",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-N03",
+      "scenario_type": "plausible_absent",
+      "target_document": null,
+      "topic": "residencias_numero_vagas"
+    },
+    {
+      "answerability_intent": "NO_EVIDENCE",
+      "language": "pt",
+      "no_evidence_validation": {
+        "annotator": null,
+        "search_result": "'numero de vagas' ocorre uma vez e e sobre unidades curriculares em periodo de ferias (P1-DOC-004#544), nao sobre alojamento. O regulamento das residencias regula candidatura e ocupacao sem fixar quantas residencias ou camas existem.",
+        "terms_searched": [
+          "numero de vagas",
+          "quantas residencias",
+          "capacidade"
+        ],
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_SEARCHED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "question": "Quantas vagas de alojamento estao disponiveis por ano?",
+      "question_id": "DX047",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-N03",
+      "scenario_type": "plausible_absent",
+      "target_document": null,
+      "topic": "residencias_numero_vagas"
+    },
+    {
+      "answerability_intent": "NO_EVIDENCE",
+      "language": "pt",
+      "no_evidence_validation": {
+        "annotator": null,
+        "search_result": "P1-DOC-002 tem a seccao 'MATRICULAS E INSCRICOES NO ANO LETIVO 2026/2027' (#86) com prazos de matricula, mas NAO tem datas de aulas, exames ou pausas de 2026/2027. E um near-miss: o ano aparece, o facto pedido nao.",
+        "terms_searched": [
+          "2026 2027",
+          "ano letivo 2026"
+        ],
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_SEARCHED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "overlap_review_note": "Familia semantica proxima de DA036/DA037 (calendario 2024/2025, NO_EVIDENCE na D4.8.2): ambos perguntam por datas de aulas de um ano que o corpus nao cobre. O ano e outro e a direcao temporal e outra (futuro vs passado), mas a independencia nao e obvia.",
+      "question": "Quando comecam as aulas do ano letivo 2026/2027?",
+      "question_id": "DX048",
+      "review_status": "HUMAN_REVIEW_REQUIRED",
+      "scenario_id": "SC-N04",
+      "scenario_type": "near_miss_negative",
+      "target_document": null,
+      "topic": "calendario_2627_aulas"
+    },
+    {
+      "answerability_intent": "NO_EVIDENCE",
+      "language": "pt",
+      "no_evidence_validation": {
+        "annotator": null,
+        "search_result": "P1-DOC-002 tem a seccao 'MATRICULAS E INSCRICOES NO ANO LETIVO 2026/2027' (#86) com prazos de matricula, mas NAO tem datas de aulas, exames ou pausas de 2026/2027. E um near-miss: o ano aparece, o facto pedido nao.",
+        "terms_searched": [
+          "2026 2027",
+          "ano letivo 2026"
+        ],
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_SEARCHED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "overlap_review_note": "Familia semantica proxima de DA036/DA037 (calendario 2024/2025, NO_EVIDENCE na D4.8.2): ambos perguntam por datas de aulas de um ano que o corpus nao cobre. O ano e outro e a direcao temporal e outra (futuro vs passado), mas a independencia nao e obvia.",
+      "question": "Qual e a data de inicio do primeiro semestre de 2026/2027?",
+      "question_id": "DX049",
+      "review_status": "HUMAN_REVIEW_REQUIRED",
+      "scenario_id": "SC-N04",
+      "scenario_type": "near_miss_negative",
+      "target_document": null,
+      "topic": "calendario_2627_aulas"
+    },
+    {
+      "answerability_intent": "NO_EVIDENCE",
+      "language": "pt",
+      "no_evidence_validation": {
+        "annotator": null,
+        "search_result": "Zero ocorrencias em todo o corpus.",
+        "terms_searched": [
+          "greve",
+          "paralisacao"
+        ],
+        "validation_method": "normalised_full_corpus_term_search_and_reading",
+        "validation_status": "MACHINE_SEARCHED_PENDING_HUMAN_CONFIRMATION"
+      },
+      "question": "O que acontece as aulas em caso de greve?",
+      "question_id": "DX050",
+      "review_status": "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW",
+      "scenario_id": "SC-N05",
+      "scenario_type": "plausible_absent",
+      "target_document": null,
+      "topic": "greve_interrupcao"
+    }
+  ],
+  "scenario_digest": "1900150ef10729f85fee2d863fab612f0eb4cbc8ee8226257cb5d3efa686bb29",
+  "scenario_distribution": {
+    "SC-A01": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX001",
+        "DX002"
+      ],
+      "scenario_type": "exact_institutional_terms",
+      "target_document": "P1-DOC-004",
+      "topic": "escala_classificacao"
+    },
+    "SC-A02": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX003",
+        "DX004"
+      ],
+      "scenario_type": "exact_institutional_terms",
+      "target_document": "P1-DOC-004",
+      "topic": "nota_minima_aprovacao"
+    },
+    "SC-A03": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX005",
+        "DX006"
+      ],
+      "scenario_type": "semantic_reformulation",
+      "target_document": "P1-DOC-004",
+      "topic": "provas_avaliacao_continua"
+    },
+    "SC-A04": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX007",
+        "DX008"
+      ],
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-005",
+      "topic": "propina_prestacoes"
+    },
+    "SC-A05": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX009",
+        "DX010"
+      ],
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-005",
+      "topic": "multa_prestacoes"
+    },
+    "SC-A06": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "question_ids": [
+        "DX011"
+      ],
+      "scenario_type": "semantic_reformulation",
+      "target_document": "P1-DOC-005",
+      "topic": "reducao_protocolo"
+    },
+    "SC-A07": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX012",
+        "DX013"
+      ],
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-005",
+      "topic": "propina_tfc"
+    },
+    "SC-A08": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX014",
+        "DX015"
+      ],
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-002",
+      "topic": "epoca_especial_inscricao_2526"
+    },
+    "SC-A09": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "question_ids": [
+        "DX016"
+      ],
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-002",
+      "topic": "epoca_especial_realizacao_2526"
+    },
+    "SC-A10": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX017",
+        "DX018"
+      ],
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-002",
+      "topic": "regime_avaliacao_2526"
+    },
+    "SC-A11": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX019",
+        "DX020"
+      ],
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-002",
+      "topic": "reingresso_prazos_2627"
+    },
+    "SC-A12": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "question_ids": [
+        "DX021"
+      ],
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-002",
+      "topic": "transferencias_2fase_2627"
+    },
+    "SC-A13": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX022",
+        "DX023"
+      ],
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-003",
+      "topic": "segunda_chamada_2324"
+    },
+    "SC-A14": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "question_ids": [
+        "DX024"
+      ],
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-003",
+      "topic": "melhoria_notas_2324"
+    },
+    "SC-A15": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "question_ids": [
+        "DX025"
+      ],
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-003",
+      "topic": "regime_avaliacao_2324"
+    },
+    "SC-A16": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX026",
+        "DX027"
+      ],
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-004",
+      "topic": "cartao_estudante_emissao"
+    },
+    "SC-A17": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "question_ids": [
+        "DX028"
+      ],
+      "scenario_type": "strong_lexical_cue",
+      "target_document": "P1-DOC-004",
+      "topic": "documentos_emitidos"
+    },
+    "SC-A18": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX029",
+        "DX030"
+      ],
+      "scenario_type": "semantic_interpretation",
+      "target_document": "P1-DOC-004",
+      "topic": "limites_horario_plano"
+    },
+    "SC-A19": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "question_ids": [
+        "DX031"
+      ],
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-004",
+      "topic": "creditacao_uc"
+    },
+    "SC-A20": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "question_ids": [
+        "DX032"
+      ],
+      "scenario_type": "semantic_interpretation",
+      "target_document": "P1-DOC-004",
+      "topic": "cursos_ferias"
+    },
+    "SC-A21": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX033",
+        "DX034"
+      ],
+      "scenario_type": "exact_institutional_terms",
+      "target_document": "P1-DOC-007",
+      "topic": "comissao_residentes"
+    },
+    "SC-A22": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "question_ids": [
+        "DX035"
+      ],
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-007",
+      "topic": "visitas_quinzenais"
+    },
+    "SC-A23": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "question_ids": [
+        "DX036"
+      ],
+      "scenario_type": "semantic_interpretation",
+      "target_document": "P1-DOC-007",
+      "topic": "responsabilidade_quarto_partilhado"
+    },
+    "SC-A24": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX037",
+        "DX038"
+      ],
+      "scenario_type": "strong_lexical_cue",
+      "target_document": "P1-DOC-007",
+      "topic": "proibicoes_residencia"
+    },
+    "SC-A25": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX039",
+        "DX040"
+      ],
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-004",
+      "topic": "recurso_juri_prazo"
+    },
+    "SC-A26": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "question_ids": [
+        "DX042"
+      ],
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-005",
+      "topic": "reclamacao_listas_ordenacao"
+    },
+    "SC-A27": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "question_ids": [
+        "DX041"
+      ],
+      "scenario_type": "semantic_reformulation",
+      "target_document": "P1-DOC-006",
+      "topic": "outorga_tipos_cerimonia"
+    },
+    "SC-N01": {
+      "answerability_intent": "NO_EVIDENCE",
+      "question_count": 2,
+      "question_ids": [
+        "DX043",
+        "DX044"
+      ],
+      "scenario_type": "plausible_absent",
+      "target_document": null,
+      "topic": "residencia_internet"
+    },
+    "SC-N02": {
+      "answerability_intent": "NO_EVIDENCE",
+      "question_count": 1,
+      "question_ids": [
+        "DX045"
+      ],
+      "scenario_type": "plausible_absent",
+      "target_document": null,
+      "topic": "residencia_lavandaria"
+    },
+    "SC-N03": {
+      "answerability_intent": "NO_EVIDENCE",
+      "question_count": 2,
+      "question_ids": [
+        "DX046",
+        "DX047"
+      ],
+      "scenario_type": "plausible_absent",
+      "target_document": null,
+      "topic": "residencias_numero_vagas"
+    },
+    "SC-N04": {
+      "answerability_intent": "NO_EVIDENCE",
+      "question_count": 2,
+      "question_ids": [
+        "DX048",
+        "DX049"
+      ],
+      "scenario_type": "near_miss_negative",
+      "target_document": null,
+      "topic": "calendario_2627_aulas"
+    },
+    "SC-N05": {
+      "answerability_intent": "NO_EVIDENCE",
+      "question_count": 1,
+      "question_ids": [
+        "DX050"
+      ],
+      "scenario_type": "plausible_absent",
+      "target_document": null,
+      "topic": "greve_interrupcao"
+    }
+  },
+  "scenarios": [
+    {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "scenario_id": "SC-A01",
+      "scenario_type": "exact_institutional_terms",
+      "target_document": "P1-DOC-004",
+      "topic": "escala_classificacao"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "scenario_id": "SC-A02",
+      "scenario_type": "exact_institutional_terms",
+      "target_document": "P1-DOC-004",
+      "topic": "nota_minima_aprovacao"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "scenario_id": "SC-A03",
+      "scenario_type": "semantic_reformulation",
+      "target_document": "P1-DOC-004",
+      "topic": "provas_avaliacao_continua"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "scenario_id": "SC-A04",
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-005",
+      "topic": "propina_prestacoes"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "scenario_id": "SC-A05",
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-005",
+      "topic": "multa_prestacoes"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "scenario_id": "SC-A06",
+      "scenario_type": "semantic_reformulation",
+      "target_document": "P1-DOC-005",
+      "topic": "reducao_protocolo"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "scenario_id": "SC-A07",
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-005",
+      "topic": "propina_tfc"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "scenario_id": "SC-A08",
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-002",
+      "topic": "epoca_especial_inscricao_2526"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "scenario_id": "SC-A09",
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-002",
+      "topic": "epoca_especial_realizacao_2526"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "scenario_id": "SC-A10",
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-002",
+      "topic": "regime_avaliacao_2526"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "scenario_id": "SC-A11",
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-002",
+      "topic": "reingresso_prazos_2627"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "scenario_id": "SC-A12",
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-002",
+      "topic": "transferencias_2fase_2627"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "scenario_id": "SC-A13",
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-003",
+      "topic": "segunda_chamada_2324"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "scenario_id": "SC-A14",
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-003",
+      "topic": "melhoria_notas_2324"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "scenario_id": "SC-A15",
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-003",
+      "topic": "regime_avaliacao_2324"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "scenario_id": "SC-A16",
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-004",
+      "topic": "cartao_estudante_emissao"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "scenario_id": "SC-A17",
+      "scenario_type": "strong_lexical_cue",
+      "target_document": "P1-DOC-004",
+      "topic": "documentos_emitidos"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "scenario_id": "SC-A18",
+      "scenario_type": "semantic_interpretation",
+      "target_document": "P1-DOC-004",
+      "topic": "limites_horario_plano"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "scenario_id": "SC-A19",
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-004",
+      "topic": "creditacao_uc"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "scenario_id": "SC-A20",
+      "scenario_type": "semantic_interpretation",
+      "target_document": "P1-DOC-004",
+      "topic": "cursos_ferias"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "scenario_id": "SC-A21",
+      "scenario_type": "exact_institutional_terms",
+      "target_document": "P1-DOC-007",
+      "topic": "comissao_residentes"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "scenario_id": "SC-A22",
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-007",
+      "topic": "visitas_quinzenais"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "scenario_id": "SC-A23",
+      "scenario_type": "semantic_interpretation",
+      "target_document": "P1-DOC-007",
+      "topic": "responsabilidade_quarto_partilhado"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "scenario_id": "SC-A24",
+      "scenario_type": "strong_lexical_cue",
+      "target_document": "P1-DOC-007",
+      "topic": "proibicoes_residencia"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "scenario_id": "SC-A25",
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-004",
+      "topic": "recurso_juri_prazo"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "scenario_id": "SC-A27",
+      "scenario_type": "semantic_reformulation",
+      "target_document": "P1-DOC-006",
+      "topic": "outorga_tipos_cerimonia"
+    },
+    {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "scenario_id": "SC-A26",
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-005",
+      "topic": "reclamacao_listas_ordenacao"
+    },
+    {
+      "answerability_intent": "NO_EVIDENCE",
+      "question_count": 2,
+      "scenario_id": "SC-N01",
+      "scenario_type": "plausible_absent",
+      "target_document": null,
+      "topic": "residencia_internet"
+    },
+    {
+      "answerability_intent": "NO_EVIDENCE",
+      "question_count": 1,
+      "scenario_id": "SC-N02",
+      "scenario_type": "plausible_absent",
+      "target_document": null,
+      "topic": "residencia_lavandaria"
+    },
+    {
+      "answerability_intent": "NO_EVIDENCE",
+      "question_count": 2,
+      "scenario_id": "SC-N03",
+      "scenario_type": "plausible_absent",
+      "target_document": null,
+      "topic": "residencias_numero_vagas"
+    },
+    {
+      "answerability_intent": "NO_EVIDENCE",
+      "question_count": 2,
+      "scenario_id": "SC-N04",
+      "scenario_type": "near_miss_negative",
+      "target_document": null,
+      "topic": "calendario_2627_aulas"
+    },
+    {
+      "answerability_intent": "NO_EVIDENCE",
+      "question_count": 1,
+      "scenario_id": "SC-N05",
+      "scenario_type": "plausible_absent",
+      "target_document": null,
+      "topic": "greve_interrupcao"
+    }
+  ],
+  "schema_version": 1,
+  "scope_note": "Painel independente da D4.10, desenhado sobre P1/S1 sem observar qualquer ranking. Nao contem julgamentos de relevancia: os graus 0/1/2 so existem depois de haver resultados para julgar.",
+  "snapshot_id": "a94f940229152a3b61860b370df8cb3ea8fe1a0e7236d65e86fe4b5118baf4c1",
+  "usable_documents": [
+    "P1-DOC-002",
+    "P1-DOC-003",
+    "P1-DOC-004",
+    "P1-DOC-005",
+    "P1-DOC-006",
+    "P1-DOC-007"
+  ],
+  "usable_documents_note": "P1-DOC-001 (Estatuto do Estudante) esta fora do corpus indexado: o upload falhou com 413 payload_too_large e nenhuma versao foi criada. Facto registado no binding de S1, nao uma escolha desta fase."
+}

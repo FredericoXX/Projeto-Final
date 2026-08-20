@@ -1,25 +1,26 @@
 # Estado atual
 
 **Observação:** 2026-08-19 · `main` em
-`adb332bf8f1cf04d762efafacf2d7397337bc634` (merge do Pull Request #58) ·
+`cce62fbb856a9346cb7f903f17a505666d55a4d5` (merge do Pull Request #59) ·
 repositório `FredericoXX/Projeto-Final`
 
 Os factos abaixo descrevem a `main` em
-`adb332bf8f1cf04d762efafacf2d7397337bc634`, merge do Pull Request #58 que
-integrou a calibração e a avaliação held-out da admissão densa (D4.8.2).
-Trabalho em curso noutras branches não é estado deste snapshot e, quando
-referido, é identificado como tal.
+`cce62fbb856a9346cb7f903f17a505666d55a4d5`, merge do Pull Request #59 que
+integrou a fusão lexical + densa por RRF (D4.9). Trabalho em curso noutras
+branches não é estado deste snapshot e, quando referido, é identificado como tal.
 
-**Exceção declarada:** a **fusão lexical + densa por RRF** (D4.9) vive na branch
-`analysis/d4-9-hybrid-rrf` e ainda **não está na `main`**. O que é trabalho de
-branch está identificado como tal em cada afirmação; ver
-[Fusão lexical + densa por RRF](#fusão-lexical--densa-por-rrf-d49-branch).
+**Exceção declarada:** o **pré-registo da avaliação independente e ampliada**
+(D4.10a) vive na branch `analysis/d4-10a-evaluation-protocol` e ainda **não está
+na `main`**. O que é trabalho de branch está identificado como tal em cada
+afirmação; ver
+[Pré-registo da D4.10](#pré-registo-da-avaliação-independente-de-retrieval-d410a-branch).
 
 A baseline experimental de dense retrieval (D4.8) **está na `main`** desde o
 Pull Request #56, o repooling com a comparação definitiva (D4.8.1) desde o
-Pull Request #57 e a admissão densa (D4.8.2) desde o Pull Request #58; as
-ressalvas anteriores, que os descreviam como trabalho de branch, deixaram de ser
-verdadeiras e foram removidas. O repooling dirigido e o
+Pull Request #57, a admissão densa (D4.8.2) desde o Pull Request #58 e a fusão
+por RRF (D4.9) desde o Pull Request #59; as ressalvas anteriores, que os
+descreviam como trabalho de branch, deixaram de ser verdadeiras e foram
+removidas. O repooling dirigido e o
 diagnóstico do ranking (D4.6) estão na `main` desde o Pull Request #54, e as
 variantes de ponderação (D4.7) desde o Pull Request #55.
 
@@ -833,10 +834,10 @@ artefacto da execução em
 ## Baseline experimental de dense retrieval
 
 **Estado:** a **D4.8** está na `main` desde o Pull Request #56, o **repooling com
-a comparação definitiva** (D4.8.1) desde o Pull Request #57 e a **calibração da
-admissão densa** (D4.8.2) desde o Pull Request #58. A **fusão lexical + densa
-por RRF** (D4.9) vive na branch `analysis/d4-9-hybrid-rrf` e **não está na
-`main`**. Em todos os casos é um **experimento offline**: o
+a comparação definitiva** (D4.8.1) desde o Pull Request #57, a **calibração da
+admissão densa** (D4.8.2) desde o Pull Request #58 e a **fusão lexical + densa
+por RRF** (D4.9) desde o Pull Request #59. Em todos os casos é um **experimento
+offline**: o
 retrieval de produção não foi alterado e
 `app.retrieval.dependencies.get_retriever` continua a devolver
 `PostgresLexicalRetriever`, fixado por teste.
@@ -1036,10 +1037,10 @@ corpus para outro ano: produz as similaridades mais altas de todo o conjunto.
 Detalhe em
 [`docs/relatorios/d4-8-2-dense-admission.md`](../relatorios/d4-8-2-dense-admission.md).
 
-## Fusão lexical + densa por RRF (D4.9, branch)
+## Fusão lexical + densa por RRF (D4.9, integrada pelo PR #59)
 
-**Estado:** trabalho de branch (`analysis/d4-9-hybrid-rrf`), **não está na
-`main`**. Experimento offline de fusão de rankings. Não existe
+**Estado:** na `main` desde o Pull Request #59. Experimento offline de fusão de
+rankings. Não existe
 `PostgresHybridRetriever`, não há endpoint, e
 `app.retrieval.dependencies.get_retriever` continua a devolver
 `PostgresLexicalRetriever`, fixado por teste.
@@ -1048,7 +1049,7 @@ A fase **não executa retrieval**: consome os rankings já versionados pela D4.8
 e reordena-os. Não precisa de base de dados, do fornecedor de embeddings nem de
 rede, e há teste em subprocesso que o confirma.
 
-O que a branch acrescenta: `app/evaluation/hybrid_rrf.py` (puro, **não**
+O que o PR #59 integrou: `app/evaluation/hybrid_rrf.py` (puro, **não**
 reexportado por `__init__.py`), `scripts/evaluate_hybrid_rrf.py` e o artefacto
 [`docs/evaluation/hybrid-rrf-p1-s1.json`](../evaluation/hybrid-rrf-p1-s1.json).
 
@@ -1116,23 +1117,92 @@ metodológica da D4.9, registada no relatório e no campo
 Detalhe em
 [`docs/relatorios/d4-9-hybrid-rrf-p1-s1.md`](../relatorios/d4-9-hybrid-rrf-p1-s1.md).
 
+## Pré-registo da avaliação independente de retrieval (D4.10a, branch)
+
+**Estado:** trabalho de branch (`analysis/d4-10a-evaluation-protocol`), **não
+está na `main`**. Esta fase **não executou experiência nenhuma**: não gerou
+embeddings, não correu retrieval, não construiu pool, não observou rankings, não
+julgou relevância e não calculou métricas.
+
+Existe porque o problema da D4.9 não foi só a amostra pequena: foi que a regra de
+decisão e o resultado nasceram no mesmo commit, e nada no histórico provava a
+ordem. A D4.10 separa desenho e execução em fases distintas — e em commits
+distintos.
+
+O que a branch acrescenta: `app/evaluation/d4_10_protocol.py` (puro, **não**
+reexportado por `__init__.py`), `scripts/stamp_d4_10_question_set.py`,
+`scripts/seal_d4_10_protocol.py`,
+[`docs/evaluation/d4-10-question-set-v1.json`](../evaluation/d4-10-question-set-v1.json)
+e [`docs/evaluation/d4-10-protocol-v1.json`](../evaluation/d4-10-protocol-v1.json).
+
+O painel novo: **32 cenários, 50 perguntas** (42 ANSWERABLE, 8 NO_EVIDENCE),
+identificadores com prefixo `DX`, sobreposição zero de identificadores e de texto
+com Q001–Q014 e DA001–DA049. Cobre os **seis** documentos indexados de P1 —
+P1-DOC-001 está fora do corpus desde o upload, por `413 payload_too_large`.
+
+C0, C1 e C2 ficam congelados tal como as fases que os mediram, **incluindo o
+desempate da D4.9**: a sensibilidade observada em Q003 é hipótese a observar, não
+autorização para corrigir o algoritmo dentro do mesmo teste. Não entra política
+de admissão — a D4.8.2 continua fechada.
+
+A decisão A/B/C está pré-registada e **não tem limiar de ganho material**: `A`
+exige que o intervalo de confiança de 95%, reamostrado por cenário, não inclua
+zero. O bootstrap reamostra `scenario_id` e não perguntas, porque paráfrases da
+mesma família não são observações independentes.
+
+**A fase não está fechada.** Os rótulos ANSWERABLE/NO_EVIDENCE foram trabalhados
+contra os 1834 chunks indexados — 48 âncoras localizadas e verificadas, e para
+cada NO_EVIDENCE os termos procurados e o que apareceu — mas a validação exigida
+é **humana**, e uma máquina não assina por um humano. As 50 perguntas estão
+pendentes de revisão, `annotator` é nulo e `human_review.freeze_ready` é `false`.
+Um cenário (`SC-N04`) está marcado `HUMAN_REVIEW_REQUIRED` por proximidade
+semântica com DA036/DA037.
+
+**Três digests, não um.** Uma auditoria independente mostrou que confirmar
+`DX001` com um anotador ou `DX002` com outro produzia digests idênticos: a
+validação humana ficava fora de toda a selagem e seria reescrevível sem rasto
+depois de feita. O `question_set_digest` continua a cobrir só a substância das
+perguntas — se cobrisse a revisão, validar invalidaria o conjunto validado — e
+juntam-se-lhe o `scenario_digest`, agora com os metadados dos cenários (tipo,
+tópico, documento alvo, intenção), e o `human_review_digest`, que cobre o estado
+de revisão e o bloco de validação inteiro de cada pergunta. Os três entram no
+`protocol_digest` e os três são precondição da D4.10b. Carimbar
+(`stamp_d4_10_question_set`) e selar (`seal_d4_10_protocol`) são comandos
+separados para que a selagem **verifique** a identidade declarada em vez de a
+recalcular e concordar consigo própria.
+
+Digests em vigor — **não finais**, porque o `human_review_digest` mudará com a
+revisão humana e o `protocol_digest` com ele:
+
+```
+protocol_digest      6b066812d5c4ab7e8dc5d5095daad409549f6c0d71585bd782f25512d66e9b2a
+question_set_digest  666ddb6f41e805f24dd885ef709527ad21ef11144c89638ac4488b126a77d093
+scenario_digest      1900150ef10729f85fee2d863fab612f0eb4cbc8ee8226257cb5d3efa686bb29
+human_review_digest  dccdb73a5722b0ed1513b67afd9eeca16be95b1d03dcddf02c5613735cbf3845
+```
+
+Detalhe em
+[`docs/relatorios/d4-10a-evaluation-protocol.md`](../relatorios/d4-10a-evaluation-protocol.md).
+
 ## Testes e verificações
 
 Os testes do backend usam PostgreSQL real numa base dedicada; os do frontend
 usam MSW, sem rede nem backend.
 
-Contagem de execução medida em **2026-08-19**, sobre o conteúdo da fusão por RRF
-na branch `analysis/d4-9-hybrid-rrf` (base `adb332b`, antes de qualquer merge):
-**2047 passed, 1 warning** (`python -m pytest -q`). O warning é o
-`StarletteDeprecationWarning` pré-existente de `fastapi/testclient.py`. Na mesma
-data e sobre o mesmo conteúdo, `mypy app tests scripts` reporta **226 source
+Contagem de execução medida em **2026-08-19**, sobre o conteúdo do pré-registo
+da D4.10a na branch `analysis/d4-10a-evaluation-protocol` (base `cce62fb`, antes
+de qualquer merge): **2099 passed, 1 warning** (`python -m pytest -q`). O warning
+é o `StarletteDeprecationWarning` pré-existente de `fastapi/testclient.py`. Na mesma
+data e sobre o mesmo conteúdo, `mypy app tests scripts` reporta **230 source
 files** sem erros e `ruff check` passa sobre `app`, `scripts` e `tests`. O
 frontend **não foi alterado** por este trabalho.
 
-Os 44 testes adicionais face à `main` vivem todos num ficheiro novo,
-`tests/test_evaluation_hybrid_rrf.py`, e nenhum teste existente foi editado. A
-contagem anterior, medida sobre a D4.8.2 em `7b85b50`, era de **2003 passed** e
-**223 source files**.
+Os 51 testes adicionais face à `main` vivem todos num ficheiro novo,
+`tests/test_evaluation_d4_10_protocol.py`, e nenhum teste existente foi editado.
+A contagem anterior, medida sobre a D4.9, era de **2048 passed**. Dos 51, 16
+entraram com a correção dos digests descrita acima — incluindo a reprodução do
+achado da auditoria: duas revisões diferentes do mesmo painel têm de produzir
+`protocol_digest` diferentes.
 
 Os 63 testes que a D4.8.2 acrescentou vivem todos num ficheiro novo,
 `tests/test_evaluation_dense_admission.py`. **Nenhum teste existente
@@ -1323,9 +1393,10 @@ produção. A D4.8 mediu uma condição densa offline e recomendou experimentar 
 arquitetura híbrida; a D4.8.1 completou os julgamentos e **reviu essa
 recomendação**, pedindo primeiro um estudo de admissibilidade; a D4.8.2 fez esse
 estudo e mediu que uma regra de limiar único calibrada só em DEV generaliza para
-cenários independentes deste corpus; a D4.9, na branch
-`analysis/d4-9-hybrid-rrf`, mediu a fusão por RRF e concluiu **D** — há
-complementaridade concreta, mas a amostra não sustenta promoção. Nada disso
+cenários independentes deste corpus; a D4.9 mediu a fusão por RRF e
+concluiu **D** — há complementaridade concreta, mas a amostra não sustenta
+promoção; a D4.10a, na branch `analysis/d4-10a-evaluation-protocol`, prepara o
+painel independente que a D4.9 pediu, ainda sem executar coisa nenhuma. Nada disso
 alterou o sistema:
 **recomendar ou medir uma experiência não é adotar uma arquitetura**, nenhuma
 política de abstenção existe no *answering*, nenhum retriever híbrido existe e
