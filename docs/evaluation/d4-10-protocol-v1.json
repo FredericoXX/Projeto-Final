@@ -1,0 +1,765 @@
+{
+  "bootstrap_protocol": {
+    "confidence_interval": 0.95,
+    "forbidden": [
+      "usar o bootstrap para escolher configuracao",
+      "alterar a seed depois de observar resultados"
+    ],
+    "intervals_for": [
+      "delta_ndcg_at_5_c2_minus_c1",
+      "delta_mrr_c2_minus_c1",
+      "delta_recall_at_5_c2_minus_c1",
+      "delta_solved_question_rate_c2_minus_c1"
+    ],
+    "replicates": 10000,
+    "seed": 20260819,
+    "unit": "scenario_id",
+    "unit_rationale": "Perguntas do mesmo cenario sao parafrases da mesma familia semantica e nao sao observacoes independentes. Reamostrar por pergunta duplicaria evidencia estatistica que nao existe."
+  },
+  "conditions": {
+    "C0": {
+      "comparable_across_queries": false,
+      "condition": "C0",
+      "frozen_from": "D4.8.1 (lexical-dense-comparison-p1-s1.json)",
+      "name": "lexical",
+      "retriever": "PostgresLexicalRetriever",
+      "score_kind": "lexical_relevance",
+      "score_version": "lexical_composite_v1",
+      "top_k": 5
+    },
+    "C1": {
+      "condition": "C1",
+      "configuration_version": "openai_embeddings_v1",
+      "dimension": 1536,
+      "frozen_from": "D4.8 / D4.8.1",
+      "index_digest": "451d9f2fbe07a799ca694026e8238dd9aa3296c15e03d46330bb1d36d3d9370c",
+      "model": "text-embedding-3-small",
+      "name": "dense",
+      "normalization": "none",
+      "provider": "openai",
+      "retriever": "PostgresDenseRetriever",
+      "similarity_metric": "cosine",
+      "top_k": 5
+    },
+    "C2": {
+      "absent_condition_contributes": false,
+      "arithmetic": "exact rational (fractions.Fraction)",
+      "condition": "C2",
+      "final_top_k": 5,
+      "formula": "sum over conditions of 1 / (k_rrf + rank), ranks 1-based",
+      "frozen_from": "D4.9 (app/evaluation/hybrid_rrf.py)",
+      "k_rrf": 60,
+      "method": "reciprocal_rank_fusion",
+      "name": "hybrid_rrf",
+      "source_depth": 5,
+      "sources": [
+        "C0",
+        "C1"
+      ],
+      "tie_break": [
+        "maior rrf_score, em aritmetica exata",
+        "menor best_rank entre as condicoes que o devolveram",
+        "menor corpus_item_id",
+        "menor chunk_index"
+      ],
+      "tie_break_note": "Congelado tal como a D4.9 o mediu. A sensibilidade observada em Q003 - um empate exato resolvido pela identidade a favor de um distrator - e uma HIPOTESE A OBSERVAR nesta fase, nao uma autorizacao para corrigir o algoritmo dentro do mesmo teste.",
+      "uses_original_scores": false
+    }
+  },
+  "contract": "d4_10_pre_registered_protocol",
+  "corpus_digest": "e8a0f08b5ecf37821244e62c266a48b1d64c928cabb75e0e23e08f9c895a447e",
+  "corpus_id": "P1",
+  "d4_10b_preconditions": [
+    "protocol_digest desta selagem",
+    "question_set_digest identico",
+    "scenario_digest identico",
+    "human_review_digest identico",
+    "human_review.freeze_ready verdadeiro",
+    "identidade de C0, C1 e C2 identica a declarada aqui"
+  ],
+  "decision_protocol": {
+    "A_EVIDENCE_FOR_HYBRID": "delta nDCG@5 C2-C1 positivo E o intervalo de confianca de 95% agrupado por cenario NAO inclui zero E Recall@5 de C2 nao inferior ao de C1 E solved_question_rate de C2 nao inferior ao de C1. Significa evidencia no painel independente de que C2 melhora C1 - NAO significa producao.",
+    "B_EVIDENCE_FOR_DENSE": "o intervalo de delta nDCG@5 fica integralmente abaixo de zero, OU ha degradacao consistente das metricas secundarias essenciais que torne a fusao injustificavel. A causa tem de ser documentada.",
+    "C_INCONCLUSIVE": "o intervalo inclui zero, OU os resultados sao mistos, OU o ganho nao e robusto entre cenarios, OU a amostra continua insuficiente para distinguir C1 de C2. Um resultado inconclusivo e valido e NAO autoriza novo tuning sobre o mesmo conjunto.",
+    "magnitude_threshold": null,
+    "magnitude_threshold_note": "NAO existe limiar de 'ganho material'. A D4.9 introduziu um MATERIAL_DELTA = 0.02 contra a instrucao explicita da fase e teve de o remover. A magnitude e reportada como estimativa, intervalo, casos e cenarios."
+  },
+  "digest_algorithm": "sha256",
+  "digest_scope": {
+    "human_review_digest": "estado de revisao e bloco de validacao inteiro de cada pergunta: anotador, metodo, estado, racional e ancoras ou termos procurados. Existe porque o question_set_digest nao cobre nada disto; sem ele, a validacao humana ficaria fora da selagem e seria editavel sem rasto.",
+    "question_set_digest": "substancia das perguntas: identificador, cenario, texto, idioma, intencao e documento alvo. NAO cobre a revisao, para que confirmar uma validacao nao invalide o conjunto validado.",
+    "scenario_digest": "metadados de cada cenario - tipo, topico, documento alvo, intencao, contagem - e as perguntas que o compoem."
+  },
+  "distribution": {
+    "by_answerability_intent": {
+      "ANSWERABLE": 42,
+      "NO_EVIDENCE": 8
+    },
+    "by_scenario_type": {
+      "exact_institutional_terms": 3,
+      "near_miss_negative": 1,
+      "numeric_fee_deadline": 9,
+      "plausible_absent": 4,
+      "procedural": 7,
+      "semantic_interpretation": 3,
+      "semantic_reformulation": 3,
+      "strong_lexical_cue": 2
+    },
+    "question_count": 50,
+    "questions_per_scenario": {
+      "max": 2,
+      "min": 1
+    },
+    "scenario_count": 32
+  },
+  "document_distribution": {
+    "NO_TARGET_DOCUMENT": {
+      "by_answerability_intent": {
+        "NO_EVIDENCE": 8
+      },
+      "by_scenario_type": {
+        "near_miss_negative": 2,
+        "plausible_absent": 6
+      },
+      "question_count": 8,
+      "scenario_count": 5,
+      "scenario_ids": [
+        "SC-N01",
+        "SC-N02",
+        "SC-N03",
+        "SC-N04",
+        "SC-N05"
+      ],
+      "topics": [
+        "calendario_2627_aulas",
+        "greve_interrupcao",
+        "residencia_internet",
+        "residencia_lavandaria",
+        "residencias_numero_vagas"
+      ]
+    },
+    "P1-DOC-002": {
+      "by_answerability_intent": {
+        "ANSWERABLE": 8
+      },
+      "by_scenario_type": {
+        "numeric_fee_deadline": 5,
+        "procedural": 3
+      },
+      "question_count": 8,
+      "scenario_count": 5,
+      "scenario_ids": [
+        "SC-A08",
+        "SC-A09",
+        "SC-A10",
+        "SC-A11",
+        "SC-A12"
+      ],
+      "topics": [
+        "epoca_especial_inscricao_2526",
+        "epoca_especial_realizacao_2526",
+        "regime_avaliacao_2526",
+        "reingresso_prazos_2627",
+        "transferencias_2fase_2627"
+      ]
+    },
+    "P1-DOC-003": {
+      "by_answerability_intent": {
+        "ANSWERABLE": 4
+      },
+      "by_scenario_type": {
+        "numeric_fee_deadline": 4
+      },
+      "question_count": 4,
+      "scenario_count": 3,
+      "scenario_ids": [
+        "SC-A13",
+        "SC-A14",
+        "SC-A15"
+      ],
+      "topics": [
+        "melhoria_notas_2324",
+        "regime_avaliacao_2324",
+        "segunda_chamada_2324"
+      ]
+    },
+    "P1-DOC-004": {
+      "by_answerability_intent": {
+        "ANSWERABLE": 15
+      },
+      "by_scenario_type": {
+        "exact_institutional_terms": 4,
+        "procedural": 5,
+        "semantic_interpretation": 3,
+        "semantic_reformulation": 2,
+        "strong_lexical_cue": 1
+      },
+      "question_count": 15,
+      "scenario_count": 9,
+      "scenario_ids": [
+        "SC-A01",
+        "SC-A02",
+        "SC-A03",
+        "SC-A16",
+        "SC-A17",
+        "SC-A18",
+        "SC-A19",
+        "SC-A20",
+        "SC-A25"
+      ],
+      "topics": [
+        "cartao_estudante_emissao",
+        "creditacao_uc",
+        "cursos_ferias",
+        "documentos_emitidos",
+        "escala_classificacao",
+        "limites_horario_plano",
+        "nota_minima_aprovacao",
+        "provas_avaliacao_continua",
+        "recurso_juri_prazo"
+      ]
+    },
+    "P1-DOC-005": {
+      "by_answerability_intent": {
+        "ANSWERABLE": 8
+      },
+      "by_scenario_type": {
+        "numeric_fee_deadline": 4,
+        "procedural": 3,
+        "semantic_reformulation": 1
+      },
+      "question_count": 8,
+      "scenario_count": 5,
+      "scenario_ids": [
+        "SC-A04",
+        "SC-A05",
+        "SC-A06",
+        "SC-A07",
+        "SC-A26"
+      ],
+      "topics": [
+        "multa_prestacoes",
+        "propina_prestacoes",
+        "propina_tfc",
+        "reclamacao_listas_ordenacao",
+        "reducao_protocolo"
+      ]
+    },
+    "P1-DOC-006": {
+      "by_answerability_intent": {
+        "ANSWERABLE": 1
+      },
+      "by_scenario_type": {
+        "semantic_reformulation": 1
+      },
+      "question_count": 1,
+      "scenario_count": 1,
+      "scenario_ids": [
+        "SC-A27"
+      ],
+      "topics": [
+        "outorga_tipos_cerimonia"
+      ]
+    },
+    "P1-DOC-007": {
+      "by_answerability_intent": {
+        "ANSWERABLE": 6
+      },
+      "by_scenario_type": {
+        "exact_institutional_terms": 2,
+        "numeric_fee_deadline": 1,
+        "semantic_interpretation": 1,
+        "strong_lexical_cue": 2
+      },
+      "question_count": 6,
+      "scenario_count": 4,
+      "scenario_ids": [
+        "SC-A21",
+        "SC-A22",
+        "SC-A23",
+        "SC-A24"
+      ],
+      "topics": [
+        "comissao_residentes",
+        "proibicoes_residencia",
+        "responsabilidade_quarto_partilhado",
+        "visitas_quinzenais"
+      ]
+    }
+  },
+  "embedding_freeze_protocol": {
+    "generated_in_d4_10a": false,
+    "per_vector_fields": [
+      "question_id",
+      "content_sha256",
+      "provider",
+      "model",
+      "dimension",
+      "normalization",
+      "similarity_metric",
+      "configuration_version",
+      "vector_digest",
+      "vector"
+    ],
+    "rationale": "A D4.8 mediu deriva do fornecedor na ordem de 1e-4 na similaridade para o MESMO texto. Congelar remove a unica fonte conhecida de nao determinismo do lado externo.",
+    "rule": "Os embeddings das perguntas sao gerados UMA vez e congelados. A D4.10b nao volta a consultar o fornecedor depois do congelamento.",
+    "when": "D4.10b, antes de qualquer medicao"
+  },
+  "forbidden_changes": [
+    "alterar o conjunto de perguntas depois de observar rankings",
+    "remover perguntas cujo resultado seja desfavoravel",
+    "mover perguntas entre cenarios",
+    "alterar k_rrf, source_depth, final_top_k ou o desempate",
+    "alterar a metrica primaria ou o protocolo de metricas",
+    "alterar a unidade, o numero de replicas ou a seed do bootstrap",
+    "introduzir admission policy, threshold, confidence ou answerability",
+    "alterar C0, C1, o corpus, o chunking, o indice ou o ground truth historico",
+    "criar um limiar de ganho material"
+  ],
+  "human_review": {
+    "by_status": {
+      "HUMAN_REVIEW_REQUIRED": 2,
+      "MACHINE_PROPOSED_PENDING_HUMAN_REVIEW": 48
+    },
+    "freeze_ready": false,
+    "human_confirmed": 0,
+    "pending_human_review": 50
+  },
+  "human_review_digest": "dccdb73a5722b0ed1513b67afd9eeca16be95b1d03dcddf02c5613735cbf3845",
+  "independence_manifest": {
+    "flagged_for_human_review": [
+      "SC-N04: familia semantica proxima de DA036/DA037"
+    ],
+    "historical_sets_reviewed": [
+      "Q001-Q014 (retrieval-ground-truth-p1-lexical-dense-repooled.json)",
+      "DA001-DA049 (dense-admission-dataset-v1.json)"
+    ],
+    "id_overlap": 0,
+    "id_prefix": "DX",
+    "method": "Os topicos dos dois conjuntos historicos foram enumerados e excluidos do desenho. Cada cenario novo assenta num facto diferente do corpus, localizado por busca normalizada."
+  },
+  "metric_protocol": {
+    "binary_relevance_threshold": 2,
+    "inherited_from": "docs/evaluation/retrieval-ground-truth-p1-seed.json#metric_protocol",
+    "k_values": [
+      1,
+      3,
+      5
+    ],
+    "ndcg_gain_mapping": {
+      "0": 0,
+      "1": 1,
+      "2": 3
+    },
+    "no_evidence_metrics": {
+      "excluded_from": [
+        "recall",
+        "mrr",
+        "ndcg"
+      ],
+      "note": "Nenhum threshold ou admission policy e introduzido.",
+      "reason": "Sem alvo relevante, as metricas nao estao definidas.",
+      "reported_instead": [
+        "returned_count por condicao",
+        "grade0_returned",
+        "grade1_returned",
+        "noise_per_question"
+      ]
+    },
+    "primary_comparison": "C2 versus C1",
+    "primary_comparison_rationale": "C1 ja superou C0 de forma inequivoca na D4.8.1. 'C2 > C0' seria satisfeito por qualquer fusao que preservasse a ordem densa e nao informaria nada.",
+    "primary_k": 5,
+    "primary_metric": "ndcg@5",
+    "primary_metric_rationale": "A fusao altera sobretudo a ORDEM dos candidatos. O Recall com limiar binario no grau 2 e cego a reordenacoes dentro do top 5; o nDCG@5 mede presenca, posicao e grau.",
+    "secondary_metrics": [
+      "recall@1",
+      "recall@3",
+      "recall@5",
+      "mrr",
+      "ndcg@1",
+      "ndcg@3",
+      "solved_question_rate",
+      "grade_distribution",
+      "per_question_delta",
+      "improved_equal_worsened_counts",
+      "c0_only_grade2_targets_preserved_by_c2",
+      "c1_only_grade2_targets_preserved_by_c2"
+    ],
+    "tie_observation": {
+      "note": "A D4.10 observa, sem alterar a regra: quantos empates de RRF ocorreram, quantos chegaram ao desempate por identidade, quantos mudaram o grau da primeira posicao e em quantos o desempate favoreceu um resultado relevante ou irrelevante."
+    },
+    "unjudged_chunk_treatment": "ASSUMED_IRRELEVANT"
+  },
+  "phase": "D4.10a",
+  "pooling_protocol": {
+    "c2_note": "C2 deriva dessa uniao e nao pode introduzir elementos novos; a guarda que o verifica ja existe desde a D4.9.",
+    "grades_not_produced_in_d4_10a": true,
+    "judgment_requirement": "Todo o elemento do pool tem de ser julgado antes de qualquer metrica final.",
+    "pool": "top5(C0) union top5(C1)",
+    "relevance_scale": {
+      "0": "irrelevante",
+      "1": "parcialmente util/contextual, insuficiente para responder sozinho",
+      "2": "evidencia diretamente relevante/suficiente para o alvo avaliado"
+    },
+    "unjudged_policy": "Se unjudged_in_top_k > 0 para uma pergunta, essa pergunta NAO entra nas metricas finais ate o julgamento estar completo. Nao se assume unjudged = 0."
+  },
+  "protocol_digest": "6b066812d5c4ab7e8dc5d5095daad409549f6c0d71585bd782f25512d66e9b2a",
+  "protocol_version": "d4.10-protocol-v1",
+  "question_set_digest": "666ddb6f41e805f24dd885ef709527ad21ef11144c89638ac4488b126a77d093",
+  "question_set_version": "d4.10-question-set-v1",
+  "reference_date": "2026-08-15",
+  "research_question": "Num conjunto independente de cenarios e perguntas nao utilizado nas fases D4.2-D4.9, a fusao lexical+densa por RRF preserva ou melhora a qualidade de recuperacao face ao Dense Retrieval isolado?",
+  "scenario_digest": "1900150ef10729f85fee2d863fab612f0eb4cbc8ee8226257cb5d3efa686bb29",
+  "scenario_distribution": {
+    "SC-A01": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX001",
+        "DX002"
+      ],
+      "scenario_type": "exact_institutional_terms",
+      "target_document": "P1-DOC-004",
+      "topic": "escala_classificacao"
+    },
+    "SC-A02": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX003",
+        "DX004"
+      ],
+      "scenario_type": "exact_institutional_terms",
+      "target_document": "P1-DOC-004",
+      "topic": "nota_minima_aprovacao"
+    },
+    "SC-A03": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX005",
+        "DX006"
+      ],
+      "scenario_type": "semantic_reformulation",
+      "target_document": "P1-DOC-004",
+      "topic": "provas_avaliacao_continua"
+    },
+    "SC-A04": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX007",
+        "DX008"
+      ],
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-005",
+      "topic": "propina_prestacoes"
+    },
+    "SC-A05": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX009",
+        "DX010"
+      ],
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-005",
+      "topic": "multa_prestacoes"
+    },
+    "SC-A06": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "question_ids": [
+        "DX011"
+      ],
+      "scenario_type": "semantic_reformulation",
+      "target_document": "P1-DOC-005",
+      "topic": "reducao_protocolo"
+    },
+    "SC-A07": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX012",
+        "DX013"
+      ],
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-005",
+      "topic": "propina_tfc"
+    },
+    "SC-A08": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX014",
+        "DX015"
+      ],
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-002",
+      "topic": "epoca_especial_inscricao_2526"
+    },
+    "SC-A09": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "question_ids": [
+        "DX016"
+      ],
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-002",
+      "topic": "epoca_especial_realizacao_2526"
+    },
+    "SC-A10": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX017",
+        "DX018"
+      ],
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-002",
+      "topic": "regime_avaliacao_2526"
+    },
+    "SC-A11": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX019",
+        "DX020"
+      ],
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-002",
+      "topic": "reingresso_prazos_2627"
+    },
+    "SC-A12": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "question_ids": [
+        "DX021"
+      ],
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-002",
+      "topic": "transferencias_2fase_2627"
+    },
+    "SC-A13": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX022",
+        "DX023"
+      ],
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-003",
+      "topic": "segunda_chamada_2324"
+    },
+    "SC-A14": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "question_ids": [
+        "DX024"
+      ],
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-003",
+      "topic": "melhoria_notas_2324"
+    },
+    "SC-A15": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "question_ids": [
+        "DX025"
+      ],
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-003",
+      "topic": "regime_avaliacao_2324"
+    },
+    "SC-A16": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX026",
+        "DX027"
+      ],
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-004",
+      "topic": "cartao_estudante_emissao"
+    },
+    "SC-A17": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "question_ids": [
+        "DX028"
+      ],
+      "scenario_type": "strong_lexical_cue",
+      "target_document": "P1-DOC-004",
+      "topic": "documentos_emitidos"
+    },
+    "SC-A18": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX029",
+        "DX030"
+      ],
+      "scenario_type": "semantic_interpretation",
+      "target_document": "P1-DOC-004",
+      "topic": "limites_horario_plano"
+    },
+    "SC-A19": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "question_ids": [
+        "DX031"
+      ],
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-004",
+      "topic": "creditacao_uc"
+    },
+    "SC-A20": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "question_ids": [
+        "DX032"
+      ],
+      "scenario_type": "semantic_interpretation",
+      "target_document": "P1-DOC-004",
+      "topic": "cursos_ferias"
+    },
+    "SC-A21": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX033",
+        "DX034"
+      ],
+      "scenario_type": "exact_institutional_terms",
+      "target_document": "P1-DOC-007",
+      "topic": "comissao_residentes"
+    },
+    "SC-A22": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "question_ids": [
+        "DX035"
+      ],
+      "scenario_type": "numeric_fee_deadline",
+      "target_document": "P1-DOC-007",
+      "topic": "visitas_quinzenais"
+    },
+    "SC-A23": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "question_ids": [
+        "DX036"
+      ],
+      "scenario_type": "semantic_interpretation",
+      "target_document": "P1-DOC-007",
+      "topic": "responsabilidade_quarto_partilhado"
+    },
+    "SC-A24": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX037",
+        "DX038"
+      ],
+      "scenario_type": "strong_lexical_cue",
+      "target_document": "P1-DOC-007",
+      "topic": "proibicoes_residencia"
+    },
+    "SC-A25": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 2,
+      "question_ids": [
+        "DX039",
+        "DX040"
+      ],
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-004",
+      "topic": "recurso_juri_prazo"
+    },
+    "SC-A26": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "question_ids": [
+        "DX042"
+      ],
+      "scenario_type": "procedural",
+      "target_document": "P1-DOC-005",
+      "topic": "reclamacao_listas_ordenacao"
+    },
+    "SC-A27": {
+      "answerability_intent": "ANSWERABLE",
+      "question_count": 1,
+      "question_ids": [
+        "DX041"
+      ],
+      "scenario_type": "semantic_reformulation",
+      "target_document": "P1-DOC-006",
+      "topic": "outorga_tipos_cerimonia"
+    },
+    "SC-N01": {
+      "answerability_intent": "NO_EVIDENCE",
+      "question_count": 2,
+      "question_ids": [
+        "DX043",
+        "DX044"
+      ],
+      "scenario_type": "plausible_absent",
+      "target_document": null,
+      "topic": "residencia_internet"
+    },
+    "SC-N02": {
+      "answerability_intent": "NO_EVIDENCE",
+      "question_count": 1,
+      "question_ids": [
+        "DX045"
+      ],
+      "scenario_type": "plausible_absent",
+      "target_document": null,
+      "topic": "residencia_lavandaria"
+    },
+    "SC-N03": {
+      "answerability_intent": "NO_EVIDENCE",
+      "question_count": 2,
+      "question_ids": [
+        "DX046",
+        "DX047"
+      ],
+      "scenario_type": "plausible_absent",
+      "target_document": null,
+      "topic": "residencias_numero_vagas"
+    },
+    "SC-N04": {
+      "answerability_intent": "NO_EVIDENCE",
+      "question_count": 2,
+      "question_ids": [
+        "DX048",
+        "DX049"
+      ],
+      "scenario_type": "near_miss_negative",
+      "target_document": null,
+      "topic": "calendario_2627_aulas"
+    },
+    "SC-N05": {
+      "answerability_intent": "NO_EVIDENCE",
+      "question_count": 1,
+      "question_ids": [
+        "DX050"
+      ],
+      "scenario_type": "plausible_absent",
+      "target_document": null,
+      "topic": "greve_interrupcao"
+    }
+  },
+  "schema_version": 1,
+  "scope_note": "Protocolo pre-registado da D4.10. Nao contem resultados: nenhum embedding foi gerado, nenhum retrieval executado, nenhum ranking observado e nenhuma metrica calculada nesta fase.",
+  "sealed_at": "2026-08-19T22:51:04.521041+00:00",
+  "snapshot_id": "a94f940229152a3b61860b370df8cb3ea8fe1a0e7236d65e86fe4b5118baf4c1",
+  "usable_documents": [
+    "P1-DOC-002",
+    "P1-DOC-003",
+    "P1-DOC-004",
+    "P1-DOC-005",
+    "P1-DOC-006",
+    "P1-DOC-007"
+  ]
+}
