@@ -1,18 +1,36 @@
 {
   "bootstrap_protocol": {
+    "ci_method": "PERCENTILE",
     "confidence_interval": 0.95,
+    "descriptive_only": "A macro-media convencional por pergunta pode ser reportada para comparacao com as fases anteriores, mas a inferencia primaria e a macro-media por cenario definida aqui.",
+    "eligibility_is_enforced_by": "app/evaluation/d4_10_statistics.py::eligible_scenario_deltas, que recusa qualquer pergunta NO_EVIDENCE em vez de a ignorar.",
+    "eligible_questions": "apenas ANSWERABLE",
+    "eligible_questions_rationale": "Sem alvo relevante, nDCG, Recall e MRR nao estao definidos. As NO_EVIDENCE sao analisadas a parte, por contagem de ruido, e nao entram em nenhum bootstrap de retrieval.",
+    "estimator": "scenario_macro_mean",
+    "estimator_definition": "Para cada pergunta ANSWERABLE, delta = metrica(C2) - metrica(C1). Para cada cenario, media aritmetica dos deltas das suas perguntas. Estimador = media aritmetica dos valores por cenario. Cada cenario pesa um.",
     "forbidden": [
       "usar o bootstrap para escolher configuracao",
-      "alterar a seed depois de observar resultados"
+      "alterar a seed depois de observar resultados",
+      "trocar o metodo do intervalo depois de observar resultados",
+      "reamostrar perguntas em vez de cenarios"
     ],
+    "implementation": "app/evaluation/d4_10_statistics.py",
     "intervals_for": [
       "delta_ndcg_at_5_c2_minus_c1",
       "delta_mrr_c2_minus_c1",
       "delta_recall_at_5_c2_minus_c1",
       "delta_solved_question_rate_c2_minus_c1"
     ],
+    "prng": "random.Random(seed).choices",
+    "quantile_method": "linear_hyndman_fan_type_7",
+    "quantiles": [
+      0.025,
+      0.975
+    ],
     "replicates": 10000,
+    "sampling": "Ordenar os scenario_id elegiveis lexicograficamente. Por replica, sortear N identificadores COM REPOSICAO, sendo N o numero de cenarios elegiveis; cada ocorrencia contribui com a media do seu cenario; a estatistica da replica e a media aritmetica dos N valores. As perguntas nunca sao reamostradas individualmente.",
     "seed": 20260819,
+    "solved_question_definition": "Por pergunta: 1 se existir pelo menos um resultado de grau 2 no top-5, 0 caso contrario. Agregado por cenario e depois entre cenarios, como as restantes metricas.",
     "unit": "scenario_id",
     "unit_rationale": "Perguntas do mesmo cenario sao parafrases da mesma familia semantica e nao sao observacoes independentes. Reamostrar por pergunta duplicaria evidencia estatistica que nao existe."
   },
@@ -70,23 +88,34 @@
   "corpus_digest": "e8a0f08b5ecf37821244e62c266a48b1d64c928cabb75e0e23e08f9c895a447e",
   "corpus_id": "P1",
   "d4_10b_preconditions": [
+    "protocol_status igual a SEALED",
     "protocol_digest desta selagem",
     "question_set_digest identico",
     "scenario_digest identico",
     "human_review_digest identico",
     "human_review.freeze_ready verdadeiro",
+    "nenhum cenario marcado EXCLUDE presente no conjunto",
     "identidade de C0, C1 e C2 identica a declarada aqui"
   ],
+  "d4_10b_preconditions_note": "Um protocolo DRAFT nao satisfaz estas precondicoes, por mais correto que seja o resto do artefacto. A selagem que autoriza a execucao e a que existir depois da revisao humana, e tem de estar num commit anterior ao do primeiro embedding ou ranking.",
   "decision_protocol": {
-    "A_EVIDENCE_FOR_HYBRID": "delta nDCG@5 C2-C1 positivo E o intervalo de confianca de 95% agrupado por cenario NAO inclui zero E Recall@5 de C2 nao inferior ao de C1 E solved_question_rate de C2 nao inferior ao de C1. Significa evidencia no painel independente de que C2 melhora C1 - NAO significa producao.",
-    "B_EVIDENCE_FOR_DENSE": "o intervalo de delta nDCG@5 fica integralmente abaixo de zero, OU ha degradacao consistente das metricas secundarias essenciais que torne a fusao injustificavel. A causa tem de ser documentada.",
-    "C_INCONCLUSIVE": "o intervalo inclui zero, OU os resultados sao mistos, OU o ganho nao e robusto entre cenarios, OU a amostra continua insuficiente para distinguir C1 de C2. Um resultado inconclusivo e valido e NAO autoriza novo tuning sobre o mesmo conjunto.",
+    "A_EVIDENCE_FOR_HYBRID": "CI95_lower(delta_ndcg_at_5) > 0 E Recall@5(C2) >= Recall@5(C1) E solved_question_rate(C2) >= solved_question_rate(C1). Significa evidencia no painel independente de que C2 melhora C1 - NAO significa producao.",
+    "B_EVIDENCE_FOR_DENSE": "CI95_upper(delta_ndcg_at_5) < 0.",
+    "C_INCONCLUSIVE": "Todos os restantes casos, incluindo o intervalo que inclui zero e o que toca exatamente zero. Um resultado inconclusivo e valido e NAO autoriza novo tuning sobre o mesmo conjunto.",
+    "implementation": "app/evaluation/d4_10_statistics.py::decide",
+    "inputs": [
+      "IC95 do delta nDCG@5, macro por cenario",
+      "Recall@5 macro por cenario, C1 e C2",
+      "solved_question_rate macro por cenario, C1 e C2"
+    ],
     "magnitude_threshold": null,
-    "magnitude_threshold_note": "NAO existe limiar de 'ganho material'. A D4.9 introduziu um MATERIAL_DELTA = 0.02 contra a instrucao explicita da fase e teve de o remover. A magnitude e reportada como estimativa, intervalo, casos e cenarios."
+    "magnitude_threshold_note": "NAO existe limiar de 'ganho material'. A D4.9 introduziu um MATERIAL_DELTA = 0.02 contra a instrucao explicita da fase e teve de o remover. A magnitude e reportada como estimativa, intervalo, casos e cenarios.",
+    "secondary_metrics_cannot_reclassify": "MRR, Recall@1/@3, nDCG@1/@3, distribuicao de graus e regressoes por pergunta sao reportadas e discutidas, e nao alteram o ramo.",
+    "totality": "A regra e total: A, B ou C, sem quarta interpretacao e sem escolha humana do ramo depois de ver os resultados."
   },
   "digest_algorithm": "sha256",
   "digest_scope": {
-    "human_review_digest": "estado de revisao e bloco de validacao inteiro de cada pergunta: anotador, metodo, estado, racional e ancoras ou termos procurados. Existe porque o question_set_digest nao cobre nada disto; sem ele, a validacao humana ficaria fora da selagem e seria editavel sem rasto.",
+    "human_review_digest": "toda a revisao humana. Por pergunta: estado de revisao e bloco de validacao inteiro - anotador, metodo, estado, racional e ancoras ou termos procurados. Por cenario: a revisao de independencia semantica face as fases historicas - estado, referencias, justificacao e anotador. Existe porque nem o question_set_digest nem o scenario_digest cobrem isto; sem ele, a revisao humana ficaria fora da selagem e seria editavel sem rasto.",
     "question_set_digest": "substancia das perguntas: identificador, cenario, texto, idioma, intencao e documento alvo. NAO cobre a revisao, para que confirmar uma validacao nao invalide o conjunto validado.",
     "scenario_digest": "metadados de cada cenario - tipo, topico, documento alvo, intencao, contagem - e as perguntas que o compoem."
   },
@@ -323,13 +352,89 @@
     },
     "freeze_ready": false,
     "human_confirmed": 0,
-    "pending_human_review": 50
+    "pending_human_review": 50,
+    "scenario_overlap_review": {
+      "by_status": {
+        "PENDING_HUMAN_REVIEW": 32
+      },
+      "marked_exclude_still_present": 0,
+      "pending_or_inadmissible": 32,
+      "reviewed_and_admissible": 0,
+      "total_scenarios": 32
+    },
+    "total_questions": 50
   },
-  "human_review_digest": "dccdb73a5722b0ed1513b67afd9eeca16be95b1d03dcddf02c5613735cbf3845",
+  "human_review_digest": "0fbc06e5bf916c294aa8d5996b2b6c74013ea224b7924f1cd838a6a076c0f670",
   "independence_manifest": {
     "flagged_for_human_review": [
       "SC-N04: familia semantica proxima de DA036/DA037"
     ],
+    "historical_question_ids": [
+      "DA001",
+      "DA002",
+      "DA003",
+      "DA004",
+      "DA005",
+      "DA006",
+      "DA007",
+      "DA008",
+      "DA009",
+      "DA010",
+      "DA011",
+      "DA012",
+      "DA013",
+      "DA014",
+      "DA015",
+      "DA016",
+      "DA017",
+      "DA018",
+      "DA019",
+      "DA020",
+      "DA021",
+      "DA022",
+      "DA023",
+      "DA024",
+      "DA025",
+      "DA026",
+      "DA027",
+      "DA028",
+      "DA029",
+      "DA030",
+      "DA031",
+      "DA032",
+      "DA033",
+      "DA034",
+      "DA035",
+      "DA036",
+      "DA037",
+      "DA038",
+      "DA039",
+      "DA040",
+      "DA041",
+      "DA042",
+      "DA043",
+      "DA044",
+      "DA045",
+      "DA046",
+      "DA047",
+      "DA048",
+      "DA049",
+      "Q001",
+      "Q002",
+      "Q003",
+      "Q004",
+      "Q005",
+      "Q006",
+      "Q007",
+      "Q008",
+      "Q009",
+      "Q010",
+      "Q011",
+      "Q012",
+      "Q013",
+      "Q014"
+    ],
+    "historical_question_ids_note": "Enumeracao exata dos identificadores das fases anteriores, derivada dos dois artefactos citados em historical_sets_reviewed. Uma referencia de revisao de independencia tem de apontar para um destes: 'Q999' tem o formato certo e nao existe, e uma justificacao que aponte para uma pergunta inexistente nao sustenta nada.",
     "historical_sets_reviewed": [
       "Q001-Q014 (retrieval-ground-truth-p1-lexical-dense-repooled.json)",
       "DA001-DA049 (dense-admission-dataset-v1.json)"
@@ -403,7 +508,9 @@
     },
     "unjudged_policy": "Se unjudged_in_top_k > 0 para uma pergunta, essa pergunta NAO entra nas metricas finais ate o julgamento estar completo. Nao se assume unjudged = 0."
   },
-  "protocol_digest": "6b066812d5c4ab7e8dc5d5095daad409549f6c0d71585bd782f25512d66e9b2a",
+  "protocol_digest": "73522360acfe00e5d965f92b81eaee6e10e15333cd6ab12cbf587b9b44590fab",
+  "protocol_status": "DRAFT",
+  "protocol_status_note": "DRAFT: proposta auditavel, produzida antes de a revisao humana estar completa. NAO satisfaz as precondicoes da D4.10b. SEALED: toda a revisao humana concluida - perguntas e independencia dos cenarios - e so este estado desbloqueia a D4.10b.",
   "protocol_version": "d4.10-protocol-v1",
   "question_set_digest": "666ddb6f41e805f24dd885ef709527ad21ef11144c89638ac4488b126a77d093",
   "question_set_version": "d4.10-question-set-v1",
@@ -752,7 +859,7 @@
   },
   "schema_version": 1,
   "scope_note": "Protocolo pre-registado da D4.10. Nao contem resultados: nenhum embedding foi gerado, nenhum retrieval executado, nenhum ranking observado e nenhuma metrica calculada nesta fase.",
-  "sealed_at": "2026-08-19T22:51:04.521041+00:00",
+  "sealed_at": "2026-08-20T02:22:11.975804+00:00",
   "snapshot_id": "a94f940229152a3b61860b370df8cb3ea8fe1a0e7236d65e86fe4b5118baf4c1",
   "usable_documents": [
     "P1-DOC-002",

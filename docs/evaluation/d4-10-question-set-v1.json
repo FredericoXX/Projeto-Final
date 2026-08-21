@@ -177,11 +177,78 @@
       ]
     }
   },
-  "human_review_digest": "dccdb73a5722b0ed1513b67afd9eeca16be95b1d03dcddf02c5613735cbf3845",
+  "human_review_digest": "0fbc06e5bf916c294aa8d5996b2b6c74013ea224b7924f1cd838a6a076c0f670",
+  "human_review_note": "A revisao de independencia semantica de cada cenario face a Q001-Q014 e a DA001-DA049 e humana e esta pendente para os 32 cenarios. Sobreposicao zero de identificadores e de texto normalizado nao prova independencia semantica: duas formulacoes diferentes podem testar o mesmo facto ja avaliado. Nenhuma decisao foi tomada por maquina.",
   "independence_manifest": {
     "flagged_for_human_review": [
       "SC-N04: familia semantica proxima de DA036/DA037"
     ],
+    "historical_question_ids": [
+      "DA001",
+      "DA002",
+      "DA003",
+      "DA004",
+      "DA005",
+      "DA006",
+      "DA007",
+      "DA008",
+      "DA009",
+      "DA010",
+      "DA011",
+      "DA012",
+      "DA013",
+      "DA014",
+      "DA015",
+      "DA016",
+      "DA017",
+      "DA018",
+      "DA019",
+      "DA020",
+      "DA021",
+      "DA022",
+      "DA023",
+      "DA024",
+      "DA025",
+      "DA026",
+      "DA027",
+      "DA028",
+      "DA029",
+      "DA030",
+      "DA031",
+      "DA032",
+      "DA033",
+      "DA034",
+      "DA035",
+      "DA036",
+      "DA037",
+      "DA038",
+      "DA039",
+      "DA040",
+      "DA041",
+      "DA042",
+      "DA043",
+      "DA044",
+      "DA045",
+      "DA046",
+      "DA047",
+      "DA048",
+      "DA049",
+      "Q001",
+      "Q002",
+      "Q003",
+      "Q004",
+      "Q005",
+      "Q006",
+      "Q007",
+      "Q008",
+      "Q009",
+      "Q010",
+      "Q011",
+      "Q012",
+      "Q013",
+      "Q014"
+    ],
+    "historical_question_ids_note": "Enumeracao exata dos identificadores das fases anteriores, derivada dos dois artefactos citados em historical_sets_reviewed. Uma referencia de revisao de independencia tem de apontar para um destes: 'Q999' tem o formato certo e nao existe, e uma justificacao que aponte para uma pergunta inexistente nao sustenta nada.",
     "historical_sets_reviewed": [
       "Q001-Q014 (retrieval-ground-truth-p1-lexical-dense-repooled.json)",
       "DA001-DA049 (dense-admission-dataset-v1.json)"
@@ -1711,6 +1778,12 @@
   "scenarios": [
     {
       "answerability_intent": "ANSWERABLE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 2,
       "scenario_id": "SC-A01",
       "scenario_type": "exact_institutional_terms",
@@ -1719,6 +1792,12 @@
     },
     {
       "answerability_intent": "ANSWERABLE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 2,
       "scenario_id": "SC-A02",
       "scenario_type": "exact_institutional_terms",
@@ -1727,6 +1806,12 @@
     },
     {
       "answerability_intent": "ANSWERABLE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 2,
       "scenario_id": "SC-A03",
       "scenario_type": "semantic_reformulation",
@@ -1735,6 +1820,12 @@
     },
     {
       "answerability_intent": "ANSWERABLE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 2,
       "scenario_id": "SC-A04",
       "scenario_type": "procedural",
@@ -1743,6 +1834,12 @@
     },
     {
       "answerability_intent": "ANSWERABLE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 2,
       "scenario_id": "SC-A05",
       "scenario_type": "numeric_fee_deadline",
@@ -1751,6 +1848,12 @@
     },
     {
       "answerability_intent": "ANSWERABLE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 1,
       "scenario_id": "SC-A06",
       "scenario_type": "semantic_reformulation",
@@ -1759,6 +1862,12 @@
     },
     {
       "answerability_intent": "ANSWERABLE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 2,
       "scenario_id": "SC-A07",
       "scenario_type": "numeric_fee_deadline",
@@ -1767,6 +1876,12 @@
     },
     {
       "answerability_intent": "ANSWERABLE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 2,
       "scenario_id": "SC-A08",
       "scenario_type": "numeric_fee_deadline",
@@ -1775,6 +1890,12 @@
     },
     {
       "answerability_intent": "ANSWERABLE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 1,
       "scenario_id": "SC-A09",
       "scenario_type": "numeric_fee_deadline",
@@ -1783,6 +1904,12 @@
     },
     {
       "answerability_intent": "ANSWERABLE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 2,
       "scenario_id": "SC-A10",
       "scenario_type": "numeric_fee_deadline",
@@ -1791,6 +1918,12 @@
     },
     {
       "answerability_intent": "ANSWERABLE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 2,
       "scenario_id": "SC-A11",
       "scenario_type": "procedural",
@@ -1799,6 +1932,12 @@
     },
     {
       "answerability_intent": "ANSWERABLE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 1,
       "scenario_id": "SC-A12",
       "scenario_type": "procedural",
@@ -1807,6 +1946,12 @@
     },
     {
       "answerability_intent": "ANSWERABLE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 2,
       "scenario_id": "SC-A13",
       "scenario_type": "numeric_fee_deadline",
@@ -1815,6 +1960,12 @@
     },
     {
       "answerability_intent": "ANSWERABLE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 1,
       "scenario_id": "SC-A14",
       "scenario_type": "numeric_fee_deadline",
@@ -1823,6 +1974,12 @@
     },
     {
       "answerability_intent": "ANSWERABLE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 1,
       "scenario_id": "SC-A15",
       "scenario_type": "numeric_fee_deadline",
@@ -1831,6 +1988,12 @@
     },
     {
       "answerability_intent": "ANSWERABLE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 2,
       "scenario_id": "SC-A16",
       "scenario_type": "procedural",
@@ -1839,6 +2002,12 @@
     },
     {
       "answerability_intent": "ANSWERABLE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 1,
       "scenario_id": "SC-A17",
       "scenario_type": "strong_lexical_cue",
@@ -1847,6 +2016,12 @@
     },
     {
       "answerability_intent": "ANSWERABLE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 2,
       "scenario_id": "SC-A18",
       "scenario_type": "semantic_interpretation",
@@ -1855,6 +2030,12 @@
     },
     {
       "answerability_intent": "ANSWERABLE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 1,
       "scenario_id": "SC-A19",
       "scenario_type": "procedural",
@@ -1863,6 +2044,12 @@
     },
     {
       "answerability_intent": "ANSWERABLE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 1,
       "scenario_id": "SC-A20",
       "scenario_type": "semantic_interpretation",
@@ -1871,6 +2058,12 @@
     },
     {
       "answerability_intent": "ANSWERABLE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 2,
       "scenario_id": "SC-A21",
       "scenario_type": "exact_institutional_terms",
@@ -1879,6 +2072,12 @@
     },
     {
       "answerability_intent": "ANSWERABLE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 1,
       "scenario_id": "SC-A22",
       "scenario_type": "numeric_fee_deadline",
@@ -1887,6 +2086,12 @@
     },
     {
       "answerability_intent": "ANSWERABLE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 1,
       "scenario_id": "SC-A23",
       "scenario_type": "semantic_interpretation",
@@ -1895,6 +2100,12 @@
     },
     {
       "answerability_intent": "ANSWERABLE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 2,
       "scenario_id": "SC-A24",
       "scenario_type": "strong_lexical_cue",
@@ -1903,6 +2114,12 @@
     },
     {
       "answerability_intent": "ANSWERABLE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 2,
       "scenario_id": "SC-A25",
       "scenario_type": "procedural",
@@ -1911,6 +2128,12 @@
     },
     {
       "answerability_intent": "ANSWERABLE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 1,
       "scenario_id": "SC-A27",
       "scenario_type": "semantic_reformulation",
@@ -1919,6 +2142,12 @@
     },
     {
       "answerability_intent": "ANSWERABLE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 1,
       "scenario_id": "SC-A26",
       "scenario_type": "procedural",
@@ -1927,6 +2156,12 @@
     },
     {
       "answerability_intent": "NO_EVIDENCE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 2,
       "scenario_id": "SC-N01",
       "scenario_type": "plausible_absent",
@@ -1935,6 +2170,12 @@
     },
     {
       "answerability_intent": "NO_EVIDENCE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 1,
       "scenario_id": "SC-N02",
       "scenario_type": "plausible_absent",
@@ -1943,6 +2184,12 @@
     },
     {
       "answerability_intent": "NO_EVIDENCE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 2,
       "scenario_id": "SC-N03",
       "scenario_type": "plausible_absent",
@@ -1951,6 +2198,12 @@
     },
     {
       "answerability_intent": "NO_EVIDENCE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 2,
       "scenario_id": "SC-N04",
       "scenario_type": "near_miss_negative",
@@ -1959,6 +2212,12 @@
     },
     {
       "answerability_intent": "NO_EVIDENCE",
+      "historical_overlap_review": {
+        "annotator": null,
+        "historical_refs": [],
+        "rationale": null,
+        "status": "PENDING_HUMAN_REVIEW"
+      },
       "question_count": 1,
       "scenario_id": "SC-N05",
       "scenario_type": "plausible_absent",

@@ -75,6 +75,56 @@ HUMAN_REVIEW_REQUIRED: Final = "HUMAN_REVIEW_REQUIRED"
 HUMAN_CONFIRMED: Final = "HUMAN_CONFIRMED"
 REVIEW_STATUSES: Final = (MACHINE_PROPOSED, HUMAN_REVIEW_REQUIRED, HUMAN_CONFIRMED)
 
+#: Estados do bloco de validação, com os nomes que o artefacto já usava. O
+#: estado pendente é diferente conforme a intenção porque a operação que a
+#: máquina fez foi diferente: localizar evidência não é o mesmo que procurar e
+#: não encontrar.
+MACHINE_LOCATED: Final = "MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION"
+MACHINE_SEARCHED: Final = "MACHINE_SEARCHED_PENDING_HUMAN_CONFIRMATION"
+VALIDATION_STATUSES: Final = (MACHINE_LOCATED, MACHINE_SEARCHED, HUMAN_CONFIRMED)
+
+#: Que bloco de validação cada intenção usa, e qual o estado pendente próprio.
+VALIDATION_BLOCK_BY_INTENT: Final = {
+    ANSWERABLE: "answerable_validation",
+    NO_EVIDENCE: "no_evidence_validation",
+}
+PENDING_VALIDATION_STATUS_BY_BLOCK: Final = {
+    "answerable_validation": MACHINE_LOCATED,
+    "no_evidence_validation": MACHINE_SEARCHED,
+}
+
+#: O campo que justifica a etiqueta, por bloco. Um ANSWERABLE justifica-se pelo
+#: que a evidência diz; um NO_EVIDENCE justifica-se pelo que a procura devolveu.
+RATIONALE_FIELD_BY_BLOCK: Final = {
+    "answerable_validation": "rationale",
+    "no_evidence_validation": "search_result",
+}
+
+#: O campo que sustenta materialmente a etiqueta, por bloco.
+SUPPORT_FIELD_BY_BLOCK: Final = {
+    "answerable_validation": "located_evidence",
+    "no_evidence_validation": "terms_searched",
+}
+
+#: Revisão de independência semântica, por cenário. Sobreposição zero de
+#: identificadores e de texto normalizado **não** prova independência: duas
+#: formulações diferentes podem testar o mesmo facto institucional já medido.
+#: Só um humano decide isso, e por isso o estado inicial é pendente.
+PENDING_HUMAN_REVIEW: Final = "PENDING_HUMAN_REVIEW"
+INDEPENDENT: Final = "INDEPENDENT"
+RELATED_BUT_DISTINCT: Final = "RELATED_BUT_DISTINCT"
+EXCLUDE: Final = "EXCLUDE"
+OVERLAP_REVIEW_STATUSES: Final = (
+    PENDING_HUMAN_REVIEW,
+    INDEPENDENT,
+    RELATED_BUT_DISTINCT,
+    EXCLUDE,
+)
+#: Estados com que um cenário pode entrar na D4.10b. ``EXCLUDE`` não é um deles:
+#: um cenário excluído tem de sair do conjunto **antes** de qualquer execução.
+ADMISSIBLE_OVERLAP_STATUSES: Final = (INDEPENDENT, RELATED_BUT_DISTINCT)
+OVERLAP_REVIEW_FIELD: Final = "historical_overlap_review"
+
 #: Prefixo dos identificadores desta fase. Distinto de ``Q`` (D4.1–D4.9) e de
 #: ``DA`` (D4.8.2) para que a reutilização acidental de um identificador
 #: histórico seja visível à vista desarmada e detetável por teste.
@@ -162,9 +212,174 @@ def question_set_digest(questions: Sequence[Mapping[str, Any]]) -> str:
 
 def validation_block_name(question: Mapping[str, Any]) -> str:
     """Nome do bloco de validação que a intenção da pergunta exige."""
-    if question["answerability_intent"] == ANSWERABLE:
-        return "answerable_validation"
-    return "no_evidence_validation"
+    return VALIDATION_BLOCK_BY_INTENT[question["answerability_intent"]]
+
+
+def _non_empty_string(value: object) -> bool:
+    return isinstance(value, str) and bool(value.strip())
+
+
+def verify_question_confirmation(question: Mapping[str, Any]) -> None:
+    """Recusa uma confirmação humana incoerente ou sem fundamento registado.
+
+    O contrato anterior lia apenas o ``review_status`` e, quando este era
+    ``HUMAN_CONFIRMED``, exigia que existisse um ``annotator``. Isso deixava
+    passar uma pergunta em que o bloco de validação continuava a dizer
+    ``MACHINE_LOCATED_PENDING_HUMAN_CONFIRMATION``: o resumo contava-a como
+    confirmada enquanto o registo da validação dizia o contrário. Dois campos
+    que descrevem o mesmo facto não podem discordar — nem na ordem inversa, com
+    o bloco confirmado e a pergunta por rever.
+
+    Uma confirmação humana afirma três coisas ao mesmo tempo: que um humano
+    decidiu, quem foi, e sobre que material. As três são verificadas aqui.
+    """
+    qid = question.get("question_id")
+    block = validation_block_name(question)
+    validation = question.get(block)
+    if not isinstance(validation, Mapping):
+        msg = f"{qid}: {block} ausente"
+        raise ProtocolError(msg)
+
+    review_status = question.get("review_status")
+    validation_status = validation.get("validation_status")
+    if validation_status not in VALIDATION_STATUSES:
+        msg = f"{qid}: validation_status ausente ou desconhecido"
+        raise ProtocolError(msg)
+
+    confirmed_review = review_status == HUMAN_CONFIRMED
+    confirmed_validation = validation_status == HUMAN_CONFIRMED
+    if confirmed_review != confirmed_validation:
+        msg = (
+            f"{qid}: confirmação incoerente — review_status {review_status!r} e "
+            f"validation_status {validation_status!r}"
+        )
+        raise ProtocolError(msg)
+
+    if not confirmed_review:
+        # Pendente: o estado do bloco tem de ser o pendente próprio da intenção.
+        if validation_status != PENDING_VALIDATION_STATUS_BY_BLOCK[block]:
+            msg = (
+                f"{qid}: validation_status {validation_status!r} não é o estado "
+                f"pendente de {block}"
+            )
+            raise ProtocolError(msg)
+        return
+
+    if not _non_empty_string(validation.get("annotator")):
+        msg = f"{qid}: HUMAN_CONFIRMED sem annotator nomeado"
+        raise ProtocolError(msg)
+    if not _non_empty_string(validation.get("validation_method")):
+        msg = f"{qid}: HUMAN_CONFIRMED sem validation_method"
+        raise ProtocolError(msg)
+    rationale_field = RATIONALE_FIELD_BY_BLOCK[block]
+    if not _non_empty_string(validation.get(rationale_field)):
+        msg = f"{qid}: HUMAN_CONFIRMED sem {rationale_field}"
+        raise ProtocolError(msg)
+    support_field = SUPPORT_FIELD_BY_BLOCK[block]
+    if not validation.get(support_field):
+        msg = f"{qid}: HUMAN_CONFIRMED sem {support_field}"
+        raise ProtocolError(msg)
+
+
+def question_is_confirmed(question: Mapping[str, Any]) -> bool:
+    """Se esta pergunta conta como humanamente validada.
+
+    Passa pela **mesma** verificação que a guarda usa. Uma segunda leitura, mais
+    permissiva, seria uma forma de contar confirmações que a validação recusa —
+    exatamente o desencontro que esta fase corrigiu entre `review_status` e
+    `validation_status`.
+    """
+    try:
+        verify_question_confirmation(question)
+    except ProtocolError:
+        return False
+    validation = question.get(validation_block_name(question))
+    if not isinstance(validation, Mapping):
+        return False
+    return (
+        question.get("review_status") == HUMAN_CONFIRMED
+        and validation.get("validation_status") == HUMAN_CONFIRMED
+    )
+
+
+def known_historical_ids(payload: Mapping[str, Any]) -> frozenset[str]:
+    """Identificadores históricos que o conjunto declara ter revisto."""
+    declared = (payload.get("independence_manifest") or {}).get(
+        "historical_question_ids"
+    )
+    return frozenset(declared or ())
+
+
+def verify_scenario_review(
+    scenario: Mapping[str, Any], known_ids: frozenset[str] = frozenset()
+) -> None:
+    """Recusa uma revisão de independência ausente, desconhecida ou sem assinatura."""
+    sid = scenario.get("scenario_id")
+    review = scenario.get(OVERLAP_REVIEW_FIELD)
+    if not isinstance(review, Mapping):
+        msg = f"{sid}: {OVERLAP_REVIEW_FIELD} ausente"
+        raise ProtocolError(msg)
+    status = review.get("status")
+    if status not in OVERLAP_REVIEW_STATUSES:
+        msg = f"{sid}: status de sobreposição desconhecido: {status!r}"
+        raise ProtocolError(msg)
+    if status == PENDING_HUMAN_REVIEW:
+        return
+
+    # Decisão final: tem sempre de ser assinada.
+    if not _non_empty_string(review.get("annotator")):
+        msg = f"{sid}: decisão {status} sem annotator nomeado"
+        raise ProtocolError(msg)
+    if status in (RELATED_BUT_DISTINCT, EXCLUDE):
+        refs = review.get("historical_refs")
+        if not refs:
+            msg = f"{sid}: {status} sem historical_refs"
+            raise ProtocolError(msg)
+        for ref in refs:
+            if not HISTORICAL_QUESTION_ID_PATTERN.match(str(ref)):
+                msg = f"{sid}: historical_ref fora do padrão Q###/DA###: {ref!r}"
+                raise ProtocolError(msg)
+            # O padrão só diz que **parece** um identificador histórico. `Q999`
+            # parece e não existe, e uma justificação que aponte para uma
+            # pergunta inexistente não sustenta nada.
+            if known_ids and str(ref) not in known_ids:
+                msg = f"{sid}: historical_ref inexistente: {ref!r}"
+                raise ProtocolError(msg)
+        if not _non_empty_string(review.get("rationale")):
+            msg = f"{sid}: {status} sem rationale"
+            raise ProtocolError(msg)
+
+
+def scenario_review_is_final(
+    scenario: Mapping[str, Any], known_ids: frozenset[str] = frozenset()
+) -> bool:
+    """Se este cenário já tem decisão de independência **válida** e admissível.
+
+    Como em :func:`question_is_confirmed`, passa pela mesma verificação que a
+    guarda: contar um cenário como revisto só pelo rótulo do estado deixaria
+    passar uma decisão sem anotador, sem justificação ou a apontar para uma
+    pergunta que não existe.
+    """
+    try:
+        verify_scenario_review(scenario, known_ids)
+    except ProtocolError:
+        return False
+    review = scenario.get(OVERLAP_REVIEW_FIELD) or {}
+    return review.get("status") in ADMISSIBLE_OVERLAP_STATUSES
+
+
+def verify_overlap_review(payload: Mapping[str, Any]) -> None:
+    """Recusa qualquer revisão de independência inválida no conjunto.
+
+    Sobreposição zero de identificadores e de texto normalizado é o que o código
+    consegue provar sozinho, e não é independência semântica: duas formulações
+    sem uma palavra em comum podem testar exatamente o mesmo requisito já medido
+    noutra fase. Quem decide isso é um humano, cenário a cenário — todos os 32,
+    e não apenas o que a máquina achou suspeito.
+    """
+    known_ids = known_historical_ids(payload)
+    for scenario in payload["scenarios"]:
+        verify_scenario_review(scenario, known_ids)
 
 
 def scenario_identity(
@@ -220,18 +435,42 @@ def human_review_identity(question: Mapping[str, Any]) -> dict[str, Any]:
     }
 
 
-def human_review_digest(questions: Sequence[Mapping[str, Any]]) -> str:
-    """Digest do processo de validação, ordenado por ``question_id``.
+def scenario_review_identity(scenario: Mapping[str, Any]) -> dict[str, Any]:
+    """A projeção da revisão de independência que o digest cobre."""
+    review = scenario.get(OVERLAP_REVIEW_FIELD)
+    return {
+        "scenario_id": scenario["scenario_id"],
+        OVERLAP_REVIEW_FIELD: dict(review) if isinstance(review, Mapping) else None,
+    }
+
+
+def human_review_digest(payload: Mapping[str, Any]) -> str:
+    """Digest do processo de revisão humana — perguntas **e** cenários.
 
     Sem este digest, confirmar as cinquenta validações deixaria o registo de
     quem validou o quê fora de qualquer selagem — e portanto editável depois,
     sem rasto. Com ele, trocar o anotador de uma pergunta, mudar a pergunta que
     foi validada ou reescrever a evidência registada muda o ``protocol_digest``.
+
+    Cobre também a revisão de independência de cada cenário, pela mesma razão:
+    decidir que ``SC-N04`` é independente de DA036/DA037 é um juízo humano com
+    consequências sobre a validade do painel, e um juízo que não está selado é
+    um juízo que se pode reescrever depois de ver os resultados.
+
+    O ``scenario_digest`` continua a **não** cobrir esta revisão: se cobrisse,
+    rever a independência invalidaria os cenários revistos — a mesma armadilha
+    que o ``question_set_digest`` evita ao não cobrir o ``review_status``.
     """
-    projection = sorted(
-        (human_review_identity(question) for question in questions),
-        key=lambda record: record["question_id"],
-    )
+    projection = {
+        "questions": sorted(
+            (human_review_identity(question) for question in payload["questions"]),
+            key=lambda record: record["question_id"],
+        ),
+        "scenarios": sorted(
+            (scenario_review_identity(scenario) for scenario in payload["scenarios"]),
+            key=lambda record: record["scenario_id"],
+        ),
+    }
     return _digest(projection)
 
 
@@ -295,12 +534,11 @@ def verify_question_set(payload: Mapping[str, Any]) -> None:
         ):
             msg = f"{qid}: NO_EVIDENCE sem termos procurados"
             raise ProtocolError(msg)
-        # Só um humano assina uma confirmação humana.
-        if question["review_status"] == HUMAN_CONFIRMED and not validation.get(
-            "annotator"
-        ):
-            msg = f"{qid}: HUMAN_CONFIRMED sem annotator"
-            raise ProtocolError(msg)
+        # Só um humano assina uma confirmação humana — e os dois campos que a
+        # descrevem têm de dizer a mesma coisa.
+        verify_question_confirmation(question)
+
+    verify_overlap_review(payload)
 
     declared = {scenario["scenario_id"] for scenario in scenarios}
     used = {question["scenario_id"] for question in questions}
@@ -358,13 +596,51 @@ def human_review_summary(payload: Mapping[str, Any]) -> dict[str, Any]:
     O protocolo só pode ser declarado **congelado** quando isto chegar a zero
     pendentes: até lá, o que existe é uma proposta auditável, não um pré-registo.
     """
-    statuses = Counter(question["review_status"] for question in payload["questions"])
-    pending = statuses[MACHINE_PROPOSED] + statuses[HUMAN_REVIEW_REQUIRED]
+    questions = payload["questions"]
+    scenarios = payload["scenarios"]
+
+    # Uma pergunta só conta como confirmada se passar pela mesma verificação
+    # que a guarda aplica. Contar apenas `review_status` deixava passar uma
+    # pergunta marcada como revista cujo bloco de validação ainda dizia
+    # «pendente»; contar pelo rótulo do estado deixaria passar uma decisão de
+    # cenário sem anotador ou sem justificação.
+    known_ids = known_historical_ids(payload)
+
+    statuses = Counter(question["review_status"] for question in questions)
+    confirmed = sum(1 for question in questions if question_is_confirmed(question))
+    pending_questions = len(questions) - confirmed
+
+    overlap_statuses = Counter(
+        (scenario.get(OVERLAP_REVIEW_FIELD) or {}).get("status")
+        for scenario in scenarios
+    )
+    admissible = sum(
+        1 for scenario in scenarios if scenario_review_is_final(scenario, known_ids)
+    )
+    pending_scenarios = len(scenarios) - admissible
+    excluded = overlap_statuses[EXCLUDE]
+
     return {
         "by_status": dict(sorted(statuses.items())),
-        "pending_human_review": pending,
-        "human_confirmed": statuses[HUMAN_CONFIRMED],
-        "freeze_ready": pending == 0,
+        "pending_human_review": pending_questions,
+        "human_confirmed": confirmed,
+        "total_questions": len(questions),
+        "scenario_overlap_review": {
+            "by_status": dict(
+                sorted((str(k), v) for k, v in overlap_statuses.items())
+            ),
+            "total_scenarios": len(scenarios),
+            "reviewed_and_admissible": admissible,
+            "pending_or_inadmissible": pending_scenarios,
+            "marked_exclude_still_present": excluded,
+        },
+        # `freeze_ready` afirma que **toda** a revisão humana está feita: as
+        # perguntas e a independência dos cenários. Um cenário marcado EXCLUDE
+        # que continue no conjunto bloqueia — a remoção tem de acontecer antes
+        # de qualquer execução, não depois de se ver o que ele produziu.
+        "freeze_ready": pending_questions == 0
+        and pending_scenarios == 0
+        and excluded == 0,
     }
 
 
@@ -446,7 +722,7 @@ def declared_identity(payload: Mapping[str, Any]) -> dict[str, Any]:
     return {
         "question_set_digest": question_set_digest(payload["questions"]),
         "scenario_digest": scenario_digest(payload),
-        "human_review_digest": human_review_digest(payload["questions"]),
+        "human_review_digest": human_review_digest(payload),
         "scenario_distribution": scenario_distribution(payload),
         "document_distribution": document_distribution(payload),
     }
