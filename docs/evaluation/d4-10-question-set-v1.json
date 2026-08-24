@@ -2226,7 +2226,7 @@
     }
   ],
   "schema_version": 1,
-  "scope_note": "Painel independente da D4.10, desenhado sobre P1/S1 sem observar qualquer ranking. Nao contem julgamentos de relevancia: os graus 0/1/2 so existem depois de haver resultados para julgar.",
+  "scope_note": "Painel da D4.10 desenhado sobre P1/S1. Sete perguntas tiveram exposicao diagnostica parcial a C0 antes da execucao formal D4.10b, conforme prior_observation_disclosure incorporado no protocolo D4.10a.1. O conjunto permanece inalterado e nao contem julgamentos de relevancia: os graus 0/1/2 so existem depois de haver resultados formais para julgar.",
   "snapshot_id": "a94f940229152a3b61860b370df8cb3ea8fe1a0e7236d65e86fe4b5118baf4c1",
   "usable_documents": [
     "P1-DOC-002",

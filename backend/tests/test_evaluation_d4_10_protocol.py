@@ -14,7 +14,10 @@ from typing import Any
 
 import pytest
 
+import app.evaluation.d4_10_statistics as d4_10_statistics
+import scripts.seal_d4_10_protocol as d4_10_sealer
 from app.evaluation.d4_10_protocol import (
+    AMENDMENT_KIND,
     ANSWERABLE,
     EXCLUDE,
     HUMAN_CONFIRMED,
@@ -39,6 +42,7 @@ from app.evaluation.d4_10_protocol import (
     scenario_distribution,
     validation_block_name,
     verify_declared_identity,
+    verify_prior_observation_disclosure,
     verify_protocol_has_no_results,
     verify_question_set,
 )
@@ -53,10 +57,13 @@ from app.evaluation.d4_10_statistics import (
     StatisticsError,
     bootstrap_interval,
     bootstrap_replicates,
+    build_decision_result,
     decide,
     eligible_scenario_deltas,
     quantile,
     scenario_macro_mean,
+    sensitivity_scenario_deltas_without_sc_a16,
+    validate_decision_result,
 )
 from scripts.seal_d4_10_protocol import (
     EXIT_HUMAN_REVIEW_REQUIRED,
@@ -144,6 +151,75 @@ def test_the_artefacts_declare_their_own_digests(
     assert protocol["scenario_digest"] == scenario_digest(question_set)
     assert protocol["human_review_digest"] == human_review_digest(question_set)
     assert protocol["protocol_digest"] == protocol_digest(protocol)
+
+
+def test_the_amendment_requires_a_prior_observation_disclosure(
+    protocol: dict[str, Any],
+) -> None:
+    tampered = copy.deepcopy(protocol)
+    del tampered["prior_observation_disclosure"]
+    with pytest.raises(ProtocolError, match="prior_observation_disclosure obrigatório"):
+        verify_prior_observation_disclosure(tampered)
+
+
+def test_mutating_only_the_disclosure_changes_the_protocol_digest(
+    protocol: dict[str, Any],
+) -> None:
+    tampered = copy.deepcopy(protocol)
+    before = protocol_digest(tampered)
+    tampered["prior_observation_disclosure"]["observations"][0]["exposure_surface"][
+        0
+    ] = "different_observed_surface"
+    verify_prior_observation_disclosure(tampered)
+    assert protocol_digest(tampered) != before
+
+
+def test_observer_belief_field_is_required_without_a_default(
+    protocol: dict[str, Any],
+) -> None:
+    tampered = copy.deepcopy(protocol)
+    del tampered["prior_observation_disclosure"]["observations"][0][
+        "observer_formed_belief_about_label"
+    ]
+    with pytest.raises(ProtocolError, match="observer_formed_belief_about_label"):
+        verify_prior_observation_disclosure(tampered)
+
+
+@pytest.mark.parametrize("rationale", [None, "", "   "])
+def test_false_observer_belief_requires_a_non_empty_rationale(
+    protocol: dict[str, Any], rationale: str | None
+) -> None:
+    tampered = copy.deepcopy(protocol)
+    observation = tampered["prior_observation_disclosure"]["observations"][0]
+    observation["observer_formed_belief_about_label"] = False
+    if rationale is None:
+        observation.pop("observation_belief_rationale", None)
+    else:
+        observation["observation_belief_rationale"] = rationale
+    with pytest.raises(ProtocolError, match="observation_belief_rationale"):
+        verify_prior_observation_disclosure(tampered)
+
+
+def test_the_seven_known_exposures_and_scenarios_are_disclosed(
+    protocol: dict[str, Any],
+) -> None:
+    verify_prior_observation_disclosure(protocol)
+    disclosure = protocol["prior_observation_disclosure"]
+    observed = {
+        item["question_id"]: (item["scenario_id"], item["answerability_intent"])
+        for item in disclosure["observations"]
+    }
+    assert {
+        "DX026": ("SC-A16", ANSWERABLE),
+        "DX027": ("SC-A16", ANSWERABLE),
+        "DX043": ("SC-N01", NO_EVIDENCE),
+        "DX044": ("SC-N01", NO_EVIDENCE),
+        "DX045": ("SC-N02", NO_EVIDENCE),
+        "DX046": ("SC-N03", NO_EVIDENCE),
+        "DX047": ("SC-N03", NO_EVIDENCE),
+    }.items() <= observed.items()
+    assert protocol["amendment_kind"] == AMENDMENT_KIND
+    assert protocol["phase"] == "D4.10a.1"
 
 
 def test_the_question_set_carries_its_own_identity(
@@ -603,6 +679,33 @@ def test_a_protocol_carrying_a_nested_ranking_is_refused(
     tampered["conditions"]["C2"]["ranking"] = [{"position": 1}]
     with pytest.raises(ProtocolError, match="campo de resultado"):
         verify_protocol_has_no_results(tampered)
+
+
+def test_the_operational_docstring_distinguishes_prior_diagnostics() -> None:
+    docstring = d4_10_sealer.__doc__ or ""
+    assert "antes de existir qualquer ranking" not in docstring
+    assert "antes da execução formal da D4.10b" in docstring
+    assert "prior_observation_disclosure" in docstring
+
+
+def test_the_scope_note_distinguishes_formal_results_from_prior_diagnostics(
+    protocol: dict[str, Any],
+) -> None:
+    scope_note = protocol["scope_note"]
+    assert "nenhum ranking observado" not in scope_note.lower()
+    assert "resultados formais D4.10b" in scope_note
+    assert "observações diagnósticas" in scope_note
+    assert "prior_observation_disclosure" in scope_note
+
+
+def test_the_temporal_precondition_applies_to_formal_d4_10b_execution(
+    protocol: dict[str, Any],
+) -> None:
+    note = protocol["d4_10b_preconditions_note"]
+    assert "primeiro embedding ou ranking" not in note
+    assert "primeira geração de embeddings congelados" in note
+    assert "rankings produzidos pela execução formal da D4.10b" in note
+    assert "prior_observation_disclosure" in note
 
 
 def test_the_protocol_declares_no_magnitude_threshold(
@@ -1661,3 +1764,105 @@ def test_the_protocol_names_what_enforces_the_eligibility(
     """Declarar «apenas ANSWERABLE» sem dizer quem o impõe é só uma intenção."""
     bootstrap = protocol["bootstrap_protocol"]
     assert "eligible_scenario_deltas" in bootstrap["eligibility_is_enforced_by"]
+
+
+def test_the_primary_analysis_remains_intact_and_includes_sc_a16(
+    question_set: dict[str, Any], protocol: dict[str, Any]
+) -> None:
+    answerable = [
+        question
+        for question in question_set["questions"]
+        if question["answerability_intent"] == ANSWERABLE
+    ]
+    primary = eligible_scenario_deltas(
+        question_set,
+        {question["question_id"]: 0.0 for question in answerable},
+    )
+    assert len(answerable) == 42
+    assert sum(map(len, primary.values())) == 42
+    assert primary["SC-A16"] == [0.0, 0.0]
+    assert protocol["bootstrap_protocol"]["primary_analysis"] == {
+        "answerable_question_count": 42,
+        "includes_scenario": "SC-A16",
+        "official_scientific_decision": True,
+    }
+
+
+def test_the_sensitivity_excludes_only_sc_a16_and_keeps_no_evidence_out(
+    question_set: dict[str, Any],
+) -> None:
+    answerable_deltas = {
+        question["question_id"]: 0.0
+        for question in question_set["questions"]
+        if question["answerability_intent"] == ANSWERABLE
+    }
+    primary = eligible_scenario_deltas(question_set, answerable_deltas)
+    sensitivity = sensitivity_scenario_deltas_without_sc_a16(
+        question_set, answerable_deltas
+    )
+    assert sum(map(len, sensitivity.values())) == 40
+    assert set(sensitivity) == set(primary) - {"SC-A16"}
+    assert "SC-A16" not in sensitivity
+    assert not [scenario for scenario in sensitivity if scenario.startswith("SC-N")]
+
+    no_evidence_id = next(
+        question["question_id"]
+        for question in question_set["questions"]
+        if question["answerability_intent"] == NO_EVIDENCE
+    )
+    with pytest.raises(StatisticsError, match="NO_EVIDENCE"):
+        sensitivity_scenario_deltas_without_sc_a16(
+            question_set, {**answerable_deltas, no_evidence_id: 0.0}
+        )
+
+
+def test_the_sensitivity_reuses_the_primary_statistical_contract(
+    protocol: dict[str, Any],
+) -> None:
+    primary = protocol["bootstrap_protocol"]
+    shadow = protocol["sensitivity_analysis_protocol"]
+    assert shadow["answerable_question_count"] == 40
+    assert shadow["metric_contract"] == "o mesmo da analise primaria"
+    assert shadow["estimator"] == primary["estimator"]
+    assert shadow["bootstrap"]["replicates"] == primary["replicates"]
+    assert shadow["bootstrap"]["seed"] == primary["seed"]
+    assert shadow["bootstrap"]["confidence_interval"] == primary["confidence_interval"]
+    assert shadow["decision_implementation"].endswith("::decide")
+
+
+def test_primary_and_shadow_call_the_same_decide_function(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    primary_inputs = _decision_inputs(
+        lower=0.01, upper=0.05, delta_recall=0.0, delta_solved=0.0
+    )
+    sensitivity_inputs = _decision_inputs(
+        lower=-0.01, upper=0.03, delta_recall=0.0, delta_solved=0.0
+    )
+    original_decide = d4_10_statistics.decide
+    calls: list[DecisionInputs] = []
+
+    def tracked_decide(inputs: DecisionInputs) -> str:
+        calls.append(inputs)
+        return original_decide(inputs)
+
+    monkeypatch.setattr(d4_10_statistics, "decide", tracked_decide)
+    result = build_decision_result(primary_inputs, sensitivity_inputs)
+    assert calls == [primary_inputs, sensitivity_inputs]
+    assert result == {
+        "primary_decision": A_EVIDENCE_FOR_HYBRID,
+        "sensitivity_shadow_decision": C_INCONCLUSIVE,
+        "official_decision": A_EVIDENCE_FOR_HYBRID,
+    }
+
+
+@pytest.mark.parametrize("shadow", [None, "missing"])
+def test_the_shadow_decision_is_mandatory(shadow: str | None) -> None:
+    result: dict[str, Any] = {
+        "primary_decision": A_EVIDENCE_FOR_HYBRID,
+        "official_decision": A_EVIDENCE_FOR_HYBRID,
+    }
+    if shadow != "missing":
+        result["sensitivity_shadow_decision"] = shadow
+    with pytest.raises(StatisticsError, match="obrigatórias ausentes ou nulas"):
+        validate_decision_result(result)
