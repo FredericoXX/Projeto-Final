@@ -163,7 +163,14 @@ _OBSERVATION_FIELDS: Final = frozenset(
         "trace_observed",
         "returned_content_read",
         "target_chunk_content_read",
-        "target_chunk_id",
+        "target_chunk_index",
+        "target_corpus_item_id",
+        "persisted_user_message_timestamps_utc",
+        "persisted_end_to_end_execution_count",
+        "persisted_answer_statuses_observed",
+        "persisted_cited_source_counts_observed",
+        "reconstruction_basis",
+        "reconstruction_status",
         "observer_formed_belief_about_label",
         "observation_belief_rationale",
     }
@@ -568,6 +575,106 @@ def verify_prior_observation_disclosure(protocol: Mapping[str, Any]) -> None:
         ):
             msg = f"{qid}: exposure_surface tem de ser uma lista não vazia"
             raise ProtocolError(msg)
+        if "diagnostic_observation" in surfaces:
+            msg = (
+                f"{qid}: diagnostic_observation é demasiado ambíguo; declare o "
+                "canal reconstruído ou a reconstrução parcial"
+            )
+            raise ProtocolError(msg)
+        if "end_to_end" in surfaces:
+            reconstruction_fields = {
+                "persisted_user_message_timestamps_utc",
+                "persisted_end_to_end_execution_count",
+                "persisted_answer_statuses_observed",
+                "persisted_cited_source_counts_observed",
+                "reconstruction_basis",
+                "reconstruction_status",
+            }
+            missing_reconstruction = sorted(
+                reconstruction_fields - set(observation)
+            )
+            if missing_reconstruction:
+                msg = (
+                    f"{qid}: reconstrução end_to_end com campos em falta: "
+                    f"{missing_reconstruction}"
+                )
+                raise ProtocolError(msg)
+            timestamps = observation.get("persisted_user_message_timestamps_utc")
+            executions = observation.get("persisted_end_to_end_execution_count")
+            statuses = observation.get("persisted_answer_statuses_observed")
+            source_counts = observation.get(
+                "persisted_cited_source_counts_observed"
+            )
+            reconstruction_basis = observation.get("reconstruction_basis")
+            reconstruction_status = observation.get("reconstruction_status")
+            complete_reconstruction_invalid = (
+                not isinstance(timestamps, Sequence)
+                or isinstance(timestamps, (str, bytes))
+                or not timestamps
+                or not all(
+                    isinstance(timestamp, str) and timestamp.strip()
+                    for timestamp in timestamps
+                )
+                or not isinstance(executions, int)
+                or isinstance(executions, bool)
+                or executions != len(timestamps)
+                or not isinstance(statuses, Sequence)
+                or isinstance(statuses, (str, bytes))
+                or not statuses
+                or len(statuses) != executions
+                or not all(isinstance(status, str) and status for status in statuses)
+                or not isinstance(source_counts, Sequence)
+                or isinstance(source_counts, (str, bytes))
+                or not source_counts
+                or len(source_counts) != executions
+                or not all(
+                    isinstance(count, int) and not isinstance(count, bool) and count >= 0
+                    for count in source_counts
+                )
+                or not isinstance(reconstruction_basis, str)
+                or not reconstruction_basis.strip()
+            )
+            partial_reconstruction = (
+                reconstruction_status
+                == "partial_end_to_end_details_not_recovered"
+                and timestamps == []
+                and executions is None
+                and statuses == []
+                and source_counts == []
+                and isinstance(reconstruction_basis, str)
+                and bool(reconstruction_basis.strip())
+            )
+            if reconstruction_status == "complete_from_persisted_messages":
+                if complete_reconstruction_invalid:
+                    msg = f"{qid}: reconstrução end_to_end incompleta ou incoerente"
+                    raise ProtocolError(msg)
+            elif not partial_reconstruction:
+                msg = f"{qid}: reconstrução end_to_end incompleta ou incoerente"
+                raise ProtocolError(msg)
+        if "partially_reconstructed_diagnostic_observation" in surfaces:
+            if (
+                observation.get("reconstruction_status") != "channel_not_recovered"
+                or not isinstance(observation.get("reconstruction_basis"), str)
+                or not observation["reconstruction_basis"].strip()
+            ):
+                msg = f"{qid}: reconstrução parcial exige estado e base explícitos"
+                raise ProtocolError(msg)
+        target_identity_present = (
+            "target_chunk_index" in observation
+            or "target_corpus_item_id" in observation
+        )
+        if observation.get("target_chunk_content_read") is True or target_identity_present:
+            chunk_index = observation.get("target_chunk_index")
+            corpus_item_id = observation.get("target_corpus_item_id")
+            if (
+                not isinstance(chunk_index, int)
+                or isinstance(chunk_index, bool)
+                or chunk_index < 0
+                or not isinstance(corpus_item_id, str)
+                or not corpus_item_id.strip()
+            ):
+                msg = f"{qid}: target chunk exige corpus_item_id e chunk_index válidos"
+                raise ProtocolError(msg)
         belief = observation["observer_formed_belief_about_label"]
         if not isinstance(belief, bool):
             msg = f"{qid}: observer_formed_belief_about_label tem de ser booleano"

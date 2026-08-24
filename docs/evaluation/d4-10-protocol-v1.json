@@ -557,7 +557,7 @@
       "total_questions": 8,
       "total_scenarios": 5
     },
-    "observation_time_precision": "exact_dates_and_timestamps_not_recoverable_from_the_available_record",
+    "observation_time_precision": "partially_recoverable; persisted user-message UTC timestamps are recorded per exposure where available; no human read timestamp is inferred",
     "observations": [
       {
         "answerability_intent": "ANSWERABLE",
@@ -579,64 +579,139 @@
           "manual_database_diagnostic"
         ],
         "observer_formed_belief_about_label": true,
+        "persisted_answer_statuses_observed": [],
+        "persisted_cited_source_counts_observed": [],
+        "persisted_end_to_end_execution_count": null,
+        "persisted_user_message_timestamps_utc": [],
         "question_id": "DX027",
         "ranking_observed": true,
+        "reconstruction_basis": "prior_diagnostic_record_discloses_end_to_end_execution; no_matching_persisted_message_record_recovered",
+        "reconstruction_status": "partial_end_to_end_details_not_recovered",
         "retrieval_executed": "C0_LEXICAL",
         "returned_content_read": true,
         "scenario_id": "SC-A16",
         "target_chunk_content_read": true,
-        "target_chunk_id": 284,
+        "target_chunk_index": 284,
+        "target_corpus_item_id": "P1-DOC-004",
         "trace_observed": true
       },
       {
         "answerability_intent": "NO_EVIDENCE",
         "exposure_surface": [
-          "diagnostic_observation"
+          "end_to_end"
         ],
         "observer_formed_belief_about_label": true,
+        "persisted_answer_statuses_observed": [
+          "insufficient_evidence",
+          "insufficient_evidence"
+        ],
+        "persisted_cited_source_counts_observed": [
+          0,
+          0
+        ],
+        "persisted_end_to_end_execution_count": 2,
+        "persisted_user_message_timestamps_utc": [
+          "2026-08-24T02:09:37.998064+00:00",
+          "2026-08-24T02:22:54.132409+00:00"
+        ],
         "question_id": "DX043",
+        "reconstruction_basis": "local_postgresql_messages_and_message_sources",
+        "reconstruction_status": "complete_from_persisted_messages",
         "scenario_id": "SC-N01"
       },
       {
         "answerability_intent": "NO_EVIDENCE",
         "exposure_surface": [
-          "diagnostic_observation"
+          "end_to_end"
         ],
         "observer_formed_belief_about_label": true,
+        "persisted_answer_statuses_observed": [
+          "answered",
+          "answered"
+        ],
+        "persisted_cited_source_counts_observed": [
+          1,
+          1
+        ],
+        "persisted_end_to_end_execution_count": 2,
+        "persisted_user_message_timestamps_utc": [
+          "2026-08-24T02:09:57.983337+00:00",
+          "2026-08-24T02:23:08.637981+00:00"
+        ],
         "question_id": "DX044",
+        "reconstruction_basis": "local_postgresql_messages_and_message_sources",
+        "reconstruction_status": "complete_from_persisted_messages",
         "scenario_id": "SC-N01"
       },
       {
         "answerability_intent": "NO_EVIDENCE",
         "exposure_surface": [
-          "diagnostic_observation"
+          "partially_reconstructed_diagnostic_observation"
         ],
         "observer_formed_belief_about_label": true,
         "question_id": "DX045",
+        "reconstruction_basis": "repository_git_history_local_postgresql_messages_and_codex_execution_history_searched_no_channel_match",
+        "reconstruction_status": "channel_not_recovered",
         "scenario_id": "SC-N02"
       },
       {
         "answerability_intent": "NO_EVIDENCE",
         "exposure_surface": [
-          "diagnostic_observation"
+          "end_to_end"
         ],
         "observer_formed_belief_about_label": true,
+        "persisted_answer_statuses_observed": [
+          "answered",
+          "answered",
+          "answered"
+        ],
+        "persisted_cited_source_counts_observed": [
+          1,
+          1,
+          1
+        ],
+        "persisted_end_to_end_execution_count": 3,
+        "persisted_user_message_timestamps_utc": [
+          "2026-08-24T02:10:47.642030+00:00",
+          "2026-08-24T02:39:36.718923+00:00",
+          "2026-08-24T02:39:54.810867+00:00"
+        ],
         "question_id": "DX046",
+        "reconstruction_basis": "local_postgresql_messages_and_message_sources",
+        "reconstruction_status": "complete_from_persisted_messages",
         "scenario_id": "SC-N03"
       },
       {
         "answerability_intent": "NO_EVIDENCE",
         "exposure_surface": [
-          "diagnostic_observation"
+          "end_to_end"
         ],
         "observer_formed_belief_about_label": true,
+        "persisted_answer_statuses_observed": [
+          "insufficient_evidence",
+          "insufficient_evidence",
+          "insufficient_evidence"
+        ],
+        "persisted_cited_source_counts_observed": [
+          0,
+          0,
+          0
+        ],
+        "persisted_end_to_end_execution_count": 3,
+        "persisted_user_message_timestamps_utc": [
+          "2026-08-24T02:11:00.814004+00:00",
+          "2026-08-24T02:22:42.698999+00:00",
+          "2026-08-24T02:40:16.165421+00:00"
+        ],
         "question_id": "DX047",
+        "reconstruction_basis": "local_postgresql_messages_and_message_sources",
+        "reconstruction_status": "complete_from_persisted_messages",
         "scenario_id": "SC-N03"
       }
     ],
     "temporal_position": "after_partial_c0_diagnostic_exposure_and_before_formal_d4_10b_execution"
   },
-  "protocol_digest": "b5f3ee9ac8389b341d7b21feaa9562e8c2499df55799878b74896fc44ffbdcb9",
+  "protocol_digest": "6510844cd80b51732ce9847c9412f1414f3266bccaa7f9e1dcd8338fefe27c82",
   "protocol_status": "DRAFT",
   "protocol_status_note": "DRAFT: proposta auditavel, produzida antes de a revisao humana estar completa. NAO satisfaz as precondicoes da D4.10b. SEALED: toda a revisao humana concluida - perguntas e independencia dos cenarios - e so este estado desbloqueia a D4.10b.",
   "protocol_version": "d4.10-protocol-v1",
@@ -987,7 +1062,7 @@
   },
   "schema_version": 1,
   "scope_note": "Emenda pós-exposição e pré-execução da D4.10. Não contém resultados formais D4.10b: não houve geração de embeddings congelados, rankings formais C1/C2 nem métricas formais D4.10b. As observações diagnósticas anteriores a C0 estão declaradas no prior_observation_disclosure.",
-  "sealed_at": "2026-08-24T13:44:00.342838+00:00",
+  "sealed_at": "2026-08-24T15:27:27.828518+00:00",
   "sensitivity_analysis_protocol": {
     "answerable_question_count": 40,
     "bootstrap": {
