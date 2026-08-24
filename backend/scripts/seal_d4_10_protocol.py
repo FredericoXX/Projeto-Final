@@ -232,7 +232,8 @@ PRIOR_OBSERVATION_DISCLOSURE: Final[dict[str, Any]] = {
         "after_partial_c0_diagnostic_exposure_and_before_formal_d4_10b_execution"
     ),
     "observation_time_precision": (
-        "exact_dates_and_timestamps_not_recoverable_from_the_available_record"
+        "partially_recoverable; persisted user-message UTC timestamps are recorded "
+        "per exposure where available; no human read timestamp is inferred"
     ),
     "formal_d4_10b_execution_occurred": False,
     "exposed_condition": "C0_LEXICAL",
@@ -269,42 +270,108 @@ PRIOR_OBSERVATION_DISCLOSURE: Final[dict[str, Any]] = {
             "trace_observed": True,
             "returned_content_read": True,
             "target_chunk_content_read": True,
-            "target_chunk_id": 284,
+            "target_chunk_index": 284,
+            "target_corpus_item_id": "P1-DOC-004",
+            "persisted_user_message_timestamps_utc": [],
+            "persisted_end_to_end_execution_count": None,
+            "persisted_answer_statuses_observed": [],
+            "persisted_cited_source_counts_observed": [],
+            "reconstruction_status": "partial_end_to_end_details_not_recovered",
+            "reconstruction_basis": (
+                "prior_diagnostic_record_discloses_end_to_end_execution; "
+                "no_matching_persisted_message_record_recovered"
+            ),
             "observer_formed_belief_about_label": True,
         },
         {
             "question_id": "DX043",
             "scenario_id": "SC-N01",
             "answerability_intent": "NO_EVIDENCE",
-            "exposure_surface": ["diagnostic_observation"],
+            "exposure_surface": ["end_to_end"],
+            "persisted_user_message_timestamps_utc": [
+                "2026-08-24T02:09:37.998064+00:00",
+                "2026-08-24T02:22:54.132409+00:00",
+            ],
+            "persisted_end_to_end_execution_count": 2,
+            "persisted_answer_statuses_observed": [
+                "insufficient_evidence",
+                "insufficient_evidence",
+            ],
+            "persisted_cited_source_counts_observed": [0, 0],
+            "reconstruction_status": "complete_from_persisted_messages",
+            "reconstruction_basis": "local_postgresql_messages_and_message_sources",
             "observer_formed_belief_about_label": True,
         },
         {
             "question_id": "DX044",
             "scenario_id": "SC-N01",
             "answerability_intent": "NO_EVIDENCE",
-            "exposure_surface": ["diagnostic_observation"],
+            "exposure_surface": ["end_to_end"],
+            "persisted_user_message_timestamps_utc": [
+                "2026-08-24T02:09:57.983337+00:00",
+                "2026-08-24T02:23:08.637981+00:00",
+            ],
+            "persisted_end_to_end_execution_count": 2,
+            "persisted_answer_statuses_observed": ["answered", "answered"],
+            "persisted_cited_source_counts_observed": [1, 1],
+            "reconstruction_status": "complete_from_persisted_messages",
+            "reconstruction_basis": "local_postgresql_messages_and_message_sources",
             "observer_formed_belief_about_label": True,
         },
         {
             "question_id": "DX045",
             "scenario_id": "SC-N02",
             "answerability_intent": "NO_EVIDENCE",
-            "exposure_surface": ["diagnostic_observation"],
+            "exposure_surface": [
+                "partially_reconstructed_diagnostic_observation"
+            ],
+            "reconstruction_status": "channel_not_recovered",
+            "reconstruction_basis": (
+                "repository_git_history_local_postgresql_messages_and_codex_"
+                "execution_history_searched_no_channel_match"
+            ),
             "observer_formed_belief_about_label": True,
         },
         {
             "question_id": "DX046",
             "scenario_id": "SC-N03",
             "answerability_intent": "NO_EVIDENCE",
-            "exposure_surface": ["diagnostic_observation"],
+            "exposure_surface": ["end_to_end"],
+            "persisted_user_message_timestamps_utc": [
+                "2026-08-24T02:10:47.642030+00:00",
+                "2026-08-24T02:39:36.718923+00:00",
+                "2026-08-24T02:39:54.810867+00:00",
+            ],
+            "persisted_end_to_end_execution_count": 3,
+            "persisted_answer_statuses_observed": [
+                "answered",
+                "answered",
+                "answered",
+            ],
+            "persisted_cited_source_counts_observed": [1, 1, 1],
+            "reconstruction_status": "complete_from_persisted_messages",
+            "reconstruction_basis": "local_postgresql_messages_and_message_sources",
             "observer_formed_belief_about_label": True,
         },
         {
             "question_id": "DX047",
             "scenario_id": "SC-N03",
             "answerability_intent": "NO_EVIDENCE",
-            "exposure_surface": ["diagnostic_observation"],
+            "exposure_surface": ["end_to_end"],
+            "persisted_user_message_timestamps_utc": [
+                "2026-08-24T02:11:00.814004+00:00",
+                "2026-08-24T02:22:42.698999+00:00",
+                "2026-08-24T02:40:16.165421+00:00",
+            ],
+            "persisted_end_to_end_execution_count": 3,
+            "persisted_answer_statuses_observed": [
+                "insufficient_evidence",
+                "insufficient_evidence",
+                "insufficient_evidence",
+            ],
+            "persisted_cited_source_counts_observed": [0, 0, 0],
+            "reconstruction_status": "complete_from_persisted_messages",
+            "reconstruction_basis": "local_postgresql_messages_and_message_sources",
             "observer_formed_belief_about_label": True,
         },
     ],

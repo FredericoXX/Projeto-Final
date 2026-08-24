@@ -222,6 +222,156 @@ def test_the_seven_known_exposures_and_scenarios_are_disclosed(
     assert protocol["phase"] == "D4.10a.1"
 
 
+def test_dx027_uses_the_experimental_corpus_chunk_identity(
+    protocol: dict[str, Any],
+) -> None:
+    observations = {
+        item["question_id"]: item
+        for item in protocol["prior_observation_disclosure"]["observations"]
+    }
+    dx027 = observations["DX027"]
+    assert "target_chunk_id" not in dx027
+    assert dx027["target_corpus_item_id"] == "P1-DOC-004"
+    assert dx027["target_chunk_index"] == 284
+    assert dx027["reconstruction_status"] == (
+        "partial_end_to_end_details_not_recovered"
+    )
+    assert dx027["persisted_user_message_timestamps_utc"] == []
+    assert dx027["persisted_end_to_end_execution_count"] is None
+    assert dx027["persisted_answer_statuses_observed"] == []
+    assert dx027["persisted_cited_source_counts_observed"] == []
+    assert dx027["reconstruction_basis"]
+
+    tampered = copy.deepcopy(protocol)
+    tampered_dx027 = next(
+        item
+        for item in tampered["prior_observation_disclosure"]["observations"]
+        if item["question_id"] == "DX027"
+    )
+    tampered_dx027["target_chunk_id"] = 284
+    with pytest.raises(ProtocolError, match="campos não observacionais"):
+        verify_prior_observation_disclosure(tampered)
+
+
+def test_read_target_chunk_requires_experimental_identity(
+    protocol: dict[str, Any],
+) -> None:
+    tampered = copy.deepcopy(protocol)
+    dx027 = next(
+        item
+        for item in tampered["prior_observation_disclosure"]["observations"]
+        if item["question_id"] == "DX027"
+    )
+    del dx027["target_chunk_index"]
+    del dx027["target_corpus_item_id"]
+
+    with pytest.raises(ProtocolError, match="target chunk exige"):
+        verify_prior_observation_disclosure(tampered)
+
+
+@pytest.mark.parametrize(
+    "field",
+    ["target_chunk_index", "target_corpus_item_id"],
+)
+def test_target_identity_is_atomic(
+    protocol: dict[str, Any], field: str
+) -> None:
+    tampered = copy.deepcopy(protocol)
+    dx027 = next(
+        item
+        for item in tampered["prior_observation_disclosure"]["observations"]
+        if item["question_id"] == "DX027"
+    )
+    del dx027[field]
+
+    with pytest.raises(ProtocolError, match="target chunk exige"):
+        verify_prior_observation_disclosure(tampered)
+
+
+def test_no_evidence_surfaces_preserve_reconstructed_precision(
+    protocol: dict[str, Any],
+) -> None:
+    disclosure = protocol["prior_observation_disclosure"]
+    observations = {
+        item["question_id"]: item for item in disclosure["observations"]
+    }
+    expected_surfaces = {
+        "DX043": ["end_to_end"],
+        "DX044": ["end_to_end"],
+        "DX045": ["partially_reconstructed_diagnostic_observation"],
+        "DX046": ["end_to_end"],
+        "DX047": ["end_to_end"],
+    }
+    for question_id, surfaces in expected_surfaces.items():
+        assert observations[question_id]["exposure_surface"] == surfaces
+        assert "diagnostic_observation" not in surfaces
+
+    for question_id, execution_count in {
+        "DX043": 2,
+        "DX044": 2,
+        "DX046": 3,
+        "DX047": 3,
+    }.items():
+        observation = observations[question_id]
+        assert observation["reconstruction_status"] == (
+            "complete_from_persisted_messages"
+        )
+        assert observation["persisted_end_to_end_execution_count"] == execution_count
+        assert (
+            len(observation["persisted_user_message_timestamps_utc"])
+            == execution_count
+        )
+        assert len(observation["persisted_answer_statuses_observed"]) == execution_count
+        assert (
+            len(observation["persisted_cited_source_counts_observed"])
+            == execution_count
+        )
+
+    assert observations["DX045"]["reconstruction_status"] == "channel_not_recovered"
+    assert observations["DX045"]["reconstruction_basis"]
+    assert "partially_recoverable" in disclosure["observation_time_precision"]
+    assert "no human read timestamp is inferred" in disclosure[
+        "observation_time_precision"
+    ]
+    assert "not_recoverable_from_the_available_record" not in disclosure[
+        "observation_time_precision"
+    ]
+
+
+def test_ambiguous_or_incomplete_reconstruction_is_refused(
+    protocol: dict[str, Any],
+) -> None:
+    tampered = copy.deepcopy(protocol)
+    dx043 = next(
+        item
+        for item in tampered["prior_observation_disclosure"]["observations"]
+        if item["question_id"] == "DX043"
+    )
+    dx043["exposure_surface"] = ["diagnostic_observation"]
+    with pytest.raises(ProtocolError, match="demasiado ambíguo"):
+        verify_prior_observation_disclosure(tampered)
+
+    tampered = copy.deepcopy(protocol)
+    dx043 = next(
+        item
+        for item in tampered["prior_observation_disclosure"]["observations"]
+        if item["question_id"] == "DX043"
+    )
+    del dx043["persisted_user_message_timestamps_utc"]
+    with pytest.raises(ProtocolError, match="reconstrução end_to_end"):
+        verify_prior_observation_disclosure(tampered)
+
+    tampered = copy.deepcopy(protocol)
+    dx043 = next(
+        item
+        for item in tampered["prior_observation_disclosure"]["observations"]
+        if item["question_id"] == "DX043"
+    )
+    del dx043["reconstruction_basis"]
+    with pytest.raises(ProtocolError, match="reconstrução end_to_end"):
+        verify_prior_observation_disclosure(tampered)
+
+
 def test_the_question_set_carries_its_own_identity(
     question_set: dict[str, Any], protocol: dict[str, Any]
 ) -> None:
