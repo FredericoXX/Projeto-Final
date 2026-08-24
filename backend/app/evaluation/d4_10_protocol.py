@@ -131,6 +131,44 @@ OVERLAP_REVIEW_FIELD: Final = "historical_overlap_review"
 QUESTION_ID_PATTERN: Final = re.compile(r"^DX\d{3}$")
 SCENARIO_ID_PATTERN: Final = re.compile(r"^SC-[AN]\d{2}$")
 
+#: A natureza temporal da D4.10a.1 não pode ser apagada por uma redação mais
+#: curta no artefacto. O valor faz parte do ``protocol_digest``.
+AMENDMENT_KIND: Final = "post_exposure_pre_execution_protocol_amendment"
+
+#: Inventário mínimo conhecido comunicado para a emenda. Validá-lo aqui impede
+#: que uma futura reconstrução omita silenciosamente uma exposição desfavorável.
+KNOWN_PRIOR_EXPOSURES: Final = {
+    "DX026": ("SC-A16", ANSWERABLE),
+    "DX027": ("SC-A16", ANSWERABLE),
+    "DX043": ("SC-N01", NO_EVIDENCE),
+    "DX044": ("SC-N01", NO_EVIDENCE),
+    "DX045": ("SC-N02", NO_EVIDENCE),
+    "DX046": ("SC-N03", NO_EVIDENCE),
+    "DX047": ("SC-N03", NO_EVIDENCE),
+}
+KNOWN_EXPOSED_SCENARIOS: Final = {
+    "SC-A16": ANSWERABLE,
+    "SC-N01": NO_EVIDENCE,
+    "SC-N02": NO_EVIDENCE,
+    "SC-N03": NO_EVIDENCE,
+}
+_OBSERVATION_FIELDS: Final = frozenset(
+    {
+        "question_id",
+        "scenario_id",
+        "answerability_intent",
+        "exposure_surface",
+        "retrieval_executed",
+        "ranking_observed",
+        "trace_observed",
+        "returned_content_read",
+        "target_chunk_content_read",
+        "target_chunk_id",
+        "observer_formed_belief_about_label",
+        "observation_belief_rationale",
+    }
+)
+
 #: Identificadores que esta fase **não** pode reutilizar.
 HISTORICAL_QUESTION_ID_PATTERN: Final = re.compile(r"^(Q\d{3}|DA\d{3})$")
 
@@ -478,6 +516,100 @@ def protocol_digest(protocol: Mapping[str, Any]) -> str:
     """Digest do protocolo, sem os campos que descrevem a própria selagem."""
     excluded = {"protocol_digest", "sealed_at"}
     return _digest({k: v for k, v in protocol.items() if k not in excluded})
+
+
+def verify_prior_observation_disclosure(protocol: Mapping[str, Any]) -> None:
+    """Recusa uma D4.10a.1 que esconda ou interprete a exposição conhecida."""
+    if protocol.get("amendment_kind") != AMENDMENT_KIND:
+        msg = f"amendment_kind tem de ser {AMENDMENT_KIND!r}"
+        raise ProtocolError(msg)
+
+    disclosure = protocol.get("prior_observation_disclosure")
+    if not isinstance(disclosure, Mapping):
+        msg = "prior_observation_disclosure obrigatório e incorporado por valor"
+        raise ProtocolError(msg)
+    observations = disclosure.get("observations")
+    if not isinstance(observations, Sequence) or isinstance(observations, (str, bytes)):
+        msg = "prior_observation_disclosure.observations tem de ser uma lista"
+        raise ProtocolError(msg)
+
+    indexed: dict[str, Mapping[str, Any]] = {}
+    for position, observation in enumerate(observations):
+        if not isinstance(observation, Mapping):
+            msg = f"observations[{position}] tem de ser um objeto"
+            raise ProtocolError(msg)
+        unknown_fields = sorted(set(observation) - _OBSERVATION_FIELDS)
+        if unknown_fields:
+            msg = f"observations[{position}] contém campos não observacionais: {unknown_fields}"
+            raise ProtocolError(msg)
+        required = {
+            "question_id",
+            "scenario_id",
+            "answerability_intent",
+            "exposure_surface",
+            "observer_formed_belief_about_label",
+        }
+        missing = sorted(required - set(observation))
+        if missing:
+            msg = f"observations[{position}] campos obrigatórios em falta: {missing}"
+            raise ProtocolError(msg)
+        qid = observation["question_id"]
+        if not isinstance(qid, str) or qid in indexed:
+            msg = f"observations[{position}] question_id inválido ou duplicado"
+            raise ProtocolError(msg)
+        surfaces = observation["exposure_surface"]
+        if (
+            not isinstance(surfaces, Sequence)
+            or isinstance(surfaces, (str, bytes))
+            or not surfaces
+            or not all(
+                isinstance(surface, str) and surface.strip() for surface in surfaces
+            )
+        ):
+            msg = f"{qid}: exposure_surface tem de ser uma lista não vazia"
+            raise ProtocolError(msg)
+        belief = observation["observer_formed_belief_about_label"]
+        if not isinstance(belief, bool):
+            msg = f"{qid}: observer_formed_belief_about_label tem de ser booleano"
+            raise ProtocolError(msg)
+        if belief is False:
+            rationale = observation.get("observation_belief_rationale")
+            if not isinstance(rationale, str) or not rationale.strip():
+                msg = (
+                    f"{qid}: observation_belief_rationale não vazio é obrigatório "
+                    "quando observer_formed_belief_about_label é false"
+                )
+                raise ProtocolError(msg)
+        indexed[qid] = observation
+
+    missing_known = sorted(set(KNOWN_PRIOR_EXPOSURES) - set(indexed))
+    if missing_known:
+        msg = f"exposições conhecidas em falta: {missing_known}"
+        raise ProtocolError(msg)
+    for qid, (scenario_id, intent) in KNOWN_PRIOR_EXPOSURES.items():
+        observation = indexed[qid]
+        if (
+            observation["scenario_id"] != scenario_id
+            or observation["answerability_intent"] != intent
+        ):
+            msg = f"{qid}: cenário ou intenção divergente no disclosure"
+            raise ProtocolError(msg)
+
+    exposed_scenarios = disclosure.get("exposed_scenarios")
+    if not isinstance(exposed_scenarios, Sequence) or isinstance(
+        exposed_scenarios, (str, bytes)
+    ):
+        msg = "prior_observation_disclosure.exposed_scenarios tem de ser uma lista"
+        raise ProtocolError(msg)
+    declared_scenarios = {
+        scenario.get("scenario_id"): scenario.get("answerability_intent")
+        for scenario in exposed_scenarios
+        if isinstance(scenario, Mapping)
+    }
+    for scenario_id, intent in KNOWN_EXPOSED_SCENARIOS.items():
+        if declared_scenarios.get(scenario_id) != intent:
+            msg = f"{scenario_id}: exposição de cenário ausente ou com intenção divergente"
+            raise ProtocolError(msg)
 
 
 def verify_question_set(payload: Mapping[str, Any]) -> None:

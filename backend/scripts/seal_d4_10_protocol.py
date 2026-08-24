@@ -1,4 +1,4 @@
-"""D4.10a — valida o conjunto de perguntas e sela o protocolo pré-registado.
+"""D4.10a.1 — valida e escreve o protocolo emendado antes da execução formal.
 
 Este comando **não executa a experiência**. Não gera embeddings, não corre
 retrieval, não constrói pool, não julga, não calcula métricas e não decide nada.
@@ -7,11 +7,14 @@ escreve o protocolo que a futura D4.10b terá de citar.
 
 A separação existe porque a D4.9 não a teve. Lá, a regra de decisão e o
 resultado nasceram no mesmo commit e nada no histórico provava a ordem. Aqui o
-protocolo é selado antes de existir qualquer ranking, e o runner seguinte —
-noutro commit — recusa correr contra um protocolo diferente.
+A D4.10a é selada antes da execução formal da D4.10b. Observações diagnósticas
+anteriores podem existir apenas quando explicitamente declaradas no
+``prior_observation_disclosure``; o runner seguinte — noutro commit — terá de
+recusar correr contra um protocolo diferente.
 """
 
 import argparse
+import copy
 import json
 import sys
 from collections.abc import Sequence
@@ -20,6 +23,7 @@ from pathlib import Path
 from typing import Any, Final
 
 from app.evaluation.d4_10_protocol import (
+    AMENDMENT_KIND,
     DIGEST_ALGORITHM,
     ProtocolError,
     distribution,
@@ -31,11 +35,15 @@ from app.evaluation.d4_10_protocol import (
     scenario_digest,
     scenario_distribution,
     verify_declared_identity,
+    verify_prior_observation_disclosure,
     verify_protocol_has_no_results,
     verify_question_set,
 )
 from app.evaluation.d4_10_statistics import decision_block as statistics_decision_block
 from app.evaluation.d4_10_statistics import protocol_block as statistics_protocol_block
+from app.evaluation.d4_10_statistics import (
+    sensitivity_protocol_block as statistics_sensitivity_protocol_block,
+)
 
 PROTOCOL_VERSION: Final = "d4.10-protocol-v1"
 QUESTION_SET_VERSION: Final = "d4.10-question-set-v1"
@@ -211,6 +219,122 @@ BOOTSTRAP_PROTOCOL: Final[dict[str, Any]] = statistics_protocol_block()
 
 DECISION_PROTOCOL: Final[dict[str, Any]] = statistics_decision_block()
 
+SENSITIVITY_ANALYSIS_PROTOCOL: Final[dict[str, Any]] = (
+    statistics_sensitivity_protocol_block()
+)
+
+#: Divulgação factual incorporada por valor no protocolo. Não contém juízos de
+#: correção do ground truth nem datas inventadas; a precisão temporal disponível
+#: é declarada explicitamente.
+PRIOR_OBSERVATION_DISCLOSURE: Final[dict[str, Any]] = {
+    "disclosure_status": "known_partial_diagnostic_exposure_disclosed",
+    "temporal_position": (
+        "after_partial_c0_diagnostic_exposure_and_before_formal_d4_10b_execution"
+    ),
+    "observation_time_precision": (
+        "exact_dates_and_timestamps_not_recoverable_from_the_available_record"
+    ),
+    "formal_d4_10b_execution_occurred": False,
+    "exposed_condition": "C0_LEXICAL",
+    "exposed_scenarios": [
+        {"scenario_id": "SC-A16", "answerability_intent": "ANSWERABLE"},
+        {"scenario_id": "SC-N01", "answerability_intent": "NO_EVIDENCE"},
+        {"scenario_id": "SC-N02", "answerability_intent": "NO_EVIDENCE"},
+        {"scenario_id": "SC-N03", "answerability_intent": "NO_EVIDENCE"},
+    ],
+    "observations": [
+        {
+            "question_id": "DX026",
+            "scenario_id": "SC-A16",
+            "answerability_intent": "ANSWERABLE",
+            "exposure_surface": [
+                "c0_retrieval",
+                "comparative_scenario_diagnostic",
+            ],
+            "retrieval_executed": "C0_LEXICAL",
+            "observer_formed_belief_about_label": True,
+        },
+        {
+            "question_id": "DX027",
+            "scenario_id": "SC-A16",
+            "answerability_intent": "ANSWERABLE",
+            "exposure_surface": [
+                "end_to_end",
+                "c0_retrieval",
+                "c0_lexical_trace",
+                "manual_database_diagnostic",
+            ],
+            "retrieval_executed": "C0_LEXICAL",
+            "ranking_observed": True,
+            "trace_observed": True,
+            "returned_content_read": True,
+            "target_chunk_content_read": True,
+            "target_chunk_id": 284,
+            "observer_formed_belief_about_label": True,
+        },
+        {
+            "question_id": "DX043",
+            "scenario_id": "SC-N01",
+            "answerability_intent": "NO_EVIDENCE",
+            "exposure_surface": ["diagnostic_observation"],
+            "observer_formed_belief_about_label": True,
+        },
+        {
+            "question_id": "DX044",
+            "scenario_id": "SC-N01",
+            "answerability_intent": "NO_EVIDENCE",
+            "exposure_surface": ["diagnostic_observation"],
+            "observer_formed_belief_about_label": True,
+        },
+        {
+            "question_id": "DX045",
+            "scenario_id": "SC-N02",
+            "answerability_intent": "NO_EVIDENCE",
+            "exposure_surface": ["diagnostic_observation"],
+            "observer_formed_belief_about_label": True,
+        },
+        {
+            "question_id": "DX046",
+            "scenario_id": "SC-N03",
+            "answerability_intent": "NO_EVIDENCE",
+            "exposure_surface": ["diagnostic_observation"],
+            "observer_formed_belief_about_label": True,
+        },
+        {
+            "question_id": "DX047",
+            "scenario_id": "SC-N03",
+            "answerability_intent": "NO_EVIDENCE",
+            "exposure_surface": ["diagnostic_observation"],
+            "observer_formed_belief_about_label": True,
+        },
+    ],
+    "ground_truth_guard": (
+        "A exposição NO_EVIDENCE não é confirmação nem refutação do ground truth."
+    ),
+    "amendment_does_not_authorize_changes_to": [
+        "questions",
+        "scenarios",
+        "intent",
+        "target",
+        "C0",
+        "C1",
+        "C2",
+        "metrics",
+    ],
+    "no_evidence_limitation_follow_up": {
+        "exposed_scenarios": 3,
+        "total_scenarios": 5,
+        "exposed_scenarios_percent": 60.0,
+        "exposed_questions": 5,
+        "total_questions": 8,
+        "exposed_questions_percent": 62.5,
+        "future_recovery": (
+            "Se for decidida, usar painel independente posterior; não acrescentar "
+            "perguntas às 50 atuais."
+        ),
+    },
+}
+
 FORBIDDEN_CHANGES: Final = [
     "alterar o conjunto de perguntas depois de observar rankings",
     "remover perguntas cujo resultado seja desfavoravel",
@@ -264,7 +388,14 @@ def build_protocol(
         "schema_version": 1,
         "contract": "d4_10_pre_registered_protocol",
         "protocol_version": PROTOCOL_VERSION,
-        "phase": "D4.10a",
+        "phase": "D4.10a.1",
+        "amendment_kind": AMENDMENT_KIND,
+        "amendment_note": (
+            "Emenda posterior à exposição diagnóstica parcial a C0 e anterior à "
+            "execução formal C1 versus C2 da D4.10b. Não restaura independência "
+            "perfeita: preserva a análise primária original e introduz a análise "
+            "de sensibilidade antes da execução formal."
+        ),
         "protocol_status": status,
         "protocol_status_note": (
             "DRAFT: proposta auditavel, produzida antes de a revisao humana "
@@ -273,10 +404,12 @@ def build_protocol(
             "cenarios - e so este estado desbloqueia a D4.10b."
         ),
         "scope_note": (
-            "Protocolo pre-registado da D4.10. Nao contem resultados: nenhum "
-            "embedding foi gerado, nenhum retrieval executado, nenhum ranking "
-            "observado e nenhuma metrica calculada nesta fase."
+            "Emenda pós-exposição e pré-execução da D4.10. Não contém resultados "
+            "formais D4.10b: não houve geração de embeddings congelados, rankings "
+            "formais C1/C2 nem métricas formais D4.10b. As observações diagnósticas "
+            "anteriores a C0 estão declaradas no prior_observation_disclosure."
         ),
+        "prior_observation_disclosure": copy.deepcopy(PRIOR_OBSERVATION_DISCLOSURE),
         "research_question": (
             "Num conjunto independente de cenarios e perguntas nao utilizado nas "
             "fases D4.2-D4.9, a fusao lexical+densa por RRF preserva ou melhora a "
@@ -301,6 +434,7 @@ def build_protocol(
         "pooling_protocol": POOLING_PROTOCOL,
         "embedding_freeze_protocol": EMBEDDING_FREEZE_PROTOCOL,
         "bootstrap_protocol": BOOTSTRAP_PROTOCOL,
+        "sensitivity_analysis_protocol": SENSITIVITY_ANALYSIS_PROTOCOL,
         "decision_protocol": DECISION_PROTOCOL,
         "forbidden_changes": FORBIDDEN_CHANGES,
         "d4_10b_preconditions": [
@@ -317,7 +451,10 @@ def build_protocol(
             "Um protocolo DRAFT nao satisfaz estas precondicoes, por mais "
             "correto que seja o resto do artefacto. A selagem que autoriza a "
             "execucao e a que existir depois da revisao humana, e tem de estar "
-            "num commit anterior ao do primeiro embedding ou ranking."
+            "num commit anterior à primeira geração de embeddings congelados e "
+            "aos primeiros rankings produzidos pela execução formal da D4.10b. "
+            "As observações diagnósticas anteriores declaradas no "
+            "prior_observation_disclosure não violam esta guarda."
         ),
         "digest_scope": {
             "question_set_digest": (
@@ -342,6 +479,7 @@ def build_protocol(
         },
         "digest_algorithm": DIGEST_ALGORITHM,
     }
+    verify_prior_observation_disclosure(protocol)
     verify_protocol_has_no_results(protocol)
     protocol["protocol_digest"] = protocol_digest(protocol)
     protocol["sealed_at"] = datetime.now(UTC).isoformat()
@@ -352,8 +490,8 @@ def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="seal_d4_10_protocol",
         description=(
-            "D4.10a - valida o conjunto de perguntas e sela o protocolo "
-            "pre-registado. Nao executa a experiencia."
+            "D4.10a.1 - valida o conjunto de perguntas e escreve a emenda "
+            "pos-exposicao e pre-execucao. Nao executa a experiencia."
         ),
     )
     parser.add_argument("--question-set", type=Path, required=True)

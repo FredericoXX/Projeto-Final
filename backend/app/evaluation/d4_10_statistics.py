@@ -59,6 +59,12 @@ B_EVIDENCE_FOR_DENSE: Final = "B_EVIDENCE_FOR_DENSE"
 C_INCONCLUSIVE: Final = "C_INCONCLUSIVE"
 DECISIONS: Final = (A_EVIDENCE_FOR_HYBRID, B_EVIDENCE_FOR_DENSE, C_INCONCLUSIVE)
 
+#: A análise primária permanece exatamente a originalmente definida. A única
+#: exclusão metodológica introduzida pela emenda D4.10a.1 pertence à análise de
+#: sensibilidade separada e nunca altera ``eligible_scenario_deltas``.
+SENSITIVITY_EXCLUDED_SCENARIO_ID: Final = "SC-A16"
+SENSITIVITY_EXCLUDED_QUESTION_IDS: Final = ("DX026", "DX027")
+
 
 class StatisticsError(ValueError):
     """Entrada inválida para o estimador. Nada é calculado."""
@@ -160,6 +166,44 @@ def eligible_scenario_deltas(
     for qid in sorted(deltas_by_question):
         grouped.setdefault(scenarios[qid], []).append(float(deltas_by_question[qid]))
     return grouped
+
+
+def sensitivity_scenario_deltas_without_sc_a16(
+    question_set: Mapping[str, Any], deltas_by_question: Mapping[str, float]
+) -> dict[str, list[float]]:
+    """Seleção *shadow* D4.10a.1: a primária menos o cenário SC-A16 inteiro.
+
+    A elegibilidade primária é executada primeiro, incluindo a recusa de
+    ``NO_EVIDENCE``. Só depois se retira SC-A16; assim esta função não cria uma
+    segunda definição de elegibilidade nem consegue esconder outro cenário.
+    """
+    grouped = eligible_scenario_deltas(question_set, deltas_by_question)
+    excluded_ids = {
+        question["question_id"]
+        for question in question_set["questions"]
+        if question["scenario_id"] == SENSITIVITY_EXCLUDED_SCENARIO_ID
+    }
+    if excluded_ids != set(SENSITIVITY_EXCLUDED_QUESTION_IDS):
+        msg = (
+            f"{SENSITIVITY_EXCLUDED_SCENARIO_ID}: composição inesperada; "
+            f"esperado {sorted(SENSITIVITY_EXCLUDED_QUESTION_IDS)}, "
+            f"obtido {sorted(excluded_ids)}"
+        )
+        raise StatisticsError(msg)
+    missing = sorted(excluded_ids - set(deltas_by_question))
+    if missing:
+        msg = f"sensitivity sem todas as perguntas expostas de SC-A16: {missing}"
+        raise StatisticsError(msg)
+    if SENSITIVITY_EXCLUDED_SCENARIO_ID not in grouped:
+        msg = f"sensitivity sem {SENSITIVITY_EXCLUDED_SCENARIO_ID} na análise primária"
+        raise StatisticsError(msg)
+
+    sensitivity = dict(grouped)
+    del sensitivity[SENSITIVITY_EXCLUDED_SCENARIO_ID]
+    if not sensitivity:
+        msg = "nenhum cenário elegível depois de excluir SC-A16"
+        raise StatisticsError(msg)
+    return sensitivity
 
 
 def scenario_mean(values: Sequence[float]) -> float:
@@ -272,6 +316,45 @@ def decide(inputs: DecisionInputs) -> str:
     return C_INCONCLUSIVE
 
 
+def validate_decision_result(result: Mapping[str, Any]) -> None:
+    """Valida o contrato mínimo da futura saída D4.10b, sem criar o runner."""
+    required = (
+        "primary_decision",
+        "sensitivity_shadow_decision",
+        "official_decision",
+    )
+    missing_or_null = [field for field in required if result.get(field) is None]
+    if missing_or_null:
+        msg = f"decisões obrigatórias ausentes ou nulas: {missing_or_null}"
+        raise StatisticsError(msg)
+    invalid = [field for field in required if result[field] not in DECISIONS]
+    if invalid:
+        msg = f"decisões fora do contrato A/B/C: {invalid}"
+        raise StatisticsError(msg)
+    if result["official_decision"] != result["primary_decision"]:
+        msg = "official_decision tem de ser igual a primary_decision"
+        raise StatisticsError(msg)
+
+
+def build_decision_result(
+    primary_inputs: DecisionInputs, sensitivity_inputs: DecisionInputs
+) -> dict[str, str]:
+    """Calcula primária e sombra com a mesma :func:`decide` pura.
+
+    A decisão oficial é sempre a primária. Uma sombra divergente é preservada
+    no resultado e não seleciona configuração nem reclassifica a conclusão.
+    """
+    primary_decision = decide(primary_inputs)
+    sensitivity_shadow_decision = decide(sensitivity_inputs)
+    result = {
+        "primary_decision": primary_decision,
+        "sensitivity_shadow_decision": sensitivity_shadow_decision,
+        "official_decision": primary_decision,
+    }
+    validate_decision_result(result)
+    return result
+
+
 def protocol_block() -> dict[str, Any]:
     """O bloco pré-registado que o protocolo transporta.
 
@@ -295,6 +378,11 @@ def protocol_block() -> dict[str, Any]:
             "NO_EVIDENCE sao analisadas a parte, por contagem de ruido, e nao "
             "entram em nenhum bootstrap de retrieval."
         ),
+        "primary_analysis": {
+            "answerable_question_count": 42,
+            "includes_scenario": SENSITIVITY_EXCLUDED_SCENARIO_ID,
+            "official_scientific_decision": True,
+        },
         "estimator": "scenario_macro_mean",
         "estimator_definition": (
             "Para cada pergunta ANSWERABLE, delta = metrica(C2) - metrica(C1). "
@@ -339,6 +427,44 @@ def protocol_block() -> dict[str, Any]:
             "trocar o metodo do intervalo depois de observar resultados",
             "reamostrar perguntas em vez de cenarios",
         ],
+    }
+
+
+def sensitivity_protocol_block() -> dict[str, Any]:
+    """Bloco da sensitivity introduzida pela emenda pós-exposição D4.10a.1."""
+    return {
+        "name": "sensitivity_without_sc_a16",
+        "role": "shadow_only",
+        "excluded_scenario_id": SENSITIVITY_EXCLUDED_SCENARIO_ID,
+        "excluded_question_ids": list(SENSITIVITY_EXCLUDED_QUESTION_IDS),
+        "answerable_question_count": 40,
+        "eligible_questions": "apenas ANSWERABLE",
+        "metric_contract": "o mesmo da analise primaria",
+        "estimator": "scenario_macro_mean",
+        "bootstrap": {
+            "implementation": "app/evaluation/d4_10_statistics.py::bootstrap_interval",
+            "replicates": DEFAULT_REPLICATES,
+            "seed": DEFAULT_SEED,
+            "confidence_interval": DEFAULT_CONFIDENCE,
+            "ci_method": CI_METHOD,
+            "quantile_method": QUANTILE_METHOD,
+        },
+        "selection_implementation": (
+            "app/evaluation/d4_10_statistics.py::sensitivity_scenario_deltas_without_sc_a16"
+        ),
+        "decision_implementation": "app/evaluation/d4_10_statistics.py::decide",
+        "result_contract_implementation": (
+            "app/evaluation/d4_10_statistics.py::validate_decision_result"
+        ),
+        "required_non_null_output_fields": [
+            "primary_decision",
+            "sensitivity_shadow_decision",
+        ],
+        "official_decision_rule": (
+            "official_decision e sempre primary_decision; a shadow e reportada "
+            "mesmo quando diverge e nao seleciona configuracao nem reclassifica "
+            "o resultado cientifico"
+        ),
     }
 
 

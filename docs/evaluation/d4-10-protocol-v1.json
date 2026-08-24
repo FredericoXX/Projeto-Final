@@ -1,4 +1,6 @@
 {
+  "amendment_kind": "post_exposure_pre_execution_protocol_amendment",
+  "amendment_note": "Emenda posterior à exposição diagnóstica parcial a C0 e anterior à execução formal C1 versus C2 da D4.10b. Não restaura independência perfeita: preserva a análise primária original e introduz a análise de sensibilidade antes da execução formal.",
   "bootstrap_protocol": {
     "ci_method": "PERCENTILE",
     "confidence_interval": 0.95,
@@ -21,6 +23,11 @@
       "delta_recall_at_5_c2_minus_c1",
       "delta_solved_question_rate_c2_minus_c1"
     ],
+    "primary_analysis": {
+      "answerable_question_count": 42,
+      "includes_scenario": "SC-A16",
+      "official_scientific_decision": true
+    },
     "prng": "random.Random(seed).choices",
     "quantile_method": "linear_hyndman_fan_type_7",
     "quantiles": [
@@ -97,7 +104,7 @@
     "nenhum cenario marcado EXCLUDE presente no conjunto",
     "identidade de C0, C1 e C2 identica a declarada aqui"
   ],
-  "d4_10b_preconditions_note": "Um protocolo DRAFT nao satisfaz estas precondicoes, por mais correto que seja o resto do artefacto. A selagem que autoriza a execucao e a que existir depois da revisao humana, e tem de estar num commit anterior ao do primeiro embedding ou ranking.",
+  "d4_10b_preconditions_note": "Um protocolo DRAFT nao satisfaz estas precondicoes, por mais correto que seja o resto do artefacto. A selagem que autoriza a execucao e a que existir depois da revisao humana, e tem de estar num commit anterior à primeira geração de embeddings congelados e aos primeiros rankings produzidos pela execução formal da D4.10b. As observações diagnósticas anteriores declaradas no prior_observation_disclosure não violam esta guarda.",
   "decision_protocol": {
     "A_EVIDENCE_FOR_HYBRID": "CI95_lower(delta_ndcg_at_5) > 0 E Recall@5(C2) >= Recall@5(C1) E solved_question_rate(C2) >= solved_question_rate(C1). Significa evidencia no painel independente de que C2 melhora C1 - NAO significa producao.",
     "B_EVIDENCE_FOR_DENSE": "CI95_upper(delta_ndcg_at_5) < 0.",
@@ -495,7 +502,7 @@
     },
     "unjudged_chunk_treatment": "ASSUMED_IRRELEVANT"
   },
-  "phase": "D4.10a",
+  "phase": "D4.10a.1",
   "pooling_protocol": {
     "c2_note": "C2 deriva dessa uniao e nao pode introduzir elementos novos; a guarda que o verifica ja existe desde a D4.9.",
     "grades_not_produced_in_d4_10a": true,
@@ -508,7 +515,128 @@
     },
     "unjudged_policy": "Se unjudged_in_top_k > 0 para uma pergunta, essa pergunta NAO entra nas metricas finais ate o julgamento estar completo. Nao se assume unjudged = 0."
   },
-  "protocol_digest": "73522360acfe00e5d965f92b81eaee6e10e15333cd6ab12cbf587b9b44590fab",
+  "prior_observation_disclosure": {
+    "amendment_does_not_authorize_changes_to": [
+      "questions",
+      "scenarios",
+      "intent",
+      "target",
+      "C0",
+      "C1",
+      "C2",
+      "metrics"
+    ],
+    "disclosure_status": "known_partial_diagnostic_exposure_disclosed",
+    "exposed_condition": "C0_LEXICAL",
+    "exposed_scenarios": [
+      {
+        "answerability_intent": "ANSWERABLE",
+        "scenario_id": "SC-A16"
+      },
+      {
+        "answerability_intent": "NO_EVIDENCE",
+        "scenario_id": "SC-N01"
+      },
+      {
+        "answerability_intent": "NO_EVIDENCE",
+        "scenario_id": "SC-N02"
+      },
+      {
+        "answerability_intent": "NO_EVIDENCE",
+        "scenario_id": "SC-N03"
+      }
+    ],
+    "formal_d4_10b_execution_occurred": false,
+    "ground_truth_guard": "A exposição NO_EVIDENCE não é confirmação nem refutação do ground truth.",
+    "no_evidence_limitation_follow_up": {
+      "exposed_questions": 5,
+      "exposed_questions_percent": 62.5,
+      "exposed_scenarios": 3,
+      "exposed_scenarios_percent": 60.0,
+      "future_recovery": "Se for decidida, usar painel independente posterior; não acrescentar perguntas às 50 atuais.",
+      "total_questions": 8,
+      "total_scenarios": 5
+    },
+    "observation_time_precision": "exact_dates_and_timestamps_not_recoverable_from_the_available_record",
+    "observations": [
+      {
+        "answerability_intent": "ANSWERABLE",
+        "exposure_surface": [
+          "c0_retrieval",
+          "comparative_scenario_diagnostic"
+        ],
+        "observer_formed_belief_about_label": true,
+        "question_id": "DX026",
+        "retrieval_executed": "C0_LEXICAL",
+        "scenario_id": "SC-A16"
+      },
+      {
+        "answerability_intent": "ANSWERABLE",
+        "exposure_surface": [
+          "end_to_end",
+          "c0_retrieval",
+          "c0_lexical_trace",
+          "manual_database_diagnostic"
+        ],
+        "observer_formed_belief_about_label": true,
+        "question_id": "DX027",
+        "ranking_observed": true,
+        "retrieval_executed": "C0_LEXICAL",
+        "returned_content_read": true,
+        "scenario_id": "SC-A16",
+        "target_chunk_content_read": true,
+        "target_chunk_id": 284,
+        "trace_observed": true
+      },
+      {
+        "answerability_intent": "NO_EVIDENCE",
+        "exposure_surface": [
+          "diagnostic_observation"
+        ],
+        "observer_formed_belief_about_label": true,
+        "question_id": "DX043",
+        "scenario_id": "SC-N01"
+      },
+      {
+        "answerability_intent": "NO_EVIDENCE",
+        "exposure_surface": [
+          "diagnostic_observation"
+        ],
+        "observer_formed_belief_about_label": true,
+        "question_id": "DX044",
+        "scenario_id": "SC-N01"
+      },
+      {
+        "answerability_intent": "NO_EVIDENCE",
+        "exposure_surface": [
+          "diagnostic_observation"
+        ],
+        "observer_formed_belief_about_label": true,
+        "question_id": "DX045",
+        "scenario_id": "SC-N02"
+      },
+      {
+        "answerability_intent": "NO_EVIDENCE",
+        "exposure_surface": [
+          "diagnostic_observation"
+        ],
+        "observer_formed_belief_about_label": true,
+        "question_id": "DX046",
+        "scenario_id": "SC-N03"
+      },
+      {
+        "answerability_intent": "NO_EVIDENCE",
+        "exposure_surface": [
+          "diagnostic_observation"
+        ],
+        "observer_formed_belief_about_label": true,
+        "question_id": "DX047",
+        "scenario_id": "SC-N03"
+      }
+    ],
+    "temporal_position": "after_partial_c0_diagnostic_exposure_and_before_formal_d4_10b_execution"
+  },
+  "protocol_digest": "b5f3ee9ac8389b341d7b21feaa9562e8c2499df55799878b74896fc44ffbdcb9",
   "protocol_status": "DRAFT",
   "protocol_status_note": "DRAFT: proposta auditavel, produzida antes de a revisao humana estar completa. NAO satisfaz as precondicoes da D4.10b. SEALED: toda a revisao humana concluida - perguntas e independencia dos cenarios - e so este estado desbloqueia a D4.10b.",
   "protocol_version": "d4.10-protocol-v1",
@@ -858,8 +986,37 @@
     }
   },
   "schema_version": 1,
-  "scope_note": "Protocolo pre-registado da D4.10. Nao contem resultados: nenhum embedding foi gerado, nenhum retrieval executado, nenhum ranking observado e nenhuma metrica calculada nesta fase.",
-  "sealed_at": "2026-08-20T02:22:11.975804+00:00",
+  "scope_note": "Emenda pós-exposição e pré-execução da D4.10. Não contém resultados formais D4.10b: não houve geração de embeddings congelados, rankings formais C1/C2 nem métricas formais D4.10b. As observações diagnósticas anteriores a C0 estão declaradas no prior_observation_disclosure.",
+  "sealed_at": "2026-08-24T13:44:00.342838+00:00",
+  "sensitivity_analysis_protocol": {
+    "answerable_question_count": 40,
+    "bootstrap": {
+      "ci_method": "PERCENTILE",
+      "confidence_interval": 0.95,
+      "implementation": "app/evaluation/d4_10_statistics.py::bootstrap_interval",
+      "quantile_method": "linear_hyndman_fan_type_7",
+      "replicates": 10000,
+      "seed": 20260819
+    },
+    "decision_implementation": "app/evaluation/d4_10_statistics.py::decide",
+    "eligible_questions": "apenas ANSWERABLE",
+    "estimator": "scenario_macro_mean",
+    "excluded_question_ids": [
+      "DX026",
+      "DX027"
+    ],
+    "excluded_scenario_id": "SC-A16",
+    "metric_contract": "o mesmo da analise primaria",
+    "name": "sensitivity_without_sc_a16",
+    "official_decision_rule": "official_decision e sempre primary_decision; a shadow e reportada mesmo quando diverge e nao seleciona configuracao nem reclassifica o resultado cientifico",
+    "required_non_null_output_fields": [
+      "primary_decision",
+      "sensitivity_shadow_decision"
+    ],
+    "result_contract_implementation": "app/evaluation/d4_10_statistics.py::validate_decision_result",
+    "role": "shadow_only",
+    "selection_implementation": "app/evaluation/d4_10_statistics.py::sensitivity_scenario_deltas_without_sc_a16"
+  },
   "snapshot_id": "a94f940229152a3b61860b370df8cb3ea8fe1a0e7236d65e86fe4b5118baf4c1",
   "usable_documents": [
     "P1-DOC-002",
