@@ -57,7 +57,13 @@ from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
 from app.models.document_version import DocumentVersion
 from app.models.institution import Institution
-from app.retrieval.base import Evidence, RetrievalContext, RetrievalResult, Retriever
+from app.retrieval.base import (
+    Evidence,
+    RetrievalContext,
+    RetrievalQuery,
+    RetrievalResult,
+    Retriever,
+)
 from app.retrieval.lexical import LexicalRetrievalTrace
 from app.services.document_extraction_service import PAGE_SEPARATOR
 
@@ -864,10 +870,7 @@ def analyze_chunk_integrity(
     for previous, current in zip(by_offset, by_offset[1:], strict=False):
         if current.start_char > previous.end_char:
             gap_text = extracted_text[previous.end_char : current.start_char]
-            if any(
-                not character.isspace()
-                for character in gap_text.replace(PAGE_SEPARATOR, "")
-            ):
+            if any(not character.isspace() for character in gap_text.replace(PAGE_SEPARATOR, "")):
                 gap_count += 1
         elif current.start_char < previous.end_char:
             overlap_count += 1
@@ -876,11 +879,7 @@ def analyze_chunk_integrity(
         for match in re.finditer(r"[^\r\n\f]* \| [^\r\n\f]*", extracted_text)
     ]
     split_table_row_count = sum(
-        sum(
-            chunk.start_char < row_end and chunk.end_char > row_start
-            for chunk in chunks
-        )
-        > 1
+        sum(chunk.start_char < row_end and chunk.end_char > row_start for chunk in chunks) > 1
         for row_start, row_end in table_row_spans
     )
     pages = Counter(chunk.page_number for chunk in chunks)
@@ -1189,16 +1188,12 @@ def _report_conditions(
         satisfied = any(outcome.satisfied for outcome in outcomes)
         # Representante coerente com o valor composto: perante divergência,
         # o detalhe mostrado é o de um chunk que justifica esse valor.
-        representative = next(
-            outcome for outcome in outcomes if outcome.satisfied == satisfied
-        )
+        representative = next(outcome for outcome in outcomes if outcome.satisfied == satisfied)
         detail = representative.detail
         matching = sum(outcome.satisfied for outcome in outcomes)
         if matching != len(outcomes):
             detail = f"{detail} ({matching} of {len(outcomes)} chunks satisfy it)."
-        conditions.append(
-            EligibilityCondition(name=name, satisfied=satisfied, detail=detail)
-        )
+        conditions.append(EligibilityCondition(name=name, satisfied=satisfied, detail=detail))
     return tuple(conditions)
 
 
@@ -1896,13 +1891,9 @@ def _build_extraction_page_summaries(
                 page_number=page_number if isinstance(page_number, int) else None,
                 method=method if isinstance(method, str) else None,
                 extracted_characters=characters if isinstance(characters, int) else None,
-                ocr_confidence=(
-                    float(confidence) if isinstance(confidence, int | float) else None
-                ),
+                ocr_confidence=(float(confidence) if isinstance(confidence, int | float) else None),
                 quality=quality if isinstance(quality, str) else None,
-                warning=(
-                    sanitize_excerpt(warning)[:160] if isinstance(warning, str) else None
-                ),
+                warning=(sanitize_excerpt(warning)[:160] if isinstance(warning, str) else None),
             )
         )
     return tuple(summaries), native_pages, ocr_pages, low_quality_pages
@@ -1923,9 +1914,7 @@ def _build_selected_version_info(
         checksum_sha256_prefix=selected.checksum_sha256[:12],
         processing_status=selected.processing_status,
         processing_error=(
-            sanitize_excerpt(selected.processing_error)[:200]
-            if selected.processing_error
-            else None
+            sanitize_excerpt(selected.processing_error)[:200] if selected.processing_error else None
         ),
         page_count=selected.page_count,
         extracted_text_length=extracted_text_length,
@@ -2123,14 +2112,17 @@ def run_diagnostic(
             # contrato real: pergunta normalizada, contexto e filtros atuais.
             # Quando o retriever suporta um trace interno, usa-se a variante
             # que o devolve — a pesquisa continua a correr uma só vez.
-            normalized_query = normalize_text(question.question)
             context = RetrievalContext(
                 institution_id=institution_id,
                 language=question.language,
                 reference_date=resolved_reference_date,
             )
             retrieval_result = retriever.search(
-                db, normalized_query, context, top_k, official_only
+                db,
+                RetrievalQuery.from_text(question.question),
+                context,
+                top_k,
+                official_only,
             )
             results = list(retrieval_result.evidence)
             raw_trace = _lexical_trace_of(retrieval_result)
@@ -2286,9 +2278,7 @@ def _md_bool(value: bool | None) -> str:
     return "sim" if value else "não"
 
 
-def _add_lexical_trace(
-    add: Callable[[str], None], trace: LexicalTraceReport
-) -> None:
+def _add_lexical_trace(add: Callable[[str], None], trace: LexicalTraceReport) -> None:
     """Renderiza o trace lexical: apenas metadados e componentes do score.
 
     Nunca a pergunta, os seus termos, o conteúdo dos chunks, títulos
@@ -2306,10 +2296,7 @@ def _add_lexical_trace(
     add(f"- Variantes planeadas: {list(trace.planned_variants) or 'nenhuma'}")
     add(f"- Limite global de candidatos: {trace.global_candidate_limit}")
     for variant in trace.variants:
-        add(
-            f"  - {variant.strategy}: quota={variant.quota} "
-            f"devolvidos={variant.returned_count}"
-        )
+        add(f"  - {variant.strategy}: quota={variant.quota} devolvidos={variant.returned_count}")
     add(f"- Total devolvido antes da deduplicação: {trace.total_returned_before_dedup}")
     add(f"- Únicos após deduplicação: {trace.unique_after_dedup}")
     add(f"- Candidatos avaliados: {trace.candidates_evaluated}")
@@ -2326,10 +2313,7 @@ def _add_lexical_trace(
             f"titulo={result.title_overlap:.2f} seccao={result.section_overlap:.2f} "
             f"tipo={result.structure_type or '—'}"
         )
-        add(
-            f"  - termos correspondidos: {result.matched_term_count}; "
-            f"razão: {result.reason}"
-        )
+        add(f"  - termos correspondidos: {result.matched_term_count}; razão: {result.reason}")
     if trace.excluded:
         add("- Excluídos:")
         for excluded in trace.excluded:
@@ -2413,14 +2397,10 @@ def render_markdown(report: DiagnosticReport) -> str:
         add("| --- | --- | --- | --- | --- | --- |")
         for page_row in selected.page_summaries:
             row_confidence = (
-                f"{page_row.ocr_confidence:.1f}"
-                if page_row.ocr_confidence is not None
-                else "—"
+                f"{page_row.ocr_confidence:.1f}" if page_row.ocr_confidence is not None else "—"
             )
             row_characters = (
-                page_row.extracted_characters
-                if page_row.extracted_characters is not None
-                else "—"
+                page_row.extracted_characters if page_row.extracted_characters is not None else "—"
             )
             add(
                 f"| {page_row.page_number if page_row.page_number is not None else '—'} "

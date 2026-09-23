@@ -21,12 +21,81 @@ from uuid import UUID
 
 from sqlalchemy.orm import Session
 
+from app.core.text_normalization import normalize_text
+
 
 @dataclass(frozen=True)
 class RetrievalContext:
     institution_id: UUID
     language: str
     reference_date: date
+
+
+@dataclass(frozen=True)
+class RetrievalQuery:
+    """A pergunta nas duas formas de que a recuperação precisa.
+
+    Até aqui o retrieval recebia uma única ``str`` já normalizada, e a forma
+    original morria no serviço que chamava. Isso bastava enquanto tudo o que o
+    índice sabia vinha de ``normalized_content`` — mas a normalização remove os
+    diacríticos **antes** do *stemmer* português, e o *stemmer* usa-os nas suas
+    regras: ``classificações`` e ``classificação`` reduzem ambos a
+    ``classific``, ao passo que ``classificacoes`` e ``classificacao`` produzem
+    radicais diferentes e deixam de corresponder. A informação que resolve isso
+    existe na pergunta que o utilizador escreveu, e era deitada fora um nível
+    acima de quem dela precisa.
+
+    As duas formas viajam juntas, e não uma só com a outra reconstruída à
+    chegada: ``normalize_text`` não é invertível — perde acentos, caixa e
+    espaços — e qualquer tentativa de adivinhar a original a partir da
+    normalizada seria uma invenção.
+
+    A relação entre as duas é verificada na construção: ``normalized`` é
+    sempre ``normalize_text(original)``, e um par incoerente falha de imediato
+    em vez de produzir evidência para uma pergunta que ninguém fez.
+
+    ``normalized`` continua a ser a forma que governa o planeamento da consulta,
+    a tokenização canónica e a cobertura; ``original`` é usada apenas para
+    construir consultas FTS acentuadas. Uma estratégia que não tenha nada a
+    fazer com diacríticos — a densa, por exemplo — lê só ``normalized`` e
+    comporta-se exatamente como antes.
+    """
+
+    original: str
+    normalized: str
+
+    def __post_init__(self) -> None:
+        """``normalized`` tem mesmo de ser a normalização de ``original``.
+
+        Sem esta verificação o tipo aceitava
+        ``RetrievalQuery(original="notas", normalized="propinas")``: duas
+        perguntas diferentes a viajarem como uma só, com o planeamento e a
+        cobertura a lerem uma e as consultas FTS acentuadas a lerem a outra.
+        O resultado seria evidência recuperada para uma pergunta que ninguém
+        fez, sem erro visível em lado nenhum.
+
+        A relação era antes apenas uma promessa do docstring de
+        :meth:`from_text`, e havia quatro sítios a construir a classe
+        diretamente. Uma invariante que depende de todos os chamadores se
+        lembrarem dela não é uma invariante.
+        """
+        expected = normalize_text(self.original)
+        if self.normalized != expected:
+            msg = (
+                "normalized tem de ser normalize_text(original); "
+                f"recebido {self.normalized!r}, esperado {expected!r}"
+            )
+            raise ValueError(msg)
+
+    @classmethod
+    def from_text(cls, text: str) -> "RetrievalQuery":
+        """Constrói a partir do que o utilizador escreveu.
+
+        Forma preferida: dispensa o chamador de normalizar e de acertar a
+        relação entre as duas formas. Construir diretamente continua a ser
+        possível — e continua a ser verificado em ``__post_init__``.
+        """
+        return cls(original=text, normalized=normalize_text(text))
 
 
 @dataclass(frozen=True)
@@ -155,7 +224,7 @@ class Retriever(Protocol):
     def search(
         self,
         db: Session,
-        query: str,
+        query: RetrievalQuery,
         context: RetrievalContext,
         top_k: int,
         official_only: bool,

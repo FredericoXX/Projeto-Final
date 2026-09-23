@@ -20,10 +20,18 @@ Assim, o título ou a secção nunca criam evidência: só desempatam entre
 candidatos que já correspondem no conteúdo. Um resultado vazio é um
 resultado legítimo.
 
-A comparação de cobertura usa formas canónicas (``lexical_normalization``:
-ordinais e intervalos), não stemming — o stemming linguístico do
-PostgreSQL governa a **recuperação** (fase A); a cobertura governa a
-**ordenação** (fase B). O score não é uma probabilidade.
+A cobertura compara formas canónicas (``lexical_normalization``: ordinais e
+intervalos) e aceita, além delas, as correspondências morfológicas que o
+PostgreSQL **já confirmou** contra o ``search_vector`` do próprio segmento
+(``LexicalCandidate.fts_matched_terms``). Não há aqui um stemming próprio:
+há o veredicto do índice, transportado desde a fase A em vez de descartado
+entre as duas fases — era esse descarte que fazia a elegibilidade recusar
+como insuficiente aquilo que a recuperação tinha acabado de confirmar.
+
+O alcance dessa segunda prova é estreito por desenho: diz que o termo está
+no conteúdo, e nada sobre **onde**. ``exact_phrase``, ``ordered``,
+``proximity`` e ``compactness`` continuam a ler apenas o *stream* canónico,
+onde a forma flexionada não ocorre. O score não é uma probabilidade.
 """
 
 import math
@@ -41,6 +49,7 @@ from app.retrieval.eligibility import (
 from app.retrieval.lexical_normalization import (
     LexicalRepresentation,
     build_lexical_representation,
+    is_canonical_marker,
 )
 from app.retrieval.query_planning import (
     MAX_INFORMATIVE_TERMS,
@@ -81,8 +90,15 @@ W_SECTION = 0.05
 W_FTS = 0.02
 W_STRATEGY = 0.02
 _WEIGHT_SUM = (
-    W_COVERAGE + W_EXACT_PHRASE + W_PROXIMITY + W_ORDER
-    + W_TITLE + W_STRUCTURE + W_SECTION + W_FTS + W_STRATEGY
+    W_COVERAGE
+    + W_EXACT_PHRASE
+    + W_PROXIMITY
+    + W_ORDER
+    + W_TITLE
+    + W_STRUCTURE
+    + W_SECTION
+    + W_FTS
+    + W_STRATEGY
 )
 if not math.isclose(_WEIGHT_SUM, 1.0, rel_tol=1e-9):  # pragma: no cover - erro de programação
     msg = "os pesos do ranking devem somar 1.0"
@@ -108,8 +124,7 @@ STRUCTURE_MIN_COMPACTNESS = 0.5
 # pequeno do score e desempate na ordenação final.
 _MAX_STRATEGY_PRIORITY = max(STRATEGY_PRIORITY.values())
 _STRATEGY_QUALITY: dict[LexicalQueryStrategy, float] = {
-    strategy: priority / _MAX_STRATEGY_PRIORITY
-    for strategy, priority in STRATEGY_PRIORITY.items()
+    strategy: priority / _MAX_STRATEGY_PRIORITY for strategy, priority in STRATEGY_PRIORITY.items()
 }
 
 
@@ -141,6 +156,44 @@ class LexicalCandidate:
     chunking_strategy: str | None
     raw_score: float
     strategy: LexicalQueryStrategy
+    # Termos informativos da pergunta que o **PostgreSQL** confirmou existirem
+    # no conteúdo deste segmento por via morfológica, sob a configuração FTS do
+    # idioma. Não é um stemming reimplementado em Python: é o veredicto do
+    # próprio motor, transportado desde a consulta de recuperação (ver
+    # ``PostgresLexicalRetriever._build_statement``), para que a fase de
+    # elegibilidade possa usar a prova que a fase de recuperação já produziu.
+    #
+    # As duas origens são guardadas **em separado** porque não têm o mesmo
+    # alcance nem o mesmo custo, e confundi-las tornaria o trace incapaz de
+    # explicar por que via um segmento entrou:
+    #
+    #   - ``indexed`` — casou o ``search_vector``, a coluna gerada e indexada
+    #     por GIN sobre ``normalized_content`` (texto já sem diacríticos);
+    #   - ``content`` — casou ``to_tsvector(cfg, content)``, calculado na hora
+    #     sobre o texto **original acentuado**. É a via que recupera
+    #     ``classificações`` ⇄ ``classificação``, que o *stemmer* português só
+    #     reduz ao mesmo radical enquanto vê os acentos.
+    #
+    # Nenhuma das duas descreve posições: um radical não diz onde a palavra
+    # está, nem em que ordem, nem quão perto das outras. Por isso entram na
+    # cobertura e nunca nos sinais posicionais.
+    #
+    # Vazios por omissão. Um candidato construído fora da consulta de produção
+    # (avaliação offline, testes puros) comporta-se exatamente como antes desta
+    # capacidade existir, em vez de herdar correspondências que ninguém
+    # verificou.
+    indexed_fts_matched_terms: frozenset[str] = frozenset()
+    content_fts_matched_terms: frozenset[str] = frozenset()
+
+    @property
+    def fts_matched_terms(self) -> frozenset[str]:
+        """Todas as correspondências morfológicas, seja qual for a origem.
+
+        Propriedade e não campo: a união é sempre derivável das duas parcelas,
+        e mantê-la como terceiro estado guardado permitiria que ficasse
+        dessincronizada de ambas.
+        """
+        return self.indexed_fts_matched_terms | self.content_fts_matched_terms
 
 
 @dataclass(frozen=True)
@@ -159,6 +212,23 @@ class LexicalFeatures:
     fts_norm: float
     length_factor: float
     strategy_quality: float
+    # Parcelas de ``matched_terms`` cuja prova foi **apenas** morfológica,
+    # separadas por origem (índice / conteúdo acentuado). Existem para o trace:
+    # permitem ler uma cobertura com a sua proveniência à vista, em vez de a
+    # deduzir. Nenhum peso do score as consulta — ``fts_norm``, que é outra
+    # coisa (o ``ts_rank_cd`` cru saturado), continua a ser o único sinal de
+    # FTS que pontua.
+    #
+    # Últimos campos e com omissão: ``build_features`` preenche-os sempre a
+    # partir do ``ContentMatch``, e um duplo de teste que descreva sinais sem
+    # correspondências morfológicas não tem de o dizer.
+    indexed_fts_matched_terms: frozenset[str] = frozenset()
+    content_fts_matched_terms: frozenset[str] = frozenset()
+
+    @property
+    def fts_matched_terms(self) -> frozenset[str]:
+        """União das duas parcelas morfológicas."""
+        return self.indexed_fts_matched_terms | self.content_fts_matched_terms
 
 
 @dataclass(frozen=True)
@@ -224,6 +294,23 @@ def informative_query_terms(normalized_query: str, language: str) -> tuple[str, 
         if len(terms) >= MAX_INFORMATIVE_TERMS:
             break
     return tuple(terms)
+
+
+def fts_probe_terms(query_terms: tuple[str, ...]) -> tuple[str, ...]:
+    """Termos que podem ser sondados contra o ``search_vector``, por ordem.
+
+    São os termos canónicos da pergunta **menos os marcadores abstratos**
+    (``ord:N``, ``rng:N-M``). A exclusão não é cosmética: esses marcadores não
+    são palavras de nenhum idioma, e ``websearch_to_tsquery`` decompô-los-ia em
+    lexemas soltos — ``ord:1`` torna-se ``'ord' & '1'`` e ``rng:1-12`` torna-se
+    ``'rng' & '1' <-> '-12'``. Sondá-los faria "primeira" corresponder a
+    qualquer segmento que contivesse um ``1``, que é exatamente a expansão
+    ordinal→cardinal que o planeamento da consulta proíbe.
+
+    O ordinal e o intervalo continuam, portanto, a exigir correspondência
+    canónica real na elegibilidade e no ranking.
+    """
+    return tuple(term for term in query_terms if not is_canonical_marker(term))
 
 
 def _informative_stream(
@@ -310,9 +397,31 @@ def compute_content_match(
 ) -> ContentMatch:
     """Sinais que dependem apenas do conteúdo (função pura, fase 1).
 
-    Nada aqui usa título, secção, estrutura, comprimento, estratégia ou
-    score FTS: são exatamente estes os sinais em que a elegibilidade pode
-    basear-se.
+    Nada aqui usa título, secção, estrutura, comprimento, estratégia ou o
+    score FTS cru (``ts_rank_cd``): são exatamente estes os sinais em que a
+    elegibilidade pode basear-se.
+
+    Duas provas de correspondência, com alcances diferentes
+    -------------------------------------------------------
+
+    **Superfície** — igualdade entre formas canónicas (``lexical_normalization``:
+    ordinais e intervalos). Diz que o termo está no conteúdo, **e onde**.
+
+    **Morfológica** — o termo casou o ``search_vector`` do segmento sob a
+    configuração FTS do idioma, segundo o próprio PostgreSQL
+    (``candidate.fts_matched_terms``). Diz que o termo está no conteúdo, e nada
+    mais: um radical não tem posição.
+
+    A união das duas é ``matched_terms``, e é sobre ela que a cobertura é
+    calculada — a alternativa seria a contradição que esta função tinha:
+    recusar como evidência insuficiente um candidato que o índice só devolveu
+    porque o conteúdo **de facto** corresponde. O limiar não desce por isso;
+    muda a prova que lhe é apresentada.
+
+    Os sinais posicionais — ``exact_phrase``, ``ordered``, ``proximity`` e
+    ``compactness`` — continuam a ler **apenas** o *stream* canónico do
+    conteúdo. Uma correspondência morfológica não é uma ocorrência literal, e
+    deixá-la entrar aqui faria um candidato ganhar duas vezes com uma só prova.
     """
     language = candidate.language
     functional = functional_terms_for(language)
@@ -321,19 +430,46 @@ def compute_content_match(
     positions = content.first_positions()
     term_count = len(query_terms)
 
-    matched = frozenset(term for term in query_terms if term in content_set)
+    surface_matched = frozenset(term for term in query_terms if term in content_set)
+
+    # Restrito aos termos **desta** pergunta e disjunto da superfície: a
+    # partição mantém ``matched_terms - fts_matched_terms`` a recuperar
+    # exatamente as correspondências literais, que é o que torna o trace
+    # auditável em vez de apenas mais numeroso.
+    #
+    # Os marcadores canónicos são recusados aqui, e não só na sonda
+    # (``fts_probe_terms``). A regra que um ordinal ou um intervalo exige
+    # correspondência canónica real é desta função, e uma regra que dependa de
+    # o chamador ter filtrado bem é uma regra que se perde em silêncio no dia
+    # em que outro chamador aparecer.
+    def _parcel(carried: frozenset[str]) -> frozenset[str]:
+        return (
+            frozenset(
+                term for term in query_terms if term in carried and not is_canonical_marker(term)
+            )
+            - surface_matched
+        )
+
+    indexed_fts = _parcel(candidate.indexed_fts_matched_terms)
+    # Disjunta também da parcela indexada: um termo confirmado pelas duas vias
+    # é contado uma vez e atribuído à mais barata, para que o trace não sugira
+    # que a via acentuada foi necessária quando o índice já bastava.
+    content_fts = _parcel(candidate.content_fts_matched_terms) - indexed_fts
+    matched = surface_matched | indexed_fts | content_fts
     coverage = len(matched) / term_count if term_count else 0.0
 
     if term_count >= 2:
         stream = _informative_stream(content, functional)
         exact_phrase = 1.0 if _is_contiguous_sublist(query_terms, stream) else 0.0
     else:
-        exact_phrase = 1.0 if coverage > 0 else 0.0
+        exact_phrase = 1.0 if surface_matched else 0.0
 
-    proximity, compactness = compute_proximity(query_terms, matched, positions)
+    proximity, compactness = compute_proximity(query_terms, surface_matched, positions)
     return ContentMatch(
         coverage=coverage,
         matched_terms=matched,
+        indexed_fts_matched_terms=indexed_fts,
+        content_fts_matched_terms=content_fts,
         exact_phrase=exact_phrase,
         ordered=_ordered_fraction(query_terms, positions),
         proximity=proximity,
@@ -380,6 +516,8 @@ def build_features(
     return LexicalFeatures(
         coverage=match.coverage,
         matched_terms=match.matched_terms,
+        indexed_fts_matched_terms=match.indexed_fts_matched_terms,
+        content_fts_matched_terms=match.content_fts_matched_terms,
         exact_phrase=match.exact_phrase,
         ordered=match.ordered,
         proximity=match.proximity,
@@ -393,13 +531,9 @@ def build_features(
     )
 
 
-def compute_features(
-    query_terms: tuple[str, ...], candidate: LexicalCandidate
-) -> LexicalFeatures:
+def compute_features(query_terms: tuple[str, ...], candidate: LexicalCandidate) -> LexicalFeatures:
     """Sinais completos de um candidato (conveniência: fase 1 + fase 2)."""
-    return build_features(
-        query_terms, candidate, compute_content_match(query_terms, candidate)
-    )
+    return build_features(query_terms, candidate, compute_content_match(query_terms, candidate))
 
 
 def compute_score(features: LexicalFeatures) -> float:

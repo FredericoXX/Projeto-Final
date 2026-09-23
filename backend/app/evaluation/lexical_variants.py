@@ -135,9 +135,7 @@ class TermProjection:
 
 def identity_projection() -> TermProjection:
     """A baseline: cada termo projeta-se em si mesmo."""
-    return TermProjection(
-        name=MATCHING_EXACT_CANONICAL, query_mapping={}, content_mapping={}
-    )
+    return TermProjection(name=MATCHING_EXACT_CANONICAL, query_mapping={}, content_mapping={})
 
 
 def project_terms(terms: tuple[str, ...], projection: TermProjection) -> tuple[str, ...]:
@@ -159,18 +157,14 @@ def projected_positions(
         positions.setdefault(projection.project_content(token.canonical), token.position)
         if token.numeric_range is not None:
             for endpoint in token.numeric_range.endpoint_canonicals:
-                positions.setdefault(
-                    projection.project_content(endpoint), token.position
-                )
+                positions.setdefault(projection.project_content(endpoint), token.position)
     return positions
 
 
 def projected_content_set(
     representation: LexicalRepresentation, projection: TermProjection
 ) -> frozenset[str]:
-    values = {
-        projection.project_content(token.canonical) for token in representation.tokens
-    }
+    values = {projection.project_content(token.canonical) for token in representation.tokens}
     for token in representation.tokens:
         if token.numeric_range is not None:
             values.update(
@@ -193,6 +187,15 @@ def variant_content_match(
     e não no projetado: o consumidor a jusante — ``decide_eligibility``, através
     de ``_canonical_relaxed_is_satisfied`` — compara-o com ``query_terms``, e um
     conjunto em radicais falharia silenciosamente essa comparação.
+
+    ``fts_matched_terms`` é **reinterceptado** com o novo conjunto, e não
+    herdado intacto. A projeção da variante substitui o modelo de
+    correspondência de produção por inteiro, incluindo a morfologia: uma
+    parcela calculada pelo modelo antigo não descreve o conjunto novo, e um
+    termo que a projeção deixasse de corresponder continuaria a declarar-se
+    correspondido por radical. A interseção preserva a invariante
+    ``fts_matched_terms ⊆ matched_terms`` e nunca atribui à variante uma
+    correspondência que ela própria não fez.
     """
     if not query_terms:
         return base
@@ -213,6 +216,8 @@ def variant_content_match(
         base,
         coverage=coverage,
         matched_terms=matched,
+        indexed_fts_matched_terms=base.indexed_fts_matched_terms & matched,
+        content_fts_matched_terms=base.content_fts_matched_terms & matched,
         proximity=proximity,
         compactness=compactness,
     )

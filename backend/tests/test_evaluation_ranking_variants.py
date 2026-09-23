@@ -51,10 +51,7 @@ from scripts.evaluate_retrieval_experiment import (
 )
 
 ARTEFACT = (
-    Path(__file__).resolve().parents[2]
-    / "docs"
-    / "evaluation"
-    / "ranking-variants-p1-s1.json"
+    Path(__file__).resolve().parents[2] / "docs" / "evaluation" / "ranking-variants-p1-s1.json"
 )
 
 
@@ -97,7 +94,15 @@ def _features(**overrides: float) -> LexicalFeatures:
         "length_factor": 1.0,
         "strategy_quality": 0.25,
     }
-    return LexicalFeatures(matched_terms=frozenset({"a"}), **{**defaults, **overrides})
+    # Os dois conjuntos são explícitos para que ``**defaults`` continue a
+    # descrever apenas sinais numéricos. Estes duplos não dependem de
+    # correspondências morfológicas: o que medem é a ponderação dos sinais.
+    return LexicalFeatures(
+        matched_terms=frozenset({"a"}),
+        indexed_fts_matched_terms=frozenset(),
+        content_fts_matched_terms=frozenset(),
+        **{**defaults, **overrides},
+    )
 
 
 # ---------------------------------------------------------------------------
@@ -310,10 +315,7 @@ def test_every_variant_sees_the_same_eligible_set() -> None:
     for policy in payload["budget_policies"]:
         cells = [c for c in payload["cells"] if c["budget_policy"] == policy]
         signatures = {
-            tuple(
-                (r["question_id"], r["eligible_candidates"])
-                for r in cell["question_results"]
-            )
+            tuple((r["question_id"], r["eligible_candidates"]) for r in cell["question_results"])
             for cell in cells
         }
         assert len(signatures) == 1, policy
@@ -340,10 +342,7 @@ def test_the_artefact_records_the_normalised_weights_of_every_variant() -> None:
 # ---------------------------------------------------------------------------
 
 DIAGNOSTICS = (
-    Path(__file__).resolve().parents[2]
-    / "docs"
-    / "evaluation"
-    / "ranking-diagnostics-p1-s1.json"
+    Path(__file__).resolve().parents[2] / "docs" / "evaluation" / "ranking-diagnostics-p1-s1.json"
 )
 GROUND_TRUTH = DIAGNOSTICS.with_name("retrieval-ground-truth-p1-repooled.json")
 

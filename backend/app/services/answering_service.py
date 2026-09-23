@@ -30,7 +30,7 @@ from app.core.exceptions import ValidationError
 from app.core.language import resolve_language
 from app.core.text_normalization import normalize_text
 from app.models.user import User
-from app.retrieval.base import RetrievalContext, Retriever
+from app.retrieval.base import RetrievalContext, RetrievalQuery, Retriever
 from app.schemas.answering import (
     AnsweringRequest,
     AnsweringResponse,
@@ -73,7 +73,14 @@ def ask(
         reference_date=datetime.now(UTC).date(),
     )
     retrieval_result = retriever.search(
-        db, normalized_query, context, top_k, payload.official_only
+        db,
+        # As duas formas viajam juntas: a normalizada governa o planeamento e a
+        # cobertura, a original permite ao retrieval construir consultas FTS
+        # acentuadas. A validação acima continua a ser feita sobre a normalizada.
+        RetrievalQuery.from_text(payload.query),
+        context,
+        top_k,
+        payload.official_only,
     )
     evidence = retrieval_result.evidence
 

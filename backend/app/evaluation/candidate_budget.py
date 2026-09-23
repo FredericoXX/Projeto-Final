@@ -110,9 +110,7 @@ def pool_order_key(candidate: LexicalCandidate) -> tuple[object, ...]:
     )
 
 
-def truncate_pool(
-    candidates: Iterable[LexicalCandidate], budget: int
-) -> list[LexicalCandidate]:
+def truncate_pool(candidates: Iterable[LexicalCandidate], budget: int) -> list[LexicalCandidate]:
     """Os ``budget`` melhores candidatos da união, por :func:`pool_order_key`."""
     return sorted(candidates, key=pool_order_key)[:budget]
 
@@ -124,9 +122,10 @@ def merge_candidate(
     """Deduplicação por segmento, com a semântica de ``_merge_candidate``.
 
     O mesmo segmento pode ser devolvido por várias variantes. Produção guarda-o
-    uma vez, com a **melhor** estratégia e o **maior** score bruto; qualquer
-    outra escolha alteraria ``strategy_quality``, que é um sinal do ranking, e a
-    experiência passaria a medir duas coisas ao mesmo tempo.
+    uma vez, com a **melhor** estratégia, o **maior** score bruto e a **união**
+    das correspondências morfológicas confirmadas pelo FTS; qualquer outra
+    escolha alteraria ``strategy_quality`` ou a cobertura, que são sinais do
+    ranking, e a experiência passaria a medir duas coisas ao mesmo tempo.
     """
     existing = candidates.get(candidate.chunk_id)
     if existing is None:
@@ -136,6 +135,12 @@ def merge_candidate(
         existing,
         strategy=_better_strategy(existing.strategy, candidate.strategy),
         raw_score=max(existing.raw_score, candidate.raw_score),
+        indexed_fts_matched_terms=(
+            existing.indexed_fts_matched_terms | candidate.indexed_fts_matched_terms
+        ),
+        content_fts_matched_terms=(
+            existing.content_fts_matched_terms | candidate.content_fts_matched_terms
+        ),
     )
 
 
@@ -257,8 +262,7 @@ def summarise_target_position(
         "best_total": best["total"],
         "matched_by_any_variant": True,
         "reachable_under_current_quota": any(
-            match["position"] <= quota_by_strategy.get(match["strategy"], 0)
-            for match in matches
+            match["position"] <= quota_by_strategy.get(match["strategy"], 0) for match in matches
         ),
     }
 

@@ -201,8 +201,7 @@ def test_disagreeing_on_the_protocol_is_rejected() -> None:
     historical, repooled = _extended()
     repooled["metric_protocol"]["primary_k"] = 3
     assert any(
-        "metric_protocol.primary_k" in p
-        for p in verify_repooling(historical, repooled).problems
+        "metric_protocol.primary_k" in p for p in verify_repooling(historical, repooled).problems
     )
 
 
@@ -357,7 +356,15 @@ def _features(**overrides: float) -> LexicalFeatures:
         "length_factor": 1.0,
         "strategy_quality": 0.25,
     }
-    return LexicalFeatures(matched_terms=frozenset({"a"}), **{**defaults, **overrides})
+    # Os dois conjuntos são explícitos para que ``**defaults`` continue a
+    # descrever apenas sinais numéricos. Estes duplos não dependem de
+    # correspondências morfológicas: o que medem é a ponderação dos sinais.
+    return LexicalFeatures(
+        matched_terms=frozenset({"a"}),
+        indexed_fts_matched_terms=frozenset(),
+        content_fts_matched_terms=frozenset(),
+        **{**defaults, **overrides},
+    )
 
 
 def test_a_dominated_target_cannot_be_saved_by_any_reweighting() -> None:
@@ -433,17 +440,13 @@ def test_the_versioned_repooling_extends_the_historical_ground_truth() -> None:
 
 
 def test_the_versioned_ground_truths_have_different_digests() -> None:
-    assert ground_truth_digest(_load(SEED_PATH)) != ground_truth_digest(
-        _load(REPOOLED_PATH)
-    )
+    assert ground_truth_digest(_load(SEED_PATH)) != ground_truth_digest(_load(REPOOLED_PATH))
 
 
 def test_the_diagnostics_artefact_declares_the_digests_it_used() -> None:
     payload = _load(DIAGNOSTICS_PATH)
     assert payload["ground_truth_digest_before"] == ground_truth_digest(_load(SEED_PATH))
-    assert payload["ground_truth_digest_after"] == ground_truth_digest(
-        _load(REPOOLED_PATH)
-    )
+    assert payload["ground_truth_digest_after"] == ground_truth_digest(_load(REPOOLED_PATH))
     assert payload["repooling"]["revisions"] == []
 
 
@@ -484,14 +487,10 @@ def test_every_diagnosed_candidate_carries_its_structure_type() -> None:
         if case["target_rank"] is None:
             continue
         assert "target_structure_type" in case
-        assert case["target_decomposition"]["structure_type"] == case[
-            "target_structure_type"
-        ]
+        assert case["target_decomposition"]["structure_type"] == case["target_structure_type"]
         for competitor in case["competitors"]:
             assert "structure_type" in competitor
-            assert competitor["decomposition"]["structure_type"] == competitor[
-                "structure_type"
-            ]
+            assert competitor["decomposition"]["structure_type"] == competitor["structure_type"]
 
 
 def test_the_cross_document_failure_pits_a_paragraph_against_a_table_row() -> None:

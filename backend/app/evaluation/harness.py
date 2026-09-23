@@ -37,6 +37,7 @@ from app.models.user import User
 from app.retrieval.base import (
     Evidence,
     RetrievalContext,
+    RetrievalQuery,
     RetrievalResult,
     RetrievalTrace,
     ScoreKind,
@@ -116,7 +117,7 @@ class FakeRetriever:
     def search(
         self,
         db: Session,
-        query: str,
+        query: RetrievalQuery,
         context: RetrievalContext,
         top_k: int,
         official_only: bool,

@@ -9,7 +9,7 @@ from app.core.exceptions import ValidationError
 from app.core.language import resolve_language
 from app.core.text_normalization import normalize_text
 from app.models.user import User
-from app.retrieval.base import RetrievalContext, Retriever
+from app.retrieval.base import RetrievalContext, RetrievalQuery, Retriever
 from app.schemas.retrieval import (
     RetrievalEvidenceRead,
     RetrievalSearchRequest,
@@ -43,7 +43,10 @@ def search_evidence(
     )
     result = retriever.search(
         db,
-        normalized_query,
+        # A forma original acompanha a normalizada: o retrieval lexical precisa
+        # dela para reconstruir consultas FTS acentuadas, e a normalização é
+        # irreversível a jusante.
+        RetrievalQuery.from_text(payload.query),
         context,
         payload.top_k,
         payload.official_only,

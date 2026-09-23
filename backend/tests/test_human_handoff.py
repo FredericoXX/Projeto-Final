@@ -34,7 +34,7 @@ from app.main import app
 from app.models.message import Message
 from app.models.message_source import MessageSource
 from app.models.user import User
-from app.retrieval.base import RetrievalContext, RetrievalResult
+from app.retrieval.base import RetrievalContext, RetrievalQuery, RetrievalResult
 from app.retrieval.dependencies import get_retriever
 from app.schemas.handoff import HANDOFF_OUTCOME
 from app.services import human_handoff_service
@@ -57,7 +57,7 @@ class ExplodingRetriever:
     def search(
         self,
         db: Session,
-        query: str,
+        query: RetrievalQuery,
         context: RetrievalContext,
         top_k: int,
         official_only: bool,
@@ -241,9 +241,7 @@ def test_handoff_message_appears_in_the_persisted_history(client: TestClient) ->
     _, headers, conversation = _setup(client, support=_configured_support())
     created = _handoff(client, headers, conversation["id"]).json()["assistant_message"]
 
-    listing = client.get(
-        f"/api/v1/conversations/{conversation['id']}/messages", headers=headers
-    )
+    listing = client.get(f"/api/v1/conversations/{conversation['id']}/messages", headers=headers)
 
     assert listing.status_code == 200
     items = listing.json()["items"]
@@ -498,15 +496,11 @@ def test_conversation_from_another_institution_reports_as_missing(
     test_session_factory: sessionmaker[Session],
 ) -> None:
     """Instituição A não pode encaminhar — nem descobrir — uma conversa de B."""
-    institution_b = _create_institution(
-        client, name="Institution B", support=_configured_support()
-    )
+    institution_b = _create_institution(client, name="Institution B", support=_configured_support())
     headers_b = _create_admin(client, institution_b["id"])
     conversation_b = _create_conversation(client, headers_b)
 
-    institution_a = _create_institution(
-        client, name="Institution A", support=_configured_support()
-    )
+    institution_a = _create_institution(client, name="Institution A", support=_configured_support())
     headers_a = _create_admin(client, institution_a["id"])
 
     response = _handoff(client, headers_a, conversation_b["id"])
@@ -525,9 +519,7 @@ def test_unconfigured_tenant_cannot_probe_another_institution_conversation(
 ) -> None:
     """404 precede a validação do destino: a resposta não muda consoante a
     instituição do atacante ter ou não atendimento configurado."""
-    institution_b = _create_institution(
-        client, name="Institution B", support=_configured_support()
-    )
+    institution_b = _create_institution(client, name="Institution B", support=_configured_support())
     headers_b = _create_admin(client, institution_b["id"])
     conversation_b = _create_conversation(client, headers_b)
 
@@ -579,9 +571,7 @@ def test_unknown_conversation_is_not_found(client: TestClient) -> None:
         {"institution_id": str(uuid.uuid4())},
     ],
 )
-def test_client_supplied_body_never_changes_the_outcome(
-    client: TestClient, payload: dict
-) -> None:
+def test_client_supplied_body_never_changes_the_outcome(client: TestClient, payload: dict) -> None:
     """O trigger e o destino são determinados pelo backend.
 
     O endpoint não declara schema de pedido, portanto o corpo é ignorado por
@@ -740,9 +730,7 @@ def test_deactivated_user_cannot_complete_a_handoff(
     with test_session_factory() as db:
         stale = _stale_user(institution["id"], me["id"], role="student")
         with pytest.raises(AuthenticationError):
-            human_handoff_service.request_human_handoff(
-                db, stale, uuid.UUID(conversation["id"])
-            )
+            human_handoff_service.request_human_handoff(db, stale, uuid.UUID(conversation["id"]))
 
     assert _message_count(test_session_factory) == 0
 
@@ -768,9 +756,7 @@ def test_demoted_admin_cannot_hand_off_another_users_conversation(
         # A linha diz "student"; o objeto de identidade ainda diz "admin".
         stale = _stale_user(institution["id"], demoted["id"], role="admin")
         with pytest.raises(NotFoundError):
-            human_handoff_service.request_human_handoff(
-                db, stale, uuid.UUID(conversation["id"])
-            )
+            human_handoff_service.request_human_handoff(db, stale, uuid.UUID(conversation["id"]))
 
     assert _message_count(test_session_factory) == 0
 

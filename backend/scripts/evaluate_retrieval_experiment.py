@@ -102,6 +102,27 @@ from app.retrieval.reranking import (
 )
 
 EXPERIMENT_SCHEMA_VERSION: Final = "1"
+
+#: Versão da pipeline lexical que este script **reproduz**, que não é a de
+#: produção.
+#:
+#: Produção avançou para ``lexical_pipeline_v3`` em dois passos: a consulta de
+#: recuperação passou a devolver, por candidato, os termos da pergunta que
+#: casaram o conteúdo por morfologia, e ganhou uma segunda via FTS sobre o
+#: ``content`` acentuado. Ambos mudam o **conjunto de candidatos** e a
+#: cobertura. Este script mantém deliberadamente a consulta e o conversor de
+#: linha do ``v1``: os seus resultados estão congelados em artefactos com
+#: digests publicados, e adotar qualquer dos dois passos mudaria a cobertura, a
+#: elegibilidade e as métricas de experiências já concluídas — deixaria de
+#: reproduzir o que mediu.
+#:
+#: A constante existe para que essa diferença seja **declarada** em vez de
+#: inferida do silêncio: nenhum consumidor deve ler destes artefactos uma
+#: paridade com a pipeline atual. ``tests/test_lexical_fts_matching.py``
+#: verifica que continua diferente de ``LEXICAL_PIPELINE_VERSION`` — se
+#: alguém alinhar o script com produção, tem de subir esta versão no mesmo
+#: gesto, e os artefactos antigos passam a declarar-se do que são.
+REPRODUCED_LEXICAL_PIPELINE_VERSION: Final = "lexical_pipeline_v1"
 DIGEST_ALGORITHM: Final = "sha256"
 
 EXIT_OK: Final = 0
@@ -173,9 +194,9 @@ def stem_words_batch(db: Session, words: Iterable[str]) -> dict[str, str]:
     words_array = cast(bindparam("words", unique), ARRAY(Text))
     statement = select(
         func.unnest(words_array).label("word"),
-        func.ts_lexize(
-            literal_column(PORTUGUESE_STEM_DICTIONARY), func.unnest(words_array)
-        ).label("lexemes"),
+        func.ts_lexize(literal_column(PORTUGUESE_STEM_DICTIONARY), func.unnest(words_array)).label(
+            "lexemes"
+        ),
     )
     stems: dict[str, str] = {}
     for word, lexemes in db.execute(statement).all():
@@ -244,32 +265,20 @@ def projection_for(
     if variant == MATCHING_STEM_NORMALIZED:
         # Radicais sobre as formas sem acentos que o sistema já persiste: os
         # dois lados usam o mesmo mapa porque nenhum depende de acentuação.
-        return TermProjection(
-            name=variant, query_mapping=stems, content_mapping=stems
-        )
+        return TermProjection(name=variant, query_mapping=stems, content_mapping=stems)
 
     query_accents = accent_map_for_text(query_text)
     content_accents = accent_map_for_text(content_text)
     return TermProjection(
         name=variant,
         query_mapping={
-            plain: stems.get(accented, accented)
-            for plain, accented in query_accents.items()
+            plain: stems.get(accented, accented) for plain, accented in query_accents.items()
         }
-        | {
-            word: stem
-            for word, stem in stems.items()
-            if word not in query_accents
-        },
+        | {word: stem for word, stem in stems.items() if word not in query_accents},
         content_mapping={
-            plain: stems.get(accented, accented)
-            for plain, accented in content_accents.items()
+            plain: stems.get(accented, accented) for plain, accented in content_accents.items()
         }
-        | {
-            word: stem
-            for word, stem in stems.items()
-            if word not in content_accents
-        },
+        | {word: stem for word, stem in stems.items() if word not in content_accents},
     )
 
 
@@ -335,6 +344,14 @@ def _candidate_statement(
 
 
 def _row_to_candidate(row: Any, strategy: LexicalQueryStrategy) -> LexicalCandidate:
+    """Linha desta experiência para candidato, na forma da pipeline ``v1``.
+
+    ``fts_matched_terms`` fica no valor por omissão (vazio) **de propósito**:
+    ``_candidate_statement`` é a consulta do ``v1`` e não traz a sonda
+    morfológica. Preenchê-lo aqui exigiria inventar correspondências que a
+    consulta não verificou; acrescentar a sonda à consulta mudaria resultados
+    congelados. Ver ``REPRODUCED_LEXICAL_PIPELINE_VERSION``.
+    """
     return LexicalCandidate(
         chunk_id=row.chunk_id,
         document_id=row.document_id,
@@ -494,9 +511,7 @@ def judged_grade_index(
     question: Mapping[str, Any], document_index: Mapping[str, str]
 ) -> dict[tuple[str, int], int]:
     return {
-        (document_index[judgment["corpus_item_id"]], judgment["chunk_index"]): judgment[
-            "relevance"
-        ]
+        (document_index[judgment["corpus_item_id"]], judgment["chunk_index"]): judgment["relevance"]
         for judgment in question["evidence_judgments"]
     }
 
@@ -543,12 +558,8 @@ def evaluate_cell(
             grades.get((str(candidate.document_id), candidate.chunk_index), UNJUDGED_GRADE)
             for candidate in returned
         ]
-        judged_grades = [
-            judgment["relevance"] for judgment in question["evidence_judgments"]
-        ]
-        total_relevant = sum(
-            1 for grade in judged_grades if grade >= BINARY_RELEVANCE_THRESHOLD
-        )
+        judged_grades = [judgment["relevance"] for judgment in question["evidence_judgments"]]
+        total_relevant = sum(1 for grade in judged_grades if grade >= BINARY_RELEVANCE_THRESHOLD)
         distractors = sum(
             1
             for candidate in returned
@@ -572,16 +583,13 @@ def evaluate_cell(
             "ranking": [
                 {
                     "position": position,
-                    "corpus_item_id": _corpus_item_for(
-                        str(candidate.document_id), document_index
-                    ),
+                    "corpus_item_id": _corpus_item_for(str(candidate.document_id), document_index),
                     "chunk_index": candidate.chunk_index,
                     "grade": grades.get(
                         (str(candidate.document_id), candidate.chunk_index),
                         UNJUDGED_GRADE,
                     ),
-                    "judged": (str(candidate.document_id), candidate.chunk_index)
-                    in grades,
+                    "judged": (str(candidate.document_id), candidate.chunk_index) in grades,
                 }
                 for position, candidate in enumerate(returned, start=1)
             ],
@@ -594,13 +602,11 @@ def evaluate_cell(
         )
         if measurable:
             record["recall"] = {
-                str(k): round(recall_at_k(retrieved_grades, total_relevant, k), 6)
-                for k in K_VALUES
+                str(k): round(recall_at_k(retrieved_grades, total_relevant, k), 6) for k in K_VALUES
             }
             record["reciprocal_rank"] = round(reciprocal_rank(retrieved_grades), 6)
             record["ndcg"] = {
-                str(k): round(ndcg_at_k(retrieved_grades, judged_grades, k), 6)
-                for k in K_VALUES
+                str(k): round(ndcg_at_k(retrieved_grades, judged_grades, k), 6) for k in K_VALUES
             }
             for k in K_VALUES:
                 recalls[k].append(recall_at_k(retrieved_grades, total_relevant, k))
@@ -667,15 +673,10 @@ def _close(got: float, want: float) -> bool:
 
 def _ranking_signature(entries: Sequence[Mapping[str, Any]]) -> list[tuple[Any, ...]]:
     """Identidade posicional do resultado, para comparação entre execuções."""
-    return [
-        (entry["position"], entry["corpus_item_id"], entry["chunk_index"])
-        for entry in entries
-    ]
+    return [(entry["position"], entry["corpus_item_id"], entry["chunk_index"]) for entry in entries]
 
 
-def verify_baseline_replication(
-    cell: Mapping[str, Any], baseline: Mapping[str, Any]
-) -> list[str]:
+def verify_baseline_replication(cell: Mapping[str, Any], baseline: Mapping[str, Any]) -> list[str]:
     """A célula de controlo tem de reproduzir o D4.2 — **inteiro**.
 
     Uma versão anterior desta guarda comparava apenas o Recall das perguntas que
@@ -727,8 +728,7 @@ def verify_baseline_replication(
         measured_there = "recall" in reference
         if measured_here != measured_there:
             problems.append(
-                f"{question_id} measured={measured_here} but baseline "
-                f"measured={measured_there}"
+                f"{question_id} measured={measured_here} but baseline measured={measured_there}"
             )
             continue
         if not measured_here:
@@ -739,9 +739,7 @@ def verify_baseline_replication(
                 got = result[metric][str(k)]
                 want = reference[metric][str(k)]
                 if not _close(got, want):
-                    problems.append(
-                        f"{question_id} {metric}@{k} {got} != baseline {want}"
-                    )
+                    problems.append(f"{question_id} {metric}@{k} {got} != baseline {want}")
         if not _close(result["reciprocal_rank"], reference["reciprocal_rank"]):
             problems.append(
                 f"{question_id} reciprocal_rank {result['reciprocal_rank']} "
@@ -764,9 +762,7 @@ def verify_baseline_replication(
             got = aggregate[metric][str(k)]
             want = reference_aggregate[metric][str(k)]
             if not _close(got, want):
-                problems.append(
-                    f"aggregate {metric}@{k} {got} != baseline {want}"
-                )
+                problems.append(f"aggregate {metric}@{k} {got} != baseline {want}")
     return problems
 
 
@@ -779,13 +775,9 @@ def verify_baseline_integrity(baseline: dict[str, Any]) -> None:
     """
     declared = baseline.get("result_digest")
     if not declared:
-        raise ExperimentError(
-            "the baseline artefact has no result_digest", EXIT_BASELINE_MISMATCH
-        )
+        raise ExperimentError("the baseline artefact has no result_digest", EXIT_BASELINE_MISMATCH)
     payload = {
-        key: value
-        for key, value in baseline.items()
-        if key not in {"result_digest", "executed_at"}
+        key: value for key, value in baseline.items() if key not in {"result_digest", "executed_at"}
     }
     recomputed = hashlib.sha256(canonical_json(payload).encode("utf-8")).hexdigest()
     if recomputed != declared:
@@ -793,6 +785,38 @@ def verify_baseline_integrity(baseline: dict[str, Any]) -> None:
             "the baseline artefact does not match its own result_digest "
             f"(declared {declared}, recomputed {recomputed}); it was modified "
             "after being produced and cannot serve as a reference",
+            EXIT_BASELINE_MISMATCH,
+        )
+    verify_reproduced_pipeline(baseline)
+
+
+def verify_reproduced_pipeline(baseline: dict[str, Any]) -> None:
+    """O baseline tem de ser da pipeline que este script sabe reproduzir.
+
+    Este script executa deliberadamente a consulta do ``lexical_pipeline_v1``:
+    sem a sonda morfológica e sem a via FTS acentuada que produção passou a ter.
+    Comparar os seus resultados com um baseline produzido por outra versão da
+    pipeline seria comparar dois sistemas diferentes e atribuir a diferença ao
+    fator em estudo — exatamente o erro que a identidade da pipeline existe
+    para tornar impossível.
+
+    Falha alto e cedo, em vez de deixar a experiência correr e publicar um
+    número sem significado.
+    """
+    declared = baseline.get("retrieval", {}).get("pipeline_version")
+    if declared is None:
+        raise ExperimentError(
+            "the baseline artefact does not declare retrieval.pipeline_version; "
+            "it predates pipeline identity and cannot be replicated safely",
+            EXIT_BASELINE_MISMATCH,
+        )
+    if declared != REPRODUCED_LEXICAL_PIPELINE_VERSION:
+        raise ExperimentError(
+            f"this experiment reproduces {REPRODUCED_LEXICAL_PIPELINE_VERSION}, but the "
+            f"baseline was produced by {declared}; the candidate set and the coverage "
+            "policy differ between them, so the two are not comparable. Re-run the "
+            "baseline with a matching pipeline, or update this script and raise "
+            "REPRODUCED_LEXICAL_PIPELINE_VERSION together with it",
             EXIT_BASELINE_MISMATCH,
         )
 
@@ -913,14 +937,15 @@ def _run(args: argparse.Namespace) -> int:
         "baseline_result_digest": baseline["result_digest"],
         "control_reproduces_baseline": True,
         "retrieval": retrieval,
+        # Declarado no artefacto, e não só no código: quem o ler daqui a um
+        # ano tem de poder saber que pipeline o produziu sem ir ao git.
+        "reproduced_pipeline_version": REPRODUCED_LEXICAL_PIPELINE_VERSION,
         "matching_variants": list(MATCHING_VARIANTS),
         "pool_conditions": list(POOL_CONDITIONS),
         "primary_k": PRIMARY_K,
         "cells": cells,
     }
-    payload["result_digest"] = hashlib.sha256(
-        canonical_json(payload).encode("utf-8")
-    ).hexdigest()
+    payload["result_digest"] = hashlib.sha256(canonical_json(payload).encode("utf-8")).hexdigest()
     payload["executed_at"] = datetime.now(UTC).isoformat()
 
     args.output.write_text(
