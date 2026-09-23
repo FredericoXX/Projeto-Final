@@ -16,7 +16,7 @@ from datetime import UTC, datetime
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.retrieval.base import Evidence, RetrievalContext
+from app.retrieval.base import Evidence, RetrievalContext, RetrievalQuery
 from app.retrieval.lexical import (
     CANDIDATE_MAX,
     LexicalRetrievalTrace,
@@ -46,9 +46,10 @@ def _search_traced(
     testes verificam — se o retriever passasse a devolver só o trace genérico,
     estes testes falhariam em vez de silenciarem.
     """
-    result = retriever.search(db, query, context, top_k, official_only)
+    result = retriever.search(db, RetrievalQuery.from_text(query), context, top_k, official_only)
     assert isinstance(result.trace, LexicalRetrievalTrace)
     return result.evidence, result.trace
+
 
 # --- Documentos sintéticos ---------------------------------------------------
 
@@ -143,8 +144,7 @@ def test_additional_calendar_questions_prefer_correct_row(client: TestClient) ->
         items = _search(client, headers, question).json()["items"]
         assert items, f"sem resultados para {question!r}"
         assert expected_row in items[0]["content"], (
-            f"esperava {expected_row!r} em topo para {question!r}, "
-            f"veio {items[0]['content']!r}"
+            f"esperava {expected_row!r} em topo para {question!r}, veio {items[0]['content']!r}"
         )
 
 
@@ -260,9 +260,7 @@ def test_four_variants_share_the_global_budget(
     quotas — e das linhas devolvidas por SQL — nunca excede o orçamento."""
     institution, headers, _ = _setup(client)
     for index in range(40):
-        _create_searchable(
-            client, headers, f"Exames da 1.ª chamada numero {index} | detalhes"
-        )
+        _create_searchable(client, headers, f"Exames da 1.ª chamada numero {index} | detalhes")
     from app.core.text_normalization import normalize_text
 
     retriever = PostgresLexicalRetriever()
@@ -435,9 +433,7 @@ def test_partial_coverage_candidate_is_excluded_by_coverage_not_threshold(
     # O documento de matrícula cobre 1 de 2 termos: é removido por cobertura
     # insuficiente — uma causa tipada, distinta do limiar.
     assert trace.excluded_insufficient_coverage >= 1
-    assert any(
-        excluded.reason == "insufficient_coverage" for excluded in trace.excluded
-    )
+    assert any(excluded.reason == "insufficient_coverage" for excluded in trace.excluded)
 
 
 def test_trace_counts_are_mathematically_consistent(
@@ -506,9 +502,7 @@ def test_table_row_does_not_beat_paragraph_with_higher_coverage(client: TestClie
         title="Parágrafo",
     )
     # table_row que só cobre dois dos três termos.
-    _create_searchable(
-        client, headers, "Exames de matemática | Sala 3", title="Tabela"
-    )
+    _create_searchable(client, headers, "Exames de matemática | Sala 3", title="Tabela")
     items = _search(client, headers, "período exames matemática").json()["items"]
     assert items[0]["document_id"] == paragraph["id"]
 
@@ -578,13 +572,11 @@ NEIGHBOUR_RANGE_DOC = "Período de inscrições | 1 a 13 de novembro de 2030"
 
 
 def test_compact_range_query_retrieves_spaced_content(client: TestClient) -> None:
-    """"01a12" na pergunta recupera "1 a 12" no conteúdo através do
+    """ "01a12" na pergunta recupera "1 a 12" no conteúdo através do
     contexto (relaxação canónica) e do marcador canónico."""
     _, headers, _ = _setup(client)
     _create_searchable(client, headers, RANGE_DOC, title="Inscrições")
-    items = _search(client, headers, "Qual é o período de inscrições de 01a12?").json()[
-        "items"
-    ]
+    items = _search(client, headers, "Qual é o período de inscrições de 01a12?").json()["items"]
     assert items
     assert "1 a 12" in items[0]["content"]
 
@@ -608,7 +600,7 @@ def test_correct_range_outranks_neighbouring_range(client: TestClient) -> None:
 def test_number_run_does_not_match_a_range_in_retrieval(
     client: TestClient, test_session_factory: sessionmaker[Session]
 ) -> None:
-    """"0509" continua ambíguo: nunca é lido como o intervalo 5 a 9."""
+    """ "0509" continua ambíguo: nunca é lido como o intervalo 5 a 9."""
     institution, headers, _ = _setup(client)
     _create_searchable(
         client, headers, "Semana institucional | 5 a 9 de outubro de 2030", title="Semana"

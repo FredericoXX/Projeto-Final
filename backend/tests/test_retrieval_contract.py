@@ -20,9 +20,9 @@ import pytest
 from fastapi.testclient import TestClient
 from sqlalchemy.orm import Session, sessionmaker
 
-from app.core.text_normalization import normalize_text
 from app.diagnostics import document_pipeline
 from app.retrieval.base import (
+    RetrievalQuery,
     RetrievalResult,
     RetrievalTrace,
     ScoreKind,
@@ -39,9 +39,7 @@ from tests.test_retrieval_reranking import _context, _setup_calendar
 # --- Contratos puros ---------------------------------------------------------
 
 
-@pytest.mark.parametrize(
-    "contract", [RetrievalResult, RetrievalTrace, ScoreSemantics]
-)
+@pytest.mark.parametrize("contract", [RetrievalResult, RetrievalTrace, ScoreSemantics])
 def test_contracts_are_frozen_dataclasses(contract: type) -> None:
     """Um resultado descreve uma pesquisa já feita: não deve ser editável."""
     assert dataclasses.is_dataclass(contract)
@@ -137,7 +135,7 @@ def test_search_returns_result_whose_trace_describes_that_same_search(
     with test_session_factory() as db:
         result = retriever.search(
             db,
-            normalize_text("Até quando posso mudar o regime de avaliação?"),
+            RetrievalQuery.from_text("Até quando posso mudar o regime de avaliação?"),
             _context(institution["id"]),
             top_k=5,
             official_only=True,
@@ -211,7 +209,7 @@ def test_evidence_is_an_immutable_tuple(
     with test_session_factory() as db:
         result = retriever.search(
             db,
-            normalize_text("Até quando posso mudar o regime de avaliação?"),
+            RetrievalQuery.from_text("Até quando posso mudar o regime de avaliação?"),
             _context(institution["id"]),
             top_k=5,
             official_only=True,
@@ -245,7 +243,7 @@ def test_public_score_is_the_composed_rerank_score_not_raw_ts_rank_cd(
     with test_session_factory() as db:
         result = retriever.search(
             db,
-            normalize_text("Até quando posso mudar o regime de avaliação?"),
+            RetrievalQuery.from_text("Até quando posso mudar o regime de avaliação?"),
             _context(institution["id"]),
             top_k=5,
             official_only=True,
@@ -275,7 +273,7 @@ def test_composed_score_stays_within_the_declared_unit_range(
     with test_session_factory() as db:
         result = retriever.search(
             db,
-            normalize_text("Exames da 1.ª chamada"),
+            RetrievalQuery.from_text("Exames da 1.ª chamada"),
             _context(institution["id"]),
             top_k=5,
             official_only=True,

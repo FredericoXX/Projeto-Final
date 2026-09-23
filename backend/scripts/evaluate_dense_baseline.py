@@ -113,7 +113,7 @@ from app.evaluation.retrieval_metrics import (
 from app.evaluation.snapshot_builder import build_evaluation_snapshot
 from app.models.chunk_embedding import ChunkEmbedding
 from app.models.document_chunk import DocumentChunk
-from app.retrieval.base import RetrievalContext
+from app.retrieval.base import RetrievalContext, RetrievalQuery
 from app.retrieval.dense import DENSE_PIPELINE_VERSION, PostgresDenseRetriever
 from app.retrieval.lexical import PostgresLexicalRetriever
 from scripts.embed_pilot_corpus import (
@@ -210,9 +210,7 @@ def verify_index_identity(
     Em qualquer dos casos nada é escrito: um artefacto produzido sobre um índice
     misto declararia uma configuração que não descreve os vetores usados.
     """
-    eligible = RetrievalEligibility.select_eligible_chunk_ids(context).subquery(
-        "eligible_chunks"
-    )
+    eligible = RetrievalEligibility.select_eligible_chunk_ids(context).subquery("eligible_chunks")
     rows = db.execute(
         select(
             ChunkEmbedding.configuration_version,
@@ -244,9 +242,7 @@ def verify_index_identity(
             f"(declared {identity.configuration_version!r})"
         )
     if stale:
-        problems.append(
-            f"{stale} vectors describe content the chunk no longer has"
-        )
+        problems.append(f"{stale} vectors describe content the chunk no longer has")
     if problems:
         raise ExperimentError(
             "the vector index is not homogeneous for the declared identity "
@@ -277,9 +273,7 @@ def embedding_index_digest(
     Usa a âncora do protocolo (``corpus_item_id`` + ``chunk_index``) e nunca os
     UUID locais: o digest tem de descrever o corpus, não a instalação.
     """
-    eligible = RetrievalEligibility.select_eligible_chunk_ids(context).subquery(
-        "eligible_chunks"
-    )
+    eligible = RetrievalEligibility.select_eligible_chunk_ids(context).subquery("eligible_chunks")
     rows = db.execute(
         select(
             DocumentChunk.document_id,
@@ -305,9 +299,7 @@ def embedding_index_digest(
                 EXIT_SNAPSHOT_MISMATCH,
             )
         values = [float(value) for value in vector]
-        entries.append(
-            [corpus_item_id, chunk_index, content_sha256, vector_digest(values)]
-        )
+        entries.append([corpus_item_id, chunk_index, content_sha256, vector_digest(values)])
 
     entries.sort(key=lambda entry: (entry[0], entry[1]))
     payload = {
@@ -344,7 +336,7 @@ def evaluate_condition(
     quem produziu o registo. O que é específico de cada estratégia vive em
     ``trace``, com as chaves que essa estratégia sabe produzir.
     """
-    result = retriever.search(db, query, context, top_k, official_only)
+    result = retriever.search(db, RetrievalQuery.from_text(query), context, top_k, official_only)
     trace = result.trace
 
     ranking: list[dict[str, Any]] = []
@@ -398,20 +390,14 @@ def condition_metrics(
 ) -> dict[str, Any]:
     """As métricas do protocolo, sobre um ranking já resolvido em graus."""
     retrieved_grades = [int(entry["grade"]) for entry in ranking]
-    total_relevant = sum(
-        1 for grade in judged_grades if grade >= BINARY_RELEVANCE_THRESHOLD
-    )
+    total_relevant = sum(1 for grade in judged_grades if grade >= BINARY_RELEVANCE_THRESHOLD)
     return {
         "total_relevant_judged": total_relevant,
         "recall": {
-            str(k): round(recall_at_k(retrieved_grades, total_relevant, k), 6)
-            for k in K_VALUES
+            str(k): round(recall_at_k(retrieved_grades, total_relevant, k), 6) for k in K_VALUES
         },
         "reciprocal_rank": round(reciprocal_rank(retrieved_grades), 6),
-        "ndcg": {
-            str(k): round(ndcg_at_k(retrieved_grades, judged_grades, k), 6)
-            for k in K_VALUES
-        },
+        "ndcg": {str(k): round(ndcg_at_k(retrieved_grades, judged_grades, k), 6) for k in K_VALUES},
     }
 
 
@@ -443,19 +429,13 @@ def verify_ground_truth_identity(
     digest = ground_truth_digest(ground_truth)
     problems: list[str] = []
     if digest != EXPECTED_GROUND_TRUTH_DIGEST:
-        problems.append(
-            f"ground_truth_digest {digest} != expected {EXPECTED_GROUND_TRUTH_DIGEST}"
-        )
+        problems.append(f"ground_truth_digest {digest} != expected {EXPECTED_GROUND_TRUTH_DIGEST}")
     declared = variants.get("ground_truth_digest")
     if declared != digest:
-        problems.append(
-            f"the D4.7 artefact declares ground_truth_digest {declared}, "
-            f"not {digest}"
-        )
+        problems.append(f"the D4.7 artefact declares ground_truth_digest {declared}, not {digest}")
     if problems:
         raise ExperimentError(
-            "the question set is not the one D4.8 is defined against: "
-            + "; ".join(problems),
+            "the question set is not the one D4.8 is defined against: " + "; ".join(problems),
             EXIT_BASELINE_MISMATCH,
         )
     return digest
@@ -521,15 +501,12 @@ def verify_c0_reproduces_d42(
         got_ranking = _ranking_signature(lexical["ranking"])
         want_ranking = _ranking_signature(want["ranking"])
         if got_ranking != want_ranking:
-            problems.append(
-                f"{question_id} ranking {got_ranking} != D4.2 {want_ranking}"
-            )
+            problems.append(f"{question_id} ranking {got_ranking} != D4.2 {want_ranking}")
 
     if problems:
         raise ExperimentError(
             "C0 does not reproduce the D4.2 lexical baseline; a difference between "
-            "C0 and C1 could be a difference between two runs of C0: "
-            + "; ".join(problems),
+            "C0 and C1 could be a difference between two runs of C0: " + "; ".join(problems),
             EXIT_BASELINE_MISMATCH,
         )
 
@@ -590,15 +567,11 @@ def verify_c0_reproduces_d47_control(
                 got = measured[question_id][metric][str(k)]
                 want = reference[question_id][metric][str(k)]
                 if not _close(got, want):
-                    problems.append(
-                        f"{question_id} {metric}@{k} {got} != D4.7 control {want}"
-                    )
+                    problems.append(f"{question_id} {metric}@{k} {got} != D4.7 control {want}")
         got_rr = measured[question_id]["reciprocal_rank"]
         want_rr = reference[question_id]["reciprocal_rank"]
         if not _close(got_rr, want_rr):
-            problems.append(
-                f"{question_id} reciprocal_rank {got_rr} != D4.7 control {want_rr}"
-            )
+            problems.append(f"{question_id} reciprocal_rank {got_rr} != D4.7 control {want_rr}")
 
     control_aggregate = control["aggregate"]
     if aggregate["questions_measured"] != control_aggregate["questions_measured"]:
@@ -615,9 +588,7 @@ def verify_c0_reproduces_d47_control(
             got = aggregate[metric][str(k)]
             want = control_aggregate[metric][str(k)]
             if not _close(got, want):
-                problems.append(
-                    f"aggregate {metric}@{k} {got} != D4.7 control {want}"
-                )
+                problems.append(f"aggregate {metric}@{k} {got} != D4.7 control {want}")
 
     if problems:
         raise ExperimentError(
@@ -757,9 +728,7 @@ def _run(args: argparse.Namespace) -> int:
     verify_c0_reproduces_d42(records, baseline)
 
     measured = [
-        record
-        for record in records
-        if "metrics" in record["conditions"][CONDITION_LEXICAL]
+        record for record in records if "metrics" in record["conditions"][CONDITION_LEXICAL]
     ]
     aggregates = {
         condition: aggregate_metrics(
@@ -769,11 +738,7 @@ def _run(args: argparse.Namespace) -> int:
     }
     verify_c0_reproduces_d47_control(records, aggregates[CONDITION_LEXICAL], variants)
 
-    repooling = [
-        request
-        for record in records
-        for request in record.pop("repooling_requests")
-    ]
+    repooling = [request for record in records for request in record.pop("repooling_requests")]
     unjudged_total = len(repooling)
     comparability = classify_comparability(unjudged_total)
 
@@ -821,15 +786,11 @@ def _run(args: argparse.Namespace) -> int:
             else "A uniao dos dois top 5 esta inteiramente julgada."
         ),
         "unjudged_in_top_k_total": unjudged_total,
-        "questions_with_unjudged": sorted(
-            {request["question_id"] for request in repooling}
-        ),
+        "questions_with_unjudged": sorted({request["question_id"] for request in repooling}),
         "aggregate": aggregates,
         "question_results": records,
     }
-    payload["result_digest"] = hashlib.sha256(
-        canonical_json(payload).encode("utf-8")
-    ).hexdigest()
+    payload["result_digest"] = hashlib.sha256(canonical_json(payload).encode("utf-8")).hexdigest()
     payload["executed_at"] = datetime.now(UTC).isoformat()
 
     repooling_payload: dict[str, Any] = {

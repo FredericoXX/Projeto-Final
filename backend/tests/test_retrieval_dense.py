@@ -43,7 +43,7 @@ from app.models.chunk_embedding import EMBEDDING_DIMENSION, ChunkEmbedding
 from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
 from app.models.document_version import DocumentVersion
-from app.retrieval.base import RetrievalContext, ScoreKind
+from app.retrieval.base import RetrievalContext, RetrievalQuery, ScoreKind
 from app.retrieval.dense import (
     DENSE_PIPELINE_VERSION,
     DenseRetrievalTrace,
@@ -97,9 +97,7 @@ class FakeEmbeddingModel:
     default: list[float]
     calls: list[list[str]]
 
-    def __init__(
-        self, vectors: dict[str, list[float]], default: list[float] | None = None
-    ) -> None:
+    def __init__(self, vectors: dict[str, list[float]], default: list[float] | None = None) -> None:
         self.vectors = vectors
         self.default = default if default is not None else concept(0.0, 0.0, 1.0)
         self.calls = []
@@ -269,7 +267,7 @@ def _search(
         language=language,
         reference_date=REFERENCE_DATE,
     )
-    return retriever.search(db, query, context, top_k, official_only)
+    return retriever.search(db, RetrievalQuery.from_text(query), context, top_k, official_only)
 
 
 def _anchors(result) -> list[tuple[str, int]]:  # type: ignore[no-untyped-def]
@@ -293,10 +291,12 @@ def test_the_nearest_chunk_comes_first(client: TestClient, db: Session) -> None:
     tenant = _create_tenant(client, code_prefix="DEN")
     document = _add_document(db, tenant, title="Regulamento")
     version = _add_version(db, tenant, document)
-    _add_chunk(db, tenant, document, version, content="longe", chunk_index=0,
-               vector=concept(0.0, 1.0))
-    _add_chunk(db, tenant, document, version, content="perto", chunk_index=1,
-               vector=concept(1.0, 0.0))
+    _add_chunk(
+        db, tenant, document, version, content="longe", chunk_index=0, vector=concept(0.0, 1.0)
+    )
+    _add_chunk(
+        db, tenant, document, version, content="perto", chunk_index=1, vector=concept(1.0, 0.0)
+    )
     db.commit()
 
     model = FakeEmbeddingModel({"pergunta": concept(1.0, 0.0)})
@@ -321,8 +321,15 @@ def test_ties_are_broken_deterministically_and_not_by_the_database(
     document = _add_document(db, tenant, title="Regulamento")
     version = _add_version(db, tenant, document)
     for index in (2, 0, 1):
-        _add_chunk(db, tenant, document, version, content=f"igual {index}",
-                   chunk_index=index, vector=concept(1.0, 0.0))
+        _add_chunk(
+            db,
+            tenant,
+            document,
+            version,
+            content=f"igual {index}",
+            chunk_index=index,
+            vector=concept(1.0, 0.0),
+        )
     db.commit()
 
     model = FakeEmbeddingModel({"pergunta": concept(1.0, 0.0)})
@@ -333,15 +340,20 @@ def test_ties_are_broken_deterministically_and_not_by_the_database(
     assert _anchors(first) == _anchors(second)
 
 
-def test_top_k_truncates_and_the_trace_says_what_survived(
-    client: TestClient, db: Session
-) -> None:
+def test_top_k_truncates_and_the_trace_says_what_survived(client: TestClient, db: Session) -> None:
     tenant = _create_tenant(client, code_prefix="TOP")
     document = _add_document(db, tenant, title="Regulamento")
     version = _add_version(db, tenant, document)
     for index in range(6):
-        _add_chunk(db, tenant, document, version, content=f"segmento {index}",
-                   chunk_index=index, vector=concept(1.0, index / 10))
+        _add_chunk(
+            db,
+            tenant,
+            document,
+            version,
+            content=f"segmento {index}",
+            chunk_index=index,
+            vector=concept(1.0, index / 10),
+        )
     db.commit()
 
     model = FakeEmbeddingModel({"pergunta": concept(1.0, 0.0)})
@@ -376,8 +388,9 @@ def test_a_chunk_from_another_institution_is_never_returned(
 
     their_document = _add_document(db, theirs, title="Alheio")
     their_version = _add_version(db, theirs, their_document)
-    _add_chunk(db, theirs, their_document, their_version, content="alheio",
-               vector=concept(1.0, 0.0))
+    _add_chunk(
+        db, theirs, their_document, their_version, content="alheio", vector=concept(1.0, 0.0)
+    )
     db.commit()
 
     model = FakeEmbeddingModel({"pergunta": concept(1.0, 0.0)})
@@ -402,13 +415,13 @@ def test_an_inadmissible_document_is_never_returned_however_close(
     tenant = _create_tenant(client, code_prefix="ADM")
     admissible = _add_document(db, tenant, title="Admissivel")
     admissible_version = _add_version(db, tenant, admissible)
-    _add_chunk(db, tenant, admissible, admissible_version, content="admissivel",
-               vector=concept(0.0, 1.0))
+    _add_chunk(
+        db, tenant, admissible, admissible_version, content="admissivel", vector=concept(0.0, 1.0)
+    )
 
     excluded = _add_document(db, tenant, title="Excluido", **kwargs)  # type: ignore[arg-type]
     excluded_version = _add_version(db, tenant, excluded)
-    _add_chunk(db, tenant, excluded, excluded_version, content="excluido",
-               vector=concept(1.0, 0.0))
+    _add_chunk(db, tenant, excluded, excluded_version, content="excluido", vector=concept(1.0, 0.0))
     db.commit()
 
     model = FakeEmbeddingModel({"pergunta": concept(1.0, 0.0)})
@@ -418,18 +431,14 @@ def test_an_inadmissible_document_is_never_returned_however_close(
     assert titles == ["Admissivel"], reason
 
 
-def test_only_the_latest_processed_version_is_visible(
-    client: TestClient, db: Session
-) -> None:
+def test_only_the_latest_processed_version_is_visible(client: TestClient, db: Session) -> None:
     """C5, com a versão antiga deliberadamente mais próxima da pergunta."""
     tenant = _create_tenant(client, code_prefix="VER")
     document = _add_document(db, tenant, title="Regulamento")
     old = _add_version(db, tenant, document, version_number=1)
     new = _add_version(db, tenant, document, version_number=2)
-    _add_chunk(db, tenant, document, old, content="antigo", chunk_index=0,
-               vector=concept(1.0, 0.0))
-    _add_chunk(db, tenant, document, new, content="novo", chunk_index=0,
-               vector=concept(0.0, 1.0))
+    _add_chunk(db, tenant, document, old, content="antigo", chunk_index=0, vector=concept(1.0, 0.0))
+    _add_chunk(db, tenant, document, new, content="novo", chunk_index=0, vector=concept(0.0, 1.0))
     db.commit()
 
     model = FakeEmbeddingModel({"pergunta": concept(1.0, 0.0)})
@@ -473,18 +482,23 @@ def test_the_dense_visible_set_is_exactly_the_retrieval_eligibility_set(
     admissible = _add_document(db, tenant, title="Admissivel")
     admissible_version = _add_version(db, tenant, admissible)
     for index in range(3):
-        _add_chunk(db, tenant, admissible, admissible_version, content=f"ok {index}",
-                   chunk_index=index, vector=concept(1.0, index / 10))
+        _add_chunk(
+            db,
+            tenant,
+            admissible,
+            admissible_version,
+            content=f"ok {index}",
+            chunk_index=index,
+            vector=concept(1.0, index / 10),
+        )
 
     inactive = _add_document(db, tenant, title="Inativo", is_active=False)
     inactive_version = _add_version(db, tenant, inactive)
-    _add_chunk(db, tenant, inactive, inactive_version, content="inativo",
-               vector=concept(1.0, 0.0))
+    _add_chunk(db, tenant, inactive, inactive_version, content="inativo", vector=concept(1.0, 0.0))
 
     foreign = _add_document(db, other, title="Alheio")
     foreign_version = _add_version(db, other, foreign)
-    _add_chunk(db, other, foreign, foreign_version, content="alheio",
-               vector=concept(1.0, 0.0))
+    _add_chunk(db, other, foreign, foreign_version, content="alheio", vector=concept(1.0, 0.0))
     db.commit()
 
     model = FakeEmbeddingModel({"pergunta": concept(1.0, 0.0)})
@@ -519,8 +533,9 @@ def test_an_admissible_chunk_without_a_vector_is_invisible_and_counted(
     tenant = _create_tenant(client, code_prefix="COV")
     document = _add_document(db, tenant, title="Regulamento")
     version = _add_version(db, tenant, document)
-    _add_chunk(db, tenant, document, version, content="com vetor", chunk_index=0,
-               vector=concept(1.0, 0.0))
+    _add_chunk(
+        db, tenant, document, version, content="com vetor", chunk_index=0, vector=concept(1.0, 0.0)
+    )
     _add_chunk(db, tenant, document, version, content="sem vetor", chunk_index=1)
     db.commit()
 
@@ -539,8 +554,7 @@ def test_vectors_of_another_model_are_not_used(client: TestClient, db: Session) 
     tenant = _create_tenant(client, code_prefix="MOD")
     document = _add_document(db, tenant, title="Regulamento")
     version = _add_version(db, tenant, document)
-    chunk = _add_chunk(db, tenant, document, version, content="texto",
-                       vector=concept(1.0, 0.0))
+    chunk = _add_chunk(db, tenant, document, version, content="texto", vector=concept(1.0, 0.0))
     db.add(
         ChunkEmbedding(
             chunk_id=chunk.id,
@@ -563,9 +577,7 @@ def test_vectors_of_another_model_are_not_used(client: TestClient, db: Session) 
     assert len(result.evidence) == 1
 
 
-def test_vectors_of_another_provider_are_not_used(
-    client: TestClient, db: Session
-) -> None:
+def test_vectors_of_another_provider_are_not_used(client: TestClient, db: Session) -> None:
     """O mesmo nome de modelo em dois fornecedores não é o mesmo modelo.
 
     Sem ``provider`` na chave e no filtro, estes dois vetores seriam
@@ -574,8 +586,7 @@ def test_vectors_of_another_provider_are_not_used(
     tenant = _create_tenant(client, code_prefix="PRV")
     document = _add_document(db, tenant, title="Regulamento")
     version = _add_version(db, tenant, document)
-    chunk = _add_chunk(db, tenant, document, version, content="texto",
-                       vector=concept(0.0, 1.0))
+    chunk = _add_chunk(db, tenant, document, version, content="texto", vector=concept(0.0, 1.0))
     db.add(
         ChunkEmbedding(
             chunk_id=chunk.id,
@@ -614,8 +625,9 @@ def test_a_vector_of_another_configuration_is_invisible_and_breaks_coverage(
     tenant = _create_tenant(client, code_prefix="CFG")
     document = _add_document(db, tenant, title="Regulamento")
     version = _add_version(db, tenant, document)
-    _add_chunk(db, tenant, document, version, content="atual", chunk_index=0,
-               vector=concept(0.0, 1.0))
+    _add_chunk(
+        db, tenant, document, version, content="atual", chunk_index=0, vector=concept(0.0, 1.0)
+    )
     old = _add_chunk(db, tenant, document, version, content="antigo", chunk_index=1)
     db.add(
         ChunkEmbedding(
@@ -639,9 +651,7 @@ def test_a_vector_of_another_configuration_is_invisible_and_breaks_coverage(
     assert trace.embedded_chunks == 1
 
 
-def test_the_identity_predicate_requires_all_three_fields(
-    client: TestClient, db: Session
-) -> None:
+def test_the_identity_predicate_requires_all_three_fields(client: TestClient, db: Session) -> None:
     """``matches_identity`` é a definição única do filtro, e filtra as três.
 
     Testada diretamente para que um campo em falta apareça aqui, e não como um
@@ -650,8 +660,7 @@ def test_the_identity_predicate_requires_all_three_fields(
     tenant = _create_tenant(client, code_prefix="IDF")
     document = _add_document(db, tenant, title="Regulamento")
     version = _add_version(db, tenant, document)
-    chunk = _add_chunk(db, tenant, document, version, content="texto",
-                       vector=concept(1.0, 0.0))
+    chunk = _add_chunk(db, tenant, document, version, content="texto", vector=concept(1.0, 0.0))
     for divergent in (
         {"provider": "outro"},
         {"model": "outro"},
@@ -662,9 +671,7 @@ def test_the_identity_predicate_requires_all_three_fields(
                 chunk_id=chunk.id,
                 provider=divergent.get("provider", FAKE_PROVIDER),
                 model=divergent.get("model", "modelo-" + str(len(divergent))),
-                configuration_version=divergent.get(
-                    "configuration_version", FAKE_CONFIGURATION
-                ),
+                configuration_version=divergent.get("configuration_version", FAKE_CONFIGURATION),
                 embedded_content_sha256=chunk.content_sha256,
                 embedding=concept(0.0, 1.0),
             )
@@ -673,9 +680,7 @@ def test_the_identity_predicate_requires_all_three_fields(
 
     identity = FakeEmbeddingModel({}).identity
     matching = db.scalars(
-        select(ChunkEmbedding.chunk_id).where(
-            ChunkEmbedding.matches_identity(identity)
-        )
+        select(ChunkEmbedding.chunk_id).where(ChunkEmbedding.matches_identity(identity))
     ).all()
 
     assert list(matching) == [chunk.id]
@@ -697,15 +702,20 @@ def _retrievability(tenant: _Tenant) -> RetrievabilityContext:
     )
 
 
-def test_a_homogeneous_index_passes_the_identity_guard(
-    client: TestClient, db: Session
-) -> None:
+def test_a_homogeneous_index_passes_the_identity_guard(client: TestClient, db: Session) -> None:
     tenant = _create_tenant(client, code_prefix="HOM")
     document = _add_document(db, tenant, title="Regulamento")
     version = _add_version(db, tenant, document)
     for index in range(2):
-        _add_chunk(db, tenant, document, version, content=f"texto {index}",
-                   chunk_index=index, vector=concept(1.0, index / 10))
+        _add_chunk(
+            db,
+            tenant,
+            document,
+            version,
+            content=f"texto {index}",
+            chunk_index=index,
+            vector=concept(1.0, index / 10),
+        )
     db.commit()
 
     verify_index_identity(
@@ -730,8 +740,9 @@ def test_an_index_with_another_configuration_is_refused_by_name(
     tenant = _create_tenant(client, code_prefix="MIX")
     document = _add_document(db, tenant, title="Regulamento")
     version = _add_version(db, tenant, document)
-    _add_chunk(db, tenant, document, version, content="novo", chunk_index=0,
-               vector=concept(1.0, 0.0))
+    _add_chunk(
+        db, tenant, document, version, content="novo", chunk_index=0, vector=concept(1.0, 0.0)
+    )
     old = _add_chunk(db, tenant, document, version, content="antigo", chunk_index=1)
     db.add(
         ChunkEmbedding(
@@ -767,8 +778,7 @@ def test_a_vector_of_content_the_chunk_no_longer_has_is_refused(
     tenant = _create_tenant(client, code_prefix="STL")
     document = _add_document(db, tenant, title="Regulamento")
     version = _add_version(db, tenant, document)
-    chunk = _add_chunk(db, tenant, document, version, content="texto",
-                       vector=concept(1.0, 0.0))
+    chunk = _add_chunk(db, tenant, document, version, content="texto", vector=concept(1.0, 0.0))
     db.execute(
         update(ChunkEmbedding)
         .where(ChunkEmbedding.chunk_id == chunk.id)
@@ -801,8 +811,9 @@ def test_content_that_changed_without_its_hash_being_updated_is_refused(
     tenant = _create_tenant(client, code_prefix="DRF")
     document = _add_document(db, tenant, title="Regulamento")
     version = _add_version(db, tenant, document)
-    chunk = _add_chunk(db, tenant, document, version, content="texto original",
-                       vector=concept(1.0, 0.0))
+    chunk = _add_chunk(
+        db, tenant, document, version, content="texto original", vector=concept(1.0, 0.0)
+    )
     db.commit()
     # O vetor e o chunk concordam no hash antigo; o conteúdo é que mudou.
     assert chunk.content_sha256 == content_digest("texto original")
@@ -891,9 +902,7 @@ def test_the_stored_hash_is_recomputed_from_the_text_actually_sent(
     assert row.embedded_content_sha256 != "9" * 64
 
 
-def test_a_fresh_index_is_not_sent_to_the_provider_again(
-    client: TestClient, db: Session
-) -> None:
+def test_a_fresh_index_is_not_sent_to_the_provider_again(client: TestClient, db: Session) -> None:
     tenant = _create_tenant(client, code_prefix="FRS")
     document = _add_document(db, tenant, title="Regulamento")
     version = _add_version(db, tenant, document)
@@ -979,8 +988,7 @@ def test_the_index_left_by_a_full_run_passes_the_identity_guard(
     document = _add_document(db, tenant, title="Regulamento")
     version = _add_version(db, tenant, document)
     for index in range(3):
-        _add_chunk(db, tenant, document, version, content=f"texto {index}",
-                   chunk_index=index)
+        _add_chunk(db, tenant, document, version, content=f"texto {index}", chunk_index=index)
     db.commit()
     model = FakeEmbeddingModel({})
 
@@ -1081,9 +1089,7 @@ def test_the_lexical_relevance_threshold_is_not_applied_to_similarity(
     assert 0.0 < result.evidence[0].score < 0.99
 
 
-def test_dense_returns_results_even_when_nothing_is_close(
-    client: TestClient, db: Session
-) -> None:
+def test_dense_returns_results_even_when_nothing_is_close(client: TestClient, db: Session) -> None:
     """Comportamento **declarado**, não desejável: ver o docstring de ``dense``.
 
     Sem elegibilidade de conteúdo e sem limiar, uma pergunta sem resposta no
@@ -1095,8 +1101,15 @@ def test_dense_returns_results_even_when_nothing_is_close(
     document = _add_document(db, tenant, title="Regulamento")
     version = _add_version(db, tenant, document)
     for index in range(3):
-        _add_chunk(db, tenant, document, version, content=f"nada a ver {index}",
-                   chunk_index=index, vector=concept(0.0, 1.0, index / 10))
+        _add_chunk(
+            db,
+            tenant,
+            document,
+            version,
+            content=f"nada a ver {index}",
+            chunk_index=index,
+            vector=concept(0.0, 1.0, index / 10),
+        )
     db.commit()
 
     model = FakeEmbeddingModel({"pergunta sem resposta": concept(1.0, 0.0)})

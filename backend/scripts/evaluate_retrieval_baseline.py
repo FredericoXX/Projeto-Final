@@ -37,7 +37,6 @@ from uuid import UUID
 
 from sqlalchemy import select
 
-from app.core.text_normalization import normalize_text
 from app.database.session import SessionLocal
 from app.evaluation.results import canonical_json
 from app.evaluation.retrieval_metrics import (
@@ -53,11 +52,16 @@ from app.evaluation.retrieval_metrics import (
 )
 from app.evaluation.snapshot_builder import build_evaluation_snapshot
 from app.models.document_chunk import DocumentChunk
-from app.retrieval.base import RetrievalContext
+from app.retrieval.base import RetrievalContext, RetrievalQuery
 from app.retrieval.eligibility import decide_eligibility
-from app.retrieval.lexical import PostgresLexicalRetriever
+from app.retrieval.lexical import PostgresLexicalRetriever, fts_match_columns
+from app.retrieval.lexical_normalization import accent_map_for_query
 from app.retrieval.query_planning import LexicalQueryStrategy
-from app.retrieval.reranking import LexicalCandidate, compute_content_match
+from app.retrieval.reranking import (
+    LexicalCandidate,
+    compute_content_match,
+    fts_probe_terms,
+)
 
 BASELINE_SCHEMA_VERSION: Final = "2"
 
@@ -144,8 +148,7 @@ def verify_snapshot(
     problems: list[str] = []
     if snapshot.snapshot_id != ground_truth["snapshot_id"]:
         problems.append(
-            f"snapshot_id rebuilt {snapshot.snapshot_id} "
-            f"!= declared {ground_truth['snapshot_id']}"
+            f"snapshot_id rebuilt {snapshot.snapshot_id} != declared {ground_truth['snapshot_id']}"
         )
     if snapshot.corpus_digest != ground_truth["corpus_digest"]:
         problems.append(
@@ -193,17 +196,35 @@ def counterfactual_eligibility(
     document_id: str,
     chunk_index: int,
     query_terms: tuple[str, ...],
+    query: RetrievalQuery,
+    language: str,
 ) -> dict[str, Any]:
     """Teria este segmento passado a elegibilidade lexical, se avaliado?
 
     Usa **as funções reais** ``compute_content_match`` e ``decide_eligibility``,
     e não uma aproximação. A distinção importa e já produziu uma conclusão
-    errada: a geração de candidatos usa Full-Text Search, que faz *stemming*,
-    enquanto a cobertura da elegibilidade compara **formas canónicas exatas**
-    (``term in content_set``). Aproximar a segunda pela primeira sobrestima a
-    correspondência — ``residencia`` casaria ``residencias``, que na
-    elegibilidade real **não** casa.
+    errada: aproximar a elegibilidade pela geração de candidatos sobrestima a
+    correspondência.
+
+    Aproximá-la pela igualdade de formas canónicas, porém, passou a
+    **subestimá-la**. A elegibilidade real conta hoje também as
+    correspondências morfológicas que o PostgreSQL confirma, e um candidato
+    construído sem elas seria julgado por uma política que já não existe:
+    ``notas`` ⇄ ``nota`` e ``classificações`` ⇄ ``classificação`` sairiam
+    daqui como inelegíveis quando o retrieval real os aceita. O relatório
+    concluiria que a cobertura rejeitou o segmento, quando o que houve foi um
+    contrafactual desatualizado.
+
+    Por isso as duas sondas entram na **mesma** consulta que já ia buscar a
+    linha — as colunas vêm de ``fts_match_columns``, as de produção — e o
+    candidato é montado com a mesma prova que a recuperação lhe daria. Não há
+    consulta adicional: a sonda é uma subconsulta escalar no ``SELECT`` que já
+    existia.
     """
+    probe = fts_probe_terms(query_terms)
+    accent_map = accent_map_for_query(query.original)
+    active_accent_map = accent_map if any(term in accent_map for term in probe) else None
+    indexed_column, content_column = fts_match_columns(probe, language, active_accent_map)
     row = db.execute(  # type: ignore[attr-defined]
         select(
             DocumentChunk.id,
@@ -215,6 +236,8 @@ def counterfactual_eligibility(
             DocumentChunk.section_title,
             DocumentChunk.structure_type,
             DocumentChunk.chunking_strategy,
+            indexed_column,
+            content_column,
         ).where(
             DocumentChunk.document_id == UUID(document_id),
             DocumentChunk.chunk_index == chunk_index,
@@ -239,12 +262,18 @@ def counterfactual_eligibility(
         chunking_strategy=row[8],
         raw_score=0.0,
         strategy=LexicalQueryStrategy.REDUCED_OR,
+        indexed_fts_matched_terms=frozenset(row[9] or ()),
+        content_fts_matched_terms=frozenset(row[10] or ()),
     )
     match = compute_content_match(query_terms, candidate)
     decision = decide_eligibility(query_terms, match, LexicalQueryStrategy.REDUCED_OR)
     return {
         "coverage": round(match.coverage, 6),
         "matched_terms": sorted(match.matched_terms),
+        # Origem à vista: sem isto, um contrafactual elegível por radical era
+        # indistinguível de um elegível por correspondência literal.
+        "indexed_fts_matched_terms": sorted(match.indexed_fts_matched_terms),
+        "content_fts_matched_terms": sorted(match.content_fts_matched_terms),
         "would_be_eligible": decision.eligible,
         "exclusion_reason": None if decision.eligible else str(decision.reason),
     }
@@ -259,6 +288,8 @@ def describe_target_fate(
     trace: object,
     retrieved_count: int,
     query_terms: tuple[str, ...],
+    query: RetrievalQuery,
+    language: str,
 ) -> list[dict[str, Any]]:
     """Onde acabou cada segmento de grau 2, e porquê.
 
@@ -274,8 +305,7 @@ def describe_target_fate(
     corretivos diferentes.
     """
     excluded_by_key = {
-        (entry.document_id, entry.chunk_index): entry
-        for entry in getattr(trace, "excluded", ())
+        (entry.document_id, entry.chunk_index): entry for entry in getattr(trace, "excluded", ())
     }
     truncated = trace.result_count_before_limit > retrieved_count  # type: ignore[attr-defined]
     fates: list[dict[str, Any]] = []
@@ -305,6 +335,8 @@ def describe_target_fate(
                 document_id=document_id,
                 chunk_index=judgment["chunk_index"],
                 query_terms=query_terms,
+                query=query,
+                language=language,
             )
         fates.append(record)
     return fates
@@ -321,8 +353,14 @@ def evaluate_question(
     official_only: bool,
 ) -> dict[str, Any]:
     """Executa uma pergunta e resolve os graus observados, sem calcular métricas."""
-    normalized_query = normalize_text(question["question"])
-    result = retriever.search(db, normalized_query, context, top_k, official_only)  # type: ignore[arg-type]
+    query = RetrievalQuery.from_text(question["question"])
+    result = retriever.search(
+        db,  # type: ignore[arg-type]
+        query,
+        context,
+        top_k,
+        official_only,
+    )
 
     grades_by_key: dict[tuple[str, int], int] = {}
     for judgment in question["evidence_judgments"]:
@@ -395,6 +433,8 @@ def evaluate_question(
             trace=trace,
             retrieved_count=len(result.evidence),
             query_terms=query_terms,
+            query=query,
+            language=context.language,
         ),
     }
 
@@ -464,9 +504,7 @@ def run(
             official_only=True,
         )
         retrieval = probe.retrieval.canonical()
-        verify_snapshot(
-            db, ground_truth=ground_truth, binding=binding, retrieval=retrieval
-        )
+        verify_snapshot(db, ground_truth=ground_truth, binding=binding, retrieval=retrieval)
 
         document_index = build_document_index(binding)
         context = RetrievalContext(

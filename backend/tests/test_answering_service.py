@@ -24,6 +24,7 @@ from app.models.user import User
 from app.retrieval.base import (
     Evidence,
     RetrievalContext,
+    RetrievalQuery,
     RetrievalResult,
     RetrievalTrace,
     ScoreKind,
@@ -46,7 +47,7 @@ class FakeRetriever:
     def search(
         self,
         db: Session,
-        query: str,
+        query: RetrievalQuery,
         context: RetrievalContext,
         top_k: int,
         official_only: bool,
@@ -198,9 +199,7 @@ def test_question_without_evidence_returns_fallback_without_calling_generator(
     session, user = _create_institution_and_admin(client, test_session_factory)
     try:
         generator = FakeAnswerGenerator()
-        response = answering_service.ask(
-            session, user, _request(), FakeRetriever([]), generator
-        )
+        response = answering_service.ask(session, user, _request(), FakeRetriever([]), generator)
 
         assert response.status == "insufficient_evidence"
         assert generator.calls == []
@@ -459,9 +458,7 @@ def test_unavailable_provider_propagates_service_unavailable(
 ) -> None:
     session, user = _create_institution_and_admin(client, test_session_factory)
     try:
-        generator = FakeAnswerGenerator(
-            exception=AnswerGeneratorUnavailableError("not configured")
-        )
+        generator = FakeAnswerGenerator(exception=AnswerGeneratorUnavailableError("not configured"))
         with pytest.raises(AnswerGeneratorUnavailableError):
             answering_service.ask(
                 session, user, _request(), FakeRetriever([_evidence()]), generator

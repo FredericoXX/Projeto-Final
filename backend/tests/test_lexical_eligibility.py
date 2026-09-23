@@ -12,6 +12,7 @@ import math
 from uuid import UUID, uuid4
 
 import pytest
+from fastapi.testclient import TestClient
 
 from app.core.text_normalization import normalize_text
 from app.retrieval.eligibility import (
@@ -29,6 +30,7 @@ from app.retrieval.reranking import (
     informative_query_terms,
     rerank,
 )
+from tests.test_retrieval import _create_searchable, _search, _setup
 
 _MIN = 0.05
 
@@ -42,6 +44,7 @@ def _cand(
     strategy: LexicalQueryStrategy = LexicalQueryStrategy.REDUCED_OR,
     raw: float = 0.05,
     document_id: UUID | None = None,
+    indexed_fts_matched_terms: frozenset[str] = frozenset(),
 ) -> LexicalCandidate:
     return LexicalCandidate(
         chunk_id=uuid4(),
@@ -62,6 +65,7 @@ def _cand(
         chunking_strategy=None,
         raw_score=raw,
         strategy=strategy,
+        indexed_fts_matched_terms=indexed_fts_matched_terms,
     )
 
 
@@ -114,11 +118,43 @@ def test_single_term_with_surface_match_is_eligible() -> None:
 
 
 def test_single_term_retrieved_by_stemming_is_eligible() -> None:
-    """"matrículas" ⇄ "matrícula": sem correspondência de superfície, mas o
-    candidato só chegou aqui porque o índice GIN o devolveu."""
-    decision = _decide("matriculas", _cand("informacao sobre a matricula anual"))
+    """ "matrículas" ⇄ "matrícula": sem correspondência de superfície, mas com
+    a correspondência morfológica que o PostgreSQL confirmou.
+
+    A prova é **dada ao candidato**, como a consulta de recuperação a dá em
+    produção. Antes este teste não a fornecia e passava à mesma, porque
+    qualquer consulta de um termo era elegível — descrevia o comportamento
+    desejado sem o exercer.
+    """
+    candidate = _cand(
+        "informacao sobre a matricula anual",
+        indexed_fts_matched_terms=frozenset({"matriculas"}),
+    )
+    decision = _decide("matriculas", candidate)
     assert decision.eligible
     assert decision.basis is EligibilityBasis.SINGLE_TERM_FTS
+
+
+def test_single_term_without_any_match_is_not_evidence() -> None:
+    """Cobertura zero não é evidência, nem numa consulta de um só termo.
+
+    O caso real é a consulta exclusivamente negativa: em ``-propinas`` o termo
+    informativo é ``propinas``, e a tsquery devolve de propósito os segmentos
+    que **não** o contêm. Todos chegavam aqui sem correspondência nenhuma e
+    saíam declarados ``SINGLE_TERM_FTS`` — uma base que afirmava um radical
+    que nunca casou.
+    """
+    decision = _decide("propinas", _cand("o campus encerra as dezoito horas"))
+    assert not decision.eligible
+    assert decision.reason is ExclusionReason.NO_CONTENT_MATCH
+
+
+def test_an_only_negative_query_produces_no_evidence(client: TestClient) -> None:
+    """E o mesmo, observado ponta a ponta contra o PostgreSQL real."""
+    _, headers, _ = _setup(client)
+    _create_searchable(client, headers, "O campus encerra as dezoito horas.")
+
+    assert _search(client, headers, "-propinas").json()["items"] == []
 
 
 # --- 4-6: cobertura mínima em consultas multi-termo --------------------------
@@ -131,9 +167,7 @@ def test_one_match_out_of_three_terms_is_not_evidence() -> None:
 
 
 def test_two_matches_out_of_three_terms_are_evidence() -> None:
-    decision = _decide(
-        "regime avaliacao exames", _cand("o regime de avaliacao dos estudantes")
-    )
+    decision = _decide("regime avaliacao exames", _cand("o regime de avaliacao dos estudantes"))
     assert decision.eligible
     assert decision.basis is EligibilityBasis.COVERAGE
 
@@ -250,9 +284,7 @@ def test_explicit_or_is_not_reported_as_conjunctive_proof() -> None:
     candidate = _cand("calendario de aulas teoricas", strategy=LexicalQueryStrategy.EXACT)
     terms = informative_query_terms(normalize_text("aulas OR exames"), "pt")
     match = compute_content_match(terms, candidate)
-    decision = decide_eligibility(
-        terms, match, LexicalQueryStrategy.EXACT, explicit_syntax=True
-    )
+    decision = decide_eligibility(terms, match, LexicalQueryStrategy.EXACT, explicit_syntax=True)
     assert decision.eligible
     assert decision.basis is EligibilityBasis.EXPLICIT_SYNTAX
     assert decision.basis is not EligibilityBasis.CONJUNCTIVE_STRATEGY
@@ -262,9 +294,7 @@ def test_negated_query_is_reported_as_explicit_syntax() -> None:
     candidate = _cand("matricula gratuita para bolseiros", strategy=LexicalQueryStrategy.EXACT)
     terms = informative_query_terms(normalize_text("matricula -propinas"), "pt")
     match = compute_content_match(terms, candidate)
-    decision = decide_eligibility(
-        terms, match, LexicalQueryStrategy.EXACT, explicit_syntax=True
-    )
+    decision = decide_eligibility(terms, match, LexicalQueryStrategy.EXACT, explicit_syntax=True)
     assert decision.eligible
     assert decision.basis is EligibilityBasis.EXPLICIT_SYNTAX
 
@@ -295,9 +325,7 @@ def test_explicit_syntax_still_cannot_rescue_zero_coverage() -> None:
     candidate = _cand("conteudo sem qualquer relacao", strategy=LexicalQueryStrategy.EXACT)
     terms = informative_query_terms(normalize_text("aulas OR exames"), "pt")
     match = compute_content_match(terms, candidate)
-    decision = decide_eligibility(
-        terms, match, LexicalQueryStrategy.EXACT, explicit_syntax=True
-    )
+    decision = decide_eligibility(terms, match, LexicalQueryStrategy.EXACT, explicit_syntax=True)
     assert not decision.eligible
     assert decision.reason is ExclusionReason.NO_CONTENT_MATCH
 
@@ -353,9 +381,7 @@ def test_proximity_of_one_match_in_a_three_term_query_is_not_one() -> None:
 
 def test_proximity_two_of_three_adjacent_beats_two_of_three_distant() -> None:
     adjacent = _proximity("regime avaliacao exames", "regime avaliacao aqui")
-    distant = _proximity(
-        "regime avaliacao exames", "regime xx yy zz ww vv uu avaliacao"
-    )
+    distant = _proximity("regime avaliacao exames", "regime xx yy zz ww vv uu avaliacao")
     assert adjacent == pytest.approx(2 / 3)
     assert distant < adjacent
 

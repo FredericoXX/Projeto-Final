@@ -43,6 +43,7 @@ construção: a mesma entrada produz sempre a mesma representação.
 """
 
 import re
+import unicodedata
 from dataclasses import dataclass
 from enum import StrEnum
 
@@ -55,20 +56,38 @@ RANGE_PREFIX = "rng:"
 # listas são pequenas, explícitas e por idioma; cobrem primeiro..décimo e
 # first..tenth, nas formas masculina/feminina do português.
 _WRITTEN_ORDINALS_PT: dict[str, int] = {
-    "primeiro": 1, "primeira": 1,
-    "segundo": 2, "segunda": 2,
-    "terceiro": 3, "terceira": 3,
-    "quarto": 4, "quarta": 4,
-    "quinto": 5, "quinta": 5,
-    "sexto": 6, "sexta": 6,
-    "setimo": 7, "setima": 7,
-    "oitavo": 8, "oitava": 8,
-    "nono": 9, "nona": 9,
-    "decimo": 10, "decima": 10,
+    "primeiro": 1,
+    "primeira": 1,
+    "segundo": 2,
+    "segunda": 2,
+    "terceiro": 3,
+    "terceira": 3,
+    "quarto": 4,
+    "quarta": 4,
+    "quinto": 5,
+    "quinta": 5,
+    "sexto": 6,
+    "sexta": 6,
+    "setimo": 7,
+    "setima": 7,
+    "oitavo": 8,
+    "oitava": 8,
+    "nono": 9,
+    "nona": 9,
+    "decimo": 10,
+    "decima": 10,
 }
 _WRITTEN_ORDINALS_EN: dict[str, int] = {
-    "first": 1, "second": 2, "third": 3, "fourth": 4, "fifth": 5,
-    "sixth": 6, "seventh": 7, "eighth": 8, "ninth": 9, "tenth": 10,
+    "first": 1,
+    "second": 2,
+    "third": 3,
+    "fourth": 4,
+    "fifth": 5,
+    "sixth": 6,
+    "seventh": 7,
+    "eighth": 8,
+    "ninth": 9,
+    "tenth": 10,
 }
 
 # Separadores de intervalo inequívocos: a preposição "a", hífen, travessão
@@ -105,6 +124,71 @@ CANONICAL_KINDS = frozenset({TokenKind.ORDINAL, TokenKind.RANGE})
 def is_canonical_marker(term: str) -> bool:
     """O termo é um marcador abstrato (``ord:N`` ou ``rng:N-M``)?"""
     return term.startswith((ORDINAL_PREFIX, RANGE_PREFIX))
+
+
+def accent_map_for_query(original: str) -> dict[str, str]:
+    """``forma normalizada -> forma original`` para os tokens que perderam
+    diacríticos nesta pergunta, e só nesta.
+
+    Serve para reconstruir uma consulta FTS acentuada a partir de uma consulta
+    já normalizada, sem adivinhar nada: cada entrada é um par observado no
+    mesmo texto, na mesma posição. Um mapa global do corpus faria uma pergunta
+    ser reacentuada com informação de outra — e é precisamente o erro que o
+    módulo de avaliação documenta ao manter os seus mapas locais.
+
+    Só entram tokens que **tinham diacríticos**. O critério é esse e não "a
+    forma mudou": ``normalize_text`` também baixa a caixa, e um simples
+    ``Quanto`` no início da frase difere da sua forma normalizada sem que nada
+    de relevante se tenha perdido. Usar a diferença como critério armaria a via
+    acentuada — que não é indexável — em praticamente todas as perguntas, pela
+    maiúscula inicial. O ``casefold`` não muda o resultado do *stemmer*; a
+    remoção de marcas combinantes muda.
+
+    Os tokens já sem acentos projetam-se em si mesmos e não precisam de
+    entrada; um mapa vazio significa "não há nada a reacentuar", e é assim que
+    a via acentuada se desliga sozinha.
+
+    Chaves **ambíguas são omitidas**: se a mesma forma normalizada aparecer na
+    pergunta escrita de duas maneiras, nenhuma delas é reposta.
+
+    O alinhamento é posicional entre a tokenização do texto original e a do
+    texto normalizado. ``normalize_text`` não divide nem junta tokens de
+    palavra — remove marcas combinantes, muda a caixa e colapsa espaços — pelo
+    que as duas sequências têm normalmente o mesmo comprimento. Se por alguma
+    razão não tiverem (uma decomposição NFKD que separe um carácter, um
+    ``casefold`` que expanda uma letra), devolve-se um mapa **vazio** em vez de
+    alinhar à força: um par trocado produziria uma consulta que procura outra
+    palavra, e nenhuma correspondência é melhor do que a correspondência
+    errada.
+    """
+    from app.core.text_normalization import normalize_text
+
+    original_tokens = _WORD_RE.findall(original)
+    normalized_tokens = _WORD_RE.findall(normalize_text(original))
+    if len(original_tokens) != len(normalized_tokens):
+        return {}
+
+    # Uma forma normalizada pode vir de mais do que uma forma escrita na mesma
+    # pergunta — "avô avo" normaliza as duas para "avo". Como a substituição é
+    # por token e não por posição, uma chave ambígua reescreveria **todas** as
+    # ocorrências com a mesma forma, e a segunda palavra passaria a ter um
+    # acento que o utilizador não escreveu: "avô avo" tornar-se-ia "avô avô",
+    # que é outra pergunta. Nesses casos a chave é omitida e ambas as
+    # ocorrências ficam como estão — a via acentuada perde uma oportunidade,
+    # que é preferível a procurar outra palavra.
+    observed: dict[str, set[str]] = {}
+    for source, normalized in zip(original_tokens, normalized_tokens, strict=True):
+        observed.setdefault(normalized, set()).add(source)
+    return {
+        normalized: next(iter(sources))
+        for normalized, sources in observed.items()
+        if len(sources) == 1 and _carries_diacritics(next(iter(sources)))
+    }
+
+
+def _carries_diacritics(token: str) -> bool:
+    """O token tem marcas combinantes que a normalização vai remover?"""
+    return any(unicodedata.combining(char) for char in unicodedata.normalize("NFKD", token))
 
 
 @dataclass(frozen=True)
@@ -232,9 +316,7 @@ def _match_numeric_ordinal(
     return None
 
 
-def build_lexical_representation(
-    normalized_text: str, language: str
-) -> LexicalRepresentation:
+def build_lexical_representation(normalized_text: str, language: str) -> LexicalRepresentation:
     """Constrói a representação lexical de um texto **já normalizado**.
 
     A varredura é da esquerda para a direita e determinística. Em cada
@@ -243,11 +325,7 @@ def build_lexical_representation(
     """
     family = _ordinal_family(language)
     written = (
-        _WRITTEN_ORDINALS_PT
-        if family == "pt"
-        else _WRITTEN_ORDINALS_EN
-        if family == "en"
-        else {}
+        _WRITTEN_ORDINALS_PT if family == "pt" else _WRITTEN_ORDINALS_EN if family == "en" else {}
     )
     tokens: list[LexicalToken] = []
     position = 0
@@ -262,9 +340,7 @@ def build_lexical_representation(
 
         range_match = _RANGE_RE.match(normalized_text, index)
         if range_match is not None:
-            numeric_range = NumericRange(
-                int(range_match.group(1)), int(range_match.group(2))
-            )
+            numeric_range = NumericRange(int(range_match.group(1)), int(range_match.group(2)))
             # Uma única unidade posicional: o intervalo comporta-se como
             # um termo, seja qual for a forma textual que o originou.
             tokens.append(

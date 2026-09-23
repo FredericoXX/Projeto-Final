@@ -3,9 +3,12 @@
 São exatamente as peças introduzidas para impedir a repetição de dois erros
 causais reais cometidos durante o D4.2:
 
-1. aproximar a elegibilidade por ``to_tsvector``/``plainto_tsquery``, que faz
-   *stemming*, quando a cobertura real compara **formas canónicas exatas** — o
-   que fez ``residencia`` parecer casar ``residencias``;
+1. aproximar a elegibilidade pela geração de candidatos, o que sobrestimava a
+   correspondência — e, depois de a elegibilidade passar a contar o *stemming*
+   confirmado pelo PostgreSQL, aproximá-la pela igualdade de formas exatas, o
+   que passou a **subestimá-la**. O contrafactual recebe agora as mesmas
+   sondas morfológicas que a recuperação, e nenhuma das duas aproximações
+   sobrevive;
 2. classificar como "nunca foi candidato" um segmento que o ``top_k`` podia ter
    truncado.
 
@@ -19,6 +22,7 @@ from uuid import UUID, uuid4
 
 import pytest
 
+from app.retrieval.base import RetrievalQuery
 from scripts.evaluate_retrieval_baseline import (
     EXIT_SNAPSHOT_MISMATCH,
     FATE_CANDIDATE_EXCLUDED,
@@ -34,6 +38,11 @@ from scripts.evaluate_retrieval_baseline import (
 DOCUMENT_ID = "11111111-1111-4111-8111-111111111111"
 
 
+def _query(text: str = "prazo de entrega") -> RetrievalQuery:
+    """A pergunta nas duas formas, como o contrafactual a recebe."""
+    return RetrievalQuery.from_text(text)
+
+
 @dataclass
 class FakeRow:
     values: tuple
@@ -43,10 +52,23 @@ class FakeRow:
 
 
 class FakeDb:
-    """Devolve sempre a mesma linha de segmento. Não é uma Session."""
+    """Devolve sempre a mesma linha de segmento. Não é uma Session.
 
-    def __init__(self, normalized_content: str) -> None:
+    As duas últimas colunas são as sondas morfológicas que a consulta real
+    agora traz: substituem o que o PostgreSQL responderia para este segmento.
+    Vazias por omissão — é o caso em que só a igualdade de formas conta.
+    """
+
+    def __init__(
+        self,
+        normalized_content: str,
+        *,
+        indexed_fts: tuple[str, ...] = (),
+        content_fts: tuple[str, ...] = (),
+    ) -> None:
         self.normalized_content = normalized_content
+        self.indexed_fts = indexed_fts
+        self.content_fts = content_fts
 
     def execute(self, _statement: object) -> FakeRow:
         return FakeRow(
@@ -60,6 +82,8 @@ class FakeDb:
                 None,  # section_title
                 "paragraph",  # structure_type
                 None,  # chunking_strategy
+                list(self.indexed_fts),  # indexed_fts_matched_terms
+                list(self.content_fts),  # content_fts_matched_terms
             )
         )
 
@@ -71,21 +95,27 @@ class TestCounterfactualEligibility:
             document_id=DOCUMENT_ID,
             chunk_index=0,
             query_terms=("prazo", "entrega"),
+            query=_query(),
+            language="pt",
         )
         assert result["matched_terms"] == ["entrega", "prazo"]
         assert result["coverage"] == pytest.approx(1.0)
         assert result["would_be_eligible"] is True
         assert result["exclusion_reason"] is None
 
-    def test_plural_does_not_match_singular(self) -> None:
-        # O erro que motivou este teste: o FTS conflaria as duas formas, a
-        # elegibilidade não. Um contrafactual que use stemming sobrestima a
-        # correspondência e produz uma conclusão causal errada.
+    def test_without_fts_confirmation_the_plural_does_not_match_the_singular(self) -> None:
+        """Sem prova morfológica, vale só a igualdade de formas canónicas.
+
+        O contrafactual nunca inventa correspondências: se a sonda não
+        confirmar nada, ``residencia`` não casa ``residencias``.
+        """
         result = counterfactual_eligibility(
             FakeDb("a candidatura as residencias estudantis e apresentada pelo candidato"),
             document_id=DOCUMENT_ID,
             chunk_index=0,
             query_terms=("candidato", "residencia", "universitaria", "prazo"),
+            query=_query(),
+            language="pt",
         )
         assert "residencia" not in result["matched_terms"]
         assert result["matched_terms"] == ["candidato"]
@@ -93,12 +123,56 @@ class TestCounterfactualEligibility:
         assert result["would_be_eligible"] is False
         assert result["exclusion_reason"] is not None
 
+    def test_fts_confirmation_reaches_the_counterfactual(self) -> None:
+        """Com prova morfológica, o contrafactual acompanha a produção.
+
+        Era aqui que o diagnóstico mentia: a elegibilidade real passou a
+        contar as correspondências que o PostgreSQL confirma, e um
+        contrafactual que as ignorasse declararia inelegível um segmento que o
+        retrieval aceita — apontando a causa errada no relatório de falhas.
+        """
+        result = counterfactual_eligibility(
+            FakeDb(
+                "a candidatura as residencias estudantis e apresentada pelo candidato",
+                indexed_fts=("residencia",),
+            ),
+            document_id=DOCUMENT_ID,
+            chunk_index=0,
+            query_terms=("candidato", "residencia", "universitaria", "prazo"),
+            query=_query(),
+            language="pt",
+        )
+        assert result["matched_terms"] == ["candidato", "residencia"]
+        assert result["indexed_fts_matched_terms"] == ["residencia"]
+        assert result["coverage"] == pytest.approx(0.5)
+        assert result["would_be_eligible"] is True
+
+    def test_the_two_fts_origins_are_reported_separately(self) -> None:
+        """A via acentuada aparece na sua própria parcela, não confundida."""
+        result = counterfactual_eligibility(
+            FakeDb(
+                "a classificacao final consta do certificado emitido",
+                content_fts=("classificacoes",),
+            ),
+            document_id=DOCUMENT_ID,
+            chunk_index=0,
+            query_terms=("classificacoes", "certificado"),
+            query=_query("Onde constam as classificações?"),
+            language="pt",
+        )
+        assert result["content_fts_matched_terms"] == ["classificacoes"]
+        assert result["indexed_fts_matched_terms"] == []
+        assert result["coverage"] == pytest.approx(1.0)
+        assert result["would_be_eligible"] is True
+
     def test_below_coverage_threshold_is_ineligible(self) -> None:
         result = counterfactual_eligibility(
             FakeDb("apenas um termo casa aqui: prazo"),
             document_id=DOCUMENT_ID,
             chunk_index=0,
             query_terms=("prazo", "entrega", "documento", "servico"),
+            query=_query(),
+            language="pt",
         )
         assert result["coverage"] == pytest.approx(0.25)
         assert result["would_be_eligible"] is False
@@ -141,6 +215,8 @@ class TestDescribeTargetFate:
             trace=FakeTrace(result_count_before_limit=1),
             retrieved_count=1,
             query_terms=("prazo",),
+            query=_query(),
+            language="pt",
         )
         assert fates[0]["fate"] == FATE_RETURNED
         # Um segmento devolvido não precisa de contrafactual: não há nada a
@@ -155,12 +231,12 @@ class TestDescribeTargetFate:
             returned_keys=set(),
             trace=FakeTrace(
                 result_count_before_limit=0,
-                excluded=(
-                    FakeExcluded(DOCUMENT_ID, 7, "insufficient_coverage", 0.25, ("prazo",)),
-                ),
+                excluded=(FakeExcluded(DOCUMENT_ID, 7, "insufficient_coverage", 0.25, ("prazo",)),),
             ),
             retrieved_count=0,
             query_terms=("prazo", "entrega"),
+            query=_query(),
+            language="pt",
         )
         assert fates[0]["fate"] == FATE_CANDIDATE_EXCLUDED
         assert fates[0]["exclusion_reason"] == "insufficient_coverage"
@@ -178,6 +254,8 @@ class TestDescribeTargetFate:
             trace=FakeTrace(result_count_before_limit=0),
             retrieved_count=0,
             query_terms=("prazo", "entrega"),
+            query=_query(),
+            language="pt",
         )
         assert fates[0]["fate"] == FATE_NEVER_A_CANDIDATE
         assert fates[0]["counterfactual"]["would_be_eligible"] is True
@@ -194,6 +272,8 @@ class TestDescribeTargetFate:
             trace=FakeTrace(result_count_before_limit=9),
             retrieved_count=5,
             query_terms=("prazo", "entrega"),
+            query=_query(),
+            language="pt",
         )
         assert fates[0]["fate"] == FATE_NOT_RETURNED_INDETERMINATE
         assert "counterfactual" in fates[0]
@@ -209,6 +289,8 @@ class TestDescribeTargetFate:
             trace=FakeTrace(result_count_before_limit=0),
             retrieved_count=0,
             query_terms=("prazo",),
+            query=_query(),
+            language="pt",
         )
         assert fates == []
 
@@ -234,9 +316,7 @@ class TestVerifySnapshot:
             "scripts.evaluate_retrieval_baseline.build_evaluation_snapshot",
             lambda *args, **kwargs: FakeSnapshot("aaa", "bbb"),
         )
-        verify_snapshot(
-            object(), ground_truth=GROUND_TRUTH, binding=BINDING, retrieval=RETRIEVAL
-        )
+        verify_snapshot(object(), ground_truth=GROUND_TRUTH, binding=BINDING, retrieval=RETRIEVAL)
 
     @pytest.mark.parametrize(
         ("snapshot_id", "corpus_digest", "expected"),

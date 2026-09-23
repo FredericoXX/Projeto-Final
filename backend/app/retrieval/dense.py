@@ -69,6 +69,7 @@ from app.models.document_version import DocumentVersion
 from app.retrieval.base import (
     Evidence,
     RetrievalContext,
+    RetrievalQuery,
     RetrievalResult,
     RetrievalTrace,
     ScoreKind,
@@ -167,13 +168,18 @@ class PostgresDenseRetriever:
     def search(
         self,
         db: Session,
-        query: str,
+        query: RetrievalQuery,
         context: RetrievalContext,
         top_k: int,
         official_only: bool,
     ) -> RetrievalResult:
         identity = self._embedding_model.identity
-        vectors = self._embedding_model.embed([query])
+        # Só a forma normalizada: o modelo de embeddings foi aplicado ao mesmo
+        # texto normalizado do lado documental, e alimentá-lo com a forma
+        # original passaria a comparar vetores produzidos a partir de textos
+        # com regras diferentes. Os diacríticos importam ao *stemmer* lexical,
+        # não a esta estratégia — o comportamento aqui é o de sempre.
+        vectors = self._embedding_model.embed([query.normalized])
         if len(vectors) != 1:
             msg = "the embedding model returned no vector for the query"
             raise EmbeddingError(msg)
@@ -193,9 +199,7 @@ class PostgresDenseRetriever:
 
         rows = list(
             db.execute(
-                self._build_statement(
-                    query_vector, retrievability, identity, candidate_limit
-                )
+                self._build_statement(query_vector, retrievability, identity, candidate_limit)
             )
         )
         top_rows = rows[:top_k]
@@ -328,9 +332,9 @@ class PostgresDenseRetriever:
         arriscaria declarar cobertura completa sobre um conjunto diferente
         daquele que a pesquisa percorre.
         """
-        eligible = RetrievalEligibility.select_eligible_chunk_ids(
-            retrievability
-        ).subquery("eligible_chunks")
+        eligible = RetrievalEligibility.select_eligible_chunk_ids(retrievability).subquery(
+            "eligible_chunks"
+        )
         admissible = db.execute(select(eligible.c.id)).fetchall()
         embedded = db.execute(
             select(eligible.c.id).join(

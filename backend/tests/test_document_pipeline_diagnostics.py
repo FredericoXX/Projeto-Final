@@ -33,6 +33,7 @@ from app.models.document_version import DocumentVersion
 from app.models.institution import Institution
 from app.retrieval.base import (
     Evidence,
+    RetrievalQuery,
     RetrievalResult,
     RetrievalTrace,
     ScoreKind,
@@ -51,10 +52,10 @@ class EmptyRetriever:
     """
 
     def __init__(self) -> None:
-        self.calls: list[tuple[str, Any, int, bool]] = []
+        self.calls: list[tuple[RetrievalQuery, Any, int, bool]] = []
 
     def search(
-        self, db: Session, query: str, context: Any, top_k: int, official_only: bool
+        self, db: Session, query: RetrievalQuery, context: Any, top_k: int, official_only: bool
     ) -> RetrievalResult:
         self.calls.append((query, context, top_k, official_only))
         return RetrievalResult(
@@ -1084,9 +1085,7 @@ def test_expected_facts_in_same_table_row_are_reported() -> None:
         diagnostic.find_fact_in_text(index, text_value, fact, 240)
         for fact in question.expected_facts
     )
-    result = diagnostic.analyze_question_chunks(
-        question, [chunk], extraction, 240
-    )
+    result = diagnostic.analyze_question_chunks(question, [chunk], extraction, 240)
     assert result.all_facts_in_same_chunk is True
     assert result.expected_facts_in_same_table_row is True
     assert result.relevant_chunks[0].page_number == 1
@@ -1730,17 +1729,19 @@ def test_empty_retriever_leaves_lexical_trace_absent() -> None:
 
 
 def test_page_summary_builder_tolerates_malformed_details() -> None:
-    summaries, native_pages, ocr_pages, low_pages = (
-        diagnostic._build_extraction_page_summaries(
-            [
-                {"page_number": 1, "method": "native", "quality": "high",
-                 "extracted_characters": 10},
-                {"page_number": "x", "method": 3, "ocr_confidence": "abc"},
-                "entrada inválida",
-                {"page_number": 2, "method": "ocr", "quality": "low",
-                 "ocr_confidence": 55, "warning": "w\x00arn"},
-            ]
-        )
+    summaries, native_pages, ocr_pages, low_pages = diagnostic._build_extraction_page_summaries(
+        [
+            {"page_number": 1, "method": "native", "quality": "high", "extracted_characters": 10},
+            {"page_number": "x", "method": 3, "ocr_confidence": "abc"},
+            "entrada inválida",
+            {
+                "page_number": 2,
+                "method": "ocr",
+                "quality": "low",
+                "ocr_confidence": 55,
+                "warning": "w\x00arn",
+            },
+        ]
     )
     assert native_pages == 1 and ocr_pages == 1 and low_pages == 1
     assert len(summaries) == 3  # a entrada não-dict é ignorada
