@@ -12,7 +12,7 @@ All tables are also truncated before every individual test, so tests
 don't need to track and delete the rows they create.
 """
 
-from collections.abc import Iterator
+from collections.abc import Callable, Iterator
 from pathlib import Path
 
 import pytest
@@ -30,6 +30,8 @@ from app.main import app
 # antes da execução de create_all.
 from app.models import chunk_embedding as _chunk_embedding  # noqa: F401
 from app.models import conversation as _conversation  # noqa: F401
+from app.models import decision_catalog as _decision_catalog  # noqa: F401
+from app.models import decision_record as _decision_record  # noqa: F401
 from app.models import document as _document  # noqa: F401
 from app.models import document_chunk as _document_chunk  # noqa: F401
 from app.models import document_version as _document_version  # noqa: F401
@@ -124,3 +126,28 @@ def _clean_tables(test_engine: Engine) -> None:
         return
     with test_engine.begin() as conn:
         conn.execute(text(f"TRUNCATE TABLE {table_names} RESTART IDENTITY CASCADE"))
+
+
+# --- Política de decisão v1.7 (modo experimental) -----------------------------
+
+
+@pytest.fixture
+def policy_enabled(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Ativa o modo experimental, desativado por omissão."""
+    monkeypatch.setattr(settings, "decision_policy_mode", "experimental")
+
+
+@pytest.fixture
+def install() -> Iterator[Callable[..., None]]:
+    """Instala estimador e gerador da política por dependency override."""
+    from app.answering.dependencies import get_answer_generator
+    from app.decision.estimators.dependencies import get_dimension_estimator
+    from tests.decision_support import RecordingGenerator
+
+    def _install(estimator: object, generator: object | None = None) -> None:
+        app.dependency_overrides[get_dimension_estimator] = lambda: estimator
+        app.dependency_overrides[get_answer_generator] = lambda: generator or RecordingGenerator()
+
+    yield _install
+    app.dependency_overrides.pop(get_dimension_estimator, None)
+    app.dependency_overrides.pop(get_answer_generator, None)

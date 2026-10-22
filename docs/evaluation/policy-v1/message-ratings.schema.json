@@ -1,0 +1,82 @@
+{
+  "$defs": {
+    "MessageRating": {
+      "additionalProperties": false,
+      "description": "Juízo humano sobre a mensagem da execução principal de um caso.\n\nA v1.7 pede a qualidade da mensagem mas o prompt não define critérios; o\njuízo é, por isso, um único \"aceitável / não aceitável\" de um avaliador\nhumano identificado, com nota livre. Critérios mais finos dependem do\ndocumento da v1.7. Nenhum modelo produz estas avaliações.",
+      "properties": {
+        "acceptable": {
+          "title": "Acceptable",
+          "type": "boolean"
+        },
+        "case_id": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "condition": {
+          "maxLength": 32,
+          "minLength": 1,
+          "title": "Condition",
+          "type": "string"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        },
+        "rater_id": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Rater Id",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id",
+        "condition",
+        "rater_id",
+        "acceptable"
+      ],
+      "title": "MessageRating",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "ratings": {
+      "items": {
+        "$ref": "#/$defs/MessageRating"
+      },
+      "title": "Ratings",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "policy_v1_message_ratings_1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "set_id": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Set Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "set_id",
+    "ratings"
+  ],
+  "title": "MessageRatingSet",
+  "type": "object"
+}

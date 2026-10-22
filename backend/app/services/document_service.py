@@ -55,7 +55,7 @@ def acquire_document_lifecycle_lock(db: Session, document_id: uuid.UUID) -> None
 
 # Campos NOT NULL na base: um null explícito no PATCH seria um erro de
 # base de dados; é rejeitado aqui como erro de validação (422).
-_NON_NULLABLE_FIELDS = ("title", "language", "official_source", "is_active")
+_NON_NULLABLE_FIELDS = ("title", "language", "official_source", "is_active", "access_roles")
 
 
 def _validate_validity_range(valid_from: date | None, valid_until: date | None) -> None:
@@ -98,6 +98,7 @@ def create_document(db: Session, manager: User, data: DocumentCreate) -> Documen
         language=language,
         source_url=data.source_url,
         official_source=data.official_source,
+        access_roles=data.access_roles,
         valid_from=data.valid_from,
         valid_until=data.valid_until,
     )

@@ -345,6 +345,27 @@ describe('document editing and deletion', () => {
     }
   });
 
+  it('restricts a document to selected roles and shows them', async () => {
+    tokenStorage.set('test-token');
+    let patchPayload: Record<string, unknown> | null = null;
+    server.use(
+      http.patch(`${API}/documents/:id`, async ({ request }) => {
+        patchPayload = (await request.json()) as Record<string, unknown>;
+        return HttpResponse.json({ ...sampleDocument, access_roles: ['staff'] });
+      }),
+    );
+    const user = userEvent.setup();
+    renderApp(`/admin/documents/${sampleDocument.id}`);
+
+    expect(await screen.findByText('All roles')).toBeInTheDocument();
+    await user.click(screen.getByRole('button', { name: 'Edit' }));
+    await user.click(screen.getByRole('checkbox', { name: 'staff' }));
+    await user.click(screen.getByRole('button', { name: 'Save' }));
+
+    expect(await screen.findByText('staff')).toBeInTheDocument();
+    expect((patchPayload as unknown as Record<string, unknown>).access_roles).toEqual(['staff']);
+  });
+
   it('disables the language field once versions exist and explains why', async () => {
     tokenStorage.set('test-token');
     const user = userEvent.setup();

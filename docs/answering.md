@@ -153,6 +153,16 @@ escalar. A distinção é o âmbito da A2.3a e não deve ser lida como mais do q
 | mensagem auditável com snapshot do destino | ticket, fila, atribuição de operador, SLA, notificação interna, UI de operador |
 | — | `AnswerabilityEvaluator`, `RequestSpecificity`, classificação da pergunta |
 
+> **Nota de versão (2026-10-22).** A tabela descreve o fluxo B0 e o E1 pedido
+> pelo utilizador, que continuam iguais. A política v1.7 acrescenta, num modo
+> **experimental e separado** (`POST /conversations/{id}/decide`, desativado
+> por omissão), uma `DecisionPolicy` com `policy_version`, um catálogo de
+> serviços por tema e a escalação decidida pelo sistema
+> (`handoff_trigger="policy_decision"`), sempre como recomendação E1. Ver
+> [`decision-policy.md`](decision-policy.md). No B0, a data de referência passou
+> a ser única por pedido e o papel do requerente entra na recuperação
+> (autorização documental C13).
+
 Não há inferência: o sistema **não** analisa a pergunta, não procura palavras
 como "nota" ou "propina", e nunca decide sozinho encaminhar. A escalação
 decidida pelo sistema (nível `system_decision`) depende da política de decisão,

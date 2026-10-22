@@ -203,6 +203,7 @@ export const sampleDocument: DocumentRead = {
   source_url: 'https://example.edu/calendar',
   official_source: true,
   is_active: true,
+  access_roles: [],
   valid_from: null,
   valid_until: null,
   created_at: '2026-01-10T10:00:00Z',

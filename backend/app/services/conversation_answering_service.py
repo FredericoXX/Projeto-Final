@@ -48,6 +48,10 @@ def ask_in_conversation(
     _ensure_active(conversation.id, conversation.status)
     fallback_language = conversation.language
 
+    # Uma única data de referência por pedido, fixada antes da recuperação e
+    # usada também na revalidação das fontes: evita que recuperação e
+    # persistência avaliem a validade em dias diferentes.
+    reference_date = datetime.now(UTC).date()
     answer = answering_service.ask(
         db,
         current_user,
@@ -55,9 +59,9 @@ def ask_in_conversation(
         retriever,
         generator,
         fallback_language=fallback_language,
+        reference_date=reference_date,
     )
     query = payload.query
-    reference_date = datetime.now(UTC).date()
 
     # Nenhum write foi feito até aqui. O rollback termina a transação de
     # leitura e liberta qualquer snapshot antes dos SELECT FOR UPDATE.
@@ -126,6 +130,7 @@ def ask_in_conversation(
                 language=answer.language,
                 reference_date=reference_date,
                 official_only=payload.official_only,
+                requester_role=persisted_user.role,
             )
         else:
             if answer.sources:

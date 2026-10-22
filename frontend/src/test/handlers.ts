@@ -53,6 +53,16 @@ export const handlers = [
   // A conta por omissão gere documentos; os testes de outros papéis substituem-na.
   http.get(`${API}/auth/me`, () => HttpResponse.json(knowledgeManagerUser)),
 
+  // Por omissão, o modo experimental da política v1.7 está desativado, como no
+  // backend: nenhum teste vê a opção sem a pedir explicitamente.
+  http.get(`${API}/decision/status`, () =>
+    HttpResponse.json({
+      enabled: false,
+      policy_version: 'decision_policy_v1.7-experimental.1',
+      catalog_configured: false,
+    }),
+  ),
+
   // Por omissão, a integração institucional não está configurada: nenhum
   // teste vê dados simulados sem os pedir explicitamente.
   http.get(`${API}/academic-requests/access`, () =>

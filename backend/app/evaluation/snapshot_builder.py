@@ -26,7 +26,11 @@ from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
 from app.core.config import settings
-from app.documents.retrievability import RetrievabilityContext, RetrievalEligibility
+from app.documents.retrievability import (
+    DOCUMENT_ACCESS_POLICY_VERSION,
+    RetrievabilityContext,
+    RetrievalEligibility,
+)
 from app.evaluation.snapshot import (
     ChunkIdentity,
     CorpusEntry,
@@ -68,6 +72,7 @@ def describe_retrieval_configuration(
     language: str,
     top_k: int,
     official_only: bool,
+    requester_role: str | None = None,
 ) -> RetrievalConfiguration:
     """Fotografa a configuração material da recuperação em vigor.
 
@@ -89,6 +94,8 @@ def describe_retrieval_configuration(
         fts_config=resolve_fts_config(language).value,
         min_relevance_score=settings.retrieval_min_relevance_score,
         candidate_limit=global_candidate_limit(top_k),
+        requester_role=requester_role,
+        document_access_policy=(None if requester_role is None else DOCUMENT_ACCESS_POLICY_VERSION),
     )
 
 
@@ -180,6 +187,7 @@ def build_evaluation_snapshot(
     reference_date: date,
     top_k: int,
     official_only: bool,
+    requester_role: str | None = None,
 ) -> EvaluationSnapshot:
     """Identidade reprodutível do contexto experimental de uma instituição.
 
@@ -199,12 +207,16 @@ def build_evaluation_snapshot(
         language=language,
         reference_date=reference_date,
         official_only=official_only,
+        # Com papel, o corpus é o que esse papel pode ver (C13); sem papel, só
+        # documentos sem restrição — nunca mais do que isso.
+        requester_role=requester_role,
     )
     entries = collect_corpus_entries(db, context)
     retrieval = describe_retrieval_configuration(
         language=language,
         top_k=top_k,
         official_only=official_only,
+        requester_role=requester_role,
     )
     return build_snapshot(
         institution_id=institution_id,

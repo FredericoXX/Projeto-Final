@@ -4,6 +4,7 @@ from uuid import UUID
 from pydantic import BaseModel, ConfigDict, field_validator, model_validator
 
 from app.core.language import normalize_language_code
+from app.core.permissions import ALLOWED_ROLES
 
 TITLE_MAX_LENGTH = 255
 SOURCE_URL_MAX_LENGTH = 2048
@@ -43,6 +44,20 @@ def _normalize_source_url(value: str | None) -> str | None:
     return normalized
 
 
+def _normalize_access_roles(value: list[str] | None) -> list[str] | None:
+    """Papéis autorizados (C13): conhecidos, sem repetição, ordenados.
+
+    A lista vazia é válida e significa "sem restrição de papel".
+    """
+    if value is None:
+        return value
+    unknown = sorted(set(value) - ALLOWED_ROLES)
+    if unknown:
+        msg = f"access_roles contains unknown roles: {unknown}"
+        raise ValueError(msg)
+    return sorted(set(value))
+
+
 def _validate_validity_range(valid_from: date | None, valid_until: date | None) -> None:
     if valid_from is not None and valid_until is not None and valid_from > valid_until:
         msg = "valid_from must not be after valid_until"
@@ -63,6 +78,8 @@ class DocumentCreate(BaseModel):
     language: str | None = None
     source_url: str | None = None
     official_source: bool = False
+    # Autorização documental por papel (C13). Vazio = sem restrição.
+    access_roles: list[str] = []
     valid_from: date | None = None
     valid_until: date | None = None
 
@@ -70,6 +87,12 @@ class DocumentCreate(BaseModel):
     @classmethod
     def normalize_title(cls, value: str) -> str:
         return _normalize_title(value)
+
+    @field_validator("access_roles")
+    @classmethod
+    def normalize_access_roles(cls, value: list[str]) -> list[str]:
+        normalized = _normalize_access_roles(value)
+        return [] if normalized is None else normalized
 
     @field_validator("description")
     @classmethod
@@ -107,6 +130,7 @@ class DocumentUpdate(BaseModel):
     source_url: str | None = None
     official_source: bool | None = None
     is_active: bool | None = None
+    access_roles: list[str] | None = None
     valid_from: date | None = None
     valid_until: date | None = None
 
@@ -116,6 +140,11 @@ class DocumentUpdate(BaseModel):
         if value is None:
             return value
         return _normalize_title(value)
+
+    @field_validator("access_roles")
+    @classmethod
+    def normalize_access_roles(cls, value: list[str] | None) -> list[str] | None:
+        return _normalize_access_roles(value)
 
     @field_validator("description")
     @classmethod
@@ -145,6 +174,7 @@ class DocumentRead(BaseModel):
     source_url: str | None
     official_source: bool
     is_active: bool
+    access_roles: list[str]
     valid_from: date | None
     valid_until: date | None
     created_at: datetime

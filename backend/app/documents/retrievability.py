@@ -6,10 +6,11 @@ nomeadas**. Não é um motor genérico de *specification objects*: não há regi
 dinâmico, herança nem combinadores. O que existe é uma definição semântica
 única por condição, servida em duas formas.
 
-Estado nesta fase: o módulo existe e é testado, mas **nenhum consumidor o
-usa**. A adoção por ``app.retrieval.lexical``,
-``app.services.message_source_service`` e ``app.diagnostics.document_pipeline``
-pertence às Fases 2 a 4 da issue #24.
+Consumidores (verificados no código): ``app.retrieval.lexical`` e
+``app.retrieval.dense`` (filtros SQL de ``RetrievalEligibility``),
+``app.services.message_source_service`` (``CitationPersistenceEligibility``),
+``app.diagnostics.document_pipeline`` e ``app.evaluation.snapshot_builder``.
+É também a dimensão D0 da política de decisão v1.7.
 
 Direção da dependência
 ----------------------
@@ -49,9 +50,10 @@ As duas políticas, e porque diferem
 legitimamente usada para gerar **esta** resposta, e a sua proveniência deve ser
 preservada".
 
-Partilham :data:`BASE_CONDITIONS` — C1–C4 e C6–C11 — e divergem em exatamente
-uma condição: :data:`LATEST_PROCESSED_VERSION` (C5), que pertence **apenas** à
-primeira.
+Partilham :data:`BASE_CONDITIONS` — C1–C4 e C6–C11 — e
+:data:`AUTHORIZATION_CONDITIONS` — C13, autorização documental por papel — e
+divergem em exatamente uma condição: :data:`LATEST_PROCESSED_VERSION` (C5), que
+pertence **apenas** à primeira.
 
 **Esta diferença é proveniência histórica intencional, não uma lacuna de
 validação.** Se a versão N foi recuperada e usada para gerar uma resposta, o
@@ -67,7 +69,24 @@ pelo teste de composição e pelo teste de proveniência histórica N → N+1 do
 Momento 6. Acrescentar C5 a ``CitationPersistenceEligibility`` parte ambos.
 
 Depois de persistido, um ``MessageSource`` nunca é reavaliado por nenhuma
-política: a leitura devolve o snapshot tal como foi gravado.
+política de admissibilidade: a leitura devolve o snapshot tal como foi gravado.
+A única verificação na leitura é a de **acesso** (C13, política v1.7): uma
+fonte cujo documento ainda existe e já não está autorizado ao papel de quem lê
+é omitida da resposta, sem que o registo seja alterado
+(``message_source_service.filter_readable_sources``).
+
+Autorização documental por papel (C13)
+--------------------------------------
+
+Mecanismo **separado** do isolamento institucional (C1–C3): o isolamento decide
+de que instituição pode vir a evidência; a autorização decide, dentro dela,
+que papéis podem ser fundamentados por um documento. ``documents.access_roles``
+vazio significa "sem restrição" — é o valor de todos os documentos anteriores
+à migração, que continuam públicos dentro da instituição. Uma lista não vazia
+restringe o documento a esses papéis. ``requester_role=None`` (consumidores
+offline sem utilizador) só admite documentos sem restrição: a ausência de papel
+nunca alarga o acesso. O papel operacional vem sempre da identidade autenticada
+e revalidada pelo backend. Nenhuma ablação de avaliação desliga C13.
 
 Fora deste módulo
 -----------------
@@ -116,6 +135,19 @@ class RetrievabilityContext:
     language: str
     reference_date: date
     official_only: bool
+    #: Papel do requerente, para C13. ``None`` só admite documentos sem
+    #: restrição de papel.
+    requester_role: str | None = None
+    #: Condições de validade que a avaliação offline e o diagnóstico temporal
+    #: podem relaxar. Só C9/C10 são relaxáveis; o isolamento e a autorização
+    #: nunca o são — ver :data:`RELAXABLE_CONDITIONS`.
+    relaxed_conditions: frozenset[str] = frozenset()
+
+    def __post_init__(self) -> None:
+        forbidden = self.relaxed_conditions - RELAXABLE_CONDITIONS
+        if forbidden:
+            msg = f"only validity conditions can be relaxed, not {sorted(forbidden)}"
+            raise ValueError(msg)
 
 
 @dataclass(frozen=True)
@@ -149,6 +181,7 @@ class RetrievabilitySubject:
     version_document_id: UUID
     version_processing_status: str
     effective_version_id: UUID | None = None
+    document_access_roles: tuple[str, ...] = ()
 
     @classmethod
     def from_entities(
@@ -178,6 +211,7 @@ class RetrievabilitySubject:
             version_document_id=version.document_id,
             version_processing_status=version.processing_status,
             effective_version_id=effective_version_id,
+            document_access_roles=tuple(document.access_roles or ()),
         )
 
 
@@ -407,6 +441,44 @@ OFFICIAL_SOURCE_COMPATIBLE = EvidenceCondition(
 
 
 # ---------------------------------------------------------------------------
+# C13 — autorização documental por papel (política v1.7)
+#
+# Lista vazia = sem restrição. O SQL usa ``cardinality(...) = 0`` em vez de
+# comparar com ``'{}'``, e o papel ``None`` reduz-se a essa única disjunção:
+# sem papel, só documentos sem restrição. Python e SQL tratam o ``None`` da
+# mesma forma explícita.
+# ---------------------------------------------------------------------------
+
+#: Versão da semântica de autorização documental, registada nas decisões.
+DOCUMENT_ACCESS_POLICY_VERSION = "document_role_access_v1"
+
+
+def role_authorized_sql(requester_role: str | None) -> ColumnElement[bool]:
+    """Predicado SQL de C13, reutilizado também na leitura das fontes."""
+    unrestricted = func.cardinality(Document.access_roles) == 0
+    if requester_role is None:
+        return unrestricted
+    return unrestricted | Document.access_roles.contains([requester_role])
+
+
+DOCUMENT_ROLE_AUTHORIZED = EvidenceCondition(
+    name="document_role_authorized",
+    sql=lambda context: role_authorized_sql(context.requester_role),
+    holds=lambda subject, context: (
+        not subject.document_access_roles
+        or (
+            context.requester_role is not None
+            and context.requester_role in subject.document_access_roles
+        )
+    ),
+    detail=lambda subject, context: (
+        f"access_roles={list(subject.document_access_roles)} "
+        f"requester_role={context.requester_role}."
+    ),
+)
+
+
+# ---------------------------------------------------------------------------
 # C5 — a exceção estrutural
 #
 # **Não é uma condição sobre uma linha isolada**: depende das outras versões do
@@ -479,6 +551,11 @@ def latest_processed_version_subquery(context: RetrievabilityContext) -> Subquer
 # Composições
 # ---------------------------------------------------------------------------
 
+#: Condições que a avaliação offline pode relaxar: só a validade (C9, C10).
+RELAXABLE_CONDITIONS: frozenset[str] = frozenset(
+    {"valid_from_compatible", "valid_until_compatible"}
+)
+
 #: C1–C4 e C6–C11: exatamente a extensão comum aos três consumidores.
 BASE_CONDITIONS: tuple[EvidenceCondition, ...] = (
     CHUNK_BELONGS_TO_INSTITUTION,
@@ -492,6 +569,11 @@ BASE_CONDITIONS: tuple[EvidenceCondition, ...] = (
     VALID_UNTIL_COMPATIBLE,
     OFFICIAL_SOURCE_COMPATIBLE,
 )
+
+#: C13: autorização por papel. Comum às duas políticas e mantida à parte da
+#: base para que a sua natureza — autorização, não isolamento nem validade —
+#: continue visível na composição.
+AUTHORIZATION_CONDITIONS: tuple[EvidenceCondition, ...] = (DOCUMENT_ROLE_AUTHORIZED,)
 
 
 @dataclass(frozen=True)
@@ -527,6 +609,8 @@ class EvidencePolicy:
         """
         filters = []
         for condition in self.conditions:
+            if condition.name in context.relaxed_conditions:
+                continue
             clause = condition.sql(context)
             if clause is not None:
                 filters.append(clause)
@@ -562,7 +646,10 @@ class EvidencePolicy:
         outcomes = tuple(
             ConditionOutcome(
                 name=condition.name,
-                satisfied=condition.holds(subject, context),
+                satisfied=(
+                    condition.name in context.relaxed_conditions
+                    or condition.holds(subject, context)
+                ),
                 detail=condition.detail(subject, context),
             )
             for condition in self.conditions
@@ -582,7 +669,7 @@ RetrievalEligibility = EvidencePolicy(
         "da pesquisa, contra a data corrente; é uma propriedade do chunk face "
         "ao estado atual do sistema e não é armazenada."
     ),
-    conditions=(*BASE_CONDITIONS, LATEST_PROCESSED_VERSION),
+    conditions=(*BASE_CONDITIONS, *AUTHORIZATION_CONDITIONS, LATEST_PROCESSED_VERSION),
 )
 
 #: "Esta evidência foi legitimamente usada para gerar **esta** resposta."
@@ -595,5 +682,5 @@ CitationPersistenceEligibility = EvidencePolicy(
         "ser a processed mais recente: ver a nota de proveniência histórica no "
         "topo do módulo."
     ),
-    conditions=BASE_CONDITIONS,
+    conditions=(*BASE_CONDITIONS, *AUTHORIZATION_CONDITIONS),
 )

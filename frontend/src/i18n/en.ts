@@ -50,6 +50,24 @@ export const en: Record<keyof typeof pt, string> = {
   'composer.charCount': '{count}/{max}',
   'composer.hint': 'Enter sends • Shift+Enter new line',
 
+  'decision.sectionLabel': 'Experimental policy decision',
+  'decision.action.answer': 'Answer',
+  'decision.action.clarify': 'Clarification request',
+  'decision.action.abstain': 'Abstention',
+  'decision.action.escalate': 'Recommended referral',
+  'decision.rule': 'Rule',
+  'decision.clarifyOptions': 'Clarification options',
+  'decision.gap': 'No support in the documents consulted',
+  'decision.recommendation':
+    'Contact recommendation: the request was not sent to the service',
+  'decision.temporal':
+    'Information was found that is not in force on the reference date and was not used.',
+  'decision.modeLabel': 'Experimental mode (decision policy v1.7)',
+  'decision.modeHint':
+    'Experimental and under calibration: decides between answering, clarifying, abstaining or recommending a contact.',
+  'decision.notConfigured':
+    'The experimental policy is not configured for this institution.',
+
   'handoff.button': 'Talk to human support',
   'handoff.pending': 'Handing off…',
   // Ver a nota em pt.ts: E1 indica um contacto, não entrega o caso.
@@ -92,6 +110,10 @@ export const en: Record<keyof typeof pt, string> = {
   'documents.field.validFrom': 'Valid from',
   'documents.field.validUntil': 'Valid until',
   'documents.field.active': 'Active',
+  'documents.field.accessRoles': 'Authorized roles',
+  'documents.accessRolesHint':
+    'With no role selected, the document can ground answers for every role in the institution.',
+  'documents.accessRolesAll': 'All roles',
   'documents.field.updatedAt': 'Updated',
   'documents.create': 'Create document',
   'documents.creating': 'Creating…',

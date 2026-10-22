@@ -22,8 +22,9 @@
 | 16 | `c4f7ab19d3e5` | Cria `chunk_embeddings`, tabela experimental do retrieval denso (D4.8); ver [`docs/ai/02-current-state.md`](ai/02-current-state.md) |
 | 17 | `d1a7c3e9b4f2` | Acrescenta `knowledge_manager` a `ck_users_role_allowed`. Nenhuma linha é alterada e nenhum admin é convertido. O downgrade recusa-se a correr enquanto existir alguma conta `knowledge_manager` (o operador reatribui-as primeiro); sem elas, repõe a constraint anterior |
 | 18 | `e3b9f1c7a5d8` | Cria `user_external_identities` (associação administrativa entre conta local, instituição e identificador externo estável), vazia e sem backfill. O downgrade remove a tabela e as associações; contas, conversas e citações não são afetadas |
+| 19 | `a8c4e2f6b1d9` | Política v1.7 experimental: `documents.access_roles` (autorização documental por papel, C13; `'{}'` por omissão, pelo que **todos os documentos existentes continuam sem restrição**; CHECK limita aos papéis existentes), `institution_decision_catalogs` (âmbito D1 e catálogo D6 em versões imutáveis, no máximo uma ativa por instituição) e `decision_records` (registo interno protegido das decisões e falhas técnicas). O downgrade **recusa-se** enquanto houver documentos restritos, versões de catálogo ou registos — remover a coluna tornaria públicos documentos restritos. Ver [`decision-policy.md`](decision-policy.md) |
 
-A head única é `e3b9f1c7a5d8`.
+A head única é `a8c4e2f6b1d9`.
 
 Como o projeto ainda está em desenvolvimento exclusivamente local, sem
 ambientes partilhados, dados de produção ou bases de dados permanentes, a

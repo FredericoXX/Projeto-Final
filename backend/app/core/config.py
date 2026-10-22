@@ -14,6 +14,11 @@ INSTITUTIONAL_PROVIDERS = frozenset({INSTITUTIONAL_PROVIDER_DISABLED, INSTITUTIO
 # instalação nunca apresenta dados sintéticos como se fossem institucionais.
 MOCK_PROVIDER_ENVIRONMENTS = frozenset({"development", "test"})
 
+# Modos da política de decisão v1.7. "disabled" mantém apenas o B0.
+DECISION_POLICY_DISABLED = "disabled"
+DECISION_POLICY_EXPERIMENTAL = "experimental"
+DECISION_POLICY_MODES = frozenset({DECISION_POLICY_DISABLED, DECISION_POLICY_EXPERIMENTAL})
+
 
 class Settings(BaseSettings):
     app_name: str = "Agentic Institutional Assistant"
@@ -100,6 +105,20 @@ class Settings(BaseSettings):
     # Não existe ainda adaptador real: o protocolo institucional não foi
     # fornecido.
     institutional_data_provider: str = INSTITUTIONAL_PROVIDER_DISABLED
+
+    # Política de decisão v1.7 — extensão EXPERIMENTAL, desativada por
+    # omissão. Com "disabled", os endpoints da política respondem 503 e o
+    # fluxo B0 (/ask) é o único disponível; nada no B0 depende destes valores.
+    decision_policy_mode: str = DECISION_POLICY_DISABLED
+    # Estimador das dimensões D1–D5. Neutro quanto ao fornecedor; o modelo
+    # cai para OPENAI_MODEL quando não é indicado.
+    decision_estimator_provider: str = "openai"
+    decision_estimator_model: str | None = None
+    decision_estimator_timeout_seconds: int = 30
+    # Tentativas fixas por chamada ao estimador (1 = sem repetição).
+    decision_estimator_max_attempts: int = 1
+    # Recuperação da política: top_k por leitura, com o mesmo teto do B0.
+    decision_retrieval_top_k: int = 5
 
     model_config = SettingsConfigDict(
         env_file=PROJECT_ROOT / ".env",
@@ -197,6 +216,28 @@ class Settings(BaseSettings):
             )
             raise ValueError(msg)
         return self
+
+    @model_validator(mode="after")
+    def check_decision_policy_configuration(self) -> "Settings":
+        if self.decision_policy_mode not in DECISION_POLICY_MODES:
+            msg = "DECISION_POLICY_MODE must be one of: " + ", ".join(
+                sorted(DECISION_POLICY_MODES)
+            )
+            raise ValueError(msg)
+        if not 1 <= self.decision_estimator_max_attempts <= 3:
+            msg = "DECISION_ESTIMATOR_MAX_ATTEMPTS must be between 1 and 3"
+            raise ValueError(msg)
+        if self.decision_estimator_timeout_seconds <= 0:
+            msg = "DECISION_ESTIMATOR_TIMEOUT_SECONDS must be greater than zero"
+            raise ValueError(msg)
+        if not 1 <= self.decision_retrieval_top_k <= self.answering_max_top_k:
+            msg = "DECISION_RETRIEVAL_TOP_K must be between 1 and ANSWERING_MAX_TOP_K"
+            raise ValueError(msg)
+        return self
+
+    @property
+    def decision_policy_enabled(self) -> bool:
+        return self.decision_policy_mode == DECISION_POLICY_EXPERIMENTAL
 
     @property
     def resolved_document_storage_path(self) -> Path:

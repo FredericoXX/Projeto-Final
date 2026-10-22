@@ -195,6 +195,8 @@ class PostgresDenseRetriever:
             language=context.language,
             reference_date=context.reference_date,
             official_only=official_only,
+            requester_role=context.requester_role,
+            relaxed_conditions=context.relaxed_conditions,
         )
 
         rows = list(

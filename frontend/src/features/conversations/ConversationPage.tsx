@@ -4,6 +4,8 @@ import { useTranslation } from '../../i18n/useTranslation';
 import {
   useAsk,
   useConversation,
+  useDecide,
+  useDecisionStatus,
   useMessages,
   useRenameConversation,
   useRequestHandoff,
@@ -36,6 +38,13 @@ export function ConversationPage() {
   const ask = useAsk(conversationId);
   const rename = useRenameConversation(conversationId);
   const handoff = useRequestHandoff(conversationId);
+  const decisionStatus = useDecisionStatus();
+  const decide = useDecide(conversationId);
+  // Modo experimental da política v1.7: desligado por omissão e só oferecido
+  // quando o backend o tem ativo e configurado para a instituição.
+  const [experimental, setExperimental] = useState(false);
+  const policyAvailable =
+    decisionStatus.data?.enabled === true && decisionStatus.data.catalog_configured;
   const [askError, setAskError] = useState<string | null>(null);
   const [handoffError, setHandoffError] = useState<string | null>(null);
   const [renaming, setRenaming] = useState(false);
@@ -77,13 +86,31 @@ export function ConversationPage() {
   async function handleAsk(query: string, officialOnly: boolean): Promise<boolean> {
     setAskError(null);
     try {
-      await ask.mutateAsync({ query, official_only: officialOnly });
+      if (experimental && policyAvailable) {
+        await decide.mutateAsync({ query, official_only: officialOnly });
+      } else {
+        await ask.mutateAsync({ query, official_only: officialOnly });
+      }
       return true;
     } catch (error) {
       // 502/503 (e qualquer erro) nunca insere uma mensagem local: o backend não
       // persiste turnos parciais. Manter o texto digitado para nova tentativa.
       setAskError(t(errorTranslationKey(error)));
       return false;
+    }
+  }
+
+  async function handleClarify(messageId: string, readingId: string) {
+    if (decide.isPending) {
+      return;
+    }
+    setAskError(null);
+    try {
+      // Nova decisão a partir do pedido original e da leitura escolhida; o
+      // backend revalida toda a admissibilidade.
+      await decide.mutateAsync({ clarification: { message_id: messageId, reading_id: readingId } });
+    } catch (error) {
+      setAskError(t(errorTranslationKey(error)));
     }
   }
 
@@ -223,7 +250,12 @@ export function ConversationPage() {
           </button>
         )}
         {messages.map((message) => (
-          <MessageItem key={message.id} message={message} />
+          <MessageItem
+            key={message.id}
+            message={message}
+            onClarify={isActive && policyAvailable ? handleClarify : undefined}
+            clarifyPending={decide.isPending}
+          />
         ))}
       </div>
 
@@ -249,7 +281,25 @@ export function ConversationPage() {
 
       {conversation && isActive && (
         <>
-          <Composer disabled={!isActive} pending={ask.isPending} onSubmit={handleAsk} />
+          {policyAvailable && (
+            <div className="composer-meta">
+              <label className="checkbox-field">
+                <input
+                  type="checkbox"
+                  checked={experimental}
+                  disabled={ask.isPending || decide.isPending}
+                  onChange={(event) => setExperimental(event.target.checked)}
+                />
+                {t('decision.modeLabel')}
+              </label>
+              <span className="text-sm">{t('decision.modeHint')}</span>
+            </div>
+          )}
+          <Composer
+            disabled={!isActive}
+            pending={ask.isPending || decide.isPending}
+            onSubmit={handleAsk}
+          />
           {/* Ação secundária, junto ao composer mas fora dele: não compete
               visualmente com o envio normal da pergunta. Só existe em
               conversas ativas — closed/archived não aceitam mensagens novas. */}

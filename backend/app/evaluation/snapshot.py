@@ -242,9 +242,15 @@ class RetrievalConfiguration:
     fts_config: str
     min_relevance_score: float
     candidate_limit: int
+    #: Papel do requerente e versão da autorização documental (C13). Só entram
+    #: na identidade quando há papel: um snapshot sem papel — todos os
+    #: históricos, de P1 — mantém exatamente o mesmo payload e o mesmo
+    #: ``snapshot_id``; com papel, o corpus depende dele e a identidade também.
+    requester_role: str | None = None
+    document_access_policy: str | None = None
 
     def canonical(self) -> dict[str, Any]:
-        return {
+        payload: dict[str, Any] = {
             "strategy": self.strategy,
             "pipeline_version": self.pipeline_version,
             "scoring_version": self.scoring_version,
@@ -257,6 +263,10 @@ class RetrievalConfiguration:
             "min_relevance_score": self.min_relevance_score,
             "candidate_limit": self.candidate_limit,
         }
+        if self.requester_role is not None:
+            payload["requester_role"] = self.requester_role
+            payload["document_access_policy"] = self.document_access_policy
+        return payload
 
 
 def canonical_snapshot_payload(

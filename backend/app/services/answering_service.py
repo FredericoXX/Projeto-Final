@@ -13,7 +13,7 @@ pergunta completa, o contexto documental ou a resposta bruta.
 
 import hashlib
 import logging
-from datetime import UTC, datetime
+from datetime import UTC, date, datetime
 
 from sqlalchemy.orm import Session
 
@@ -49,7 +49,15 @@ def ask(
     generator: AnswerGenerator,
     *,
     fallback_language: str | None = None,
+    reference_date: date | None = None,
 ) -> AnsweringResponse:
+    """Fluxo B0: ``answered`` → ANSWER, ``insufficient_evidence`` → ABSTAIN.
+
+    ``reference_date`` é estabelecido uma única vez pelo chamador e usado na
+    recuperação; quem persiste o turno revalida as fontes contra a **mesma**
+    data. Sem valor, é a data UTC corrente no início do pedido.
+    """
+    reference_date = reference_date or datetime.now(UTC).date()
     institution = get_institution(db, current_user.institution_id)
     language = resolve_language(
         payload.language,
@@ -70,7 +78,10 @@ def ask(
     context = RetrievalContext(
         institution_id=current_user.institution_id,
         language=language,
-        reference_date=datetime.now(UTC).date(),
+        reference_date=reference_date,
+        # Autorização documental por papel (C13): o papel vem da identidade
+        # autenticada; a persistência conversacional revalida-o sob lock.
+        requester_role=current_user.role,
     )
     retrieval_result = retriever.search(
         db,

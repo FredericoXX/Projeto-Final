@@ -26,9 +26,20 @@ from app.core.text_normalization import normalize_text
 
 @dataclass(frozen=True)
 class RetrievalContext:
+    """Quem pergunta, em que idioma e a que data.
+
+    ``requester_role`` alimenta a autorização documental por papel (C13 de
+    ``app.documents.retrievability``); ``None`` só admite documentos sem
+    restrição. ``relaxed_conditions`` existe apenas para a avaliação offline
+    (ablação A-sem-filtro) e para o diagnóstico temporal, e só aceita as
+    condições de validade C9/C10 — a validação vive no contexto documental.
+    """
+
     institution_id: UUID
     language: str
     reference_date: date
+    requester_role: str | None = None
+    relaxed_conditions: frozenset[str] = frozenset()
 
 
 @dataclass(frozen=True)
