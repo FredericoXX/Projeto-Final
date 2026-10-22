@@ -1,0 +1,96 @@
+{
+  "$defs": {
+    "EvaluationCase": {
+      "additionalProperties": false,
+      "description": "Um caso do conjunto de avaliação da política v1 (P2). Sem rótulos.",
+      "properties": {
+        "case_id": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "language": {
+          "title": "Language",
+          "type": "string"
+        },
+        "official_only": {
+          "default": true,
+          "title": "Official Only",
+          "type": "boolean"
+        },
+        "query": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Query",
+          "type": "string"
+        },
+        "reference_date": {
+          "format": "date",
+          "title": "Reference Date",
+          "type": "string"
+        },
+        "requester_role": {
+          "enum": [
+            "admin",
+            "knowledge_manager",
+            "staff",
+            "student",
+            "user"
+          ],
+          "title": "Requester Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "case_id",
+        "query",
+        "language",
+        "reference_date",
+        "requester_role"
+      ],
+      "title": "EvaluationCase",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "cases": {
+      "items": {
+        "$ref": "#/$defs/EvaluationCase"
+      },
+      "title": "Cases",
+      "type": "array"
+    },
+    "corpus": {
+      "const": "P2",
+      "title": "Corpus",
+      "type": "string"
+    },
+    "institution_code": {
+      "title": "Institution Code",
+      "type": "string"
+    },
+    "schema_version": {
+      "const": "policy_v1_cases_1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "set_id": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Set Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "set_id",
+    "corpus",
+    "institution_code",
+    "cases"
+  ],
+  "title": "EvaluationCaseSet",
+  "type": "object"
+}

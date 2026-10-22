@@ -5,6 +5,7 @@ from app.api.routes.answering import router as answering_router
 from app.api.routes.auth import router as auth_router
 from app.api.routes.bootstrap import router as bootstrap_router
 from app.api.routes.conversations import router as conversations_router
+from app.api.routes.decision import router as decision_router
 from app.api.routes.documents import router as documents_router
 from app.api.routes.health import router as health_router
 from app.api.routes.institutions import router as institutions_router
@@ -67,5 +68,11 @@ app.include_router(
 
 app.include_router(
     academic_requests_router,
+    prefix="/api/v1",
+)
+
+# Política de decisão v1.7 — modo experimental, desativado por omissão.
+app.include_router(
+    decision_router,
     prefix="/api/v1",
 )

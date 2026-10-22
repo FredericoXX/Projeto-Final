@@ -90,17 +90,15 @@ do ranking lexical, D4.7, merge `47c1e9c`) e o **Pull Request #56** (baseline
 experimental de dense retrieval, D4.8, merge `22b59fc`) — ver
 [Trabalho arquitetural em aberto](#trabalho-arquitetural-em-aberto).
 
-## Perfis, permissões e acesso institucional (branch, não integrado)
+## Perfis, permissões e acesso institucional (integrado pelo PR #66)
 
-**Trabalho de branch, não estado da `main`.** Os factos desta secção foram
+**Integrado na `main`** pelo Pull Request #66 (merge
+`d87ed34641141093f9aabf6ca7045f73411fe323`). Os factos desta secção foram
 observados em 2026-10-09, e as correções pós-auditoria em 2026-10-22, na branch
-`feat/institutional-permissions-and-requests-preparation`, criada a partir da
-`main` em `ca482803676f6509db5f7c851ff7fbe9e10404a4` (merge do Pull Request
-#65), **antes de qualquer commit**. Enquanto a branch não for integrada, o
-resto deste documento continua a descrever a `main`. Fonte canónica:
+`feat/institutional-permissions-and-requests-preparation`. Fonte canónica:
 [`docs/institutional-access.md`](../institutional-access.md).
 
-Implementado na branch:
+Implementado:
 
 - matriz explícita de permissões em `app/core/permissions.py`, verificada por
   `require_permission`; `GET /auth/me` devolve `permissions`;
@@ -129,10 +127,42 @@ Implementado na branch:
 
 Apenas preparado, **não** implementado: adaptador real, SSO ou autenticação
 institucional, persistência e retenção de dados individuais, ligação ao
-diagnóstico e à política de decisão, fila e operador (E2). **D0–D6/R01–R12 não
-estão executáveis**: a especificação integral não está no repositório (a A2.2
-histórica tem D1–D6 e M1–M9) — ver
-[`institutional-access.md`, secção 10](../institutional-access.md#10-estado-da-especificação-d0d6--r01r12).
+diagnóstico e à política de decisão, fila e operador (E2). À data do PR #66,
+D0–D6/R01–R12 não estavam executáveis — ver
+[`institutional-access.md`, secção 10](../institutional-access.md#10-estado-da-especificação-d0d6--r01r12)
+e a secção seguinte, que regista a extensão experimental entretanto feita.
+
+## Política de decisão v1.7 — modo experimental (branch, não integrado)
+
+**Trabalho de branch, não estado da `main`.** Observado em 2026-10-22 na branch
+`feat/decision-policy-v1-7-experimental`, criada a partir de `origin/main` em
+`d87ed34641141093f9aabf6ca7045f73411fe323`, **antes de qualquer commit**. Fonte
+canónica: [`docs/decision-policy.md`](../decision-policy.md); matriz de
+conformidade em
+[`relatorios/policy-v1-7-integration.md`](../relatorios/policy-v1-7-integration.md).
+
+Implementado na branch, como extensão **experimental, desativada por omissão e
+não avaliada**:
+
+- contratos D0–D6 (`app/decision/dimensions.py`) e `DecisionPolicy` pura com
+  R01–R12 (`app/decision/policy.py`, `decision_policy_v1.7-experimental.1`);
+  `RequestConstraint` ganha `administrative_action_required`;
+- estimadores substituíveis com validação estrutural, adaptador OpenAI isolado
+  e doubles determinísticos só nos testes;
+- turno da política `POST /conversations/{id}/decide`
+  (`DECISION_POLICY_MODE=experimental`), com as quatro ações, mensagens
+  versionadas, continuação de clarificação e encaminhamento automático E1 como
+  recomendação; o B0 (`/ask`) mantém o contrato;
+- catálogo institucional versionado (âmbito D1 e serviços D6), gerido pelo
+  admin em `/decision/catalog`;
+- autorização documental por papel (C13, `documents.access_roles`) nas duas
+  políticas de admissibilidade, na pesquisa e na leitura das fontes;
+- diagnóstico temporal, data de referência única por pedido (também no B0),
+  registo interno `decision_records` e replay;
+- infraestrutura de avaliação preparada (`app/evaluation/policy_v1/`, scripts
+  `p2_labels_tool`, `freeze_policy_v1_artifacts`, `run_policy_v1_evaluation`);
+  **nenhuma avaliação foi executada e nenhum rótulo foi criado**;
+- migração `a8c4e2f6b1d9`; head única `a8c4e2f6b1d9`.
 
 Verificações desta branch: ver
 [Testes e verificações](#testes-e-verificações).
@@ -1307,6 +1337,19 @@ Detalhe em
 
 Os testes do backend usam PostgreSQL real numa base dedicada; os do frontend
 usam MSW, sem rede nem backend.
+
+**Branch `feat/decision-policy-v1-7-experimental`** (base `d87ed34`, sem
+commit), medida em **2026-10-23**, depois das correções da segunda auditoria: **2575 passed,
+1 warning** (`python -m pytest -q`, o mesmo `StarletteDeprecationWarning`); `mypy app
+tests scripts` sem erros em **294 source files**; `ruff check .` passa; numa base PostgreSQL descartável, a
+única head `a8c4e2f6b1d9` sobe, desce até `c4f7ab19d3e5` e volta a subir, e
+`alembic check` não deteta diferenças. Frontend: **120** testes em 12 ficheiros,
+lint, typecheck e build verdes. Instabilidade observada, não resolvida:
+`test_concurrent_uploads_get_distinct_sequential_version_numbers` falhou 3 vezes
+em no máximo ~70 execuções desta branch (`StoragePathError` no armazenamento
+local, não alterado; passou nas últimas 40 e na suite final) e 0 em 55 sobre
+`origin/main` — ver o
+[relatório de integração](../relatorios/policy-v1-7-integration.md).
 
 **Branch `feat/institutional-permissions-and-requests-preparation`** (base
 `ca48280`, sem commit), medida em **2026-10-22**, depois das correções

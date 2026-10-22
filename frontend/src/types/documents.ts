@@ -10,6 +10,8 @@ export interface DocumentRead {
   source_url: string | null;
   official_source: boolean;
   is_active: boolean;
+  // Autorização documental por papel (C13). Vazio = sem restrição de papel.
+  access_roles: string[];
   valid_from: IsoDate | null;
   valid_until: IsoDate | null;
   created_at: IsoDateTime;
@@ -27,6 +29,7 @@ export interface DocumentUpdateRequest {
   source_url?: string | null;
   official_source?: boolean;
   is_active?: boolean;
+  access_roles?: string[];
   valid_from?: IsoDate | null;
   valid_until?: IsoDate | null;
 }

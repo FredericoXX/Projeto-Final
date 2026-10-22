@@ -1529,3 +1529,74 @@ def test_user_external_identities_migration_upgrade_downgrade_upgrade(
     finally:
         engine.dispose()
     assert current_revision == ScriptDirectory.from_config(alembic_cfg).get_current_head()
+
+
+def test_decision_policy_storage_migration_preserves_public_documents_and_guards_downgrade(
+    migrations_database_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """Documentos anteriores continuam sem restrição de papel; o downgrade
+    recusa-se enquanto houver restrições, catálogos ou registos de decisão."""
+    monkeypatch.setattr(settings, "database_url", migrations_database_url)
+    alembic_cfg = Config(str(BACKEND_DIR / "alembic.ini"))
+    command.upgrade(alembic_cfg, "e3b9f1c7a5d8")
+
+    engine = create_engine(migrations_database_url)
+    document_id = str(uuid.uuid4())
+    try:
+        institution_id, user_id = _insert_institution_and_user(engine, role="knowledge_manager")
+        with engine.begin() as conn:
+            conn.execute(
+                text(
+                    """INSERT INTO documents
+                    (id, institution_id, created_by_user_id, title, language,
+                     official_source, is_active)
+                    VALUES (:id, :institution_id, :user_id, 'Anterior', 'pt', true, true)"""
+                ),
+                {"id": document_id, "institution_id": institution_id, "user_id": user_id},
+            )
+    finally:
+        engine.dispose()
+
+    command.upgrade(alembic_cfg, "a8c4e2f6b1d9")
+    engine = create_engine(migrations_database_url)
+    try:
+        inspector = inspect(engine)
+        assert {"institution_decision_catalogs", "decision_records"} <= set(
+            inspector.get_table_names()
+        )
+        with engine.connect() as conn:
+            roles = conn.execute(
+                text("SELECT access_roles FROM documents WHERE id = :id"), {"id": document_id}
+            ).scalar_one()
+        assert roles == []
+        with engine.begin() as conn, pytest.raises(Exception, match="ck_documents_access_roles"):
+            conn.execute(
+                text("UPDATE documents SET access_roles = ARRAY['root'] WHERE id = :id"),
+                {"id": document_id},
+            )
+        with engine.begin() as conn:
+            conn.execute(
+                text("UPDATE documents SET access_roles = ARRAY['staff'] WHERE id = :id"),
+                {"id": document_id},
+            )
+    finally:
+        engine.dispose()
+
+    with pytest.raises(RuntimeError, match="Downgrade refused"):
+        command.downgrade(alembic_cfg, "e3b9f1c7a5d8")
+
+    engine = create_engine(migrations_database_url)
+    try:
+        with engine.begin() as conn:
+            conn.execute(text("UPDATE documents SET access_roles = '{}'"))
+    finally:
+        engine.dispose()
+    command.downgrade(alembic_cfg, "e3b9f1c7a5d8")
+    engine = create_engine(migrations_database_url)
+    try:
+        inspector = inspect(engine)
+        assert "decision_records" not in inspector.get_table_names()
+        assert "access_roles" not in {c["name"] for c in inspector.get_columns("documents")}
+    finally:
+        engine.dispose()

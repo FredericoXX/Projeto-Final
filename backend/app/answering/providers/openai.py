@@ -14,6 +14,7 @@ Segurança e privacidade:
 
 import json
 import logging
+from dataclasses import replace
 from typing import Any
 
 import openai
@@ -105,7 +106,17 @@ class OpenAIAnswerGenerator:
             )
             raise AnswerGenerationError(GENERATION_FAILED_MESSAGE) from None
 
-        return _parse_completion(completion)
+        parsed = _parse_completion(completion)
+        usage = getattr(completion, "usage", None)
+        input_tokens = getattr(usage, "prompt_tokens", None)
+        output_tokens = getattr(usage, "completion_tokens", None)
+        if isinstance(input_tokens, int) and isinstance(output_tokens, int):
+            # Só contagens: a utilização entra no registo da decisão e da
+            # avaliação, nunca nos logs nem na resposta.
+            return replace(
+                parsed, usage={"input_tokens": input_tokens, "output_tokens": output_tokens}
+            )
+        return parsed
 
     def _build_client(self) -> Any:
         api_key = settings.openai_api_key

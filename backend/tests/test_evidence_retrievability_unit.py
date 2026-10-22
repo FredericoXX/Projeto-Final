@@ -16,6 +16,7 @@ from uuid import UUID
 import pytest
 
 from app.documents.retrievability import (
+    AUTHORIZATION_CONDITIONS,
     BASE_CONDITIONS,
     LATEST_PROCESSED_VERSION,
     CitationPersistenceEligibility,
@@ -279,14 +280,28 @@ def test_all_failed_conditions_are_reported_not_only_the_first() -> None:
 
 
 # --- Teste de composição ----------------------------------------------------------
+#
+# Expectativa alterada pela política v1.7 (2026-10-22): as duas políticas passam
+# a incluir também AUTHORIZATION_CONDITIONS (C13, autorização documental por
+# papel), que a v1.7 exige "antes do contexto do modelo, na consulta de
+# documentos/fontes e na persistência". C13 entra nas DUAS políticas, por isso a
+# invariante que estes testes protegem não muda: a única diferença entre elas
+# continua a ser C5, e C5 continua fora da persistência de citações.
 
 
 def test_citation_persistence_is_exactly_the_base_policy() -> None:
-    assert CitationPersistenceEligibility.conditions == BASE_CONDITIONS
+    assert CitationPersistenceEligibility.conditions == (
+        *BASE_CONDITIONS,
+        *AUTHORIZATION_CONDITIONS,
+    )
 
 
 def test_retrieval_is_the_base_policy_plus_the_latest_processed_version() -> None:
-    assert RetrievalEligibility.conditions == (*BASE_CONDITIONS, LATEST_PROCESSED_VERSION)
+    assert RetrievalEligibility.conditions == (
+        *BASE_CONDITIONS,
+        *AUTHORIZATION_CONDITIONS,
+        LATEST_PROCESSED_VERSION,
+    )
 
 
 def test_the_only_difference_between_the_two_policies_is_c5() -> None:
@@ -302,7 +317,9 @@ def test_the_only_difference_between_the_two_policies_is_c5() -> None:
 
     assert retrieval - citation == {"version_is_highest_processed"}
     assert citation - retrieval == set()
-    assert citation == set(condition.name for condition in BASE_CONDITIONS)
+    assert citation == {
+        condition.name for condition in (*BASE_CONDITIONS, *AUTHORIZATION_CONDITIONS)
+    }
 
     # E a mesma verdade pelo lado do adaptador SQL.
     assert RetrievalEligibility.requires_latest_processed_version is True

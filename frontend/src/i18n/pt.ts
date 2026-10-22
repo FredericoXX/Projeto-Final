@@ -48,6 +48,24 @@ export const pt = {
   'composer.charCount': '{count}/{max}',
   'composer.hint': 'Enter envia • Shift+Enter nova linha',
 
+  'decision.sectionLabel': 'Decisão da política experimental',
+  'decision.action.answer': 'Resposta',
+  'decision.action.clarify': 'Pedido de clarificação',
+  'decision.action.abstain': 'Abstenção',
+  'decision.action.escalate': 'Encaminhamento recomendado',
+  'decision.rule': 'Regra',
+  'decision.clarifyOptions': 'Opções de clarificação',
+  'decision.gap': 'Sem suporte nos documentos consultados',
+  'decision.recommendation':
+    'Recomendação de contacto: o pedido não foi enviado ao serviço',
+  'decision.temporal':
+    'Foi encontrada informação que não está em vigor na data de referência e não foi usada.',
+  'decision.modeLabel': 'Modo experimental (política de decisão v1.7)',
+  'decision.modeHint':
+    'Experimental e em calibração: decide entre responder, clarificar, abster-se ou recomendar um contacto.',
+  'decision.notConfigured':
+    'A política experimental não está configurada para esta instituição.',
+
   'handoff.button': 'Falar com atendimento humano',
   'handoff.pending': 'A encaminhar…',
   // Descreve o que E1 faz — indicar um contacto —, não uma entrega do caso.
@@ -91,6 +109,10 @@ export const pt = {
   'documents.field.validFrom': 'Válido desde',
   'documents.field.validUntil': 'Válido até',
   'documents.field.active': 'Ativo',
+  'documents.field.accessRoles': 'Papéis autorizados',
+  'documents.accessRolesHint':
+    'Sem nenhum papel assinalado, o documento pode fundamentar respostas a todos os papéis da instituição.',
+  'documents.accessRolesAll': 'Todos os papéis',
   'documents.field.updatedAt': 'Atualizado',
   'documents.create': 'Criar documento',
   'documents.creating': 'A criar…',

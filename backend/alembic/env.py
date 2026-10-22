@@ -7,6 +7,8 @@ from app.core.config import settings
 from app.database.base import Base
 from app.models.chunk_embedding import ChunkEmbedding  # noqa: F401
 from app.models.conversation import Conversation  # noqa: F401
+from app.models.decision_catalog import InstitutionDecisionCatalog  # noqa: F401
+from app.models.decision_record import DecisionRecord  # noqa: F401
 from app.models.document import Document  # noqa: F401
 from app.models.document_chunk import DocumentChunk  # noqa: F401
 from app.models.document_version import DocumentVersion  # noqa: F401

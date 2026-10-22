@@ -85,10 +85,16 @@ class AnsweringContext:
 
 @dataclass(frozen=True)
 class GeneratedAnswer:
-    """Output bruto do gerador, ainda por validar (ver validation.py)."""
+    """Output bruto do gerador, ainda por validar (ver validation.py).
+
+    ``usage`` é a utilização devolvida pelo fornecedor (``input_tokens``,
+    ``output_tokens``), quando a houver. É só contabilidade: nunca participa na
+    validação nem na resposta pública.
+    """
 
     answer: str
     cited_evidence_ids: tuple[str, ...]
+    usage: dict[str, int] | None = None
 
 
 class AnswerGenerator(Protocol):

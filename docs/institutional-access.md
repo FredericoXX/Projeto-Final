@@ -399,12 +399,30 @@ Quando a política atual estiver integralmente disponível, o caminho previsto �
 autorizada de dados pode permitir satisfazer o pedido, e a ação depende da
 política ainda a integrar.
 
+> **Nota de versão (2026-10-22, política v1.7 experimental).** O parágrafo
+> anterior descreve o incremento institucional. A política v1.7, entretanto
+> implementada em modo experimental ([`decision-policy.md`](decision-policy.md)),
+> fixa R04/R05: `personal_data_required` → `ESCALATE` **só** com serviço
+> competente no catálogo, `ABSTAIN` caso contrário. A consulta simulada dos
+> próprios pedidos continua **fora** do fluxo da política: a v1.7 não acede a
+> registos pessoais, e um pedido com essa restrição segue R04/R05 sem
+> consultar o fornecedor institucional. Os passos 2–3 acima continuam por
+> decidir e não foram implementados.
+
 O encaminhamento E1 mantém-se como estava, com as autorizações corrigidas: é
 pedido pelo utilizador, apenas na própria conversa, e apresenta um contacto.
 **Não** transfere o caso para um operador; a fila e o registo de resolução
 (E2) pertencem a outro incremento.
 
 ## 10. Estado da especificação D0–D6 / R01–R12
+
+> **Nota de versão (2026-10-22).** Esta secção descreve o estado no fim do
+> incremento institucional. Desde então, D0–D6 e R01–R12 estão implementados
+> como **extensão experimental** da política v1.7, a partir do prompt de
+> alteração do artefacto (o documento da política continua fora do
+> repositório). Ver [`decision-policy.md`](decision-policy.md) e
+> [`relatorios/policy-v1-7-integration.md`](relatorios/policy-v1-7-integration.md).
+> O texto abaixo mantém-se como registo histórico.
 
 O desenho revisto da tese refere sete dimensões D0–D6 e doze regras R01–R12.
 **A especificação integral não foi encontrada neste repositório**, e por isso

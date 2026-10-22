@@ -28,7 +28,7 @@ def search_evidence(
     # Reconfirma a conta na transação da pesquisa: uma desativação concorrente
     # já gravada é vista aqui, e uma posterior espera pelo fim desta leitura.
     # A pesquisa lexical só lê a base de dados, sem chamada externa.
-    authorization_service.revalidate_actor(
+    actor = authorization_service.revalidate_actor(
         db, user_id=current_user.id, institution_id=current_user.institution_id
     )
     institution = get_institution(db, current_user.institution_id)
@@ -47,6 +47,8 @@ def search_evidence(
         # Data em UTC, coerente com o resto do projeto (ex.: processed_at);
         # a data local do servidor podia divergir até um dia perto da meia-noite.
         reference_date=datetime.now(UTC).date(),
+        # Autorização documental por papel (C13), sobre o papel relido sob lock.
+        requester_role=actor.role,
     )
     result = retriever.search(
         db,

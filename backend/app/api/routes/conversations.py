@@ -29,6 +29,7 @@ from app.services import (
     conversation_service,
     human_handoff_service,
     message_service,
+    message_source_service,
 )
 
 # Todas as rotas exigem um utilizador autenticado (get_current_user). O
@@ -165,8 +166,17 @@ def list_messages(
     items, total = message_service.list_messages(
         db, current_user, conversation_id, limit=limit, offset=offset
     )
+    # Acesso verificado na leitura (C13): fontes de documentos entretanto
+    # vedados ao papel são omitidas, sem alterar o snapshot persistido. O
+    # papel é o relido sob lock por list_messages.
+    readable = message_source_service.filter_readable_sources(
+        db,
+        [MessageRead.model_validate(item) for item in items],
+        institution_id=current_user.institution_id,
+        requester_role=current_user.role,
+    )
     return MessageListResponse(
-        items=[MessageRead.model_validate(item) for item in items],
+        items=readable,
         total=total,
         limit=limit,
         offset=offset,

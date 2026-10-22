@@ -16,10 +16,17 @@ Os testes que verificam **ausências** — ``NONE``, ``AMBIGUOUS``,
 e essa duplicação é deliberada: cada um documenta uma decisão explícita da A2.0
 e falha com uma mensagem que a nomeia.
 
-Não se testa aqui qualquer associação entre contratos. ``PERSONAL_DATA_REQUIRED``
-não "leva a" ``ESCALATE``, ``NOT_ANSWERABLE`` não "leva a" ``ABSTAIN``: essas
-decisões estão em aberto, e um teste que as afirmasse fixaria uma resposta que a
-investigação ainda não deu.
+Não se testa aqui qualquer associação entre contratos: este módulo continua a
+ser vocabulário. As associações experimentais da política v1.7 vivem em
+``app.decision.policy`` e são testadas em ``test_decision_policy.py``.
+
+Expectativa alterada pela política v1.7 (2026-10-22): ``RequestConstraint``
+passa a ter **dois** membros. A v1.7 acrescenta expressamente
+``administrative_action_required`` à dimensão D2 ("Inscreva-me" pede um ato;
+"Como faço a inscrição?" pede informação). Até aqui, a A2.0 tinha-o adiado, e
+este ficheiro listava-o entre os valores especulativos. A alteração é uma
+decisão de modelação explícita, não um relaxamento do teste: o conjunto
+continua fixado com exatidão.
 """
 
 import ast
@@ -52,9 +59,10 @@ def test_scope_class_has_no_intermediate_or_unknown_member(name: str) -> None:
     assert name not in ScopeClass.__members__
 
 
-def test_request_constraint_has_exactly_the_single_approved_member() -> None:
+def test_request_constraint_has_exactly_the_approved_members() -> None:
     assert {member.name: member.value for member in RequestConstraint} == {
         "PERSONAL_DATA_REQUIRED": "personal_data_required",
+        "ADMINISTRATIVE_ACTION_REQUIRED": "administrative_action_required",
     }
 
 
@@ -80,7 +88,6 @@ def test_absence_of_constraints_is_the_empty_collection() -> None:
     "name",
     [
         "AUTH_REQUIRED",
-        "ADMINISTRATIVE_ACTION_REQUIRED",
         "HUMAN_REQUIRED",
         "HUMAN_HANDOFF_REQUESTED",
         "TRANSACTION_REQUIRED",

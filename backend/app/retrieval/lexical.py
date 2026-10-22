@@ -445,16 +445,18 @@ class PostgresLexicalRetriever:
     ) -> RetrievabilityContext:
         """Traduz o contexto de recuperação no contexto documental.
 
-        Não acrescenta configuração nenhuma: os quatro valores já existem
-        na chamada. ``official_only`` é parâmetro da pesquisa e não do
-        ``RetrievalContext``, que descreve apenas quem pergunta, em que
-        idioma e a que data.
+        Não acrescenta configuração nenhuma: todos os valores já existem na
+        chamada. ``official_only`` é parâmetro da pesquisa e não do
+        ``RetrievalContext``, que descreve apenas quem pergunta (com o papel,
+        para C13), em que idioma e a que data.
         """
         return RetrievabilityContext(
             institution_id=context.institution_id,
             language=context.language,
             reference_date=context.reference_date,
             official_only=official_only,
+            requester_role=context.requester_role,
+            relaxed_conditions=context.relaxed_conditions,
         )
 
     def _build_statement(

@@ -1,6 +1,7 @@
 """Revalidação, snapshots e consulta das fontes de mensagens persistidas."""
 
 import hashlib
+from collections.abc import Collection, Sequence
 from dataclasses import dataclass
 from datetime import date
 from uuid import UUID
@@ -14,6 +15,7 @@ from app.documents.retrievability import (
     CitationPersistenceEligibility,
     RetrievabilityContext,
     RetrievabilitySubject,
+    role_authorized_sql,
 )
 from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
@@ -21,6 +23,7 @@ from app.models.document_version import DocumentVersion
 from app.models.message import Message
 from app.models.message_source import MessageSource
 from app.schemas.answering import AnswerSourceRead
+from app.schemas.message import MessageRead
 
 SOURCES_CHANGED_MESSAGE = (
     "The documentary sources changed while the answer was being generated. "
@@ -61,6 +64,7 @@ def revalidate_and_lock_sources(
     language: str,
     reference_date: date,
     official_only: bool,
+    requester_role: str | None = None,
 ) -> tuple[SourceSnapshot, ...]:
     """Recarrega e bloqueia as fontes citadas antes de qualquer insert.
 
@@ -141,13 +145,15 @@ def revalidate_and_lock_sources(
     chunks_by_id = {chunk.id: chunk for chunk in chunks}
     snapshots: list[SourceSnapshot] = []
 
-    # Os mesmos quatro valores que o pedido de persistência já recebe: não se
-    # introduz configuração nova, apenas se traduz o contexto.
+    # Os valores que o pedido de persistência já recebe: não se introduz
+    # configuração nova, apenas se traduz o contexto. O papel é o persistido,
+    # relido sob lock pelo chamador (C13).
     retrievability = RetrievabilityContext(
         institution_id=institution_id,
         language=language,
         reference_date=reference_date,
         official_only=official_only,
+        requester_role=requester_role,
     )
 
     for citation_index, source in enumerate(cited_sources):
@@ -266,6 +272,67 @@ def create_message_sources(
     ]
     db.add_all(entities)
     return entities
+
+
+def withheld_document_ids(
+    db: Session,
+    *,
+    institution_id: UUID,
+    requester_role: str | None,
+    document_ids: Collection[UUID],
+) -> frozenset[UUID]:
+    """Documentos citados que **existem** e já não estão autorizados ao papel.
+
+    Verificação de acesso na leitura (C13, política v1.7) — não é uma
+    reavaliação de admissibilidade: validade, idioma, estado ou versão não
+    contam aqui, e o snapshot persistido nunca é alterado. Um documento entretanto
+    eliminado não é retido: a proveniência histórica continua a mostrar-se.
+    """
+    if not document_ids:
+        return frozenset()
+    return frozenset(
+        db.scalars(
+            select(Document.id).where(
+                Document.id.in_(document_ids),
+                Document.institution_id == institution_id,
+                ~role_authorized_sql(requester_role),
+            )
+        ).all()
+    )
+
+
+def filter_readable_sources(
+    db: Session,
+    messages: Sequence[MessageRead],
+    *,
+    institution_id: UUID,
+    requester_role: str | None,
+) -> list[MessageRead]:
+    """Omite das mensagens lidas as fontes de documentos vedados ao papel.
+
+    A omissão é silenciosa: nem o título, nem o identificador, nem a contagem
+    das fontes retidas chegam ao cliente — a existência de um documento vedado
+    não é revelada.
+    """
+    document_ids = {source.document_id for message in messages for source in message.sources}
+    withheld = withheld_document_ids(
+        db,
+        institution_id=institution_id,
+        requester_role=requester_role,
+        document_ids=document_ids,
+    )
+    if not withheld:
+        return list(messages)
+    return [
+        message.model_copy(
+            update={
+                "sources": [
+                    source for source in message.sources if source.document_id not in withheld
+                ]
+            }
+        )
+        for message in messages
+    ]
 
 
 def list_message_sources(

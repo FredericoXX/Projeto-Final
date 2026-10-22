@@ -1,0 +1,355 @@
+{
+  "$defs": {
+    "AnnotatorIdentity": {
+      "additionalProperties": false,
+      "properties": {
+        "adjudicators": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Adjudicators",
+          "type": "array"
+        },
+        "annotator_id": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Annotator Id",
+          "type": "string"
+        },
+        "role": {
+          "enum": [
+            "annotator",
+            "adjudication"
+          ],
+          "title": "Role",
+          "type": "string"
+        }
+      },
+      "required": [
+        "annotator_id",
+        "role"
+      ],
+      "title": "AnnotatorIdentity",
+      "type": "object"
+    },
+    "CaseLabels": {
+      "additionalProperties": false,
+      "properties": {
+        "acceptable_actions": {
+          "items": {
+            "$ref": "#/$defs/DecisionOutcome"
+          },
+          "minItems": 1,
+          "title": "Acceptable Actions",
+          "type": "array"
+        },
+        "case_id": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "d1": {
+          "$ref": "#/$defs/ScopeLabel"
+        },
+        "d2": {
+          "$ref": "#/$defs/ConstraintsLabel"
+        },
+        "d3": {
+          "$ref": "#/$defs/SpecificityLabel"
+        },
+        "d4": {
+          "$ref": "#/$defs/SupportLabel"
+        },
+        "d5": {
+          "$ref": "#/$defs/ConflictLabel"
+        },
+        "d6": {
+          "$ref": "#/$defs/DestinationLabel"
+        }
+      },
+      "required": [
+        "case_id",
+        "d1",
+        "d2",
+        "d3",
+        "d4",
+        "d5",
+        "d6",
+        "acceptable_actions"
+      ],
+      "title": "CaseLabels",
+      "type": "object"
+    },
+    "ConflictLabel": {
+      "additionalProperties": false,
+      "description": "D5. ``None`` = N/A.",
+      "properties": {
+        "unresolvable_conflict": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Unresolvable Conflict"
+        }
+      },
+      "required": [
+        "unresolvable_conflict"
+      ],
+      "title": "ConflictLabel",
+      "type": "object"
+    },
+    "ConstraintsLabel": {
+      "additionalProperties": false,
+      "description": "D2. Lista vazia = sem restrições; ``None`` = N/A.",
+      "properties": {
+        "constraints": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/$defs/RequestConstraint"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Constraints"
+        }
+      },
+      "required": [
+        "constraints"
+      ],
+      "title": "ConstraintsLabel",
+      "type": "object"
+    },
+    "DecisionOutcome": {
+      "description": "A ação que o assistente executa perante o pedido.\n\n``ANSWER`` — produzir uma resposta substantiva ao utilizador.\n\n``CLARIFY`` — solicitar informação adicional ao utilizador para resolver\numa incerteza/subespecificação relevante.\n\n``ABSTAIN`` — não produzir uma resposta substantiva porque o sistema não\ndeve responder nas condições observadas.\n\n``ESCALATE`` — encaminhar explicitamente o caso para intervenção humana.\n\n``ABSTAIN`` e ``ESCALATE`` não são sinónimos: o primeiro termina o fluxo, o\nsegundo declara que o caso continua com uma pessoa.\n\n*Quando* ``CLARIFY`` é apropriado é decidido pela dimensão D3 e pela regra\nR06 da política v1.7, fora deste módulo.\n\nFalhas técnicas — indisponibilidade do fornecedor, rejeição da validação\ndeterminística — não são desfechos desta enumeração: o sistema não escolheu\nfalhar. Recuperar documentos também não é um desfecho, é uma etapa interna.",
+      "enum": [
+        "answer",
+        "clarify",
+        "abstain",
+        "escalate"
+      ],
+      "title": "DecisionOutcome",
+      "type": "string"
+    },
+    "DestinationLabel": {
+      "additionalProperties": false,
+      "description": "D6. ``has_competent_service=None`` = N/A; ``service_id`` só com serviço.",
+      "properties": {
+        "has_competent_service": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Has Competent Service"
+        },
+        "service_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Service Id"
+        }
+      },
+      "required": [
+        "has_competent_service",
+        "service_id"
+      ],
+      "title": "DestinationLabel",
+      "type": "object"
+    },
+    "RequestConstraint": {
+      "description": "Propriedade do pedido que impede o fluxo documental normal.\n\n``PERSONAL_DATA_REQUIRED`` — o pedido só pode ser satisfeito\nsubstantivamente mediante acesso a informação específica de uma pessoa, que\nnão faz parte da documentação institucional geral disponível ao fluxo\ndocumental.\n\nO discriminante não é a presença de um possessivo. \"Qual é a minha nota?\"\ntem a restrição, porque o valor pedido vive num registo individual; \"Como\nposso consultar as minhas notas?\" pode não a ter, porque o procedimento\nestá documentado.\n\n**Não existe ``NONE``, e a omissão é deliberada.** Uma restrição é uma\npropriedade que pode ocorrer zero ou mais vezes; a ausência de restrições é\na coleção vazia — ``frozenset()`` — e não um membro artificial dentro do\npróprio conjunto de restrições.\n\n``ADMINISTRATIVE_ACTION_REQUIRED`` — o pedido só fica satisfeito com a\nexecução de um ato administrativo (inscrever, anular, emitir, alterar),\nque o assistente não pratica. \"Inscreva-me\" tem a restrição; \"Como faço a\ninscrição?\" não a tem, porque pede informação sobre o procedimento.\nAcrescentado pela política v1.7 (D2); a A2.0 tinha-o adiado.\n\nOutros valores candidatos foram considerados pela A2.0 e ficaram de fora\npor não mudarem nenhuma decisão, ou por nomearem o desfecho em vez da\npropriedade do pedido.",
+      "enum": [
+        "personal_data_required",
+        "administrative_action_required"
+      ],
+      "title": "RequestConstraint",
+      "type": "string"
+    },
+    "ScopeClass": {
+      "description": "O tema do pedido pertence ao domínio institucional do assistente?\n\n``IN_SCOPE`` — o tema do pedido pertence ao domínio institucional que o\nassistente foi concebido para apoiar.\n\n``OUT_OF_SCOPE`` — o pedido não pertence ao domínio institucional definido\npara o assistente.\n\n**A capacidade técnica atual não define o âmbito.** Isto é a distinção\ncentral deste contrato, e a que é mais fácil perder: \"Qual é a minha nota?\"\né um tema académico, logo ``IN_SCOPE``, mesmo que o protótipo não consiga —\nnem deva — obter a nota. O obstáculo desse pedido é uma restrição do pedido\n(:class:`RequestConstraint`), não o seu tema.\n\n``OUT_OF_SCOPE`` também não significa \"não há documento\", \"não sei\nresponder\" nem \"preciso de um humano\": cada uma dessas situações tem o seu\npróprio contrato, ou está declarada como pendente.\n\nO âmbito é relativo à configuração de cada instituição, e não a uma noção\nuniversal de \"assunto académico\".",
+      "enum": [
+        "in_scope",
+        "out_of_scope"
+      ],
+      "title": "ScopeClass",
+      "type": "string"
+    },
+    "ScopeLabel": {
+      "additionalProperties": false,
+      "description": "D1. ``scope=None`` é N/A.",
+      "properties": {
+        "scope": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ScopeClass"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "scope"
+      ],
+      "title": "ScopeLabel",
+      "type": "object"
+    },
+    "Specificity": {
+      "description": "D3: o pedido identifica aquilo que pede?",
+      "enum": [
+        "specified",
+        "underspecified"
+      ],
+      "title": "Specificity",
+      "type": "string"
+    },
+    "SpecificityLabel": {
+      "additionalProperties": false,
+      "description": "D3, com materialidade, desambiguação e cobertura separadas.\n\n``disambiguation`` (o utilizador consegue distinguir as leituras) e\n``coverage`` (todas as leituras materiais têm evidência admissível) só se\naplicam quando a ambiguidade é material.",
+      "properties": {
+        "coverage": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Coverage"
+        },
+        "disambiguation": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Disambiguation"
+        },
+        "materiality": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Materiality"
+        },
+        "specificity": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/Specificity"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        }
+      },
+      "required": [
+        "specificity",
+        "materiality",
+        "disambiguation",
+        "coverage"
+      ],
+      "title": "SpecificityLabel",
+      "type": "object"
+    },
+    "SupportLabel": {
+      "additionalProperties": false,
+      "description": "D4. ``partial_misleading`` só se aplica a suficiência parcial.",
+      "properties": {
+        "partial_misleading": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Partial Misleading"
+        },
+        "sufficiency": {
+          "anyOf": [
+            {
+              "enum": [
+                "full",
+                "partial",
+                "none"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Sufficiency"
+        }
+      },
+      "required": [
+        "sufficiency",
+        "partial_misleading"
+      ],
+      "title": "SupportLabel",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "annotator": {
+      "$ref": "#/$defs/AnnotatorIdentity"
+    },
+    "cases": {
+      "items": {
+        "$ref": "#/$defs/CaseLabels"
+      },
+      "title": "Cases",
+      "type": "array"
+    },
+    "schema_version": {
+      "const": "policy_v1_labels_1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "set_id": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Set Id",
+      "type": "string"
+    }
+  },
+  "required": [
+    "schema_version",
+    "set_id",
+    "annotator",
+    "cases"
+  ],
+  "title": "LabelSet",
+  "type": "object"
+}

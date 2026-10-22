@@ -35,9 +35,14 @@ interface EditFormState {
   source_url: string;
   official_source: boolean;
   is_active: boolean;
+  access_roles: string[];
   valid_from: string;
   valid_until: string;
 }
+
+// Papéis que podem restringir um documento (C13). A gestão documental não é
+// afetada: governa quem gere, não quem pode ser fundamentado pelo documento.
+const ACCESS_ROLES = ['student', 'user', 'staff', 'knowledge_manager', 'admin'] as const;
 
 function editFormFromDocument(document: DocumentRead): EditFormState {
   return {
@@ -47,6 +52,7 @@ function editFormFromDocument(document: DocumentRead): EditFormState {
     source_url: document.source_url ?? '',
     official_source: document.official_source,
     is_active: document.is_active,
+    access_roles: [...(document.access_roles ?? [])],
     valid_from: document.valid_from ?? '',
     valid_until: document.valid_until ?? '',
   };
@@ -178,6 +184,7 @@ export function DocumentDetailPage() {
       source_url: editForm.source_url.trim() ? editForm.source_url.trim() : null,
       official_source: editForm.official_source,
       is_active: editForm.is_active,
+      access_roles: editForm.access_roles,
       valid_from: editForm.valid_from ? editForm.valid_from : null,
       valid_until: editForm.valid_until ? editForm.valid_until : null,
     };
@@ -331,6 +338,27 @@ export function DocumentDetailPage() {
                 />
                 {t('documents.field.active')}
               </label>
+              <fieldset className="form-fieldset">
+                <legend className="field-label">{t('documents.field.accessRoles')}</legend>
+                <p className="text-sm">{t('documents.accessRolesHint')}</p>
+                {ACCESS_ROLES.map((role) => (
+                  <label key={role} className="checkbox-field">
+                    <input
+                      type="checkbox"
+                      checked={editForm.access_roles.includes(role)}
+                      onChange={(e) =>
+                        updateEditForm(
+                          'access_roles',
+                          e.target.checked
+                            ? [...editForm.access_roles, role]
+                            : editForm.access_roles.filter((item) => item !== role),
+                        )
+                      }
+                    />
+                    {role}
+                  </label>
+                ))}
+              </fieldset>
             </fieldset>
             {editError && <InlineError message={editError} />}
             <FormActions pending={updateMutation.isPending} onCancel={cancelEditing} />
@@ -345,6 +373,12 @@ export function DocumentDetailPage() {
             </dd>
             <dt>{t('documents.field.active')}</dt>
             <dd>{doc.is_active ? t('common.yes') : t('common.no')}</dd>
+            <dt>{t('documents.field.accessRoles')}</dt>
+            <dd>
+              {doc.access_roles && doc.access_roles.length > 0
+                ? doc.access_roles.join(', ')
+                : t('documents.accessRolesAll')}
+            </dd>
             {doc.description && (
               <>
                 <dt>{t('documents.field.description')}</dt>

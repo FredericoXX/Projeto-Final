@@ -25,6 +25,12 @@ import type {
   MessageRead,
 } from '../../types/conversations';
 import type { UUID } from '../../types/api';
+import { decideInConversation, getDecisionStatus } from '../../api/decision';
+import type {
+  ConversationDecisionResponse,
+  DecisionStatusRead,
+  DecisionTurnRequest,
+} from '../../types/decision';
 
 export const conversationKeys = {
   list: (offset: number) => ['conversations', { offset }] as const,
@@ -177,6 +183,40 @@ export function useRequestHandoff(conversationId: UUID) {
       // utilizador para representar o clique.
       appendPersistedMessages(queryClient, conversationId, [response.assistant_message]);
       // updated_at mudou no backend; a listagem reordena por atividade.
+      void queryClient.invalidateQueries({
+        queryKey: conversationKeys.detail(conversationId),
+      });
+      void queryClient.invalidateQueries({ queryKey: ['conversations'] });
+    },
+  });
+}
+
+export const decisionKeys = {
+  status: () => ['decision', 'status'] as const,
+};
+
+// Estado do modo experimental da política v1.7. Lido uma vez: decide apenas se a
+// opção aparece; o backend volta a recusar (503) se entretanto for desativado.
+export function useDecisionStatus() {
+  return useQuery<DecisionStatusRead>({
+    queryKey: decisionKeys.status(),
+    queryFn: ({ signal }) => getDecisionStatus(signal),
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+    retry: false,
+  });
+}
+
+export function useDecide(conversationId: UUID) {
+  const queryClient = useQueryClient();
+  return useMutation<ConversationDecisionResponse, unknown, DecisionTurnRequest>({
+    mutationFn: (payload) => decideInConversation(conversationId, payload),
+    onSuccess: (response) => {
+      // Mesmo padrão do B0: as duas mensagens persistidas são a fonte de verdade.
+      appendPersistedMessages(queryClient, conversationId, [
+        response.user_message,
+        response.assistant_message,
+      ]);
       void queryClient.invalidateQueries({
         queryKey: conversationKeys.detail(conversationId),
       });

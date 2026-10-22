@@ -380,3 +380,11 @@
     border: none;
   }
 }
+
+/* Turno da política experimental v1.7: ação, regra, clarificação e destino. */
+.decision-details {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  margin-top: var(--space-2);
+}

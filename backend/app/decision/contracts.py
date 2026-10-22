@@ -1,46 +1,44 @@
-"""Contratos mínimos de decisão agêntica (A2.1) — vocabulário, não política.
+"""Contratos mínimos de decisão agêntica — vocabulário, não política.
 
-Materializa os quatro contratos que a modelação A2.0 considerou suficientemente
-estáveis para implementação provisória. É deliberadamente aborrecido: quatro
+Materializa os contratos que a modelação A2.0 considerou suficientemente
+estáveis (A2.1), mais o valor ``ADMINISTRATIVE_ACTION_REQUIRED`` que a política
+de decisão v1.7 acrescenta à dimensão D2. É deliberadamente aborrecido:
 enumerações e nada mais.
 
-Estado nesta fase: o módulo existe e é testado, mas **nenhum consumidor o usa**.
-Apagá-lo não altera o comportamento do sistema. O padrão é o da Fase 1 da issue
-#24 (:mod:`app.documents.retrievability`): tipos primeiro, consumidores depois.
+Consumidores atuais (verificados no código, não presumidos): o encaminhamento
+humano E1 (:mod:`app.services.human_handoff_service`) usa ``DecisionOutcome``;
+a extensão experimental da política v1.7 usa todos — os contratos tipados das
+dimensões em :mod:`app.decision.dimensions` e as regras em
+:mod:`app.decision.policy`.
 
 Isto **não é uma policy**
 ------------------------
 
-Não existe aqui — nem deve passar a existir nesta fase — qualquer regra que
-ligue um contrato a outro. Em particular, e porque são as tentações previsíveis:
+Este módulo continua sem qualquer regra que ligue um contrato a outro. As
+associações da v1.7 — por exemplo, ``PERSONAL_DATA_REQUIRED`` → ``ESCALATE``
+**apenas** quando existe serviço competente (R04), ``ABSTAIN`` caso contrário
+(R05) — vivem em :mod:`app.decision.policy`, num modo experimental desativado
+por omissão. A v1.7 é uma especificação de trabalho sujeita a calibração; fixá-la
+aqui transformaria uma hipótese em vocabulário.
 
-- ``PERSONAL_DATA_REQUIRED`` **não** está mapeado para ``ESCALATE``;
-- ``PARTIALLY_ANSWERABLE`` **não** está mapeado para ``ANSWER``, ``CLARIFY`` nem
-  ``ABSTAIN``;
-- ``NOT_ANSWERABLE`` **não** está mapeado para ``ABSTAIN``.
+Nota de versão: até à v1.7, este módulo declarava que nenhuma destas
+associações existia, porque as decisões estavam em aberto (A2.1, A2.2). Essa
+declaração descreve o estado anterior e foi substituída por esta.
 
-Estas associações dependem de decisões de investigação ainda abertas com a
-orientadora, e escrevê-las aqui seria fixar em código uma resposta que ainda não
-foi dada. A matriz de decisão pertence a uma fase posterior.
+Deliberadamente fora deste módulo
+---------------------------------
 
-A ordem em que estas dimensões são avaliadas também **não** está definida aqui:
-a A2.0 estabeleceu precedência conceptual, não pipeline executável.
-
-Deliberadamente fora
---------------------
-
-- ``RequestSpecificity`` (subespecificação/ambiguidade) — a A2.0 concluiu que é
-  ortogonal à answerability, mas a dimensão aguarda validação. É por isso que
-  ``AMBIGUOUS`` **não** é um valor de :class:`AnswerabilityClass`;
-- ``DecisionReason`` — provavelmente uma referência estruturada às dimensões
-  acima, e não uma enumeração paralela; as dimensões ainda não estão fixadas;
+- a especificidade do pedido (D3), a razão estruturada da decisão e o conflito
+  entre evidências (D5) — contratos compostos, não enumerações; vivem em
+  :mod:`app.decision.dimensions`. ``AMBIGUOUS`` continua a **não** ser um valor
+  de :class:`AnswerabilityClass`: a subespecificação é ortogonal à cobertura;
 - ``RetrievalOutcome`` — o que a recuperação encontrou é outro nível, e os seus
   valores plausíveis ainda dependem da estratégia de recuperação;
-- evidência contraditória — problema em aberto, que **não** deve ser arrumado
-  dentro de ``NOT_ANSWERABLE`` como decisão normativa permanente.
+- evidência contraditória **não** é arrumada dentro de ``NOT_ANSWERABLE``: tem
+  dimensão própria (D5).
 
-Os valores serializados são estáveis e explícitos: mesmo sem consumidores, um
-valor implícito hoje é uma migração de dados amanhã.
+Os valores serializados são estáveis e explícitos: um valor implícito hoje é
+uma migração de dados amanhã.
 """
 
 from enum import StrEnum
@@ -91,12 +89,19 @@ class RequestConstraint(StrEnum):
     a coleção vazia — ``frozenset()`` — e não um membro artificial dentro do
     próprio conjunto de restrições.
 
+    ``ADMINISTRATIVE_ACTION_REQUIRED`` — o pedido só fica satisfeito com a
+    execução de um ato administrativo (inscrever, anular, emitir, alterar),
+    que o assistente não pratica. "Inscreva-me" tem a restrição; "Como faço a
+    inscrição?" não a tem, porque pede informação sobre o procedimento.
+    Acrescentado pela política v1.7 (D2); a A2.0 tinha-o adiado.
+
     Outros valores candidatos foram considerados pela A2.0 e ficaram de fora
-    por não mudarem nenhuma decisão nesta fase, ou por nomearem o desfecho em
-    vez da propriedade do pedido.
+    por não mudarem nenhuma decisão, ou por nomearem o desfecho em vez da
+    propriedade do pedido.
     """
 
     PERSONAL_DATA_REQUIRED = "personal_data_required"
+    ADMINISTRATIVE_ACTION_REQUIRED = "administrative_action_required"
 
 
 class AnswerabilityClass(StrEnum):
@@ -149,9 +154,8 @@ class DecisionOutcome(StrEnum):
     ``ABSTAIN`` e ``ESCALATE`` não são sinónimos: o primeiro termina o fluxo, o
     segundo declara que o caso continua com uma pessoa.
 
-    ``CLARIFY`` existe aqui sem que exista ainda a dimensão que descreverá
-    *quando* é apropriado; é intencional, porque a ação faz parte do espaço de
-    decisão independentemente de como vier a ser justificada.
+    *Quando* ``CLARIFY`` é apropriado é decidido pela dimensão D3 e pela regra
+    R06 da política v1.7, fora deste módulo.
 
     Falhas técnicas — indisponibilidade do fornecedor, rejeição da validação
     determinística — não são desfechos desta enumeração: o sistema não escolheu
