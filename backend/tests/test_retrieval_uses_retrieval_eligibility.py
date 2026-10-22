@@ -50,7 +50,7 @@ from app.retrieval.base import RetrievalContext
 from app.retrieval.lexical import PostgresLexicalRetriever
 from tests.moment06_support import (
     create_searchable_document,
-    setup_institution_with_admin,
+    setup_institution_with_manager,
     upload_version,
 )
 
@@ -296,7 +296,7 @@ def test_the_version_join_does_not_duplicate_candidates(
     ``DocumentVersion`` alterasse a cardinalidade, ou se C5 deixasse de
     escolher a versão efetiva, a contagem mudaria.
     """
-    institution, headers, _ = setup_institution_with_admin(client)
+    institution, headers, _ = setup_institution_with_manager(client)
     document, first = create_searchable_document(
         client, headers, f"O {TERM} antigo mantinha o horario alargado."
     )
@@ -333,7 +333,7 @@ def test_the_statement_selects_exactly_the_eligible_chunks_that_match(
     seja da política e não do índice; e existe um documento admissível **sem**
     o termo, para que a interseção não seja trivialmente igual à política.
     """
-    institution, headers, _ = setup_institution_with_admin(client)
+    institution, headers, _ = setup_institution_with_manager(client)
     create_searchable_document(client, headers, f"O {TERM} principal recebe visitas.")
     create_searchable_document(
         client, headers, f"O {TERM} secundario nao e oficial.", official_source=False
@@ -356,7 +356,7 @@ def test_the_statement_selects_exactly_the_eligible_chunks_that_match(
     create_searchable_document(client, headers, "A biblioteca abre ao sabado.")
 
     # Instituição vizinha com o mesmo termo: C1–C3 em jogo.
-    _, other_headers, _ = setup_institution_with_admin(client)
+    _, other_headers, _ = setup_institution_with_manager(client)
     create_searchable_document(
         client, other_headers, f"O {TERM} da outra instituicao tambem existe."
     )

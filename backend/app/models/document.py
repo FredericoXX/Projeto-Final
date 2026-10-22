@@ -66,7 +66,7 @@ class Document(Base):
         index=True,
     )
 
-    # Nunca aceite do payload: é sempre o admin autenticado que cria.
+    # Nunca aceite do payload: é sempre o gestor documental autenticado que cria.
     created_by_user_id: Mapped[UUID] = mapped_column(
         nullable=False,
         index=True,

@@ -2,6 +2,7 @@ import { http, HttpResponse } from 'msw';
 import {
   activeConversation,
   adminUser,
+  knowledgeManagerUser,
   handoffDestination,
   makeHandoffMessage,
   makeVersion,
@@ -49,7 +50,14 @@ export const handlers = [
     return domainError('authentication_failed', 'Invalid credentials.', 401);
   }),
 
-  http.get(`${API}/auth/me`, () => HttpResponse.json(adminUser)),
+  // A conta por omissão gere documentos; os testes de outros papéis substituem-na.
+  http.get(`${API}/auth/me`, () => HttpResponse.json(knowledgeManagerUser)),
+
+  // Por omissão, a integração institucional não está configurada: nenhum
+  // teste vê dados simulados sem os pedir explicitamente.
+  http.get(`${API}/academic-requests/access`, () =>
+    HttpResponse.json({ available: false, reason: 'not_configured', simulated: false }),
+  ),
 
   http.get(`${API}/conversations`, () =>
     HttpResponse.json({ items: [activeConversation], total: 1, limit: 20, offset: 0 }),

@@ -18,6 +18,7 @@ from fastapi.testclient import TestClient
 from app.core.config import settings
 from app.services import document_version_service
 from app.storage.local import LocalDocumentStorage, StoragePathError
+from tests.role_support import create_knowledge_manager
 
 BOOTSTRAP_HEADERS = {"X-Bootstrap-Token": settings.bootstrap_token or ""}
 
@@ -121,6 +122,11 @@ def _create_admin_and_login(client: TestClient, institution_id: str) -> dict[str
     return {"Authorization": f"Bearer {login.json()['access_token']}"}
 
 
+def _create_manager_and_login(client: TestClient, institution_id: str) -> dict[str, str]:
+    """Gestor documental da instituição: o admin deixou de gerir documentos."""
+    return create_knowledge_manager(client, _create_admin_and_login(client, institution_id))
+
+
 def _create_document(client: TestClient, headers: dict[str, str]) -> str:
     response = client.post(
         "/api/v1/documents", json={"title": "Storage Test"}, headers=headers
@@ -153,7 +159,7 @@ def _stored_files(tmp_path: Path) -> list[Path]:
 
 def test_temp_file_removed_after_unsupported_type(client: TestClient, tmp_path: Path) -> None:
     institution_id = _create_institution(client)
-    headers = _create_admin_and_login(client, institution_id)
+    headers = _create_manager_and_login(client, institution_id)
     document_id = _create_document(client, headers)
 
     response = _upload(
@@ -172,7 +178,7 @@ def test_temp_file_removed_after_duplicate_checksum(
     client: TestClient, tmp_path: Path
 ) -> None:
     institution_id = _create_institution(client)
-    headers = _create_admin_and_login(client, institution_id)
+    headers = _create_manager_and_login(client, institution_id)
     document_id = _create_document(client, headers)
     content = b"duplicated bytes"
 
@@ -194,7 +200,7 @@ def test_temp_file_removed_after_size_limit_exceeded(
 ) -> None:
     monkeypatch.setattr(settings, "document_max_file_size_mb", 1)
     institution_id = _create_institution(client)
-    headers = _create_admin_and_login(client, institution_id)
+    headers = _create_manager_and_login(client, institution_id)
     document_id = _create_document(client, headers)
 
     response = _upload(client, headers, document_id, b"x" * (1024 * 1024 + 1))
@@ -213,7 +219,7 @@ def test_final_file_removed_when_commit_fails(
         document_version_service, "_ensure_checksum_unique", lambda *args: None
     )
     institution_id = _create_institution(client)
-    headers = _create_admin_and_login(client, institution_id)
+    headers = _create_manager_and_login(client, institution_id)
     document_id = _create_document(client, headers)
     content = b"raced content"
 

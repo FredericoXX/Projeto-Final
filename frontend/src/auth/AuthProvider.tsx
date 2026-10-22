@@ -3,13 +3,13 @@ import { useQueryClient } from '@tanstack/react-query';
 import { fetchCurrentUser, login as loginRequest } from '../api/auth';
 import { setUnauthorizedHandler } from '../api/client';
 import { tokenStorage } from '../api/token';
-import type { UserRead } from '../types/auth';
+import type { CurrentUserRead, Permission } from '../types/auth';
 import { AuthContext, type AuthContextValue, type AuthStatus } from './AuthContext';
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient();
   const [status, setStatus] = useState<AuthStatus>('initializing');
-  const [user, setUser] = useState<UserRead | null>(null);
+  const [user, setUser] = useState<CurrentUserRead | null>(null);
 
   const clearSession = useCallback(() => {
     tokenStorage.clear();
@@ -70,15 +70,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     clearSession();
   }, [clearSession]);
 
+  const can = useCallback(
+    (permission: Permission) => user?.permissions?.includes(permission) ?? false,
+    [user],
+  );
+
   const value = useMemo<AuthContextValue>(
     () => ({
       status,
       user,
-      isAdmin: user?.role === 'admin',
+      can,
       login,
       logout,
     }),
-    [status, user, login, logout],
+    [status, user, can, login, logout],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

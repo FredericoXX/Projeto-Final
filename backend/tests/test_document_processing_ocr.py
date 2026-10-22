@@ -29,6 +29,7 @@ from app.services.document_extraction_service import (
 from app.services.ocr_engine import OcrPageResult, OcrWord, build_page_result
 from app.storage import get_document_storage
 from tests.pdf_utils import build_pdf
+from tests.role_support import create_knowledge_manager
 
 BOOTSTRAP_HEADERS = {"X-Bootstrap-Token": settings.bootstrap_token or ""}
 _ADMIN_PASSWORD = "supersecret123"
@@ -134,6 +135,11 @@ def _create_admin_and_login(client: TestClient, institution_id: str) -> dict[str
     return {"Authorization": f"Bearer {login.json()['access_token']}"}
 
 
+def _create_manager_and_login(client: TestClient, institution_id: str) -> dict[str, str]:
+    """Gestor documental da instituição: o admin deixou de gerir documentos."""
+    return create_knowledge_manager(client, _create_admin_and_login(client, institution_id))
+
+
 def _create_document(client: TestClient, headers: dict[str, str]) -> dict:
     response = client.post(
         "/api/v1/documents", json={"title": "Documento OCR"}, headers=headers
@@ -144,7 +150,7 @@ def _create_document(client: TestClient, headers: dict[str, str]) -> dict:
 
 def _setup(client: TestClient) -> tuple[str, dict[str, str], dict]:
     institution_id = _create_institution(client)
-    headers = _create_admin_and_login(client, institution_id)
+    headers = _create_manager_and_login(client, institution_id)
     document = _create_document(client, headers)
     return institution_id, headers, document
 
@@ -425,7 +431,7 @@ def test_version_of_other_institution_remains_404(
     body = _upload(client, headers_a, document_a["id"], _scanned_pdf_bytes()).json()
 
     institution_b = _create_institution(client)
-    headers_b = _create_admin_and_login(client, institution_b)
+    headers_b = _create_manager_and_login(client, institution_b)
     response = client.get(
         f"/api/v1/documents/{document_a['id']}/versions/{body['id']}",
         headers=headers_b,

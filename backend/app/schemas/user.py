@@ -3,11 +3,10 @@ from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, EmailStr, field_validator
 
+from app.core.permissions import ALLOWED_ROLES, permissions_for_role
+
 FULL_NAME_MAX_LENGTH = 255
 PASSWORD_MIN_LENGTH = 8
-
-# Roles suportadas nesta fase; genérico e não específico de nenhuma instituição.
-ALLOWED_ROLES = {"admin", "staff", "student", "user"}
 
 
 def _normalize_full_name(value: str) -> str:
@@ -109,6 +108,25 @@ class UserRead(BaseModel):
     updated_at: datetime
 
     model_config = ConfigDict(from_attributes=True)
+
+
+class CurrentUserRead(UserRead):
+    """A conta autenticada e as permissões efetivas do seu papel persistido.
+
+    As permissões vêm da matriz central (:mod:`app.core.permissions`): o
+    frontend adapta a interface a esta lista em vez de replicar a matriz. Não
+    é uma fronteira de segurança — o backend autoriza cada pedido.
+    """
+
+    permissions: list[str]
+
+    @classmethod
+    def from_user(cls, user: object) -> "CurrentUserRead":
+        base = UserRead.model_validate(user)
+        return cls(
+            **base.model_dump(),
+            permissions=sorted(permission.value for permission in permissions_for_role(base.role)),
+        )
 
 
 class UserListResponse(BaseModel):

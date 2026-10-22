@@ -10,9 +10,9 @@ from app.models.document_chunk import DocumentChunk
 from app.models.document_version import DocumentVersion
 from scripts.rebuild_document_chunks import rebuild_document_chunks
 from tests.test_retrieval import (
-    _create_admin,
     _create_document,
     _create_institution,
+    _create_manager,
     _upload,
 )
 
@@ -32,7 +32,7 @@ def test_processed_version_without_chunks_receives_chunks(
     client: TestClient, test_session_factory: sessionmaker[Session]
 ) -> None:
     institution = _create_institution(client)
-    headers, _ = _create_admin(client, institution["id"])
+    headers, _ = _create_manager(client, institution["id"])
     document = _create_document(client, headers)
     version = _upload(client, headers, document["id"], b"texto para reconstruir chunks")
 
@@ -74,7 +74,7 @@ def test_rebuild_replaces_existing_set_and_is_idempotent(
     client: TestClient, test_session_factory: sessionmaker[Session]
 ) -> None:
     institution = _create_institution(client)
-    headers, _ = _create_admin(client, institution["id"])
+    headers, _ = _create_manager(client, institution["id"])
     document = _create_document(client, headers)
     version = _upload(client, headers, document["id"], b"conteudo estavel para reconstruir")
 
@@ -115,7 +115,7 @@ def test_failed_and_pending_versions_are_ignored(
     client: TestClient, test_session_factory: sessionmaker[Session]
 ) -> None:
     institution = _create_institution(client)
-    headers, _ = _create_admin(client, institution["id"])
+    headers, _ = _create_manager(client, institution["id"])
     document = _create_document(client, headers)
     failed = _upload(client, headers, document["id"], b"\xff\xfe invalid")
     pending = _upload(client, headers, document["id"], b"conteudo que sera pendente")
@@ -138,12 +138,12 @@ def test_rebuild_filters_and_institution_isolation(
     client: TestClient, test_session_factory: sessionmaker[Session]
 ) -> None:
     institution_a = _create_institution(client)
-    headers_a, _ = _create_admin(client, institution_a["id"])
+    headers_a, _ = _create_manager(client, institution_a["id"])
     document_a = _create_document(client, headers_a)
     version_a = _upload(client, headers_a, document_a["id"], b"conteudo instituicao alfa")
 
     institution_b = _create_institution(client)
-    headers_b, _ = _create_admin(client, institution_b["id"])
+    headers_b, _ = _create_manager(client, institution_b["id"])
     document_b = _create_document(client, headers_b)
     version_b = _upload(client, headers_b, document_b["id"], b"conteudo instituicao beta")
 

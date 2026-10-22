@@ -99,11 +99,10 @@ def request_human_handoff(
       destino que foi efetivamente apresentado;
     - o **utilizador** é relido e bloqueado porque ``current_user`` foi lido na
       autenticação, num statement anterior. Em READ COMMITTED, uma desativação
-      ou despromoção que faça commit entretanto não seria visível a esta
-      transação, e o handoff completaria com identidade obsoleta. O papel usado
-      a seguir é o **persistido**, não o que veio do token: um admin
-      despromovido concorrentemente não deve continuar a alcançar conversas de
-      outros utilizadores;
+      que faça commit entretanto não seria visível a esta transação, e o
+      handoff completaria com identidade obsoleta. O papel já não alarga o
+      acesso: a conversa é sempre procurada por posse, para qualquer papel,
+      pelo que uma alteração concorrente de papel não abre conversas alheias;
     - a **conversa** garante que um fecho concorrente não é ultrapassado.
     """
     user_id = current_user.id
@@ -139,7 +138,6 @@ def request_human_handoff(
             db,
             user_id=user_id,
             institution_id=institution_id,
-            user_role=persisted_user.role,
             conversation_id=conversation_id,
             for_update=True,
         )

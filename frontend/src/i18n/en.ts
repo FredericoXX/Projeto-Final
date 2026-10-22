@@ -10,6 +10,7 @@ export const en: Record<keyof typeof pt, string> = {
 
   'nav.conversations': 'Conversations',
   'nav.documents': 'Documents',
+  'nav.academicRequests': 'My requests',
   'nav.skipToContent': 'Skip to content',
   'nav.menu': 'Menu',
 
@@ -171,4 +172,27 @@ export const en: Record<keyof typeof pt, string> = {
   'form.required': 'This field is required.',
   'form.invalidUrl': 'Enter a valid HTTP or HTTPS URL.',
   'form.invalidDateRange': 'The start date cannot be after the end date.',
+  'academicRequests.title': 'My academic requests',
+  'academicRequests.intro':
+    "Requests you submitted to academic services. This information comes from the institution's academic system, not from the assistant's documents.",
+  'academicRequests.empty': 'There are no academic requests associated with your account.',
+  'academicRequests.requestId': 'Identifier',
+  'academicRequests.officialStatus': 'Official status',
+  'academicRequests.updatedAt': 'Updated',
+  'academicRequests.nextStep': 'Next step given by the source',
+  'academicRequests.statusAsReceived':
+    'The status is shown as received from the academic system, without interpretation.',
+  'academicRequests.provenance': 'Source: institutional academic system · queried at {queriedAt}',
+  'academicRequests.sourceUpdatedAt': 'source updated at {updatedAt}',
+  'academicRequests.simulatedBadge': 'Demo',
+  'academicRequests.simulatedNotice':
+    'Simulated mode: the requests shown are synthetic demonstration data and do not correspond to real institutional records.',
+  'academicRequests.notConfigured': 'Academic request lookup is not available in this installation.',
+  'academicRequests.notLinked':
+    'Your account is not yet linked to an academic record. Please contact your institution.',
+
+  'error.institutionalAccessDenied': 'You are not authorised to consult these academic records.',
+  'error.institutionalNotConfigured': 'The academic system integration is not configured.',
+  'error.institutionalUnavailable':
+    'The academic system is temporarily unavailable. Please try again later.',
 };

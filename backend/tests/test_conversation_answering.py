@@ -34,6 +34,7 @@ from app.models.message import Message
 from app.models.message_source import MessageSource
 from app.models.user import User
 from app.services import conversation_answering_service
+from tests.role_support import create_account_and_login
 
 BOOTSTRAP_HEADERS = {"X-Bootstrap-Token": settings.bootstrap_token or ""}
 _ADMIN_PASSWORD = "supersecret123"
@@ -117,6 +118,16 @@ def _create_admin(client: TestClient, institution_id: str) -> tuple[dict[str, st
         {"Authorization": f"Bearer {login.json()['access_token']}"},
         response.json()["id"],
     )
+
+
+def _create_manager(client: TestClient, institution_id: str) -> tuple[dict[str, str], str]:
+    """Gestor documental da instituição: carrega documentos e conversa.
+
+    O admin institucional deixou de gerir documentos; os cenários que
+    precisam de um mesmo ator para carregar fontes e perguntar usam este.
+    """
+    admin_headers, _ = _create_admin(client, institution_id)
+    return create_account_and_login(client, admin_headers, role="knowledge_manager")
 
 
 def _create_user(
@@ -223,15 +234,15 @@ def _row_counts(
     return message_count, source_count
 
 
-def _setup_admin_conversation(
+def _setup_manager_conversation(
     client: TestClient,
     *,
     language: str = "pt",
 ) -> tuple[dict, dict[str, str], str, dict]:
     institution = _create_institution(client)
-    headers, admin_id = _create_admin(client, institution["id"])
+    headers, manager_id = _create_manager(client, institution["id"])
     conversation = _create_conversation(client, headers, language=language)
-    return institution, headers, admin_id, conversation
+    return institution, headers, manager_id, conversation
 
 
 def test_answered_turn_persists_messages_citations_snapshots_and_history(
@@ -241,13 +252,16 @@ def test_answered_turn_persists_messages_citations_snapshots_and_history(
 ) -> None:
     institution = _create_institution(client)
     admin_headers, _ = _create_admin(client, institution["id"])
+    manager_headers, _ = create_account_and_login(
+        client, admin_headers, role="knowledge_manager"
+    )
     user_headers, user_id = _create_user(client, admin_headers)
     conversation = _create_conversation(client, user_headers)
 
     for index in range(3):
         _create_searchable_document(
             client,
-            admin_headers,
+            manager_headers,
             f"matricula prazo regulamento institucional documento {index}",
             title=f"Regulamento {index}",
             source_url=f"https://example.edu/regulamento-{index}",
@@ -341,8 +355,10 @@ def test_answered_turn_persists_messages_citations_snapshots_and_history(
         f"/api/v1/conversations/{conversation['id']}/messages",
         headers=admin_headers,
     )
-    assert owner_history.status_code == admin_history.status_code == 200
-    assert owner_history.json() == admin_history.json()
+    # Expectativa alterada intencionalmente: o admin lia o mesmo histórico
+    # (200); deixou de ter acesso a conversas de terceiros.
+    assert owner_history.status_code == 200
+    assert admin_history.status_code == 404
     assert owner_history.json()["total"] == 2
     assert [item["role"] for item in owner_history.json()["items"]] == [
         "user",
@@ -385,7 +401,7 @@ def test_insufficient_evidence_persists_two_messages_without_sources_or_provider
     language: str,
     expected_answer: str,
 ) -> None:
-    _, headers, user_id, conversation = _setup_admin_conversation(client, language=language)
+    _, headers, user_id, conversation = _setup_manager_conversation(client, language=language)
     generator = override_generator(
         FakeAnswerGenerator(exception=AssertionError("provider must not be called"))
     )
@@ -419,7 +435,7 @@ def test_partial_term_match_persists_no_sources_and_never_calls_provider(
     a 1 dos 3 termos. Nem esse candidato fraco chega ao answering — o turno
     é persistido como insufficient_evidence, sem message_sources e sem
     qualquer chamada ao fornecedor."""
-    _, headers, _, conversation = _setup_admin_conversation(client)
+    _, headers, _, conversation = _setup_manager_conversation(client)
     _create_searchable_document(
         client,
         headers,
@@ -448,7 +464,7 @@ def test_ask_requires_authentication_and_rejects_invalid_payloads_without_writes
     test_session_factory: sessionmaker[Session],
     override_generator,
 ) -> None:
-    _, headers, _, conversation = _setup_admin_conversation(client)
+    _, headers, _, conversation = _setup_manager_conversation(client)
     generator = override_generator(FakeAnswerGenerator())
 
     assert _ask(client, conversation["id"], {}).status_code == 401
@@ -493,7 +509,7 @@ def test_closed_or_archived_conversation_rejects_ask_before_retrieval(
     override_generator,
     conversation_status: str,
 ) -> None:
-    _, headers, _, conversation = _setup_admin_conversation(client)
+    _, headers, _, conversation = _setup_manager_conversation(client)
     changed = client.patch(
         f"/api/v1/conversations/{conversation['id']}",
         json={"status": conversation_status},
@@ -514,14 +530,20 @@ def test_access_rules_and_retrieval_are_isolated_for_user_admin_and_tenant(
     test_session_factory: sessionmaker[Session],
     override_generator,
 ) -> None:
+    # Expectativa alterada intencionalmente: antes, o admin da instituição A
+    # perguntava na conversa do dono (201) e lia o seu histórico (200). O
+    # admin institucional deixou de alcançar conversas de terceiros, pelo que
+    # passa a ser recusado como qualquer outra conta alheia — antes de
+    # qualquer chamada ao gerador.
     institution_a = _create_institution(client, name="Institution A")
-    admin_a, admin_a_id = _create_admin(client, institution_a["id"])
+    admin_a, _ = _create_admin(client, institution_a["id"])
+    manager_a, _ = create_account_and_login(client, admin_a, role="knowledge_manager")
     owner_a, owner_a_id = _create_user(client, admin_a)
     stranger_a, _ = _create_user(client, admin_a)
     conversation_a = _create_conversation(client, owner_a)
     document_a, _ = _create_searchable_document(
         client,
-        admin_a,
+        manager_a,
         "isolamento comum matricula prazo alfa",
         title="Fonte A",
         source_url="https://a.example.edu/fonte",
@@ -529,9 +551,10 @@ def test_access_rules_and_retrieval_are_isolated_for_user_admin_and_tenant(
 
     institution_b = _create_institution(client, name="Institution B")
     admin_b, _ = _create_admin(client, institution_b["id"])
+    manager_b, _ = create_account_and_login(client, admin_b, role="knowledge_manager")
     document_b, _ = _create_searchable_document(
         client,
-        admin_b,
+        manager_b,
         "isolamento comum matricula prazo beta",
         title="Fonte B",
         source_url="https://b.example.edu/fonte",
@@ -539,16 +562,23 @@ def test_access_rules_and_retrieval_are_isolated_for_user_admin_and_tenant(
     generator = override_generator(FakeAnswerGenerator())
 
     same_tenant_denied = _ask(client, conversation_a["id"], stranger_a)
+    same_tenant_admin_denied = _ask(client, conversation_a["id"], admin_a)
+    same_tenant_manager_denied = _ask(client, conversation_a["id"], manager_a)
     other_tenant_denied = _ask(client, conversation_a["id"], admin_b)
-    assert same_tenant_denied.status_code == other_tenant_denied.status_code == 404
+    assert (
+        same_tenant_denied.status_code
+        == same_tenant_admin_denied.status_code
+        == same_tenant_manager_denied.status_code
+        == other_tenant_denied.status_code
+        == 404
+    )
     assert generator.calls == []
 
     owner_response = _ask(client, conversation_a["id"], owner_a)
-    admin_response = _ask(client, conversation_a["id"], admin_a)
-    assert owner_response.status_code == admin_response.status_code == 201
+    second_response = _ask(client, conversation_a["id"], owner_a)
+    assert owner_response.status_code == second_response.status_code == 201
     assert owner_response.json()["user_message"]["user_id"] == owner_a_id
-    assert admin_response.json()["user_message"]["user_id"] == admin_a_id
-    for response in (owner_response, admin_response):
+    for response in (owner_response, second_response):
         source = response.json()["assistant_message"]["sources"][0]
         assert source["document_id"] == document_a["id"]
         assert document_b["id"] not in response.text
@@ -567,8 +597,9 @@ def test_access_rules_and_retrieval_are_isolated_for_user_admin_and_tenant(
         f"/api/v1/conversations/{conversation_a['id']}/messages",
         headers=admin_a,
     )
-    assert owner_history.status_code == admin_history.status_code == 200
-    assert owner_history.json() == admin_history.json()
+    assert owner_history.status_code == 200
+    assert admin_history.status_code == 404
+    assert "isolamento" not in admin_history.text
     assert [item["role"] for item in owner_history.json()["items"]] == [
         "user",
         "assistant",
@@ -594,7 +625,7 @@ def test_provider_and_invalid_output_failures_do_not_persist_partial_turns(
     expected_status: int,
     expected_code: str,
 ) -> None:
-    _, headers, _, conversation = _setup_admin_conversation(client)
+    _, headers, _, conversation = _setup_manager_conversation(client)
     _create_searchable_document(
         client,
         headers,
@@ -634,7 +665,7 @@ def test_source_changed_during_generation_returns_conflict_without_messages(
     test_session_factory: sessionmaker[Session],
     override_generator,
 ) -> None:
-    _, headers, _, conversation = _setup_admin_conversation(client)
+    _, headers, _, conversation = _setup_manager_conversation(client)
     document, _ = _create_searchable_document(
         client,
         headers,
@@ -664,7 +695,7 @@ def test_chunk_content_changed_during_generation_returns_conflict_without_messag
     test_session_factory: sessionmaker[Session],
     override_generator,
 ) -> None:
-    _, headers, _, conversation = _setup_admin_conversation(client)
+    _, headers, _, conversation = _setup_manager_conversation(client)
     _create_searchable_document(
         client,
         headers,
@@ -705,7 +736,7 @@ def test_conversation_closed_during_generation_returns_conflict_without_messages
     test_session_factory: sessionmaker[Session],
     override_generator,
 ) -> None:
-    _, headers, _, conversation = _setup_admin_conversation(client)
+    _, headers, _, conversation = _setup_manager_conversation(client)
     _create_searchable_document(
         client,
         headers,
@@ -730,39 +761,59 @@ def test_conversation_closed_during_generation_returns_conflict_without_messages
     assert _row_counts(test_session_factory) == (0, 0)
 
 
-def test_user_role_is_reauthorized_after_generation_before_persistence(
+def test_role_change_during_generation_never_opens_another_users_conversation(
     client: TestClient,
     test_session_factory: sessionmaker[Session],
     override_generator,
 ) -> None:
+    """A posse é verificada antes e depois da geração, e nenhuma depende do papel.
+
+    Expectativa alterada intencionalmente: antes, um admin alcançava a conversa
+    alheia, o gerador era chamado uma vez, e só a despromoção concorrente
+    fazia falhar a persistência. Agora o admin é recusado à partida; e uma
+    promoção concorrente a admin, durante a geração de um turno próprio, não
+    alarga o acesso — o turno persiste na conversa do próprio e só nela.
+    """
     institution = _create_institution(client)
-    admin_headers, admin_id = _create_admin(client, institution["id"])
+    admin_headers, _ = _create_admin(client, institution["id"])
+    manager_headers, _ = create_account_and_login(
+        client, admin_headers, role="knowledge_manager"
+    )
     owner_headers, _ = _create_user(client, admin_headers)
+    asker_headers, asker_id = _create_user(client, admin_headers)
     owner_conversation = _create_conversation(client, owner_headers)
+    asker_conversation = _create_conversation(client, asker_headers)
     _create_searchable_document(
         client,
-        admin_headers,
+        manager_headers,
         "matricula prazo institucional",
         title="Regulamento",
         source_url="https://example.edu/regulamento",
     )
 
-    def remove_admin_access(_: AnsweringContext) -> None:
+    generator = override_generator(FakeAnswerGenerator())
+    denied = _ask(client, owner_conversation["id"], admin_headers)
+    assert denied.status_code == 404
+    assert denied.json()["detail"]["code"] == "resource_not_found"
+    assert generator.calls == []
+
+    def promote_to_admin(_: AnsweringContext) -> None:
         with test_session_factory() as db:
-            stored = db.get(User, uuid.UUID(admin_id))
+            stored = db.get(User, uuid.UUID(asker_id))
             assert stored is not None
-            stored.role = "student"
+            stored.role = "admin"
             db.commit()
 
-    generator = override_generator(
-        FakeAnswerGenerator(callback=remove_admin_access)
-    )
-    response = _ask(client, owner_conversation["id"], admin_headers)
-
-    assert response.status_code == 404
-    assert response.json()["detail"]["code"] == "resource_not_found"
+    generator = override_generator(FakeAnswerGenerator(callback=promote_to_admin))
+    own_turn = _ask(client, asker_conversation["id"], asker_headers)
+    assert own_turn.status_code == 201
+    assert own_turn.json()["conversation_id"] == asker_conversation["id"]
     assert len(generator.calls) == 1
-    assert _row_counts(test_session_factory) == (0, 0)
+
+    still_denied = _ask(client, owner_conversation["id"], asker_headers)
+    assert still_denied.status_code == 404
+    assert len(generator.calls) == 1
+    assert _row_counts(test_session_factory) == (2, 1)
 
 
 def test_successful_turn_uses_exactly_one_persistence_commit(
@@ -771,7 +822,7 @@ def test_successful_turn_uses_exactly_one_persistence_commit(
     override_generator,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    _, headers, _, conversation = _setup_admin_conversation(client)
+    _, headers, _, conversation = _setup_manager_conversation(client)
     _create_searchable_document(
         client,
         headers,
@@ -811,7 +862,7 @@ def test_transaction_rolls_back_everything_on_persistence_failure(
     monkeypatch: pytest.MonkeyPatch,
     failure_stage: str,
 ) -> None:
-    _, headers, _, conversation = _setup_admin_conversation(client)
+    _, headers, _, conversation = _setup_manager_conversation(client)
     _create_searchable_document(
         client,
         headers,

@@ -31,6 +31,7 @@ from app.services import document_processing_service, message_source_service
 from app.services.document_extraction_service import ExtractionResult
 from app.storage import get_document_storage
 from scripts.rebuild_document_chunks import rebuild_document_chunks
+from tests.role_support import create_account_and_login
 
 BOOTSTRAP_HEADERS = {"X-Bootstrap-Token": settings.bootstrap_token or ""}
 _ADMIN_PASSWORD = "supersecret123"
@@ -91,6 +92,17 @@ def _create_admin(
     assert login.status_code == 200
     headers = {"Authorization": f"Bearer {login.json()['access_token']}"}
     return headers, uuid.UUID(registered.json()["id"])
+
+
+def _create_manager(
+    client: TestClient, institution_id: str
+) -> tuple[dict[str, str], uuid.UUID]:
+    """Gestor documental da instituição: o admin deixou de gerir documentos."""
+    admin_headers, _ = _create_admin(client, institution_id)
+    headers, user_id = create_account_and_login(
+        client, admin_headers, role="knowledge_manager"
+    )
+    return headers, uuid.UUID(user_id)
 
 
 def _create_document(
@@ -318,7 +330,7 @@ def test_referenced_version_returns_409_without_mutating_history(
     local_answer_generator: AnswerGenerator,
 ) -> None:
     institution = _create_institution(client)
-    headers, _ = _create_admin(client, institution["id"])
+    headers, _ = _create_manager(client, institution["id"])
     document = _create_document(client, headers)
     version = _upload(
         client,
@@ -366,7 +378,7 @@ def test_unreferenced_version_can_be_reprocessed(
     test_session_factory: sessionmaker[Session],
 ) -> None:
     institution = _create_institution(client)
-    headers, _ = _create_admin(client, institution["id"])
+    headers, _ = _create_manager(client, institution["id"])
     document = _create_document(client, headers)
     version = _upload(client, headers, document["id"], "versao sem qualquer referencia")
     version_id = uuid.UUID(version["id"])
@@ -406,7 +418,7 @@ def test_new_version_is_used_without_rewriting_old_answer_history(
     local_answer_generator: AnswerGenerator,
 ) -> None:
     institution = _create_institution(client)
-    headers, _ = _create_admin(client, institution["id"])
+    headers, _ = _create_manager(client, institution["id"])
     document = _create_document(client, headers)
     version_1 = _upload(
         client,
@@ -469,7 +481,7 @@ def test_rebuild_skips_referenced_and_remains_idempotent_for_other_versions(
     local_answer_generator: AnswerGenerator,
 ) -> None:
     institution = _create_institution(client)
-    headers, _ = _create_admin(client, institution["id"])
+    headers, _ = _create_manager(client, institution["id"])
 
     referenced_document = _create_document(client, headers, title="Documento citado")
     referenced_version = _upload(
@@ -529,7 +541,7 @@ def test_concurrent_source_first_makes_reprocessing_fail_without_extraction(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     institution = _create_institution(client)
-    headers, user_id = _create_admin(client, institution["id"])
+    headers, user_id = _create_manager(client, institution["id"])
     institution_id = uuid.UUID(institution["id"])
     document = _create_document(client, headers)
     version = _upload(client, headers, document["id"], "fonte primeiro concorrencia")
@@ -637,7 +649,7 @@ def test_concurrent_reprocessing_first_rejects_stale_source_then_completes(
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
     institution = _create_institution(client)
-    headers, user_id = _create_admin(client, institution["id"])
+    headers, user_id = _create_manager(client, institution["id"])
     institution_id = uuid.UUID(institution["id"])
     document = _create_document(client, headers)
     version = _upload(client, headers, document["id"], "reprocessamento primeiro fonte")
@@ -753,7 +765,7 @@ def test_reverse_multi_version_source_orders_do_not_deadlock(
     por isso ambas terminam, ainda que uma espere pela outra.
     """
     institution = _create_institution(client)
-    headers, user_id = _create_admin(client, institution["id"])
+    headers, user_id = _create_manager(client, institution["id"])
     institution_id = uuid.UUID(institution["id"])
     document_a = _create_document(client, headers, title="Fonte concorrente A")
     document_b = _create_document(client, headers, title="Fonte concorrente B")

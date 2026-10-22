@@ -3,8 +3,9 @@ import uuid
 from fastapi import APIRouter, Depends, Query, status
 from sqlalchemy.orm import Session
 
-from app.api.dependencies.auth import require_admin
+from app.api.dependencies.auth import require_permission
 from app.api.dependencies.bootstrap import require_bootstrap_token
+from app.core.permissions import Permission
 from app.database.session import get_db
 from app.models.user import User
 from app.schemas.institution import (
@@ -26,6 +27,8 @@ from app.services import institution_service
 # à própria instituição desse admin — nunca ao institution_id de outro
 # tenant, que é tratado como inexistente (404) para não revelar a sua
 # existência.
+require_institution_manager = require_permission(Permission.INSTITUTION_MANAGE)
+
 router = APIRouter(prefix="/institutions", tags=["Institutions"])
 
 
@@ -48,7 +51,7 @@ def list_institutions(
     limit: int = Query(default=20, ge=1, le=100),
     offset: int = Query(default=0, ge=0),
     db: Session = Depends(get_db),
-    admin: User = Depends(require_admin),
+    admin: User = Depends(require_institution_manager),
 ) -> InstitutionListResponse:
     items, total = institution_service.list_institutions_for_admin(
         db, admin, limit=limit, offset=offset
@@ -65,7 +68,7 @@ def list_institutions(
 def get_institution(
     institution_id: uuid.UUID,
     db: Session = Depends(get_db),
-    admin: User = Depends(require_admin),
+    admin: User = Depends(require_institution_manager),
 ) -> InstitutionRead:
     institution = institution_service.get_institution_for_admin(db, admin, institution_id)
     return InstitutionRead.model_validate(institution)
@@ -76,7 +79,7 @@ def update_institution(
     institution_id: uuid.UUID,
     payload: InstitutionAdminUpdate,
     db: Session = Depends(get_db),
-    admin: User = Depends(require_admin),
+    admin: User = Depends(require_institution_manager),
 ) -> InstitutionRead:
     institution = institution_service.update_institution_for_admin(
         db, admin, institution_id, payload

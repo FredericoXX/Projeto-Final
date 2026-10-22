@@ -6,7 +6,7 @@ from app.api.dependencies.bootstrap import require_bootstrap_token
 from app.database.session import get_db
 from app.models.user import User
 from app.schemas.auth import LoginRequest, RegisterInitialAdminRequest, TokenResponse
-from app.schemas.user import UserRead
+from app.schemas.user import CurrentUserRead, UserRead
 from app.services import auth_service
 
 # O router mantém-se fino: valida apenas o formato da requisição e delega
@@ -40,6 +40,6 @@ def login(payload: LoginRequest, db: Session = Depends(get_db)) -> TokenResponse
     return TokenResponse(access_token=token)
 
 
-@router.get("/me", response_model=UserRead)
-def read_current_user(current_user: User = Depends(get_current_user)) -> UserRead:
-    return UserRead.model_validate(current_user)
+@router.get("/me", response_model=CurrentUserRead)
+def read_current_user(current_user: User = Depends(get_current_user)) -> CurrentUserRead:
+    return CurrentUserRead.from_user(current_user)

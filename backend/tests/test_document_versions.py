@@ -28,6 +28,7 @@ from app.services import (
 from app.services.document_extraction_service import ExtractionResult
 from app.storage import get_document_storage
 from tests.pdf_utils import build_pdf
+from tests.role_support import create_knowledge_manager
 
 _ADMIN_PASSWORD = "supersecret123"
 
@@ -73,6 +74,11 @@ def _create_admin_and_login(client: TestClient, institution_id: str) -> dict[str
     return {"Authorization": f"Bearer {login.json()['access_token']}"}
 
 
+def _create_manager_and_login(client: TestClient, institution_id: str) -> dict[str, str]:
+    """Gestor documental da instituição: o admin deixou de gerir documentos."""
+    return create_knowledge_manager(client, _create_admin_and_login(client, institution_id))
+
+
 def _create_document(client: TestClient, headers: dict[str, str], **overrides: object) -> dict:
     payload: dict = {"title": "Test Document"}
     payload.update(overrides)
@@ -98,7 +104,7 @@ def _upload(
 
 def _setup(client: TestClient) -> tuple[str, dict[str, str], dict]:
     institution_id = _create_institution(client)
-    headers = _create_admin_and_login(client, institution_id)
+    headers = _create_manager_and_login(client, institution_id)
     document = _create_document(client, headers)
     return institution_id, headers, document
 
@@ -240,7 +246,7 @@ def test_upload_to_document_of_other_institution_returns_404(client: TestClient)
     _, headers_a, document = _setup(client)
 
     institution_b = _create_institution(client)
-    headers_b = _create_admin_and_login(client, institution_b)
+    headers_b = _create_manager_and_login(client, institution_b)
 
     response = _upload(client, headers_b, document["id"], b"cross tenant")
     assert response.status_code == 404
@@ -269,7 +275,7 @@ def test_same_checksum_in_different_institutions_is_allowed(client: TestClient) 
     assert first.status_code == 201
 
     institution_b = _create_institution(client)
-    headers_b = _create_admin_and_login(client, institution_b)
+    headers_b = _create_manager_and_login(client, institution_b)
     document_b = _create_document(client, headers_b)
     second = _upload(client, headers_b, document_b["id"], content)
     assert second.status_code == 201
@@ -335,7 +341,7 @@ def test_get_version_of_other_institution_returns_404(client: TestClient) -> Non
     version_id = upload.json()["id"]
 
     institution_b = _create_institution(client)
-    headers_b = _create_admin_and_login(client, institution_b)
+    headers_b = _create_manager_and_login(client, institution_b)
 
     response = client.get(
         f"/api/v1/documents/{document['id']}/versions/{version_id}", headers=headers_b
@@ -460,7 +466,7 @@ def test_download_from_other_institution_returns_404(client: TestClient) -> None
     version_id = upload.json()["id"]
 
     institution_b = _create_institution(client)
-    headers_b = _create_admin_and_login(client, institution_b)
+    headers_b = _create_manager_and_login(client, institution_b)
 
     response = client.get(
         f"/api/v1/documents/{document['id']}/versions/{version_id}/download",

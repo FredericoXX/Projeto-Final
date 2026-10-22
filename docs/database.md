@@ -19,6 +19,11 @@
 | 13 | `4a7c1e9d2b63` | Adiciona metadados estruturais anuláveis a `document_chunks` (`page_number`, `section_title`, `structure_type`, `chunking_strategy`), com CHECKs e sem backfill |
 | 14 | `e7b1c9d4a2f0` | Localiza o `search_vector` por idioma: a coluna gerada passa a escolher `portuguese`/`english`/`simple` pela subtag primária de `language`. Revectoriza os chunks históricos automaticamente, sem backfill; recria o índice GIN. Reversível para `simple` |
 | 15 | `a5c31f70b8d2` | Adiciona o destino humano default a `institutions` (`human_support_name`, `human_support_email`, `human_support_url`; anuláveis, sem backfill) e o CHECK que exige configuração completa ou totalmente ausente |
+| 16 | `c4f7ab19d3e5` | Cria `chunk_embeddings`, tabela experimental do retrieval denso (D4.8); ver [`docs/ai/02-current-state.md`](ai/02-current-state.md) |
+| 17 | `d1a7c3e9b4f2` | Acrescenta `knowledge_manager` a `ck_users_role_allowed`. Nenhuma linha é alterada e nenhum admin é convertido. O downgrade recusa-se a correr enquanto existir alguma conta `knowledge_manager` (o operador reatribui-as primeiro); sem elas, repõe a constraint anterior |
+| 18 | `e3b9f1c7a5d8` | Cria `user_external_identities` (associação administrativa entre conta local, instituição e identificador externo estável), vazia e sem backfill. O downgrade remove a tabela e as associações; contas, conversas e citações não são afetadas |
+
+A head única é `e3b9f1c7a5d8`.
 
 Como o projeto ainda está em desenvolvimento exclusivamente local, sem
 ambientes partilhados, dados de produção ou bases de dados permanentes, a
@@ -47,8 +52,8 @@ As tabelas `institutions`, `users`, `conversations` e `messages` possuem APIs
 completas: gestão de instituições, gestão de utilizadores limitada à
 instituição do administrador autenticado, autenticação baseada em JWT + Argon2
 (login e registo do administrador inicial) e uma API de conversas/mensagens
-limitada à instituição do utilizador autenticado — e, para não administradores,
-às próprias conversas. Consulte
+limitada à instituição do utilizador autenticado e, para **todas** as contas
+(admin institucional incluído), às próprias conversas. Consulte
 [`app/api/routes/institutions.py`](../backend/app/api/routes/institutions.py),
 [`app/api/routes/users.py`](../backend/app/api/routes/users.py),
 [`app/api/routes/auth.py`](../backend/app/api/routes/auth.py) e
@@ -62,7 +67,7 @@ permanece disponível como infraestrutura e não é usado pela baseline lexical.
 
 O `user_id` de uma mensagem regista o seu autor real: para `role="user"`, é o
 utilizador que a enviou; para `role="system"`, é o administrador que a criou
-manualmente (consulte `message_service.create_message`). Isso torna as mensagens
+manualmente, numa conversa sua (consulte `message_service.create_message`). Isso torna as mensagens
 de sistema auditáveis. O campo só é `NULL` em mensagens automáticas
 `"assistant"` criadas pelo fluxo de respostas conversacionais; o papel
 `"system"` **não** implica um `user_id` nulo.
@@ -74,6 +79,34 @@ estrangeira composta `(reply_to_message_id, conversation_id, institution_id)`
 garante que o alvo pertence à mesma conversa e instituição, e um CHECK rejeita
 autorreferências. Mensagens manuais de utilizador ou sistema mantêm o campo nulo;
 ele não é aceite por `MessageCreate`.
+
+## Papéis e associação de identidade externa
+
+`users.role` aceita `admin`, `knowledge_manager`, `staff`, `student` e `user`
+(`ck_users_role_allowed`, migração `d1a7c3e9b4f2`), espelhando a matriz de
+permissões de [`app/core/permissions.py`](../backend/app/core/permissions.py).
+A matriz, a mudança intencional do contrato do `admin` e os limites estão em
+[`docs/institutional-access.md`](institutional-access.md).
+
+A tabela `user_external_identities` (migração `e3b9f1c7a5d8`) possui:
+
+- `id` — UUID, chave primária;
+- `institution_id` — UUID, `NOT NULL`, FK para `institutions.id`, indexado;
+- `user_id` — UUID, `NOT NULL`, único (uma associação por conta);
+- `external_subject` — `String(128)`, `NOT NULL`, não vazio nem só espaços
+  (`ck_user_external_identities_subject_not_blank`); único por instituição
+  (`uq_user_external_identities_institution_subject`);
+- `link_method` — `String(30)`, `NOT NULL`, apenas `administrative`
+  (`ck_user_external_identities_link_method_allowed`);
+- `linked_by_user_id` — UUID, `NOT NULL`, o admin que estabeleceu a associação;
+- `created_at` — timestamp com fuso horário, `NOT NULL`, padrão `now()`.
+
+As FKs compostas `(user_id, institution_id)` e
+`(linked_by_user_id, institution_id)` → `users.(id, institution_id)` impedem
+que uma associação ligue uma conta, ou o seu autor, a outra instituição. A
+tabela não guarda dados académicos, e a igualdade de email nunca é usada para
+inferir uma associação. As respostas do fornecedor institucional não são
+persistidas.
 
 ## Destino humano default (`institutions.human_support_*`)
 
@@ -588,6 +621,26 @@ multi-institucionais não eram aplicadas. Elas complementam a limitação por
   incorreto ou não configurado falha de forma segura com 401. É um substituto
   temporário até existir um papel real de administração da plataforma; consulte
   o [fluxo de inicialização no README](../README.md#inicialização-de-uma-instituição).
+- **Nenhum papel lê conversas de outra conta.** Leitura, listagem, contagem e
+  mutação de conversas, mensagens e fontes filtram sempre por instituição e por
+  `user_id` da sessão; uma conversa alheia responde 404 também ao admin
+  institucional. `message_service.create_message`, `ask_in_conversation` e o
+  handoff releem e bloqueiam a instituição e o utilizador antes da conversa,
+  para que uma desativação ou alteração de papel concorrente não seja
+  ultrapassada.
+- **A autorização é reconfirmada no ponto sensível de cada operação, não só
+  na autenticação.** `authorization_service.revalidate_actor` relê
+  `institutions` e `users` com `SELECT ... FOR SHARE` (ou `FOR UPDATE` da
+  instituição nas mutações de contas e da própria instituição), na transação
+  da operação, e reverifica a permissão sobre o papel relido. Cobre documentos,
+  contas, instituição, associação externa, conversas próprias e pesquisa de
+  evidência; a consulta de pedidos académicos revalida antes e depois da fonte,
+  sem locks durante a chamada. Ver
+  [`institutional-access.md`](institutional-access.md#11-revalidação-perante-revogação-concorrente).
+- **A gestão documental exige `documents.manage`** (papel
+  `knowledge_manager`); o admin institucional recebe 403 em `/documents`.
+- **A associação de identidade externa só é alterada por um admin da mesma
+  instituição** (`external_identity.manage`), nunca pelo próprio utilizador.
 - **Ler ou atualizar uma instituição exige um administrador autenticado e fica
   limitado à própria instituição.** `GET /api/v1/institutions`,
   `GET /api/v1/institutions/{id}` e `PATCH /api/v1/institutions/{id}` exigem um

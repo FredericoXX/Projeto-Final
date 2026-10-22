@@ -214,6 +214,13 @@ POST /api/v1/documents/{id}/versions           (JWT admin)   → DocumentVersion
                                                               → processing_status
 ```
 
+> **Nota posterior (2026-10-09):** este bloco descreve a versão em que foi
+> executado. Desde o incremento de perfis e permissões
+> ([`docs/institutional-access.md`](../institutional-access.md)), os passos
+> `POST /documents` e `POST /documents/{id}/versions` exigem o papel
+> `knowledge_manager`, criado por um admin com `POST /api/v1/users`; o JWT de
+> admin passou a receber 403. Os resultados deste relatório não mudam.
+
 A aplicação foi executada localmente (`uvicorn app.main:app`, porta 8077) contra
 o PostgreSQL do `docker-compose.yml`. O processamento é síncrono dentro do
 pedido de *upload*, tal como o estado atual descreve.

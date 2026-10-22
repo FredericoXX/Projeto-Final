@@ -57,7 +57,7 @@ from app.models.document_chunk import DocumentChunk
 from app.models.document_version import DocumentVersion
 from tests.moment06_support import (
     create_searchable_document,
-    setup_institution_with_admin,
+    setup_institution_with_manager,
     upload_version,
 )
 
@@ -125,7 +125,7 @@ def _healthy_selection(
     client: TestClient, db: Session
 ) -> tuple[SelectionContext, list[DocumentChunk], uuid.UUID, uuid.UUID]:
     """Documento real, processado e admissível, com os chunks da versão efetiva."""
-    _, headers, _ = setup_institution_with_admin(client)
+    _, headers, _ = setup_institution_with_manager(client)
     document, _version = create_searchable_document(client, headers, CONTENT)
     document_id = uuid.UUID(document["id"])
     institution_id = db.get(Document, document_id).institution_id  # type: ignore[union-attr]
@@ -246,7 +246,7 @@ def test_c5_is_evaluated_against_the_effective_version(
     A versão 1 continua ``processed`` e o documento continua admissível: a
     única condição que falha é a de ser a ``processed`` mais recente.
     """
-    _, headers, _ = setup_institution_with_admin(client)
+    _, headers, _ = setup_institution_with_manager(client)
     document, first = create_searchable_document(client, headers, CONTENT)
     second = upload_version(client, headers, document["id"], f"{CONTENT} atualizado")
     document_id = uuid.UUID(document["id"])
@@ -353,7 +353,7 @@ def test_a_positive_verdict_accepts_what_the_real_policy_would_reject(
     possível se nenhuma comparação paralela entre a versão selecionada e a
     versão efetiva tiver sobrevivido dentro de ``evaluate_eligibility``.
     """
-    _, headers, _ = setup_institution_with_admin(client)
+    _, headers, _ = setup_institution_with_manager(client)
     document, first = create_searchable_document(client, headers, CONTENT)
     upload_version(client, headers, document["id"], f"{CONTENT} atualizado")
     document_id = uuid.UUID(document["id"])
@@ -399,7 +399,7 @@ def test_c12_stays_outside_the_policy(
     spy = _PolicySpy(RetrievalEligibility)
     monkeypatch.setattr(document_pipeline, "RetrievalEligibility", spy)
 
-    _, headers, _ = setup_institution_with_admin(client)
+    _, headers, _ = setup_institution_with_manager(client)
     document, _version = create_searchable_document(client, headers, CONTENT)
     document_id = uuid.UUID(document["id"])
 
@@ -448,7 +448,7 @@ def test_a_version_with_mixed_chunk_languages_stays_eligible_and_shows_the_diver
     sãos: a condição agregada vem satisfeita, mas o detalhe declara quantos
     chunks a satisfazem, e é isso que torna o problema visível no relatório.
     """
-    _, headers, _ = setup_institution_with_admin(client)
+    _, headers, _ = setup_institution_with_manager(client)
     document, version = create_searchable_document(client, headers, LONG_CONTENT)
     document_id = uuid.UUID(document["id"])
     version_id = uuid.UUID(version["id"])
@@ -513,7 +513,7 @@ def test_a_processed_version_without_chunks_offers_no_retrievable_candidate(
     é a única mudança de veredicto do formato v5 — esta é a outra, e a
     documentação do diagnóstico declara ambas.
     """
-    _, headers, _ = setup_institution_with_admin(client)
+    _, headers, _ = setup_institution_with_manager(client)
     document, version = create_searchable_document(client, headers, CONTENT)
     document_id = uuid.UUID(document["id"])
 
@@ -555,7 +555,7 @@ def test_the_report_declares_the_policy_it_evaluated(
     """
     from app.retrieval.lexical import PostgresLexicalRetriever
 
-    _, headers, _ = setup_institution_with_admin(client)
+    _, headers, _ = setup_institution_with_manager(client)
     document, _version = create_searchable_document(client, headers, CONTENT)
 
     question = document_pipeline.parse_questions_payload(

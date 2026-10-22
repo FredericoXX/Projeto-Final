@@ -11,7 +11,7 @@ from app.models.user import User
 from app.retrieval.base import Retriever
 from app.retrieval.dependencies import get_retriever
 from app.schemas.answering import AnsweringRequest, AnsweringResponse
-from app.services import answering_service
+from app.services import answering_service, authorization_service
 
 router = APIRouter(prefix="/answering", tags=["Answering"])
 
@@ -30,4 +30,10 @@ def ask(
 ) -> AnsweringResponse:
     # 200 tanto para answered como para insufficient_evidence; 503/502
     # (provider não configurado/falha) chegam pelos handlers globais.
-    return answering_service.ask(db, current_user, payload, retriever, generator)
+    user_id, institution_id = current_user.id, current_user.institution_id
+    response = answering_service.ask(db, current_user, payload, retriever, generator)
+    # A geração pode demorar e chama um fornecedor externo, por isso não é
+    # feita sob lock. A conta é reconfirmada depois dela e antes de entregar a
+    # resposta: uma desativação ocorrida durante a geração impede a entrega.
+    authorization_service.revalidate_actor(db, user_id=user_id, institution_id=institution_id)
+    return response

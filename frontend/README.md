@@ -2,7 +2,7 @@
 
 Interface web mínima e responsiva para o protótipo do Assistente Institucional.
 Ela demonstra o fluxo completo sem Swagger nem pedidos manuais: iniciar sessão,
-manter uma conversa fundamentada com fontes e, como administrador, gerir
+manter uma conversa fundamentada com fontes e, como gestor documental, gerir
 documentos e as respetivas versões.
 
 A interface é **neutra em relação à instituição**: o nome da aplicação vem de
@@ -94,9 +94,14 @@ a sessão de forma centralizada. O frontend **não** é uma fronteira de
 segurança: o backend autoriza todos os pedidos.
 
 Rotas: `/login`, `/app/conversations`, `/app/conversations/:id`,
+`/app/academic-requests`, `/app/academic-requests/:requestId`,
 `/admin/documents` e `/admin/documents/:id`. As rotas protegidas não renderizam
-conteúdo até a sessão ser resolvida; `/admin/*` exige adicionalmente um
-administrador.
+conteúdo até a sessão ser resolvida. As áreas restritas são guardadas por
+**permissão**, não por papel: `GET /auth/me` devolve a lista `permissions` da
+matriz do backend e `PermissionRoute` usa-a. `/admin/documents` exige
+`documents.manage` (papel `knowledge_manager`; o caminho mantém o prefixo
+histórico `/admin`, mas o admin institucional já não tem acesso);
+`/app/academic-requests` exige `academic_requests.read_own`.
 
 ## Conversas
 
@@ -109,9 +114,23 @@ não um erro; respostas 502/503 não acrescentam uma mensagem local e preservam
 o texto digitado para nova tentativa. As mutações de `/ask` nunca são repetidas
 automaticamente.
 
+## Os meus pedidos académicos
+
+Área de consulta dos próprios pedidos académicos, preparatória da futura API
+institucional (ver [`docs/institutional-access.md`](../docs/institutional-access.md)).
+A entrada de navegação só aparece quando `GET /academic-requests/access`
+responde `available` — conta com a permissão, associação de identidade
+autorizada e integração ativa; contas sem a permissão nem chegam a fazer esse
+pedido. Com o modo simulado, cada página mostra um aviso "Demonstração". Os
+estados oficiais e os tipos de pedido são apresentados tal como recebidos, sem
+tradução; o próximo passo só aparece quando a fonte o fornece. Vazio, conta
+não associada, integração desativada, acesso recusado e falha técnica têm
+mensagens próprias em português e inglês. As consultas são iniciadas pelo
+utilizador: sem polling nem refetch automático.
+
 ## Administração de documentos
 
-Administradores podem listar e filtrar documentos, criar um documento, enviar
+Os gestores documentais (`knowledge_manager`) podem listar e filtrar documentos, criar um documento, enviar
 uma versão (`FormData` multipart, com o delimitador definido pelo navegador),
 reprocessar versões com falha — um 409 para versões referenciadas apresenta uma
 mensagem segura — e descarregar o arquivo original por um pedido autenticado

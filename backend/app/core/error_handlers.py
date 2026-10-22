@@ -13,6 +13,7 @@ from app.core.exceptions import (
     AuthenticationError,
     AuthorizationError,
     ConflictError,
+    InstitutionalAccessError,
     NotFoundError,
     PayloadTooLargeError,
     ServiceUnavailableError,
@@ -73,6 +74,32 @@ async def upstream_service_error_handler(
     return _error_response(502, "upstream_error", str(exc))
 
 
+# Cada resultado não satisfatório da integração institucional tem estado e
+# código próprios, para que o cliente distinga acesso recusado, integração
+# desativada e falha técnica — e para que nenhum deles se confunda com os
+# erros do fornecedor de geração (service_unavailable / upstream_error).
+INSTITUTIONAL_ACCESS_ERRORS: dict[str, tuple[int, str]] = {
+    # O detalhe de um pedido inexistente — ou de outro aluno — mantém o código
+    # genérico de recurso inexistente; só a proveniência é acrescentada.
+    "no_data": (404, "resource_not_found"),
+    "access_denied": (403, "institutional_access_denied"),
+    "not_configured": (503, "institutional_integration_not_configured"),
+    "unavailable": (502, "institutional_integration_unavailable"),
+}
+
+
+async def institutional_access_error_handler(
+    request: Request, exc: InstitutionalAccessError
+) -> JSONResponse:
+    status_code, code = INSTITUTIONAL_ACCESS_ERRORS.get(
+        exc.outcome, (502, "institutional_integration_unavailable")
+    )
+    detail: dict[str, object] = {"code": code, "message": str(exc)}
+    if exc.provenance is not None:
+        detail["provenance"] = exc.provenance
+    return JSONResponse(status_code=status_code, content={"detail": detail})
+
+
 # Ponto único de registo: qualquer novo tipo de DomainError só precisa de
 # um handler aqui para ganhar uma resposta HTTP consistente em toda a API.
 #
@@ -101,4 +128,7 @@ def register_error_handlers(app: FastAPI) -> None:
     )
     app.add_exception_handler(
         UpstreamServiceError, upstream_service_error_handler  # type: ignore[arg-type]
+    )
+    app.add_exception_handler(
+        InstitutionalAccessError, institutional_access_error_handler  # type: ignore[arg-type]
     )

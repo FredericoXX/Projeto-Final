@@ -9,6 +9,7 @@ export const pt = {
 
   'nav.conversations': 'Conversas',
   'nav.documents': 'Documentos',
+  'nav.academicRequests': 'Os meus pedidos',
   'nav.skipToContent': 'Saltar para o conteúdo',
   'nav.menu': 'Menu',
 
@@ -170,4 +171,30 @@ export const pt = {
   'form.required': 'Este campo é obrigatório.',
   'form.invalidUrl': 'Indique um URL HTTP ou HTTPS válido.',
   'form.invalidDateRange': 'A data inicial não pode ser posterior à data final.',
+  'academicRequests.title': 'Os meus pedidos académicos',
+  'academicRequests.intro':
+    'Consulta dos pedidos que submeteu nos serviços académicos. A informação vem do sistema académico da instituição, não dos documentos do assistente.',
+  'academicRequests.empty': 'Não existem pedidos académicos associados à sua conta.',
+  'academicRequests.requestId': 'Identificador',
+  'academicRequests.officialStatus': 'Estado oficial',
+  'academicRequests.updatedAt': 'Atualizado',
+  'academicRequests.nextStep': 'Próximo passo indicado pela fonte',
+  'academicRequests.statusAsReceived':
+    'O estado é apresentado tal como recebido do sistema académico, sem interpretação.',
+  'academicRequests.provenance': 'Origem: sistema académico institucional · consultado em {queriedAt}',
+  'academicRequests.sourceUpdatedAt': 'fonte atualizada em {updatedAt}',
+  'academicRequests.simulatedBadge': 'Demonstração',
+  'academicRequests.simulatedNotice':
+    'Modo simulado: os pedidos apresentados são dados sintéticos de demonstração e não correspondem a registos institucionais reais.',
+  'academicRequests.notConfigured':
+    'A consulta de pedidos académicos não está disponível nesta instalação.',
+  'academicRequests.notLinked':
+    'A sua conta ainda não está associada a um registo académico. Contacte os serviços da instituição.',
+
+  'error.institutionalAccessDenied':
+    'Não tem autorização para consultar estes registos académicos.',
+  'error.institutionalNotConfigured':
+    'A integração com o sistema académico não está configurada.',
+  'error.institutionalUnavailable':
+    'O sistema académico está temporariamente indisponível. Tente mais tarde.',
 } as const;

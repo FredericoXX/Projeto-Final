@@ -6,6 +6,14 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
+# Fornecedores aceites para a integração institucional (pedidos académicos).
+INSTITUTIONAL_PROVIDER_DISABLED = "disabled"
+INSTITUTIONAL_PROVIDER_MOCK = "mock"
+INSTITUTIONAL_PROVIDERS = frozenset({INSTITUTIONAL_PROVIDER_DISABLED, INSTITUTIONAL_PROVIDER_MOCK})
+# Ambientes em que o adaptador simulado pode ser ativado. Fora deles, uma
+# instalação nunca apresenta dados sintéticos como se fossem institucionais.
+MOCK_PROVIDER_ENVIRONMENTS = frozenset({"development", "test"})
+
 
 class Settings(BaseSettings):
     app_name: str = "Agentic Institutional Assistant"
@@ -85,6 +93,14 @@ class Settings(BaseSettings):
     openai_embedding_model: str | None = None
     openai_timeout_seconds: int = 30
 
+    # Integração institucional preparatória (pedidos académicos do próprio
+    # aluno). Desativada por omissão: a aplicação arranca sem API externa e
+    # sem credenciais. "mock" ativa o adaptador simulado, com dados
+    # sintéticos fixos, e só é aceite em ENVIRONMENT=development ou test.
+    # Não existe ainda adaptador real: o protocolo institucional não foi
+    # fornecido.
+    institutional_data_provider: str = INSTITUTIONAL_PROVIDER_DISABLED
+
     model_config = SettingsConfigDict(
         env_file=PROJECT_ROOT / ".env",
         env_file_encoding="utf-8",
@@ -161,6 +177,24 @@ class Settings(BaseSettings):
             raise ValueError(msg)
         if self.openai_timeout_seconds <= 0:
             msg = "OPENAI_TIMEOUT_SECONDS must be greater than zero"
+            raise ValueError(msg)
+        return self
+
+    @model_validator(mode="after")
+    def check_institutional_integration_configuration(self) -> "Settings":
+        if self.institutional_data_provider not in INSTITUTIONAL_PROVIDERS:
+            msg = "INSTITUTIONAL_DATA_PROVIDER must be one of: " + ", ".join(
+                sorted(INSTITUTIONAL_PROVIDERS)
+            )
+            raise ValueError(msg)
+        if (
+            self.institutional_data_provider == INSTITUTIONAL_PROVIDER_MOCK
+            and self.environment not in MOCK_PROVIDER_ENVIRONMENTS
+        ):
+            msg = (
+                "INSTITUTIONAL_DATA_PROVIDER=mock is only allowed when ENVIRONMENT is "
+                "development or test"
+            )
             raise ValueError(msg)
         return self
 

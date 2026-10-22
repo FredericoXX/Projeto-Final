@@ -49,7 +49,7 @@ from tests.moment06_support import (
     RecordingAnswerGenerator,
     ask,
     create_searchable_document,
-    setup_institution_with_admin,
+    setup_institution_with_manager,
 )
 
 
@@ -77,7 +77,7 @@ def test_sources_follow_generator_citation_order_and_omit_uncited_evidence(
     das citações do gerador, e a evidência recuperada mas não citada (E2) não
     aparece de todo.
     """
-    _, headers, _ = setup_institution_with_admin(client)
+    _, headers, _ = setup_institution_with_manager(client)
     documents = [
         create_searchable_document(
             client,
@@ -170,7 +170,7 @@ def test_each_structural_reason_code_produces_502_upstream_error(
     a aplicação os produz hoje. O reason code é confirmado no log (é o único
     sítio onde vive — a resposta HTTP expõe apenas a mensagem segura).
     """
-    _, headers, _ = setup_institution_with_admin(client)
+    _, headers, _ = setup_institution_with_manager(client)
     create_searchable_document(client, headers, "campus matricula prazo institucional")
     override_generator(RecordingAnswerGenerator(_generated_for(reason_code)))
 
@@ -239,7 +239,7 @@ def test_provider_absence_only_fails_when_generation_is_actually_executed(
     """
     monkeypatch.setattr(settings, "openai_api_key", None)
     monkeypatch.setattr(settings, "openai_model", None)
-    _, headers, _ = setup_institution_with_admin(client)
+    _, headers, _ = setup_institution_with_manager(client)
     create_searchable_document(client, headers, "campus matricula prazo institucional")
 
     def forbidden_client() -> object:

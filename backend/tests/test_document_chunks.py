@@ -27,6 +27,7 @@ from app.services import (
 )
 from app.services.document_extraction_service import ExtractionError
 from app.storage import get_document_storage
+from tests.role_support import create_knowledge_manager
 
 _ADMIN_PASSWORD = "supersecret123"
 
@@ -70,6 +71,11 @@ def _create_admin_and_login(client: TestClient, institution_id: str) -> dict[str
     return {"Authorization": f"Bearer {login.json()['access_token']}"}
 
 
+def _create_manager_and_login(client: TestClient, institution_id: str) -> dict[str, str]:
+    """Gestor documental da instituição: o admin deixou de gerir documentos."""
+    return create_knowledge_manager(client, _create_admin_and_login(client, institution_id))
+
+
 def _create_document(client: TestClient, headers: dict[str, str], **overrides: object) -> dict:
     payload: dict = {"title": "Test Document"}
     payload.update(overrides)
@@ -94,7 +100,7 @@ def _upload(
 
 def _setup(client: TestClient) -> tuple[str, dict[str, str], dict]:
     institution_id = _create_institution(client)
-    headers = _create_admin_and_login(client, institution_id)
+    headers = _create_manager_and_login(client, institution_id)
     document = _create_document(client, headers)
     return institution_id, headers, document
 
@@ -266,7 +272,7 @@ def test_cross_institution_chunk_is_rejected_by_postgres(
     _, _, document_a, version_a = _setup_with_version(client)
 
     institution_b = _create_institution(client)
-    _create_admin_and_login(client, institution_b)
+    _create_manager_and_login(client, institution_b)
 
     session = test_session_factory()
     try:

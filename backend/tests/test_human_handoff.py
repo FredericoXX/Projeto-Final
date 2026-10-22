@@ -735,15 +735,16 @@ def test_deactivated_user_cannot_complete_a_handoff(
     assert _message_count(test_session_factory) == 0
 
 
-def test_demoted_admin_cannot_hand_off_another_users_conversation(
+def test_stale_admin_identity_cannot_hand_off_another_users_conversation(
     client: TestClient,
     test_session_factory: sessionmaker[Session],
 ) -> None:
-    """O papel usado é o persistido, não o que veio do token.
+    """Uma identidade que ainda diz "admin" não alcança conversas alheias.
 
-    Um admin despromovido concorrentemente deixa de alcançar conversas de
-    outros utilizadores: o acesso volta a ser avaliado como utilizador comum e
-    a conversa alheia responde como inexistente.
+    Antes deste incremento, o teste fixava que só a despromoção concorrente
+    fechava esse acesso. O admin institucional deixou de ler conversas de
+    terceiros, pelo que a conversa alheia responde como inexistente
+    independentemente do papel — obsoleto ou persistido.
     """
     institution = _create_institution(client, support=_configured_support())
     admin_headers = _create_admin(client, institution["id"])
@@ -761,12 +762,14 @@ def test_demoted_admin_cannot_hand_off_another_users_conversation(
     assert _message_count(test_session_factory) == 0
 
 
-def test_persisted_admin_role_still_reaches_another_users_conversation(
+def test_persisted_admin_role_no_longer_reaches_another_users_conversation(
     client: TestClient,
     test_session_factory: sessionmaker[Session],
 ) -> None:
-    """Contraponto do teste anterior: a regra existente de admin não foi
-    endurecida por acidente — só deixou de aceitar um papel obsoleto."""
+    """Expectativa alterada intencionalmente: antes, um admin persistido
+    encaminhava a conversa de outro utilizador (``escalate``, uma mensagem).
+    O admin institucional deixou de ter acesso a conversas de terceiros; o
+    encaminhamento E1 continua disponível ao próprio dono da conversa."""
     institution = _create_institution(client, support=_configured_support())
     admin_headers = _create_admin(client, institution["id"])
     admin = client.get("/api/v1/auth/me", headers=admin_headers).json()
@@ -775,11 +778,17 @@ def test_persisted_admin_role_still_reaches_another_users_conversation(
 
     with test_session_factory() as db:
         identity = _stale_user(institution["id"], admin["id"], role="admin")
-        response = human_handoff_service.request_human_handoff(
-            db, identity, uuid.UUID(conversation["id"])
-        )
+        with pytest.raises(NotFoundError):
+            human_handoff_service.request_human_handoff(
+                db, identity, uuid.UUID(conversation["id"])
+            )
+    assert _message_count(test_session_factory) == 0
 
-    assert response.outcome == "escalate"
+    own = client.post(
+        f"/api/v1/conversations/{conversation['id']}/handoff", headers=owner_headers
+    )
+    assert own.status_code == 201
+    assert own.json()["outcome"] == "escalate"
     assert _message_count(test_session_factory) == 1
 
 

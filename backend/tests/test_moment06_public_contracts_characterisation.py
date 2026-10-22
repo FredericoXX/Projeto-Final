@@ -41,7 +41,7 @@ from tests.moment06_support import (
     create_conversation,
     create_searchable_document,
     search,
-    setup_institution_with_admin,
+    setup_institution_with_manager,
 )
 
 
@@ -86,7 +86,7 @@ def test_retrieval_search_item_exposes_exactly_the_current_field_set(
     client: TestClient,
 ) -> None:
     """A forma do item de retrieval é fixada por inteiro, não por amostragem."""
-    _, headers, _ = setup_institution_with_admin(client)
+    _, headers, _ = setup_institution_with_manager(client)
     create_searchable_document(
         client,
         headers,
@@ -147,7 +147,7 @@ def test_answering_ask_returns_only_the_two_declared_statuses(
     client: TestClient, override_generator
 ) -> None:
     """Observa os dois estados no endpoint independente (200 em ambos)."""
-    _, headers, _ = setup_institution_with_admin(client)
+    _, headers, _ = setup_institution_with_manager(client)
     create_searchable_document(client, headers, "campus matricula prazo institucional")
     override_generator(RecordingAnswerGenerator())
 
@@ -165,7 +165,7 @@ def test_conversation_ask_returns_only_the_two_declared_statuses(
     client: TestClient, override_generator
 ) -> None:
     """Observa os mesmos dois estados no endpoint conversacional (201 em ambos)."""
-    _, headers, _ = setup_institution_with_admin(client)
+    _, headers, _ = setup_institution_with_manager(client)
     conversation = create_conversation(client, headers)
     create_searchable_document(client, headers, "campus matricula prazo institucional")
     override_generator(RecordingAnswerGenerator())

@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import ConflictError, NotFoundError, ValidationError
+from app.core.permissions import Permission
 from app.models.institution import Institution
 from app.models.user import User
 from app.schemas.institution import (
@@ -13,6 +14,7 @@ from app.schemas.institution import (
     InstitutionCreate,
     is_valid_human_support_configuration,
 )
+from app.services import authorization_service
 
 CODE_UNIQUE_CONSTRAINT = "uq_institutions_code"
 DEFAULT_LANGUAGE_CHECK_CONSTRAINT = "ck_institutions_default_language_supported"
@@ -108,6 +110,18 @@ def get_institution(db: Session, institution_id: uuid.UUID) -> Institution:
     return institution
 
 
+def _revalidate_admin(db: Session, admin: User, *, exclusive_institution: bool = False) -> None:
+    # Reconfirma, sob lock, que o admin continua ativo e com institution.manage
+    # no momento da leitura/escrita (ver app.services.authorization_service).
+    authorization_service.revalidate_actor(
+        db,
+        user_id=admin.id,
+        institution_id=admin.institution_id,
+        permission=Permission.INSTITUTION_MANAGE,
+        exclusive_institution=exclusive_institution,
+    )
+
+
 def get_institution_for_admin(
     db: Session,
     admin: User,
@@ -116,6 +130,7 @@ def get_institution_for_admin(
     """An institutional admin may only ever see their own institution. Any
     other id is reported as 404, exactly like a non-existent institution,
     so this endpoint never confirms that another tenant exists."""
+    _revalidate_admin(db, admin)
     if institution_id != admin.institution_id:
         msg = f"Institution '{institution_id}' not found."
         raise NotFoundError(msg)
@@ -129,6 +144,7 @@ def list_institutions_for_admin(
     limit: int = 20,
     offset: int = 0,
 ) -> tuple[list[Institution], int]:
+    _revalidate_admin(db, admin)
     # Limitado apenas à instituição do administrador: ainda não existe um papel
     # platform_admin capaz de listar várias instituições.
     query = select(Institution).where(Institution.id == admin.institution_id)
@@ -214,6 +230,8 @@ def update_institution_for_admin(
 ) -> Institution:
     """Same 404-not-403 isolation as get_institution_for_admin: an admin
     can only ever update their own institution."""
+    # Exclusivo: a operação vai alterar a própria linha da instituição.
+    _revalidate_admin(db, admin, exclusive_institution=True)
     if institution_id != admin.institution_id:
         msg = f"Institution '{institution_id}' not found."
         raise NotFoundError(msg)

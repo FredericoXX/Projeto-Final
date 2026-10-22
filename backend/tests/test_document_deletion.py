@@ -26,12 +26,14 @@ from app.services.document_service import (
     DOCUMENT_REFERENCED_MESSAGE,
 )
 from app.storage import get_document_storage
+from tests.role_support import create_account_and_login
 from tests.test_conversation_answering import (
     FakeAnswerGenerator,
     _ask,
     _create_admin,
     _create_conversation,
     _create_institution,
+    _create_manager,
     _create_searchable_document,
     _create_user,
     override_generator,  # noqa: F401 - fixture reexportada para este módulo
@@ -56,8 +58,9 @@ def _count(session: Session, model, document_id: str) -> int:
 
 
 def _setup(client: TestClient) -> tuple[dict, dict[str, str]]:
+    """Instituição e o seu gestor documental (quem pode eliminar)."""
     institution = _create_institution(client)
-    headers, _ = _create_admin(client, institution["id"])
+    headers, _ = _create_manager(client, institution["id"])
     return institution, headers
 
 
@@ -80,11 +83,15 @@ def _cite_document(
 # --- Autorização e isolamento -------------------------------------------------
 
 
-def test_delete_requires_authentication_and_admin(client: TestClient) -> None:
-    institution, admin_headers = _setup(client)
+def test_delete_requires_authentication_and_document_permission(client: TestClient) -> None:
+    institution = _create_institution(client)
+    admin_headers, _ = _create_admin(client, institution["id"])
+    manager_headers, _ = create_account_and_login(
+        client, admin_headers, role="knowledge_manager"
+    )
     document, _ = _create_searchable_document(
         client,
-        admin_headers,
+        manager_headers,
         "conteudo qualquer",
         title="Doc",
         source_url="https://example.edu/doc",
@@ -94,6 +101,8 @@ def test_delete_requires_authentication_and_admin(client: TestClient) -> None:
 
     user_headers, _ = _create_user(client, admin_headers)
     assert _delete(client, document["id"], user_headers).status_code == 403
+    # O admin institucional também já não gere documentos.
+    assert _delete(client, document["id"], admin_headers).status_code == 403
     assert institution["id"]
 
 
@@ -305,14 +314,14 @@ def test_failed_deletion_leaves_no_partial_state(
         raise RuntimeError("simulated commit failure")
 
     with test_session_factory() as db:
-        admin = db.scalar(select(User).where(User.role == "admin"))
-        assert admin is not None
+        manager = db.scalar(select(User).where(User.role == "knowledge_manager"))
+        assert manager is not None
         storage = get_document_storage()
         monkeypatch.setattr(Session, "commit", failing_commit)
         try:
             with pytest.raises(RuntimeError):
                 document_service.delete_document(
-                    db, admin, uuid.UUID(document["id"]), storage=storage
+                    db, manager, uuid.UUID(document["id"]), storage=storage
                 )
         finally:
             monkeypatch.setattr(Session, "commit", original_commit)
@@ -546,11 +555,11 @@ def test_concurrent_upload_then_delete_leaves_no_orphan_file(
     def upload_worker() -> None:
         db = test_session_factory()
         try:
-            admin = db.scalar(select(User).where(User.role == "admin"))
-            assert admin is not None
+            manager = db.scalar(select(User).where(User.role == "knowledge_manager"))
+            assert manager is not None
             version = document_version_service.create_version(
                 db,
-                admin,
+                manager,
                 uuid.UUID(document_id),
                 upload_stream=io_module.BytesIO(b"conteudo da corrida"),
                 filename="corrida.txt",
@@ -607,15 +616,15 @@ def test_concurrent_delete_then_upload_fails_clean_without_orphan(
     storage = get_document_storage()
 
     with test_session_factory() as db:
-        admin = db.scalar(select(User).where(User.role == "admin"))
-        assert admin is not None
+        manager = db.scalar(select(User).where(User.role == "knowledge_manager"))
+        assert manager is not None
         # Eliminação completa primeiro.
         assert _delete(client, document["id"], headers).status_code == 204
         # Upload posterior: 404 limpo, sem resíduos.
         with pytest.raises(NotFoundError):
             document_version_service.create_version(
                 db,
-                admin,
+                manager,
                 uuid.UUID(document["id"]),
                 upload_stream=io_module.BytesIO(b"conteudo tardio"),
                 filename="tardio.txt",

@@ -90,6 +90,53 @@ do ranking lexical, D4.7, merge `47c1e9c`) e o **Pull Request #56** (baseline
 experimental de dense retrieval, D4.8, merge `22b59fc`) — ver
 [Trabalho arquitetural em aberto](#trabalho-arquitetural-em-aberto).
 
+## Perfis, permissões e acesso institucional (branch, não integrado)
+
+**Trabalho de branch, não estado da `main`.** Os factos desta secção foram
+observados em 2026-10-09, e as correções pós-auditoria em 2026-10-22, na branch
+`feat/institutional-permissions-and-requests-preparation`, criada a partir da
+`main` em `ca482803676f6509db5f7c851ff7fbe9e10404a4` (merge do Pull Request
+#65), **antes de qualquer commit**. Enquanto a branch não for integrada, o
+resto deste documento continua a descrever a `main`. Fonte canónica:
+[`docs/institutional-access.md`](../institutional-access.md).
+
+Implementado na branch:
+
+- matriz explícita de permissões em `app/core/permissions.py`, verificada por
+  `require_permission`; `GET /auth/me` devolve `permissions`;
+- papel novo `knowledge_manager`, único com `documents.manage`;
+- **mudança de contrato:** o `admin` institucional deixou de ler, listar,
+  contar, renomear, escrever e encaminhar conversas de terceiros, e deixou de
+  gerir documentos (403 em `/documents`). Nenhuma conta foi convertida;
+- `staff` sem acesso a conversas alheias e sem casos atribuídos;
+- tabela `user_external_identities` e rotas administrativas
+  `/users/{id}/external-identity` (só `admin` da mesma instituição);
+- contrato neutro `app/institutional/` e adaptador simulado com snapshot
+  sintético fixo, desativado por omissão (`INSTITUTIONAL_DATA_PROVIDER=disabled`;
+  `mock` só em `development`/`test`);
+- consulta só de leitura `/academic-requests` (`access`, lista, detalhe), com
+  cinco resultados distintos e proveniência `institutional_api`; área
+  correspondente no frontend, com aviso de demonstração;
+- migrations `d1a7c3e9b4f2` e `e3b9f1c7a5d8`; head única `e3b9f1c7a5d8`;
+- **correções pós-auditoria** (auditoria de 2026-10-09,
+  [`docs/audits/`](../audits/2026-10-09-institutional-preparation.md)):
+  revalidação sob lock da conta e da permissão no ponto sensível de cada
+  operação (`app/services/authorization_service.py`), consulta académica com
+  revalidação antes e depois da fonte e sem locks durante ela, adaptador
+  simulado delimitado por instituição/identificador, e proveniência em todos
+  os resultados da consulta — ver
+  [`institutional-access.md`, secção 12](../institutional-access.md#12-correções-após-a-auditoria-de-2026-10-09).
+
+Apenas preparado, **não** implementado: adaptador real, SSO ou autenticação
+institucional, persistência e retenção de dados individuais, ligação ao
+diagnóstico e à política de decisão, fila e operador (E2). **D0–D6/R01–R12 não
+estão executáveis**: a especificação integral não está no repositório (a A2.2
+histórica tem D1–D6 e M1–M9) — ver
+[`institutional-access.md`, secção 10](../institutional-access.md#10-estado-da-especificação-d0d6--r01r12).
+
+Verificações desta branch: ver
+[Testes e verificações](#testes-e-verificações).
+
 ## Arquitetura
 
 Monorepo com três peças:
@@ -1260,6 +1307,22 @@ Detalhe em
 
 Os testes do backend usam PostgreSQL real numa base dedicada; os do frontend
 usam MSW, sem rede nem backend.
+
+**Branch `feat/institutional-permissions-and-requests-preparation`** (base
+`ca48280`, sem commit), medida em **2026-10-22**, depois das correções
+pós-auditoria, da segunda passagem e da revisão final: **2390 passed, 1
+warning** (`python -m
+pytest -q`, o mesmo `StarletteDeprecationWarning`); `mypy app tests scripts`
+sem erros em **250 source files**; `ruff check .` passa; `alembic
+heads` mostra a única head `e3b9f1c7a5d8`; numa base PostgreSQL descartável,
+`upgrade head`, `downgrade c4f7ab19d3e5` e novo `upgrade head` passam e
+`alembic check` não deteta diferenças. Frontend: **112** testes em 11 ficheiros, lint, typecheck e build
+verdes. Acrescentados `tests/test_role_separation.py`,
+`tests/test_academic_requests.py`, `tests/test_concurrent_revocation.py` e
+dois casos em `tests/test_migrations.py`;
+os testes existentes alterados mudaram o ator documental para
+`knowledge_manager` ou, onde fixavam o acesso do admin a conversas alheias,
+têm a expectativa invertida com a justificação escrita no próprio teste.
 
 Contagem de execução medida em **2026-08-20**, sobre o conteúdo da correção da
 D4.10a na branch `analysis/d4-10a-corretiva` (base `bc703e1`, antes de qualquer
