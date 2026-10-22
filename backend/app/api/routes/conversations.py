@@ -32,8 +32,9 @@ from app.services import (
 )
 
 # Todas as rotas exigem um utilizador autenticado (get_current_user). O
-# isolamento multi-institucional e a regra de posse (utilizador comum vs.
-# admin) são aplicados nos serviços, com base em current_user.
+# isolamento multi-institucional e a regra de posse — cada conta, admin
+# incluído, só alcança as próprias conversas — são aplicados nos serviços,
+# com base em current_user.
 router = APIRouter(prefix="/conversations", tags=["Conversations"])
 
 

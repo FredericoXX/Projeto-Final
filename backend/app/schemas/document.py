@@ -51,7 +51,7 @@ def _validate_validity_range(valid_from: date | None, valid_until: date | None) 
 
 class DocumentCreate(BaseModel):
     # institution_id e created_by_user_id não fazem parte deste schema de
-    # propósito: vêm sempre do admin autenticado na rota, nunca do payload.
+    # propósito: vêm sempre do gestor documental autenticado na rota, nunca do payload.
     # extra="forbid" torna o envio desses (ou de qualquer campo
     # desconhecido) um 422 explícito.
     model_config = ConfigDict(extra="forbid")

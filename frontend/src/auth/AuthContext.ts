@@ -1,12 +1,14 @@
 import { createContext } from 'react';
-import type { UserRead } from '../types/auth';
+import type { CurrentUserRead, Permission } from '../types/auth';
 
 export type AuthStatus = 'initializing' | 'authenticated' | 'unauthenticated';
 
 export interface AuthContextValue {
   status: AuthStatus;
-  user: UserRead | null;
-  isAdmin: boolean;
+  user: CurrentUserRead | null;
+  // Verdadeiro quando a conta autenticada tem a permissão indicada. Adapta a
+  // interface; não é uma fronteira de segurança.
+  can: (permission: Permission) => boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => void;
 }

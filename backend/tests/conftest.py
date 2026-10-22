@@ -38,6 +38,7 @@ from app.models import message as _message  # noqa: F401
 from app.models import message_source as _message_source  # noqa: F401
 from app.models import storage_cleanup_task as _storage_cleanup_task  # noqa: F401
 from app.models import user as _user  # noqa: F401
+from app.models import user_external_identity as _user_external_identity  # noqa: F401
 
 
 def _maintenance_url(db_url: str) -> str:

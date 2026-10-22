@@ -14,7 +14,7 @@ from sqlalchemy import select
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.core.config import settings
-from app.core.exceptions import AuthorizationError, ConflictError
+from app.core.exceptions import AuthenticationError, AuthorizationError, ConflictError
 from app.models.institution import Institution
 from app.models.user import User
 from app.schemas.user import UserUpdate
@@ -307,7 +307,14 @@ def test_concurrent_admin_deactivation_keeps_at_least_one_active_admin(
     admin count (re-read after the lock, i.e. after the first commit) must
     then correctly refuse it. At most one of the two operations may
     succeed, and the institution must never end up with zero active
-    admins."""
+    admins.
+
+    Expectativa alterada intencionalmente (auditoria de 2026-10-09, F1): o
+    admin que perde a corrida era recusado com ``ConflictError`` ("último
+    admin ativo"). Desde que o próprio admin é relido sob o mesmo lock, é
+    recusado antes disso, com ``AuthenticationError``, porque o vencedor o
+    desativou: um admin desativado não chega a agir. A invariante protegida —
+    exatamente um sucesso e nunca zero admins ativos — não mudou."""
     setup_session = test_session_factory()
     try:
         institution = Institution(
@@ -360,6 +367,8 @@ def test_concurrent_admin_deactivation_keeps_at_least_one_active_admin(
                 outcome = "conflict"
             except AuthorizationError:
                 outcome = "forbidden"
+            except AuthenticationError:
+                outcome = "unauthenticated"
             with outcomes_lock:
                 outcomes.append(outcome)
         finally:
@@ -375,7 +384,7 @@ def test_concurrent_admin_deactivation_keeps_at_least_one_active_admin(
     t2.join(timeout=10)
 
     assert outcomes.count("ok") == 1
-    assert outcomes.count("conflict") == 1
+    assert outcomes.count("unauthenticated") == 1
 
     verify_session = test_session_factory()
     try:

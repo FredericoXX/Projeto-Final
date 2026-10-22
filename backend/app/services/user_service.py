@@ -5,10 +5,11 @@ from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import AuthorizationError, ConflictError, NotFoundError
+from app.core.permissions import Permission
 from app.core.security import hash_password
-from app.models.institution import Institution
 from app.models.user import User
 from app.schemas.user import UserCreate, UserUpdate
+from app.services import authorization_service
 
 # Nome do índice único de email definido na migration (ix_users_email);
 # usado para distinguir este conflito de outros IntegrityError no commit.
@@ -21,7 +22,27 @@ def get_constraint_name(error: IntegrityError) -> str | None:
     return getattr(diag, "constraint_name", None) if diag is not None else None
 
 
-def create_user(db: Session, institution_id: uuid.UUID, data: UserCreate) -> User:
+def _revalidate_admin(db: Session, acting_admin: User) -> User:
+    """Reconfirma o admin sob lock exclusivo da instituição.
+
+    O ``FOR UPDATE`` da instituição serializa todas as mutações de contas da
+    mesma instituição: um admin desativado ou despromovido por uma transação
+    concorrente que já fez commit é recusado aqui (401/403), e as invariantes
+    contadas a seguir — como "pelo menos um admin ativo" — são avaliadas sobre
+    um estado que nenhuma outra mutação de contas pode alterar até ao commit.
+    """
+    return authorization_service.revalidate_actor(
+        db,
+        user_id=acting_admin.id,
+        institution_id=acting_admin.institution_id,
+        permission=Permission.USERS_MANAGE,
+        exclusive_institution=True,
+    )
+
+
+def create_user(db: Session, acting_admin: User, data: UserCreate) -> User:
+    acting_admin = _revalidate_admin(db, acting_admin)
+    institution_id = acting_admin.institution_id
     # Email é único a nível global (não apenas por instituição) por agora.
     existing = db.scalar(select(User).where(User.email == data.email))
     if existing is not None:
@@ -65,13 +86,30 @@ def get_user(db: Session, institution_id: uuid.UUID, user_id: uuid.UUID) -> User
     return user
 
 
+def get_user_for_admin(db: Session, acting_admin: User, user_id: uuid.UUID) -> User:
+    acting_admin = authorization_service.revalidate_actor(
+        db,
+        user_id=acting_admin.id,
+        institution_id=acting_admin.institution_id,
+        permission=Permission.USERS_MANAGE,
+    )
+    return get_user(db, acting_admin.institution_id, user_id)
+
+
 def list_users(
     db: Session,
-    institution_id: uuid.UUID,
+    acting_admin: User,
     *,
     limit: int = 20,
     offset: int = 0,
 ) -> tuple[list[User], int]:
+    acting_admin = authorization_service.revalidate_actor(
+        db,
+        user_id=acting_admin.id,
+        institution_id=acting_admin.institution_id,
+        permission=Permission.USERS_MANAGE,
+    )
+    institution_id = acting_admin.institution_id
     query = select(User).where(User.institution_id == institution_id)
     count_query = (
         select(func.count()).select_from(User).where(User.institution_id == institution_id)
@@ -108,6 +146,7 @@ def update_user(
     user_id: uuid.UUID,
     data: UserUpdate,
 ) -> User:
+    acting_admin = _revalidate_admin(db, acting_admin)
     institution_id = acting_admin.institution_id
     user = get_user(db, institution_id, user_id)
 
@@ -124,16 +163,15 @@ def update_user(
     demoting_from_admin = user.role == "admin" and changes.get("role", "admin") != "admin"
 
     if user.role == "admin" and (deactivating or demoting_from_admin):
-        # SELECT ... FOR UPDATE na linha da instituição serializa qualquer
-        # operação concorrente que desative/despromova admins da mesma
-        # instituição: a segunda destas operações só continua depois da
-        # primeira terminar (commit ou rollback), altura em que a contagem
-        # abaixo já reflete a alteração feita pela primeira. Sem este lock,
-        # duas transações concorrentes podiam ambas ler "ainda há outro
-        # admin ativo" antes de qualquer uma delas gravar, e deixar a
-        # instituição sem nenhum admin ativo.
-        db.execute(select(Institution.id).where(Institution.id == institution_id).with_for_update())
-
+        # O SELECT ... FOR UPDATE na linha da instituição, tomado por
+        # _revalidate_admin no início, serializa qualquer operação concorrente
+        # que desative/despromova admins da mesma instituição: a segunda só
+        # continua depois da primeira terminar, altura em que a contagem
+        # abaixo já reflete a alteração feita pela primeira — e em que o
+        # próprio admin da segunda, se tiver sido desativado, já foi recusado
+        # pela revalidação. Sem este lock, duas transações concorrentes podiam
+        # ambas ler "ainda há outro admin ativo" antes de qualquer uma delas
+        # gravar, e deixar a instituição sem nenhum admin ativo.
         if deactivating and user.id == acting_admin.id:
             msg = "An admin cannot deactivate their own account."
             raise AuthorizationError(msg)

@@ -16,9 +16,9 @@ from sqlalchemy.orm import Session, sessionmaker
 
 from app.models.document_version import DocumentVersion
 from tests.test_retrieval import (
-    _create_admin,
     _create_document,
     _create_institution,
+    _create_manager,
     _create_searchable,
     _search,
     _setup,
@@ -199,7 +199,7 @@ def test_natural_question_respects_existing_filters(client: TestClient) -> None:
     )
 
     institution_b = _create_institution(client)
-    headers_b, _ = _create_admin(client, institution_b["id"])
+    headers_b, _ = _create_manager(client, institution_b["id"])
     _create_searchable(
         client,
         headers_b,

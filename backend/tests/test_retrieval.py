@@ -14,6 +14,7 @@ from app.models.document_chunk import DocumentChunk
 from app.models.document_version import DocumentVersion
 from app.models.institution import Institution
 from app.models.user import User
+from tests.role_support import create_account_and_login
 
 BOOTSTRAP_HEADERS = {"X-Bootstrap-Token": settings.bootstrap_token or ""}
 _ADMIN_PASSWORD = "supersecret123"
@@ -60,6 +61,12 @@ def _create_admin(client: TestClient, institution_id: str) -> tuple[dict[str, st
     )
     assert login.status_code == 200
     return {"Authorization": f"Bearer {login.json()['access_token']}"}, user_id
+
+
+def _create_manager(client: TestClient, institution_id: str) -> tuple[dict[str, str], str]:
+    """Gestor documental da instituição (o admin deixou de gerir documentos)."""
+    admin_headers, _ = _create_admin(client, institution_id)
+    return create_account_and_login(client, admin_headers, role="knowledge_manager")
 
 
 def _create_regular_user(
@@ -130,8 +137,9 @@ def _search(
 
 
 def _setup(client: TestClient) -> tuple[dict, dict[str, str], str]:
+    """Instituição e gestor documental, que carrega e pesquisa documentos."""
     institution = _create_institution(client)
-    headers, user_id = _create_admin(client, institution["id"])
+    headers, user_id = _create_manager(client, institution["id"])
     return institution, headers, user_id
 
 
@@ -156,11 +164,17 @@ def test_search_requires_authentication(client: TestClient) -> None:
 
 
 def test_regular_user_and_admin_can_search(client: TestClient) -> None:
-    institution, admin_headers, _ = _setup(client)
+    institution = _create_institution(client)
+    admin_headers, _ = _create_admin(client, institution["id"])
+    manager_headers, _ = create_account_and_login(
+        client, admin_headers, role="knowledge_manager"
+    )
     user_headers, _ = _create_regular_user(client, admin_headers)
-    _create_searchable(client, admin_headers, "O prazo de matrícula termina em setembro.")
+    _create_searchable(client, manager_headers, "O prazo de matrícula termina em setembro.")
 
+    # A pesquisa de evidência continua aberta a qualquer conta autenticada.
     assert _search(client, admin_headers, "matricula").status_code == 200
+    assert _search(client, manager_headers, "matricula").status_code == 200
     assert _search(client, user_headers, "matricula").status_code == 200
     assert institution["id"]
 
@@ -359,13 +373,16 @@ def test_default_language_and_unsupported_language(client: TestClient) -> None:
 
 
 def test_institution_isolation_applies_to_regular_user_and_admin(client: TestClient) -> None:
-    institution_a, admin_a, _ = _setup(client)
+    institution_a = _create_institution(client)
+    admin_a, _ = _create_admin(client, institution_a["id"])
+    manager_a, _ = create_account_and_login(client, admin_a, role="knowledge_manager")
     user_a, _ = _create_regular_user(client, admin_a)
-    document_a, _ = _create_searchable(client, admin_a, "segredo alfa institucional")
+    document_a, _ = _create_searchable(client, manager_a, "segredo alfa institucional")
 
     institution_b = _create_institution(client)
     admin_b, _ = _create_admin(client, institution_b["id"])
-    document_b, _ = _create_searchable(client, admin_b, "segredo beta institucional")
+    manager_b, _ = create_account_and_login(client, admin_b, role="knowledge_manager")
+    document_b, _ = _create_searchable(client, manager_b, "segredo beta institucional")
 
     assert _search(client, admin_a, "beta").json()["items"] == []
     assert _search(client, user_a, "beta").json()["items"] == []

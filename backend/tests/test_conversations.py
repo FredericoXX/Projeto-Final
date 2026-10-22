@@ -131,7 +131,11 @@ def test_list_conversations_regular_user_only_own(client: TestClient) -> None:
     assert body["items"][0]["title"] == "User A conversation"
 
 
-def test_list_conversations_admin_lists_institution(client: TestClient) -> None:
+def test_list_conversations_admin_lists_only_own(client: TestClient) -> None:
+    # Expectativa alterada intencionalmente: o admin institucional deixou de
+    # listar as conversas de toda a instituição (antes, total == 2). Passou a
+    # ver apenas as próprias, como qualquer outra conta — ver
+    # app/core/permissions.py e tests/test_role_separation.py.
     institution_id = _create_institution(client)
     admin_headers = _create_admin_and_login(client, institution_id)
 
@@ -140,10 +144,12 @@ def test_list_conversations_admin_lists_institution(client: TestClient) -> None:
 
     _create_conversation(client, user_a_headers, title="User A conversation")
     _create_conversation(client, user_b_headers, title="User B conversation")
+    _create_conversation(client, admin_headers, title="Admin conversation")
 
     response = client.get("/api/v1/conversations", headers=admin_headers)
     assert response.status_code == 200
-    assert response.json()["total"] == 2
+    assert response.json()["total"] == 1
+    assert [item["title"] for item in response.json()["items"]] == ["Admin conversation"]
 
 
 def test_get_conversation_from_other_institution_returns_404(client: TestClient) -> None:

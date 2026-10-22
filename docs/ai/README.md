@@ -81,6 +81,7 @@ Em caso de divergência prevalece:
 | Esquema, migrations, retrieval e regras de segurança | [`docs/database.md`](../database.md) |
 | Núcleo documental, extração, OCR e chunking | [`docs/document-core.md`](../document-core.md) |
 | Respostas fundamentadas e integração conversacional | [`docs/answering.md`](../answering.md) |
+| Perfis, permissões, identidade externa e integração institucional | [`docs/institutional-access.md`](../institutional-access.md) |
 | Diagnóstico do pipeline documental | [`docs/diagnostics/README.md`](../diagnostics/README.md) |
 | Interface web | [`frontend/README.md`](../../frontend/README.md) |
 | Configuração e limites | [`.env.example`](../../.env.example) |

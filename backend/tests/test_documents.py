@@ -13,6 +13,7 @@ import uuid
 from fastapi.testclient import TestClient
 
 from app.core.config import settings
+from tests.role_support import create_knowledge_manager
 
 _ADMIN_PASSWORD = "supersecret123"
 _USER_PASSWORD = "anothersecret123"
@@ -59,6 +60,11 @@ def _create_admin_and_login(client: TestClient, institution_id: str) -> dict[str
     )
     assert login.status_code == 200
     return {"Authorization": f"Bearer {login.json()['access_token']}"}
+
+
+def _create_manager_and_login(client: TestClient, institution_id: str) -> dict[str, str]:
+    """Gestor documental da instituição: o admin deixou de gerir documentos."""
+    return create_knowledge_manager(client, _create_admin_and_login(client, institution_id))
 
 
 def _create_user_and_login(
@@ -134,7 +140,7 @@ def test_create_document_forbidden_for_non_admin(client: TestClient) -> None:
 
 def test_create_document_assigns_institution_and_creator(client: TestClient) -> None:
     institution_id = _create_institution(client)
-    headers = _create_admin_and_login(client, institution_id)
+    headers = _create_manager_and_login(client, institution_id)
 
     me = client.get("/api/v1/auth/me", headers=headers)
     admin_id = me.json()["id"]
@@ -151,7 +157,7 @@ def test_create_document_without_language_uses_institution_default(
     client: TestClient,
 ) -> None:
     institution_id = _create_institution(client)
-    headers = _create_admin_and_login(client, institution_id)
+    headers = _create_manager_and_login(client, institution_id)
 
     body = _create_document(client, headers)
     assert body["language"] == "pt"
@@ -159,7 +165,7 @@ def test_create_document_without_language_uses_institution_default(
 
 def test_create_document_with_supported_language_works(client: TestClient) -> None:
     institution_id = _create_institution(client)
-    headers = _create_admin_and_login(client, institution_id)
+    headers = _create_manager_and_login(client, institution_id)
 
     body = _create_document(client, headers, language="en")
     assert body["language"] == "en"
@@ -167,7 +173,7 @@ def test_create_document_with_supported_language_works(client: TestClient) -> No
 
 def test_create_document_with_unsupported_language_returns_422(client: TestClient) -> None:
     institution_id = _create_institution(client)
-    headers = _create_admin_and_login(client, institution_id)
+    headers = _create_manager_and_login(client, institution_id)
 
     response = client.post(
         "/api/v1/documents", json=_document_payload(language="fr"), headers=headers
@@ -177,7 +183,7 @@ def test_create_document_with_unsupported_language_returns_422(client: TestClien
 
 def test_create_document_with_valid_validity_range(client: TestClient) -> None:
     institution_id = _create_institution(client)
-    headers = _create_admin_and_login(client, institution_id)
+    headers = _create_manager_and_login(client, institution_id)
 
     body = _create_document(
         client, headers, valid_from="2026-01-01", valid_until="2026-12-31"
@@ -190,7 +196,7 @@ def test_create_document_with_invalid_validity_range_returns_422(
     client: TestClient,
 ) -> None:
     institution_id = _create_institution(client)
-    headers = _create_admin_and_login(client, institution_id)
+    headers = _create_manager_and_login(client, institution_id)
 
     response = client.post(
         "/api/v1/documents",
@@ -202,7 +208,7 @@ def test_create_document_with_invalid_validity_range_returns_422(
 
 def test_create_document_rejects_unknown_fields(client: TestClient) -> None:
     institution_id = _create_institution(client)
-    headers = _create_admin_and_login(client, institution_id)
+    headers = _create_manager_and_login(client, institution_id)
 
     response = client.post(
         "/api/v1/documents",
@@ -214,7 +220,7 @@ def test_create_document_rejects_unknown_fields(client: TestClient) -> None:
 
 def test_create_document_rejects_non_http_source_url(client: TestClient) -> None:
     institution_id = _create_institution(client)
-    headers = _create_admin_and_login(client, institution_id)
+    headers = _create_manager_and_login(client, institution_id)
 
     response = client.post(
         "/api/v1/documents",
@@ -226,7 +232,7 @@ def test_create_document_rejects_non_http_source_url(client: TestClient) -> None
 
 def test_create_document_rejects_blank_title(client: TestClient) -> None:
     institution_id = _create_institution(client)
-    headers = _create_admin_and_login(client, institution_id)
+    headers = _create_manager_and_login(client, institution_id)
 
     response = client.post(
         "/api/v1/documents", json=_document_payload(title="   "), headers=headers
@@ -239,11 +245,11 @@ def test_create_document_rejects_blank_title(client: TestClient) -> None:
 
 def test_list_documents_returns_only_own_institution(client: TestClient) -> None:
     institution_a = _create_institution(client)
-    headers_a = _create_admin_and_login(client, institution_a)
+    headers_a = _create_manager_and_login(client, institution_a)
     _create_document(client, headers_a, title="Doc A")
 
     institution_b = _create_institution(client)
-    headers_b = _create_admin_and_login(client, institution_b)
+    headers_b = _create_manager_and_login(client, institution_b)
     _create_document(client, headers_b, title="Doc B")
 
     response = client.get("/api/v1/documents", headers=headers_a)
@@ -257,7 +263,7 @@ def test_list_documents_returns_only_own_institution(client: TestClient) -> None
 
 def test_list_documents_filters(client: TestClient) -> None:
     institution_id = _create_institution(client)
-    headers = _create_admin_and_login(client, institution_id)
+    headers = _create_manager_and_login(client, institution_id)
 
     _create_document(client, headers, title="Oficial PT", official_source=True)
     inactive = _create_document(client, headers, title="Inativo", language="en")
@@ -288,11 +294,11 @@ def test_list_documents_filters(client: TestClient) -> None:
 
 def test_get_document_from_other_institution_returns_404(client: TestClient) -> None:
     institution_a = _create_institution(client)
-    headers_a = _create_admin_and_login(client, institution_a)
+    headers_a = _create_manager_and_login(client, institution_a)
     document = _create_document(client, headers_a)
 
     institution_b = _create_institution(client)
-    headers_b = _create_admin_and_login(client, institution_b)
+    headers_b = _create_manager_and_login(client, institution_b)
 
     response = client.get(f"/api/v1/documents/{document['id']}", headers=headers_b)
     assert response.status_code == 404
@@ -304,7 +310,7 @@ def test_get_document_from_other_institution_returns_404(client: TestClient) -> 
 
 def test_update_document_works(client: TestClient) -> None:
     institution_id = _create_institution(client)
-    headers = _create_admin_and_login(client, institution_id)
+    headers = _create_manager_and_login(client, institution_id)
     document = _create_document(client, headers)
 
     response = client.patch(
@@ -326,7 +332,7 @@ def test_update_document_works(client: TestClient) -> None:
 
 def test_update_document_deactivation_works(client: TestClient) -> None:
     institution_id = _create_institution(client)
-    headers = _create_admin_and_login(client, institution_id)
+    headers = _create_manager_and_login(client, institution_id)
     document = _create_document(client, headers)
 
     response = client.patch(
@@ -340,11 +346,11 @@ def test_update_document_deactivation_works(client: TestClient) -> None:
 
 def test_update_document_from_other_institution_returns_404(client: TestClient) -> None:
     institution_a = _create_institution(client)
-    headers_a = _create_admin_and_login(client, institution_a)
+    headers_a = _create_manager_and_login(client, institution_a)
     document = _create_document(client, headers_a)
 
     institution_b = _create_institution(client)
-    headers_b = _create_admin_and_login(client, institution_b)
+    headers_b = _create_manager_and_login(client, institution_b)
 
     response = client.patch(
         f"/api/v1/documents/{document['id']}",
@@ -356,7 +362,7 @@ def test_update_document_from_other_institution_returns_404(client: TestClient) 
 
 def test_update_document_rejects_invalid_final_validity_range(client: TestClient) -> None:
     institution_id = _create_institution(client)
-    headers = _create_admin_and_login(client, institution_id)
+    headers = _create_manager_and_login(client, institution_id)
     document = _create_document(client, headers, valid_until="2026-06-30")
 
     # O payload só traz valid_from, mas o estado final (com o valid_until
@@ -372,7 +378,7 @@ def test_update_document_rejects_invalid_final_validity_range(client: TestClient
 
 def test_update_document_rejects_unknown_fields(client: TestClient) -> None:
     institution_id = _create_institution(client)
-    headers = _create_admin_and_login(client, institution_id)
+    headers = _create_manager_and_login(client, institution_id)
     document = _create_document(client, headers)
 
     response = client.patch(
@@ -385,7 +391,7 @@ def test_update_document_rejects_unknown_fields(client: TestClient) -> None:
 
 def test_update_language_without_versions_works(client: TestClient) -> None:
     institution_id = _create_institution(client)
-    headers = _create_admin_and_login(client, institution_id)
+    headers = _create_manager_and_login(client, institution_id)
     document = _create_document(client, headers)
 
     response = client.patch(
@@ -399,7 +405,7 @@ def test_update_language_without_versions_works(client: TestClient) -> None:
 
 def test_update_language_after_version_exists_returns_409(client: TestClient) -> None:
     institution_id = _create_institution(client)
-    headers = _create_admin_and_login(client, institution_id)
+    headers = _create_manager_and_login(client, institution_id)
     document = _create_document(client, headers)
 
     upload = _upload_version(client, headers, document["id"])
@@ -416,7 +422,7 @@ def test_update_language_after_version_exists_returns_409(client: TestClient) ->
 
 def test_update_language_to_unsupported_returns_422(client: TestClient) -> None:
     institution_id = _create_institution(client)
-    headers = _create_admin_and_login(client, institution_id)
+    headers = _create_manager_and_login(client, institution_id)
     document = _create_document(client, headers)
 
     response = client.patch(

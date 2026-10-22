@@ -59,9 +59,11 @@ garantia sobredeclarada é pior do que nenhuma:
 
 ## Permissões
 
-Nesta fase, **todos** os endpoints documentais são administrativos
-(`require_admin`) e limitados à instituição do admin autenticado.
-Staff, student e user não têm gestão documental direta. Um documento ou
+**Todos** os endpoints documentais exigem a permissão `documents.manage`
+(`require_permission`), atribuída apenas ao papel `knowledge_manager`, e estão
+limitados à instituição do gestor autenticado. O admin institucional deixou de
+ter esta permissão implícita; staff, student e user também não a têm (ver
+[`institutional-access.md`](institutional-access.md)). Um documento ou
 versão de outra instituição responde **404** (nunca 403), para não
 revelar a existência do recurso. Nenhum `institution_id` é aceite do
 cliente. Não foi criada uma nova matriz de permissões.
@@ -307,7 +309,7 @@ prompts, OpenAI e `message_sources` não foram alterados por esta estratégia.
 
 ## Endpoints
 
-Todos sob `/api/v1`, autenticados com Bearer JWT de um admin:
+Todos sob `/api/v1`, autenticados com Bearer JWT de um `knowledge_manager`:
 
 ```text
 POST   /documents                                          cria documento lógico (201)
@@ -325,7 +327,7 @@ DELETE /documents/{document_id}                            eliminação permanen
 
 ## Eliminação de documentos
 
-`DELETE /api/v1/documents/{document_id}` (apenas admin, isolamento
+`DELETE /api/v1/documents/{document_id}` (apenas `knowledge_manager`, isolamento
 institucional com 404) elimina permanentemente um documento **nunca
 citado**: chunks, versões e o próprio documento numa única transação, e
 depois os ficheiros do storage. Regras:

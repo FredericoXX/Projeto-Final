@@ -1,13 +1,17 @@
 import { useState } from 'react';
 import { NavLink, Outlet } from 'react-router-dom';
 import { useAuth } from '../../auth/useAuth';
+import { useAcademicRequestsAccess } from '../../features/academicRequests/hooks';
 import { useTranslation } from '../../i18n/useTranslation';
 import { LanguageSelector } from './LanguageSelector';
 
 const APP_NAME = import.meta.env.VITE_APP_NAME ?? 'Institutional Assistant';
 
 export function AppLayout() {
-  const { user, isAdmin, logout } = useAuth();
+  const { user, can, logout } = useAuth();
+  // A área de pedidos só aparece a contas com associação autorizada e com a
+  // integração ativa; o backend volta a verificar tudo em cada pedido.
+  const academicRequestsAccess = useAcademicRequestsAccess();
   const { t } = useTranslation();
   const [menuOpen, setMenuOpen] = useState(false);
 
@@ -37,7 +41,12 @@ export function AppLayout() {
           <NavLink className="sidebar-link" to="/app/conversations" onClick={closeMenu}>
             {t('nav.conversations')}
           </NavLink>
-          {isAdmin && (
+          {academicRequestsAccess.data?.available && (
+            <NavLink className="sidebar-link" to="/app/academic-requests" onClick={closeMenu}>
+              {t('nav.academicRequests')}
+            </NavLink>
+          )}
+          {can('documents.manage') && (
             <NavLink className="sidebar-link" to="/admin/documents" onClick={closeMenu}>
               {t('nav.documents')}
             </NavLink>

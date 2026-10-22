@@ -71,7 +71,7 @@ from tests.moment06_support import (
     create_conversation,
     create_searchable_document,
     search,
-    setup_institution_with_admin,
+    setup_institution_with_manager,
     upload_version,
 )
 
@@ -189,7 +189,7 @@ def test_c8_chunk_language_divergent_from_document_is_excluded_from_retrieval(
     O documento continua em ``pt`` e a pergunta é feita em ``pt``: a única
     condição violada é a do idioma do **chunk**.
     """
-    _, headers, _ = setup_institution_with_admin(client)
+    _, headers, _ = setup_institution_with_manager(client)
     _, version = create_searchable_document(client, headers, DIVERGENT_CONTENT)
 
     before = search(client, headers, INVARIANT_TERM)
@@ -223,7 +223,7 @@ def test_c8_chunk_language_divergent_is_rejected_by_citation_revalidation(
     metadados continua coerente: a única condição que falha é o idioma do
     chunk.
     """
-    _, headers, _ = setup_institution_with_admin(client)
+    _, headers, _ = setup_institution_with_manager(client)
     document, version = create_searchable_document(client, headers, DIVERGENT_CONTENT)
     document_id = uuid.UUID(document["id"])
     version_id = uuid.UUID(version["id"])
@@ -275,7 +275,7 @@ def test_d2_diagnostic_now_evaluates_chunk_language_like_retrieval(
     provar a tese da Fase 4: perante a mesma linha, o diagnóstico e a política
     dizem agora o mesmo, e C8 aparece com nome próprio no relatório.
     """
-    _, headers, _ = setup_institution_with_admin(client)
+    _, headers, _ = setup_institution_with_manager(client)
     document, version = create_searchable_document(client, headers, DIVERGENT_CONTENT)
     document_id = uuid.UUID(document["id"])
     version_id = uuid.UUID(version["id"])
@@ -329,7 +329,7 @@ def test_c12_absence_of_processed_version_is_reported_as_its_own_condition(
     No diagnóstico tem forma própria — uma condição única, ``processed_version_exists``,
     e nenhuma das outras é sequer avaliada.
     """
-    _, headers, _ = setup_institution_with_admin(client)
+    _, headers, _ = setup_institution_with_manager(client)
     document = create_searchable_document(client, headers, "campus provedor alfa")[0]
     document_id = uuid.UUID(document["id"])
 
@@ -371,7 +371,7 @@ def test_c5_is_absent_from_citation_revalidation_which_accepts_a_superseded_vers
     O teste fixa que C5 não é aplicada aqui — se alguém fundir as duas
     políticas, este teste falha.
     """
-    _, headers, _ = setup_institution_with_admin(client)
+    _, headers, _ = setup_institution_with_manager(client)
     document, version_1 = create_searchable_document(
         client, headers, "campus provedor alfa versao antiga"
     )
@@ -422,7 +422,7 @@ def test_phase_zero_issue_24_preserves_historical_provenance_when_n_plus_one_is_
     só possa devolver N+1. Depois de persistida, a fonte histórica continua
     legível sem reavaliar a elegibilidade atual.
     """
-    institution, headers, _ = setup_institution_with_admin(client)
+    institution, headers, _ = setup_institution_with_manager(client)
     conversation = create_conversation(client, headers)
     document, version_n = create_searchable_document(
         client,

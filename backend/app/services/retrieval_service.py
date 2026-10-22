@@ -15,6 +15,7 @@ from app.schemas.retrieval import (
     RetrievalSearchRequest,
     RetrievalSearchResponse,
 )
+from app.services import authorization_service
 from app.services.institution_service import get_institution
 
 
@@ -24,6 +25,12 @@ def search_evidence(
     payload: RetrievalSearchRequest,
     retriever: Retriever,
 ) -> RetrievalSearchResponse:
+    # Reconfirma a conta na transação da pesquisa: uma desativação concorrente
+    # já gravada é vista aqui, e uma posterior espera pelo fim desta leitura.
+    # A pesquisa lexical só lê a base de dados, sem chamada externa.
+    authorization_service.revalidate_actor(
+        db, user_id=current_user.id, institution_id=current_user.institution_id
+    )
     institution = get_institution(db, current_user.institution_id)
     language = resolve_language(
         payload.language,

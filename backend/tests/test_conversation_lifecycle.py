@@ -23,6 +23,7 @@ from tests.test_conversation_answering import (
     _create_admin,
     _create_conversation,
     _create_institution,
+    _create_manager,
     _create_searchable_document,
     _create_user,
     _row_counts,
@@ -50,7 +51,7 @@ def _setup_with_document(
     client: TestClient,
 ) -> tuple[dict, dict[str, str], str, dict]:
     institution = _create_institution(client)
-    headers, admin_id = _create_admin(client, institution["id"])
+    headers, admin_id = _create_manager(client, institution["id"])
     _create_searchable_document(
         client,
         headers,
@@ -354,11 +355,26 @@ def test_owner_renames_active_conversation_with_trim(client: TestClient) -> None
     assert response.json()["title"] == "Novo nome"
 
 
-def test_admin_renames_conversation_of_own_institution(client: TestClient) -> None:
+def test_admin_cannot_rename_another_users_conversation(client: TestClient) -> None:
+    # Expectativa alterada intencionalmente: antes, o admin renomeava qualquer
+    # conversa da sua instituição (200). O admin institucional deixou de ter
+    # acesso a conversas de terceiros; a conversa alheia responde como
+    # inexistente e o título fica intacto.
     institution = _create_institution(client)
     admin_headers, _ = _create_admin(client, institution["id"])
     user_headers, _ = _create_user(client, admin_headers)
     conversation = _create_conversation(client, user_headers)
+
+    response = _rename(client, conversation["id"], admin_headers, title="Renomeada pelo admin")
+    assert response.status_code == 404
+    unchanged = client.get(f"/api/v1/conversations/{conversation['id']}", headers=user_headers)
+    assert unchanged.json()["title"] == conversation["title"]
+
+
+def test_admin_renames_own_conversation(client: TestClient) -> None:
+    institution = _create_institution(client)
+    admin_headers, _ = _create_admin(client, institution["id"])
+    conversation = _create_conversation(client, admin_headers)
 
     response = _rename(client, conversation["id"], admin_headers, title="Renomeada pelo admin")
     assert response.status_code == 200
@@ -516,8 +532,10 @@ def test_listing_pagination_and_isolation_remain_correct(client: TestClient) -> 
     rest = client.get("/api/v1/conversations?limit=2&offset=2", headers=user_headers).json()
     assert len(rest["items"]) == 1
 
-    # Outra instituição nunca influencia a lista.
+    # Outra instituição nunca influencia a lista. Expectativa alterada
+    # intencionalmente: antes, o admin via as quatro conversas da instituição
+    # (total == 4); passou a ver apenas a sua.
     institution_b = _create_institution(client)
     headers_b, _ = _create_admin(client, institution_b["id"])
     _create_conversation(client, headers_b)
-    assert client.get("/api/v1/conversations", headers=admin_headers).json()["total"] == 4
+    assert client.get("/api/v1/conversations", headers=admin_headers).json()["total"] == 1

@@ -1,0 +1,522 @@
+{
+  "source_snapshot": {
+    "date": "2026-10-09",
+    "branch": "feat/institutional-permissions-and-requests-preparation",
+    "head": "ca482803676f6509db5f7c851ff7fbe9e10404a4",
+    "base": "ca482803676f6509db5f7c851ff7fbe9e10404a4",
+    "remote": "https://github.com/FredericoXX/Projeto-Final.git",
+    "status": "M .env.example\n M README.md\n M backend/alembic/env.py\n M backend/app/api/dependencies/auth.py\n M backend/app/api/routes/auth.py\n M backend/app/api/routes/conversations.py\n M backend/app/api/routes/documents.py\n M backend/app/api/routes/institutions.py\n M backend/app/api/routes/users.py\n M backend/app/core/config.py\n M backend/app/core/error_handlers.py\n M backend/app/core/exceptions.py\n M backend/app/main.py\n M backend/app/models/document.py\n M backend/app/models/user.py\n M backend/app/schemas/document.py\n M backend/app/schemas/user.py\n M backend/app/services/conversation_answering_service.py\n M backend/app/services/conversation_service.py\n M backend/app/services/document_service.py\n M backend/app/services/document_version_service.py\n M backend/app/services/human_handoff_service.py\n M backend/app/services/message_service.py\n M backend/tests/conftest.py\n M backend/tests/moment06_support.py\n M backend/tests/test_answering_endpoint.py\n M backend/tests/test_answering_service.py\n M backend/tests/test_conversation_answering.py\n M backend/tests/test_conversation_lifecycle.py\n M backend/tests/test_conversations.py\n M backend/tests/test_diagnostics_uses_retrieval_eligibility.py\n M backend/tests/test_document_chunks.py\n M backend/tests/test_document_deletion.py\n M backend/tests/test_document_pipeline_diagnostics.py\n M backend/tests/test_document_processing_ocr.py\n M backend/tests/test_document_storage.py\n M backend/tests/test_document_versions.py\n M backend/tests/test_documents.py\n M backend/tests/test_human_handoff.py\n M backend/tests/test_message_source_uses_citation_persistence_eligibility.py\n M backend/tests/test_migrations.py\n M backend/tests/test_moment06_answering_characterisation.py\n M backend/tests/test_moment06_evidence_eligibility_characterisation.py\n M backend/tests/test_moment06_public_contracts_characterisation.py\n M backend/tests/test_rebuild_document_chunks.py\n M backend/tests/test_referenced_document_versions.py\n M backend/tests/test_retrieval.py\n M backend/tests/test_retrieval_natural_language.py\n M backend/tests/test_retrieval_uses_retrieval_eligibility.py\n M docs/ManualConfiguracao.md\n M docs/ai/02-current-state.md\n M docs/ai/README.md\n M docs/answering.md\n M docs/database.md\n M docs/document-core.md\n M docs/relatorios/a2-2-decision-policy-specification.md\n M docs/relatorios/d4-1-pilot-corpus-ground-truth.md\n M frontend/README.md\n M frontend/src/api/auth.ts\n M frontend/src/api/errors.ts\n M frontend/src/app/router.tsx\n M frontend/src/auth/AuthContext.ts\n M frontend/src/auth/AuthProvider.tsx\nRM frontend/src/auth/AdminRoute.tsx -> frontend/src/auth/PermissionRoute.tsx\n M frontend/src/auth/routes.test.tsx\n M frontend/src/components/layout/AppLayout.tsx\n M frontend/src/i18n/en.ts\n M frontend/src/i18n/pt.ts\n M frontend/src/test/fixtures.ts\n M frontend/src/test/handlers.ts\n M frontend/src/types/auth.ts\n?? backend/alembic/versions/d1a7c3e9b4f2_add_knowledge_manager_role.py\n?? backend/alembic/versions/e3b9f1c7a5d8_create_user_external_identities.py\n?? backend/app/api/routes/academic_requests.py\n?? backend/app/core/permissions.py\n?? backend/app/institutional/\n?? backend/app/models/user_external_identity.py\n?? backend/app/schemas/academic_request.py\n?? backend/app/schemas/external_identity.py\n?? backend/app/services/academic_request_service.py\n?? backend/app/services/external_identity_service.py\n?? backend/tests/role_support.py\n?? backend/tests/test_academic_requests.py\n?? backend/tests/test_role_separation.py\n?? docs/institutional-access.md\n?? frontend/src/api/academicRequests.ts\n?? frontend/src/features/academicRequests/\n?? frontend/src/types/academicRequests.ts",
+    "files": [
+      {
+        "path": ".env.example",
+        "sha256": "f808e21dc07b920f29e7478e9dbd936faee3e23599f7479fe9d41874fc9b6653"
+      },
+      {
+        "path": "README.md",
+        "sha256": "16c460e915b627165b850501e39c3b1527a5bc19534bd1239f685f0bffe50d2e"
+      },
+      {
+        "path": "backend/alembic/env.py",
+        "sha256": "7bc618702ffbcda75be6b92c7aab1dfd3e48694d7fbd151d09dd1f48154c6bb1"
+      },
+      {
+        "path": "backend/alembic/versions/d1a7c3e9b4f2_add_knowledge_manager_role.py",
+        "sha256": "e333caae05c0c90f9dbc8a124490c2f33b3a4a4224c1362393ed2bcb2d91a2ba"
+      },
+      {
+        "path": "backend/alembic/versions/e3b9f1c7a5d8_create_user_external_identities.py",
+        "sha256": "168ad60015596855b15804029f353c3f588782e48752eef5e8d1f1bf58df7f74"
+      },
+      {
+        "path": "backend/app/api/dependencies/auth.py",
+        "sha256": "ae9dbf6e546d59c32ebb1d86aaeba5b773188e66be02f4ebb611475d9239cd37"
+      },
+      {
+        "path": "backend/app/api/routes/academic_requests.py",
+        "sha256": "551d245db77f73304aa58f59e66b9dffe76fb6e1f17dc3a1a180632b6ea94a75"
+      },
+      {
+        "path": "backend/app/api/routes/auth.py",
+        "sha256": "ab3c7d0a76772888ad686376b99d11e69c27692cefb85f427f0ff9152599a05c"
+      },
+      {
+        "path": "backend/app/api/routes/conversations.py",
+        "sha256": "c57f4d6ea1338052d8a989e0107c18e4dae6738fc6e5672ddcf777472c79c462"
+      },
+      {
+        "path": "backend/app/api/routes/documents.py",
+        "sha256": "57a17ed2d0ab4a458018d35e6e19859df6a2fabd7a96ed6c11f1802d56e28f77"
+      },
+      {
+        "path": "backend/app/api/routes/institutions.py",
+        "sha256": "fd34617a03dcfb006f7a81e38833a172bede68f2d5a11931d3ec24a416dbf60c"
+      },
+      {
+        "path": "backend/app/api/routes/users.py",
+        "sha256": "d099c3519afe502e80cf2005a08c30042953c2dcaba647498862665944a9bd7f"
+      },
+      {
+        "path": "backend/app/core/config.py",
+        "sha256": "4cb95e0472450226c79229791090a7b27fe2ddf8eebb61f3ec3a42ef2b055fd5"
+      },
+      {
+        "path": "backend/app/core/error_handlers.py",
+        "sha256": "5e958cf53f98f7801dc44ee3ed19cede494878d263d34448b41f3d2074338e87"
+      },
+      {
+        "path": "backend/app/core/exceptions.py",
+        "sha256": "92ff5625b778604fc5a3142a285afcd9dd16730f1e67084a6dcaed93003c9832"
+      },
+      {
+        "path": "backend/app/core/permissions.py",
+        "sha256": "8f2d98b3336756e57875ea644c1f908169b0c64a1de07c0b93f91d74f5477cde"
+      },
+      {
+        "path": "backend/app/institutional/__init__.py",
+        "sha256": "c931be9988ae43bde17af2d57fe11fce06576b2829088444a33822b7665b906c"
+      },
+      {
+        "path": "backend/app/institutional/contracts.py",
+        "sha256": "b0afb97ce9ce163df64d5b22d851f9a01b41d535fe3b820e9ac622a68d91527e"
+      },
+      {
+        "path": "backend/app/institutional/dependencies.py",
+        "sha256": "abafa7f7c021636b3d27063605d95584f44da3018379a3798f8e6ebf21c8e532"
+      },
+      {
+        "path": "backend/app/institutional/providers/__init__.py",
+        "sha256": "5032a9044e4e1b0169191c74a854a5dcae2e82ea83ebd0b9489ca9445133cd5b"
+      },
+      {
+        "path": "backend/app/institutional/providers/mock.py",
+        "sha256": "cf0e24b22b3f467380ec21ef4a1b20ad3922b5c4f66fcd515ee548af96bdc7c0"
+      },
+      {
+        "path": "backend/app/main.py",
+        "sha256": "81558789dc7e9fc76696d6a341cb2c194ac35eb91ce1b1aafc63e15338b2bdc8"
+      },
+      {
+        "path": "backend/app/models/document.py",
+        "sha256": "218547ee5b6311b6cff40f28adc2685853d556004ef06fc70afff16e197cf662"
+      },
+      {
+        "path": "backend/app/models/user.py",
+        "sha256": "47719bbd81a9c51c7180e4ead460b58005b0c9f6366a5927a0e98407e9ca8edb"
+      },
+      {
+        "path": "backend/app/models/user_external_identity.py",
+        "sha256": "d1989e32f8d9330e284c5a6a50f6143c2779ff97118db4540d119208f53182d0"
+      },
+      {
+        "path": "backend/app/schemas/academic_request.py",
+        "sha256": "913664c30478af915db2897fd69bbb5966fb66f6c8107dc0f7de0a4ab342740a"
+      },
+      {
+        "path": "backend/app/schemas/document.py",
+        "sha256": "d75272aa680d12ee459f7cc8c3dcf013334b58489e6a71c098f31dcd27f3f19b"
+      },
+      {
+        "path": "backend/app/schemas/external_identity.py",
+        "sha256": "d88f2a0867ed06ad7cd9468bf5b2aacbc99d53c941f4cf5be331bcd98e1792ad"
+      },
+      {
+        "path": "backend/app/schemas/user.py",
+        "sha256": "9c44d1ac551a45d334f86d62355fb9e56e9e4b90ca96b0f3ba6219c6a9e16fa6"
+      },
+      {
+        "path": "backend/app/services/academic_request_service.py",
+        "sha256": "ce529a9e128bad7fe324491c3a384b606787397cf9102843a92c9b68b2557f39"
+      },
+      {
+        "path": "backend/app/services/conversation_answering_service.py",
+        "sha256": "2d131dc7eb01664a2af645d48060404ff19f47487851620ebd725880eb0aa16a"
+      },
+      {
+        "path": "backend/app/services/conversation_service.py",
+        "sha256": "5cfb4857c364f7a2f624769d19f63b26e210807c020fa4cf3b2767f554cf3549"
+      },
+      {
+        "path": "backend/app/services/document_service.py",
+        "sha256": "12d808a31eb1a0aca632d60eef8b496ec3dcd91bcf594b6ebf5f104817ab0d06"
+      },
+      {
+        "path": "backend/app/services/document_version_service.py",
+        "sha256": "78f4729baf51e3ff925a4dcb4f8f22db13c63c4a7d30e970d888cb8580c5e88c"
+      },
+      {
+        "path": "backend/app/services/external_identity_service.py",
+        "sha256": "0f06900f7f8d385e10df6b8317c6ededcab540e608a366c958edd9094ab90839"
+      },
+      {
+        "path": "backend/app/services/human_handoff_service.py",
+        "sha256": "b22ef80c5d66ea98cfddcfa24657b5bcff94229483e4eb30a58c5e58f1fd6920"
+      },
+      {
+        "path": "backend/app/services/message_service.py",
+        "sha256": "6bdbc6d2381fc05a35f51c33e20c9d1cdc6a940afdbfb14aa82ca46ecb6ea1d0"
+      },
+      {
+        "path": "backend/tests/conftest.py",
+        "sha256": "9c4b92143308033becb1caa65861cec15a8f99741d2b8bed38f95c06fd97ad22"
+      },
+      {
+        "path": "backend/tests/moment06_support.py",
+        "sha256": "8697b05a74a9618fe15cbb8a503bc6cd10646dcc49097e691a106c191380f10d"
+      },
+      {
+        "path": "backend/tests/role_support.py",
+        "sha256": "368796ea87b8db0d2095eebc0d8373f8a940262739e9c82ffabd32b7918b4083"
+      },
+      {
+        "path": "backend/tests/test_academic_requests.py",
+        "sha256": "c8129046f5dee93a27e3f10444f5da0e03d9fe0ca6f3cdab8ee01dfe015ba9f4"
+      },
+      {
+        "path": "backend/tests/test_answering_endpoint.py",
+        "sha256": "b0999b6cb81305b27e51fba3c80cd7de0577e567dec2328450b5300cba2b52c8"
+      },
+      {
+        "path": "backend/tests/test_answering_service.py",
+        "sha256": "ebabfa882988361c04a422fc1fef66c30c2b02a248238296fe4f50f0fba9dda9"
+      },
+      {
+        "path": "backend/tests/test_conversation_answering.py",
+        "sha256": "5f6146df34dfafdb7e0686dabbe799a8b32e81ceb16185688750a1a499451a5c"
+      },
+      {
+        "path": "backend/tests/test_conversation_lifecycle.py",
+        "sha256": "fcdf1aa7684250f0ead9bc94c0e88cd8d87d9fdbd24c90c0c6b8374f3298b07e"
+      },
+      {
+        "path": "backend/tests/test_conversations.py",
+        "sha256": "bf2f659b397c324e379cf702c23eadd61538d7f19391580858383944ef61558e"
+      },
+      {
+        "path": "backend/tests/test_diagnostics_uses_retrieval_eligibility.py",
+        "sha256": "4b9bf32d51ce01672a3c9c7cf246472e8ec06a3539caf4c2e1a619c021a2a0bc"
+      },
+      {
+        "path": "backend/tests/test_document_chunks.py",
+        "sha256": "a3cf41377e77c57533605f668ede6312eb1b0c8771fb3877fd1f31f3add7d9bd"
+      },
+      {
+        "path": "backend/tests/test_document_deletion.py",
+        "sha256": "39d3f5a562973727797c906783cecaf047fe96abf240217ca7c41c44633267a2"
+      },
+      {
+        "path": "backend/tests/test_document_pipeline_diagnostics.py",
+        "sha256": "5061a8ed5b78c120eb2e6ff2ef38bbffb71625169a0f3141633a8a51617fef14"
+      },
+      {
+        "path": "backend/tests/test_document_processing_ocr.py",
+        "sha256": "0e4a19c61ea86b815d5097b7eaadfa9d0021eeca57530173ce9afcc5b1317936"
+      },
+      {
+        "path": "backend/tests/test_document_storage.py",
+        "sha256": "689d5f5b048d19c51faecfb5d1d4574611f9c7e70e0eb2cbbe76516fddd19e39"
+      },
+      {
+        "path": "backend/tests/test_document_versions.py",
+        "sha256": "10c6d173c364adfbae6a7f3c5077c6e96346ad377e4d5669cc77b76f1cc22c16"
+      },
+      {
+        "path": "backend/tests/test_documents.py",
+        "sha256": "6c6aebbedac2a214decaf6a0536379ef779ee06575a290731d7825fc1cdc6cf0"
+      },
+      {
+        "path": "backend/tests/test_human_handoff.py",
+        "sha256": "b1beaa1f636193322e5a31068c999cc73014c17d489c475e7974c19f4f01c91c"
+      },
+      {
+        "path": "backend/tests/test_message_source_uses_citation_persistence_eligibility.py",
+        "sha256": "068caa35430ab67dad0c54ce219f559f2689e4445f5fe57286651d5d7696abdd"
+      },
+      {
+        "path": "backend/tests/test_migrations.py",
+        "sha256": "2e5c410701be489f9962200e8e5a4a892032b2197962fec36d4fa89c576e94c0"
+      },
+      {
+        "path": "backend/tests/test_moment06_answering_characterisation.py",
+        "sha256": "7be7ce483ba5f1126be07c15aa02a2269c757dcdd0af8f2e5f9d6d3fe34b07c6"
+      },
+      {
+        "path": "backend/tests/test_moment06_evidence_eligibility_characterisation.py",
+        "sha256": "216836c84d00cf81e54836601fffa4fd7d89209565ddb35f0898b77871cfe361"
+      },
+      {
+        "path": "backend/tests/test_moment06_public_contracts_characterisation.py",
+        "sha256": "d82f2ab4b39293f6373c14caeb754c7c126730d307953e58177b7e7dcf027635"
+      },
+      {
+        "path": "backend/tests/test_rebuild_document_chunks.py",
+        "sha256": "6f08a39800270e74a43948a4c802f619fbcbc8ac27c384e1ddddd35e55b7065c"
+      },
+      {
+        "path": "backend/tests/test_referenced_document_versions.py",
+        "sha256": "1fc80714e67f0c5c629f1bebc411b3a097df206b8c99de4750f6680e4f5d59f9"
+      },
+      {
+        "path": "backend/tests/test_retrieval.py",
+        "sha256": "7e07e8d0a811059f464e134e67268b0b6089a3669dcdff14c69725e47344c0a5"
+      },
+      {
+        "path": "backend/tests/test_retrieval_natural_language.py",
+        "sha256": "ee22ebf10f9d573966a77b1335dc9d566a60f61f9aaf23ea909995c1b6b11c53"
+      },
+      {
+        "path": "backend/tests/test_retrieval_uses_retrieval_eligibility.py",
+        "sha256": "e0bbbd7bb316d9dfc9ff33181ed49be1ab0a79d380ecea947e2065c036e6901e"
+      },
+      {
+        "path": "backend/tests/test_role_separation.py",
+        "sha256": "d82e35d13902d8aa427b50b780149639fbe0d20c24318b41a9d1e24f55248071"
+      },
+      {
+        "path": "docs/ManualConfiguracao.md",
+        "sha256": "90d03b3d8186ffb013cbb58d921510c8e4c8af1023e4f0211a2339496c87592c"
+      },
+      {
+        "path": "docs/ai/02-current-state.md",
+        "sha256": "dd92d9cb2c01a25ba05721012e6f02b3dba8a1088ede4cbdaea787b80686d57c"
+      },
+      {
+        "path": "docs/ai/README.md",
+        "sha256": "646df057a4fdb183957d18a3536406f1dde2bb37a1a710d541540428b4efc81d"
+      },
+      {
+        "path": "docs/answering.md",
+        "sha256": "05cffdd93ec3347f0ae74fe9dd811dc898f27ce94660d22a8ed48ed428ed430a"
+      },
+      {
+        "path": "docs/database.md",
+        "sha256": "267dc89b9c4cf8c3d75df17162a5e697b39aec6c2a3fc7bd50b872aa9c9c9e7a"
+      },
+      {
+        "path": "docs/document-core.md",
+        "sha256": "c18e81e520c19cf7109c96f611806c7fbd57157bdff669f7510e5e5f13df033f"
+      },
+      {
+        "path": "docs/institutional-access.md",
+        "sha256": "8ea44f342dfbc094e8800a48565153ade43725936a78b9c36736d7bb6ecf1c65"
+      },
+      {
+        "path": "docs/relatorios/a2-2-decision-policy-specification.md",
+        "sha256": "fe771fadd4ad036fb7020867f41b47edde7aaf18c6a523d9022ac3d82f3a24fe"
+      },
+      {
+        "path": "docs/relatorios/d4-1-pilot-corpus-ground-truth.md",
+        "sha256": "91ee1f858a6a4c7d75388cfc8203f9cefbf19df1ab67760384dffa60e948f666"
+      },
+      {
+        "path": "frontend/README.md",
+        "sha256": "c0e4db8757575bc8933060c7ec16d840586c118d6b65f620943d7ced8d4e9f98"
+      },
+      {
+        "path": "frontend/src/api/academicRequests.ts",
+        "sha256": "6bd3acb817bc1b36dbb7d89ae35bdd54b32a8ccc06c059cd95fcfce9c0e18b90"
+      },
+      {
+        "path": "frontend/src/api/auth.ts",
+        "sha256": "e3d1ea38c5c6ef0b98546c8df24484d3accfb5757eed56214238f95eef01f7f0"
+      },
+      {
+        "path": "frontend/src/api/errors.ts",
+        "sha256": "6d1d8187c35c7f8d826f29c8907c15890391ffce961e26315fbdd377b4e27521"
+      },
+      {
+        "path": "frontend/src/app/router.tsx",
+        "sha256": "f07d976fca80e5bfe26e21d7120792a7d04a77cb65c3552cf678e5f67a81e89a"
+      },
+      {
+        "path": "frontend/src/auth/AuthContext.ts",
+        "sha256": "a3eb3bd70b896f1f863882b78e6d8d8b03971eeac74cb824509eb0d1411d45cf"
+      },
+      {
+        "path": "frontend/src/auth/AuthProvider.tsx",
+        "sha256": "8c28a82bb0b6d792366f5e7894aa62244709e0e371c921d42c218775e67f1c53"
+      },
+      {
+        "path": "frontend/src/auth/PermissionRoute.tsx",
+        "sha256": "e6d57993c90d080abc27dc61bf67bfa4a77277db73a2aa0440064a2c633e39f5"
+      },
+      {
+        "path": "frontend/src/auth/routes.test.tsx",
+        "sha256": "de2038d7906af8a62a10527a3b250d36368de84d4c90a59dcc9f184c48531698"
+      },
+      {
+        "path": "frontend/src/components/layout/AppLayout.tsx",
+        "sha256": "47dc03eef9067390d9be7ac3a2bd50ce76bd95ebd4e2a3c2d8bc219190796b14"
+      },
+      {
+        "path": "frontend/src/features/academicRequests/AcademicRequestDetailPage.tsx",
+        "sha256": "f20f29e6e476e8960058b046a2d28824470cc69087a67ebcdbe1413fd3df7b74"
+      },
+      {
+        "path": "frontend/src/features/academicRequests/AcademicRequestsAccessGate.tsx",
+        "sha256": "482b96d8186bffe7671e1734aafe4a5a66f38462fe10791a5618e4cff78876f9"
+      },
+      {
+        "path": "frontend/src/features/academicRequests/AcademicRequestsPage.tsx",
+        "sha256": "7e61725bf7fcb2c75b9dbf2923c5777480e3f48395b31ee04943ef467d7589d8"
+      },
+      {
+        "path": "frontend/src/features/academicRequests/ProvenanceNote.tsx",
+        "sha256": "96bda68e95d0c6dc184ac9fdc017d6006141e29c9139d3fc248bd33a80654c1c"
+      },
+      {
+        "path": "frontend/src/features/academicRequests/academicRequests.test.tsx",
+        "sha256": "655810eceaee4f21e0bad82a5445ac1d2ae607e6a30497cd750a5a065442794e"
+      },
+      {
+        "path": "frontend/src/features/academicRequests/hooks.ts",
+        "sha256": "30e9260a3c2c056ff88d99ce14f091824e28805cad3d58cc0e377b31598b820b"
+      },
+      {
+        "path": "frontend/src/i18n/en.ts",
+        "sha256": "0fa7eef14189e900fc548879b9d60c33dcf616f3f4d5b81371abf9b29052e152"
+      },
+      {
+        "path": "frontend/src/i18n/pt.ts",
+        "sha256": "6f4ef2768ee92838c3ac91de59865738e3dac3435c13efc52b015defd48bc5b7"
+      },
+      {
+        "path": "frontend/src/test/fixtures.ts",
+        "sha256": "a2182b679639e07868253f9be2fec61f515b5b9b732620793247610a9834b1d2"
+      },
+      {
+        "path": "frontend/src/test/handlers.ts",
+        "sha256": "f4045744b4a70d904f12303308717caa55830ef9a112963e26e93ead9cec6e40"
+      },
+      {
+        "path": "frontend/src/types/academicRequests.ts",
+        "sha256": "bdafff0c7a2266bc00adf7c4ee34495e8f867f4072a69944ce496c2d1440a30b"
+      },
+      {
+        "path": "frontend/src/types/auth.ts",
+        "sha256": "87826d2c4b172d9a3a3c9f5f724d778da45d965e6117c3c04069ad72b5807867"
+      }
+    ],
+    "source_manifest_sha256": "1aad3acce1cc2d4b655dbae53f23930e8122b36d3d609bc23437c3ca23d6b02e"
+  },
+  "probes": {
+    "alembic": {
+      "upgrade": "PASS",
+      "current": "PASS",
+      "heads": [
+        "e3b9f1c7a5d8"
+      ],
+      "check": "PASS",
+      "database": "institutional_assistant_audit_bb6cdbdb9ae7",
+      "database_dropped": true
+    },
+    "mock_institution_collision": {
+      "institution_ids_differ": true,
+      "both_http": [
+        200,
+        200
+      ],
+      "same_items": true,
+      "a_ids": [
+        "REQ-0001-A",
+        "REQ-0001-B",
+        "REQ-0001-C"
+      ],
+      "b_ids": [
+        "REQ-0001-A",
+        "REQ-0001-B",
+        "REQ-0001-C"
+      ]
+    },
+    "document_creation_after_committed_demotion": {
+      "http": 201,
+      "next_request_http": 403
+    },
+    "external_link_after_committed_admin_demotion": {
+      "http": 200,
+      "next_request_http": 403
+    },
+    "academic_read_after_committed_deactivation": {
+      "http": 200,
+      "record_count": 3,
+      "next_request_http": 401
+    },
+    "conversation_rename_after_committed_deactivation": {
+      "http": 200,
+      "next_request_http": 401
+    },
+    "institutional_errors": [
+      {
+        "outcome": "access_denied",
+        "http": 403,
+        "body_keys": [
+          "detail"
+        ],
+        "detail_keys": [
+          "code",
+          "message"
+        ],
+        "provenance": false
+      },
+      {
+        "outcome": "not_configured",
+        "http": 503,
+        "body_keys": [
+          "detail"
+        ],
+        "detail_keys": [
+          "code",
+          "message"
+        ],
+        "provenance": false
+      },
+      {
+        "outcome": "unavailable",
+        "http": 502,
+        "body_keys": [
+          "detail"
+        ],
+        "detail_keys": [
+          "code",
+          "message"
+        ],
+        "provenance": false
+      }
+    ]
+  },
+  "gates": {
+    "backend": {
+      "pip_check": "PASS",
+      "application_import": "PASS",
+      "ruff": "PASS",
+      "mypy": {
+        "result": "PASS",
+        "files": 248
+      },
+      "pytest": {
+        "exit_code": 0,
+        "passed": 2319,
+        "warnings": 1,
+        "duration_seconds": 527.43
+      }
+    },
+    "frontend": {
+      "npm_ci": "PASS",
+      "lint": "PASS",
+      "typecheck": "PASS",
+      "test_run": {
+        "passed": 112,
+        "files": 11,
+        "duration_seconds": 42.74
+      },
+      "build": "PASS"
+    },
+    "docker_compose_config": "PASS",
+    "git_diff_check": "PASS",
+    "git_diff_cached_check": "PASS"
+  },
+  "tools": {
+    "python": "3.12.10",
+    "node": "22.22.0",
+    "npm": "11.4.2"
+  }
+}

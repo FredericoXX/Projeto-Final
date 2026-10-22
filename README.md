@@ -11,8 +11,8 @@ aplicação FastAPI é executada localmente a partir de `backend/`, não num con
 
 Uma interface web mínima encontra-se em [`frontend/`](frontend/) (React +
 TypeScript + Vite). Ela demonstra o fluxo completo — iniciar sessão, manter uma
-conversa fundamentada com fontes e gerir documentos como administrador — sem
-Swagger nem pedidos manuais. O servidor de desenvolvimento encaminha `/api` para
+conversa fundamentada com fontes e gerir documentos como gestor documental
+(`knowledge_manager`) — sem Swagger nem pedidos manuais. O servidor de desenvolvimento encaminha `/api` para
 o backend (mesma origem, sem CORS permissivo); consulte
 [`frontend/README.md`](frontend/README.md). Início rápido:
 
@@ -205,13 +205,41 @@ payload. Não há um papel `platform_admin` nem uma interface administrativa por
 trás dele; é um mecanismo de recuperação deliberadamente mínimo e explícito
 para este protótipo.
 
+## Perfis e permissões
+
+A autorização é decidida no backend por uma matriz explícita
+([`backend/app/core/permissions.py`](backend/app/core/permissions.py)); a
+interface apenas se adapta à lista de permissões devolvida por
+`GET /api/v1/auth/me`. Resumo — o detalhe, a mudança de contrato e os limites
+estão em [`docs/institutional-access.md`](docs/institutional-access.md):
+
+| Papel | Pode |
+| --- | --- |
+| `admin` | gerir contas, a configuração da própria instituição e as associações de identidade externa |
+| `knowledge_manager` | gerir documentos, metadados, versões, processamento e vigência |
+| `staff` | base do futuro operador institucional; nesta etapa, só as próprias conversas |
+| `student`, `user` | consultar os próprios pedidos académicos, se houver associação autorizada |
+
+Todas as contas usam apenas as **próprias** conversas, perguntam, pesquisam
+evidência e pedem encaminhamento E1. **Mudança intencional:** o `admin`
+institucional deixou de ler conversas de outros utilizadores e deixou de gerir
+documentos — essa permissão passou para `knowledge_manager`, criado por um
+admin com `POST /api/v1/users` e `"role": "knowledge_manager"`. Nenhuma conta
+existente foi convertida.
+
+A consulta dos próprios pedidos académicos (`/api/v1/academic-requests`) é uma
+**preparação** para a futura API institucional: existe apenas um adaptador
+simulado, com dados sintéticos, desativado por omissão
+(`INSTITUTIONAL_DATA_PROVIDER=disabled`). Não há SSO nem ligação a nenhum
+sistema real, e o chat continua a responder apenas com documentos.
+
 ## Estado do projeto
 
 Consulte [`docs/database.md`](docs/database.md) para conhecer o histórico de
 migrações e as regras atuais de segurança institucional. `institutions`,
 `users`, `auth`, `conversations`/`messages` e o núcleo documental possuem APIs
-completas. O núcleo documental (`/api/v1/documents`, exclusivo para
-administradores) cobre documentos lógicos com uploads de arquivos versionados
+completas. O núcleo documental (`/api/v1/documents`, exclusivo do papel
+`knowledge_manager`) cobre documentos lógicos com uploads de arquivos versionados
 (PDF, TXT e Markdown), armazenamento local, deteção de duplicados e extração
 síncrona de texto — consulte
 [`docs/document-core.md`](docs/document-core.md).
@@ -339,7 +367,7 @@ sem fontes. O histórico devolve fontes ordenadas sem consultas N+1, e alteraç�
 posteriores nos metadados dos documentos não reescrevem citações antigas.
 
 A etapa de usabilidade adiciona gestão do ciclo de vida dos documentos e
-títulos de conversas. Administradores podem editar metadados dos documentos (o
+títulos de conversas. Os gestores documentais podem editar metadados dos documentos (o
 idioma é bloqueado quando existem versões), criar documentos com Guardar,
 Guardar e Novo ou Cancelar (fonte oficial ativa por omissão) e eliminar
 permanentemente um documento **nunca citado** — incluindo segmentos, versões e

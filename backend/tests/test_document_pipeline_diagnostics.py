@@ -39,6 +39,7 @@ from app.retrieval.base import (
     ScoreKind,
     ScoreSemantics,
 )
+from tests.role_support import create_knowledge_manager
 
 BOOTSTRAP_HEADERS = {"X-Bootstrap-Token": settings.bootstrap_token or ""}
 
@@ -335,6 +336,11 @@ def _create_admin(client: TestClient, institution_id: str) -> dict[str, str]:
     return {"Authorization": f"Bearer {login.json()['access_token']}"}
 
 
+def _create_manager(client: TestClient, institution_id: str) -> dict[str, str]:
+    """Gestor documental da instituição: o admin deixou de gerir documentos."""
+    return create_knowledge_manager(client, _create_admin(client, institution_id))
+
+
 def _create_document_api(client: TestClient, headers: dict[str, str], title: str) -> dict[str, Any]:
     response = client.post(
         "/api/v1/documents",
@@ -363,7 +369,7 @@ def _upload_text(
 
 def _persisted_graph(client: TestClient, label: str = "A") -> tuple[dict[str, Any], ...]:
     institution = _create_institution(client, label)
-    headers = _create_admin(client, institution["id"])
+    headers = _create_manager(client, institution["id"])
     document = _create_document_api(client, headers, f"Documento sintético {label}")
     version = _upload_text(
         client,
@@ -577,7 +583,7 @@ def test_16_document_without_versions_is_controlled(
     client: TestClient, test_session_factory: sessionmaker[Session]
 ) -> None:
     institution = _create_institution(client, "no-version")
-    headers = _create_admin(client, institution["id"])
+    headers = _create_manager(client, institution["id"])
     document = _create_document_api(client, headers, "Documento sem versão")
     with test_session_factory() as db, pytest.raises(diagnostic.VersionSelectionError):
         diagnostic.select_by_document_id(

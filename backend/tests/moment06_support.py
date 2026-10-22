@@ -1,7 +1,7 @@
 """Utilitários partilhados pelos testes de caracterização do Momento 6.
 
 Este módulo **não** contém testes: reúne apenas os helpers de construção de
-cenário (instituição, administrador, documento pesquisável, conversa) que os
+cenário (instituição, administrador, gestor documental, documento pesquisável, conversa) que os
 quatro ficheiros ``test_moment06_*`` usariam em duplicado.
 
 Os helpers atravessam sempre a API HTTP real, para que o cenário fixado
@@ -137,12 +137,18 @@ def create_regular_user(
     return headers, created.json()["id"]
 
 
-def setup_institution_with_admin(
+def setup_institution_with_manager(
     client: TestClient, **institution_overrides: object
 ) -> tuple[dict, dict[str, str], str]:
+    """Instituição e o seu gestor documental, que carrega fontes e pergunta.
+
+    O admin institucional deixou de gerir documentos; o gestor é criado pelo
+    admin através da API, como numa instituição real.
+    """
     institution = create_institution(client, **institution_overrides)  # type: ignore[arg-type]
-    headers, admin_id = create_admin(client, institution["id"])
-    return institution, headers, admin_id
+    admin_headers, _ = create_admin(client, institution["id"])
+    headers, manager_id = create_regular_user(client, admin_headers, role="knowledge_manager")
+    return institution, headers, manager_id
 
 
 def create_document(

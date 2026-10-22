@@ -89,8 +89,9 @@ Respostas HTTP:
 
 `POST /api/v1/conversations/{conversation_id}/ask` reutiliza exatamente o
 mesmo pipeline e aceita o mesmo `AnsweringRequest`, mas devolve `201` e
-persiste um turno completo. Utilizadores comuns só podem perguntar nas suas
-conversas; admins podem usar qualquer conversa da própria instituição. Uma
+persiste um turno completo. Todas as contas — o admin institucional incluído —
+só podem perguntar nas suas próprias conversas (ver
+[`institutional-access.md`](institutional-access.md)). Uma
 conversa inexistente, de outro tenant ou inacessível responde 404; `closed`
 e `archived` respondem 409. Campos como `institution_id`, `user_id`, `role`,
 `reply_to_message_id`, `sources` e `status` não pertencem ao payload e são
@@ -126,8 +127,8 @@ deixam título sem turno.
 Cada turno persistido atualiza também `conversation.updated_at` com o
 horário do turno, e a listagem ordena por `updated_at` desc (desempate
 por `id` desc) — comportamento de aplicação de chat; turnos falhados não
-alteram a posição. Renomear é `PATCH {"title": ...}`: permitido ao dono
-(ou admin da instituição) mesmo em conversas `closed`/`archived`, que
+alteram a posição. Renomear é `PATCH {"title": ...}`: permitido apenas ao dono,
+mesmo em conversas `closed`/`archived`, que
 continuam finais — qualquer payload que toque no `status` dessas
 conversas é rejeitado por inteiro com 409, sem alterar o título. A
 resposta de `/ask` não devolve o título: o frontend invalida a query de
@@ -193,10 +194,11 @@ utilizador
 Os três locks fecham janelas distintas e nenhum é decorativo: a **instituição**
 torna o snapshot do destino coerente perante uma alteração administrativa
 concorrente; o **utilizador** é relido porque `current_user` foi lido na
-autenticação, num statement anterior — em READ COMMITTED, uma desativação ou
-despromoção que faça commit entretanto não seria visível a esta transação, e o
-papel usado a seguir é o **persistido**, para que um admin despromovido deixe
-de alcançar conversas de outros utilizadores; a **conversa** garante que um
+autenticação, num statement anterior — em READ COMMITTED, uma desativação que
+faça commit entretanto não seria visível a esta transação; o papel já não
+alarga o acesso, porque a conversa é procurada por posse para qualquer papel,
+pelo que uma alteração concorrente de papel não abre conversas alheias; a
+**conversa** garante que um
 fecho concorrente não é ultrapassado. A ordem é exatamente a de
 `ask_in_conversation`, para que os dois fluxos não possam entrar em deadlock.
 

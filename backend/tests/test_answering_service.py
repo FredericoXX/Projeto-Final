@@ -32,6 +32,7 @@ from app.retrieval.base import (
 )
 from app.schemas.answering import AnsweringRequest
 from app.services import answering_service
+from tests.role_support import create_knowledge_manager
 
 BOOTSTRAP_HEADERS = {"X-Bootstrap-Token": settings.bootstrap_token or ""}
 _ADMIN_PASSWORD = "supersecret123"
@@ -240,7 +241,9 @@ def test_real_retriever_rejects_partial_match_without_calling_generator(
 
     session, user = _create_institution_and_admin(client, test_session_factory)
     try:
-        headers = _admin_headers(client, user)
+        # O documento é carregado pelo gestor documental: o admin deixou de
+        # gerir documentos. A pergunta continua a ser feita pelo admin.
+        headers = create_knowledge_manager(client, _admin_headers(client, user))
         document = client.post(
             "/api/v1/documents",
             json={

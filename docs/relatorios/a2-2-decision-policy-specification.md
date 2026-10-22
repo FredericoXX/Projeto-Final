@@ -4,6 +4,15 @@
 `6ae9badefc81f90135feb726be10a750c80105d6` · repositório
 `FredericoXX/Projeto-Final`
 
+> **Nota posterior (2026-10-09):** documento histórico, que descreve o estado
+> em `6ae9bad` e não foi reescrito. Não é a política atual: o desenho revisto
+> refere dimensões D0–D6 e regras R01–R12 cuja especificação integral não está
+> neste repositório. Desde então, o `admin` institucional deixou de ler
+> conversas de terceiros e foi preparada uma consulta, **iniciada pelo
+> utilizador e fora do fluxo de decisão**, dos próprios pedidos académicos — ver
+> [`docs/institutional-access.md`](../institutional-access.md). O assistente
+> continua a não aceder a dados académicos individuais nas suas decisões.
+
 **Natureza:** caracterização, reconciliação científica, revisão da literatura e
 modelação de domínio. **Não implementa** `DecisionPolicy` nem qualquer
 mapeamento entre contratos. Nenhum ficheiro de produção foi tocado para produzir

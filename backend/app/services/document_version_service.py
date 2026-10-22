@@ -105,7 +105,7 @@ def _validate_file(
 
 def create_version(
     db: Session,
-    admin: User,
+    manager: User,
     document_id: uuid.UUID,
     *,
     upload_stream: IO[bytes],
@@ -115,7 +115,7 @@ def create_version(
 ) -> DocumentVersion:
     # Isolamento primeiro: documento de outra instituição é 404 antes de
     # qualquer byte ser lido.
-    document = get_accessible_document(db, admin, document_id)
+    document = get_accessible_document(db, manager, document_id)
 
     # O nome do cliente é apenas metadado; Path(...).name descarta qualquer
     # componente de diretório ("../../evil.txt" -> "evil.txt").
@@ -193,7 +193,7 @@ def create_version(
         id=version_id,
         document_id=document.id,
         institution_id=document.institution_id,
-        uploaded_by_user_id=admin.id,
+        uploaded_by_user_id=manager.id,
         version_number=version_number,
         original_filename=safe_filename,
         mime_type=ALLOWED_EXTENSIONS[extension],
@@ -228,13 +228,13 @@ def create_version(
 
 def get_accessible_version(
     db: Session,
-    admin: User,
+    manager: User,
     document_id: uuid.UUID,
     version_id: uuid.UUID,
 ) -> DocumentVersion:
     # O acesso ao documento (com isolamento institucional) é validado
     # primeiro; uma versão de outro documento/instituição é 404.
-    document = get_accessible_document(db, admin, document_id)
+    document = get_accessible_document(db, manager, document_id)
     version = db.scalar(
         select(DocumentVersion).where(
             DocumentVersion.id == version_id,
@@ -249,13 +249,13 @@ def get_accessible_version(
 
 def list_versions(
     db: Session,
-    admin: User,
+    manager: User,
     document_id: uuid.UUID,
     *,
     limit: int = 20,
     offset: int = 0,
 ) -> tuple[list[DocumentVersion], int]:
-    document = get_accessible_document(db, admin, document_id)
+    document = get_accessible_document(db, manager, document_id)
 
     query = select(DocumentVersion).where(DocumentVersion.document_id == document.id)
     count_query = (
@@ -275,7 +275,7 @@ def list_versions(
 
 def get_version_content(
     db: Session,
-    admin: User,
+    manager: User,
     document_id: uuid.UUID,
     version_id: uuid.UUID,
     *,
@@ -287,7 +287,7 @@ def get_version_content(
     O texto nunca é devolvido por inteiro sem limite: a paginação por
     caracteres (offset/limit) é obrigatória e imposta na rota.
     """
-    version = get_accessible_version(db, admin, document_id, version_id)
+    version = get_accessible_version(db, manager, document_id, version_id)
 
     if version.processing_status != "processed":
         msg = (

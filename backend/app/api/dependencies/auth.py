@@ -1,10 +1,12 @@
 import uuid
+from collections.abc import Callable
 
 from fastapi import Depends
 from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
 from sqlalchemy.orm import Session
 
 from app.core.exceptions import AuthenticationError, AuthorizationError
+from app.core.permissions import Permission, has_permission
 from app.core.security import decode_access_token
 from app.database.session import get_db
 from app.models.institution import Institution
@@ -50,10 +52,19 @@ def get_current_user(
     return user
 
 
-def require_admin(current_user: User = Depends(get_current_user)) -> User:
-    # Isolamento multi-institucional: require_admin só garante o role;
-    # o filtro por institution_id continua a ser feito em cada serviço,
-    # usando current_user.institution_id.
-    if current_user.role != "admin":
-        raise AuthorizationError("Admin privileges are required.")
-    return current_user
+def require_permission(permission: Permission) -> Callable[..., User]:
+    """Dependência que exige uma permissão da matriz central.
+
+    A permissão é avaliada sobre o papel **persistido**, relido por
+    ``get_current_user`` em cada pedido; o token nunca transporta o papel.
+    Isolamento multi-institucional: a permissão autoriza o tipo de operação,
+    e o filtro por ``institution_id`` continua a ser feito em cada serviço,
+    usando ``current_user.institution_id``.
+    """
+
+    def dependency(current_user: User = Depends(get_current_user)) -> User:
+        if not has_permission(current_user.role, permission):
+            raise AuthorizationError("This account does not have the required permission.")
+        return current_user
+
+    return dependency

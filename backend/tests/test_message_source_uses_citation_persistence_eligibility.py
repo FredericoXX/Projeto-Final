@@ -67,7 +67,7 @@ from tests.moment06_support import (
     ask_in_conversation,
     create_conversation,
     create_searchable_document,
-    setup_institution_with_admin,
+    setup_institution_with_manager,
 )
 
 # Termo de forma lexical idêntica em 'portuguese' e 'english': ver
@@ -203,7 +203,7 @@ def test_the_documental_verdict_is_obtained_from_the_policy(
     refém de uma decisão que não lhe pertence. Afirma-se **de onde** vem o
     veredicto, e que o sujeito descreve as entidades que o service bloqueou.
     """
-    _, headers, _ = setup_institution_with_admin(client)
+    _, headers, _ = setup_institution_with_manager(client)
     document, version = create_searchable_document(client, headers, CONTENT)
     document_id = uuid.UUID(document["id"])
     version_id = uuid.UUID(version["id"])
@@ -262,7 +262,7 @@ def test_official_only_reaches_the_policy_as_given(
     official_only: bool,
 ) -> None:
     """O contexto traduz o pedido, sem introduzir configuração nova."""
-    _, headers, _ = setup_institution_with_admin(client)
+    _, headers, _ = setup_institution_with_manager(client)
     document, version = create_searchable_document(client, headers, CONTENT)
     document_id = uuid.UUID(document["id"])
 
@@ -303,7 +303,7 @@ def test_a_negative_verdict_rejects_an_otherwise_valid_source(
     coisa que muda é o veredicto documental. Se alguém chamasse a política e
     ignorasse a resposta, a revalidação teria sucesso e este teste falharia.
     """
-    _, headers, _ = setup_institution_with_admin(client)
+    _, headers, _ = setup_institution_with_manager(client)
     document, version = create_searchable_document(client, headers, CONTENT)
     document_id = uuid.UUID(document["id"])
 
@@ -353,7 +353,7 @@ def test_no_parallel_definition_of_documental_admissibility_survives(
     continuam ativas: identificadores, metadados (o DTO declara o idioma do
     **documento**, que não mudou), checksums e coerência com ``extracted_text``.
     """
-    _, headers, _ = setup_institution_with_admin(client)
+    _, headers, _ = setup_institution_with_manager(client)
     document, version = create_searchable_document(client, headers, CONTENT)
     document_id = uuid.UUID(document["id"])
     version_id = uuid.UUID(version["id"])
@@ -405,7 +405,7 @@ def test_snapshot_integrity_stays_in_the_service(
     conteúdo continua a produzir conflito — porque essa verificação é do
     service, e a política nem sequer conhece ``content_sha256``.
     """
-    _, headers, _ = setup_institution_with_admin(client)
+    _, headers, _ = setup_institution_with_manager(client)
     document, version = create_searchable_document(client, headers, CONTENT)
     document_id = uuid.UUID(document["id"])
 
@@ -447,7 +447,7 @@ def test_persisted_sources_are_read_back_without_any_policy(
     A leitura devolve o snapshot tal como foi gravado, sem perguntar a nenhuma
     política se a linha continuaria admissível hoje.
     """
-    _, headers, _ = setup_institution_with_admin(client)
+    _, headers, _ = setup_institution_with_manager(client)
     conversation = create_conversation(client, headers)
     document, _version = create_searchable_document(client, headers, CONTENT)
     document_id = uuid.UUID(document["id"])
@@ -493,7 +493,7 @@ def test_creating_the_associations_does_not_evaluate_the_policy_again(
     ``create_message_sources`` recebe snapshots já revalidados; voltar a
     avaliar seria uma segunda oportunidade de recusar uma resposta já gerada.
     """
-    institution, headers, _ = setup_institution_with_admin(client)
+    institution, headers, _ = setup_institution_with_manager(client)
     conversation = create_conversation(client, headers)
     document, version = create_searchable_document(client, headers, CONTENT)
     document_id = uuid.UUID(document["id"])

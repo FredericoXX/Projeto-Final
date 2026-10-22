@@ -8,6 +8,7 @@ from app.core.language import resolve_language
 from app.models.conversation import Conversation
 from app.models.user import User
 from app.schemas.conversation import ConversationCreate, ConversationUpdate
+from app.services import authorization_service
 from app.services.institution_service import get_institution
 
 
@@ -17,6 +18,9 @@ def create_conversation(
     user_id: uuid.UUID,
     data: ConversationCreate,
 ) -> Conversation:
+    # A conta é reconfirmada na transação que cria a conversa: uma desativação
+    # concorrente já gravada é vista aqui, e uma posterior espera pelo commit.
+    authorization_service.revalidate_actor(db, user_id=user_id, institution_id=institution_id)
     institution = get_institution(db, institution_id)
     language = resolve_language(
         data.language,
@@ -44,16 +48,25 @@ def get_accessible_conversation(
     *,
     for_update: bool = False,
 ) -> Conversation:
-    """Fetch a conversation, enforcing institution isolation and per-role
-    ownership: an admin can access any conversation in their institution,
-    a regular user only their own. Any other case (wrong institution,
-    someone else's conversation) reports as 404, never revealing that the
-    conversation exists elsewhere."""
+    """Obtém uma conversa aplicando isolamento institucional e posse.
+
+    Todas as contas — incluindo o admin institucional — acedem apenas às
+    próprias conversas: nenhum papel lê conversas de terceiros (ver
+    :mod:`app.core.permissions`). Uma conversa de outra instituição ou de
+    outro utilizador responde como inexistente (404), sem revelar que existe.
+
+    A conta é revalidada sob lock antes da procura, na mesma transação da
+    leitura ou mutação que se segue. O fluxo de /ask e o handoff não passam por
+    aqui: usam ``get_accessible_conversation_by_identity`` com a sua própria
+    revalidação, para não manterem locks durante a geração.
+    """
+    authorization_service.revalidate_actor(
+        db, user_id=current_user.id, institution_id=current_user.institution_id
+    )
     return get_accessible_conversation_by_identity(
         db,
         user_id=current_user.id,
         institution_id=current_user.institution_id,
-        user_role=current_user.role,
         conversation_id=conversation_id,
         for_update=for_update,
     )
@@ -64,7 +77,6 @@ def get_accessible_conversation_by_identity(
     *,
     user_id: uuid.UUID,
     institution_id: uuid.UUID,
-    user_role: str,
     conversation_id: uuid.UUID,
     for_update: bool = False,
 ) -> Conversation:
@@ -74,12 +86,13 @@ def get_accessible_conversation_by_identity(
     de leitura do answering, evitando depender de objetos ORM expirados pelo
     rollback antes de bloquear novamente a conversa.
     """
+    # A posse é incondicional: não depende do papel, e por isso uma alteração
+    # concorrente de papel não pode alargar o conjunto de conversas visível.
     query = select(Conversation).where(
         Conversation.id == conversation_id,
         Conversation.institution_id == institution_id,
+        Conversation.user_id == user_id,
     )
-    if user_role != "admin":
-        query = query.where(Conversation.user_id == user_id)
     if for_update:
         query = query.with_for_update()
 
@@ -97,16 +110,17 @@ def list_conversations(
     limit: int = 20,
     offset: int = 0,
 ) -> tuple[list[Conversation], int]:
-    query = select(Conversation).where(Conversation.institution_id == current_user.institution_id)
-    count_query = (
-        select(func.count())
-        .select_from(Conversation)
-        .where(Conversation.institution_id == current_user.institution_id)
+    authorization_service.revalidate_actor(
+        db, user_id=current_user.id, institution_id=current_user.institution_id
     )
-
-    if current_user.role != "admin":
-        query = query.where(Conversation.user_id == current_user.id)
-        count_query = count_query.where(Conversation.user_id == current_user.id)
+    # Listagem e contagem usam exatamente o mesmo filtro de instituição e
+    # posse: o total nunca revela quantas conversas existem de outras contas.
+    ownership = (
+        Conversation.institution_id == current_user.institution_id,
+        Conversation.user_id == current_user.id,
+    )
+    query = select(Conversation).where(*ownership)
+    count_query = select(func.count()).select_from(Conversation).where(*ownership)
 
     total = db.scalar(count_query) or 0
     # Ordenação por atividade recente (comportamento de chat): updated_at
@@ -129,7 +143,8 @@ def update_conversation(
     conversation_id: uuid.UUID,
     data: ConversationUpdate,
 ) -> Conversation:
-    conversation = get_accessible_conversation(db, current_user, conversation_id)
+    # Lock da conversa: um fecho concorrente não é ultrapassado pela renomeação.
+    conversation = get_accessible_conversation(db, current_user, conversation_id, for_update=True)
 
     changes = data.model_dump(exclude_unset=True)
 

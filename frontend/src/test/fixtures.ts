@@ -1,4 +1,9 @@
-import type { UserRead } from '../types/auth';
+import type { CurrentUserRead } from '../types/auth';
+import type {
+  AcademicRequestDetailResponse,
+  AcademicRequestListResponse,
+  InstitutionalProvenanceRead,
+} from '../types/academicRequests';
 import type {
   ConversationRead,
   MessageRead,
@@ -6,7 +11,9 @@ import type {
 } from '../types/conversations';
 import type { DocumentRead, DocumentVersionRead } from '../types/documents';
 
-export const adminUser: UserRead = {
+// As permissões espelham a matriz do backend (app/core/permissions.py) tal como
+// GET /auth/me as devolve.
+export const adminUser: CurrentUserRead = {
   id: '11111111-1111-1111-1111-111111111111',
   institution_id: 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa',
   full_name: 'Admin Example',
@@ -15,14 +22,81 @@ export const adminUser: UserRead = {
   is_active: true,
   created_at: '2026-01-01T10:00:00Z',
   updated_at: '2026-01-01T10:00:00Z',
+  permissions: [
+    'conversations.system_messages',
+    'external_identity.manage',
+    'institution.manage',
+    'users.manage',
+  ],
 };
 
-export const regularUser: UserRead = {
+// Conta por omissão dos testes: gere documentos e conversa, como o admin fazia
+// antes de a gestão documental passar para o knowledge_manager.
+export const knowledgeManagerUser: CurrentUserRead = {
+  ...adminUser,
+  id: '66666666-6666-6666-6666-666666666666',
+  full_name: 'Knowledge Manager Example',
+  email: 'km@example.edu',
+  role: 'knowledge_manager',
+  permissions: ['documents.manage'],
+};
+
+export const regularUser: CurrentUserRead = {
   ...adminUser,
   id: '22222222-2222-2222-2222-222222222222',
   full_name: 'Staff Example',
   email: 'staff@example.edu',
   role: 'staff',
+  permissions: [],
+};
+
+export const studentUser: CurrentUserRead = {
+  ...adminUser,
+  id: '77777777-7777-7777-7777-777777777777',
+  full_name: 'Student Example',
+  email: 'student@example.edu',
+  role: 'student',
+  permissions: ['academic_requests.read_own'],
+};
+
+// Snapshot sintético, alinhado com o adaptador simulado do backend.
+export const simulatedProvenance: InstitutionalProvenanceRead = {
+  origin: 'institutional_api',
+  simulated: true,
+  institution_id: adminUser.institution_id,
+  attempted_at: '2026-10-01T10:00:00Z',
+  source_consulted: true,
+  queried_at: '2026-10-01T10:00:00Z',
+  source_updated_at: '2026-09-30T12:00:00Z',
+  access_result: 'success',
+  fields_used: ['request_id', 'request_type', 'official_status', 'updated_at', 'next_step'],
+};
+
+export const academicRequestList: AcademicRequestListResponse = {
+  outcome: 'success',
+  items: [
+    {
+      request_id: 'REQ-0001-A',
+      request_type: 'Certidão de matrícula',
+      official_status: 'Emitida',
+      updated_at: '2026-09-12T09:30:00Z',
+      next_step: 'Disponível para descarga no portal académico.',
+    },
+    {
+      request_id: 'REQ-0001-B',
+      request_type: 'Creditação de unidades curriculares',
+      official_status: 'Em apreciação',
+      updated_at: '2026-09-25T15:00:00Z',
+      next_step: null,
+    },
+  ],
+  provenance: simulatedProvenance,
+};
+
+export const academicRequestDetail: AcademicRequestDetailResponse = {
+  outcome: 'success',
+  item: academicRequestList.items[1],
+  provenance: { ...simulatedProvenance, fields_used: simulatedProvenance.fields_used.slice(0, 4) },
 };
 
 export const activeConversation: ConversationRead = {

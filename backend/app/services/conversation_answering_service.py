@@ -38,13 +38,11 @@ def ask_in_conversation(
     # leitura/fornecedor da transação curta de persistência.
     user_id = current_user.id
     institution_id = current_user.institution_id
-    user_role = current_user.role
 
     conversation = conversation_service.get_accessible_conversation_by_identity(
         db,
         user_id=user_id,
         institution_id=institution_id,
-        user_role=user_role,
         conversation_id=conversation_id,
     )
     _ensure_active(conversation.id, conversation.status)
@@ -68,7 +66,8 @@ def ask_in_conversation(
     try:
         # Ordem compatível com as mutações administrativas: instituição,
         # utilizador e só depois conversa. Os locks permanecem até ao commit,
-        # fechando a janela entre revalidar role/estado e autorizar o turno.
+        # fechando a janela entre revalidar o estado da conta e autorizar o
+        # turno. A conversa é procurada por posse, independentemente do papel.
         persisted_institution = db.scalar(
             select(Institution)
             .where(
@@ -97,7 +96,6 @@ def ask_in_conversation(
             db,
             user_id=user_id,
             institution_id=institution_id,
-            user_role=persisted_user.role,
             conversation_id=conversation_id,
             for_update=True,
         )

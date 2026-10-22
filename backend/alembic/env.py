@@ -15,6 +15,7 @@ from app.models.message import Message  # noqa: F401
 from app.models.message_source import MessageSource  # noqa: F401
 from app.models.storage_cleanup_task import StorageCleanupTask  # noqa: F401
 from app.models.user import User  # noqa: F401
+from app.models.user_external_identity import UserExternalIdentity  # noqa: F401
 
 # Objeto Config do Alembic, que dá acesso aos valores do arquivo .ini em uso.
 config = context.config

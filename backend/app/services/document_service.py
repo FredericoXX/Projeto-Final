@@ -1,7 +1,7 @@
 """Regras de negócio dos documentos lógicos (metadados institucionais).
 
 O isolamento multi-institucional segue o padrão dos restantes services:
-todas as consultas filtram por current_admin.institution_id, e um
+todas as consultas filtram por manager.institution_id, e um
 documento de outra instituição é reportado como 404, nunca 403, para não
 revelar a sua existência.
 """
@@ -15,13 +15,14 @@ from sqlalchemy.orm import Session
 
 from app.core.exceptions import ConflictError, NotFoundError, ValidationError
 from app.core.language import normalize_language_code, resolve_language
+from app.core.permissions import Permission
 from app.models.document import Document
 from app.models.document_chunk import DocumentChunk
 from app.models.document_version import DocumentVersion
 from app.models.storage_cleanup_task import StorageCleanupTask
 from app.models.user import User
 from app.schemas.document import DocumentCreate, DocumentUpdate
-from app.services import message_source_service
+from app.services import authorization_service, message_source_service
 from app.services.institution_service import get_institution
 from app.storage.base import DocumentStorage
 
@@ -63,8 +64,24 @@ def _validate_validity_range(valid_from: date | None, valid_until: date | None) 
         raise ValidationError(msg)
 
 
-def create_document(db: Session, admin: User, data: DocumentCreate) -> Document:
-    institution = get_institution(db, admin.institution_id)
+def _revalidate_manager(db: Session, manager: User) -> User:
+    """Reconfirma, sob lock, que a conta continua ativa e com documents.manage.
+
+    Fecha a janela entre a autorização da rota e a operação: uma despromoção
+    ou desativação com commit entretanto é vista aqui, e uma posterior espera
+    pelo fim desta transação.
+    """
+    return authorization_service.revalidate_actor(
+        db,
+        user_id=manager.id,
+        institution_id=manager.institution_id,
+        permission=Permission.DOCUMENTS_MANAGE,
+    )
+
+
+def create_document(db: Session, manager: User, data: DocumentCreate) -> Document:
+    manager = _revalidate_manager(db, manager)
+    institution = get_institution(db, manager.institution_id)
     # Reutiliza a mesma regra de idioma das conversas/mensagens: omitido
     # herda o default da instituição; fornecido tem de ser suportado.
     language = resolve_language(
@@ -74,8 +91,8 @@ def create_document(db: Session, admin: User, data: DocumentCreate) -> Document:
     )
 
     document = Document(
-        institution_id=admin.institution_id,
-        created_by_user_id=admin.id,
+        institution_id=manager.institution_id,
+        created_by_user_id=manager.id,
         title=data.title,
         description=data.description,
         language=language,
@@ -90,11 +107,15 @@ def create_document(db: Session, admin: User, data: DocumentCreate) -> Document:
     return document
 
 
-def get_accessible_document(db: Session, admin: User, document_id: uuid.UUID) -> Document:
+def get_accessible_document(db: Session, manager: User, document_id: uuid.UUID) -> Document:
+    # Ponto de entrada comum de todas as operações sobre um documento e as suas
+    # versões (leitura, atualização, eliminação, upload, conteúdo, download e
+    # reprocessamento): a revalidação aqui cobre-as a todas.
+    manager = _revalidate_manager(db, manager)
     document = db.scalar(
         select(Document).where(
             Document.id == document_id,
-            Document.institution_id == admin.institution_id,
+            Document.institution_id == manager.institution_id,
         )
     )
     if document is None:
@@ -105,7 +126,7 @@ def get_accessible_document(db: Session, admin: User, document_id: uuid.UUID) ->
 
 def list_documents(
     db: Session,
-    admin: User,
+    manager: User,
     *,
     limit: int = 20,
     offset: int = 0,
@@ -113,11 +134,12 @@ def list_documents(
     official_source: bool | None = None,
     language: str | None = None,
 ) -> tuple[list[Document], int]:
-    query = select(Document).where(Document.institution_id == admin.institution_id)
+    manager = _revalidate_manager(db, manager)
+    query = select(Document).where(Document.institution_id == manager.institution_id)
     count_query = (
         select(func.count())
         .select_from(Document)
-        .where(Document.institution_id == admin.institution_id)
+        .where(Document.institution_id == manager.institution_id)
     )
 
     if is_active is not None:
@@ -158,11 +180,11 @@ def _has_versions(db: Session, document_id: uuid.UUID) -> bool:
 
 def update_document(
     db: Session,
-    admin: User,
+    manager: User,
     document_id: uuid.UUID,
     data: DocumentUpdate,
 ) -> Document:
-    document = get_accessible_document(db, admin, document_id)
+    document = get_accessible_document(db, manager, document_id)
 
     changes = data.model_dump(exclude_unset=True)
 
@@ -205,7 +227,7 @@ def update_document(
 
 def delete_document(
     db: Session,
-    admin: User,
+    manager: User,
     document_id: uuid.UUID,
     *,
     storage: DocumentStorage,
@@ -225,7 +247,7 @@ def delete_document(
     silenciosa. Só depois do commit os ficheiros são removidos; os que
     falharem mantêm a sua tarefa para reconciliação posterior.
     """
-    document = get_accessible_document(db, admin, document_id)
+    document = get_accessible_document(db, manager, document_id)
 
     try:
         # Serializa contra uploads concorrentes ANTES de fotografar as
@@ -237,7 +259,7 @@ def delete_document(
                 select(DocumentVersion)
                 .where(
                     DocumentVersion.document_id == document.id,
-                    DocumentVersion.institution_id == admin.institution_id,
+                    DocumentVersion.institution_id == manager.institution_id,
                 )
                 .order_by(DocumentVersion.id)
                 .with_for_update()
@@ -248,7 +270,7 @@ def delete_document(
             select(Document)
             .where(
                 Document.id == document.id,
-                Document.institution_id == admin.institution_id,
+                Document.institution_id == manager.institution_id,
             )
             .with_for_update()
             .execution_options(populate_existing=True)
@@ -268,7 +290,7 @@ def delete_document(
         if message_source_service.is_document_referenced(
             db,
             document_id=locked_document.id,
-            institution_id=admin.institution_id,
+            institution_id=manager.institution_id,
         ):
             raise ConflictError(DOCUMENT_REFERENCED_MESSAGE)
 
@@ -287,13 +309,13 @@ def delete_document(
         db.execute(
             delete(DocumentChunk).where(
                 DocumentChunk.document_id == locked_document.id,
-                DocumentChunk.institution_id == admin.institution_id,
+                DocumentChunk.institution_id == manager.institution_id,
             )
         )
         db.execute(
             delete(DocumentVersion).where(
                 DocumentVersion.document_id == locked_document.id,
-                DocumentVersion.institution_id == admin.institution_id,
+                DocumentVersion.institution_id == manager.institution_id,
             )
         )
         version_count = len(versions)

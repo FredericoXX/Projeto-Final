@@ -5,7 +5,7 @@ import { http, HttpResponse } from 'msw';
 import { renderApp } from '../test/renderApp';
 import { server } from '../test/server';
 import { API, VALID_EMAIL, VALID_PASSWORD } from '../test/handlers';
-import { regularUser } from '../test/fixtures';
+import { adminUser, regularUser } from '../test/fixtures';
 import { tokenStorage } from '../api/token';
 
 describe('route guards and session', () => {
@@ -85,7 +85,7 @@ describe('route guards and session', () => {
     expect(tokenStorage.get()).toBeNull();
   });
 
-  it('denies a non-admin access to the admin area', async () => {
+  it('denies the documents area to an account without document permission', async () => {
     tokenStorage.set('test-token');
     server.use(http.get(`${API}/auth/me`, () => HttpResponse.json(regularUser)));
     renderApp('/admin/documents');
@@ -94,7 +94,7 @@ describe('route guards and session', () => {
     ).toBeInTheDocument();
   });
 
-  it('hides the documents navigation from a non-admin', async () => {
+  it('hides the documents navigation from an account without document permission', async () => {
     tokenStorage.set('test-token');
     server.use(http.get(`${API}/auth/me`, () => HttpResponse.json(regularUser)));
     renderApp('/app/conversations');
@@ -103,11 +103,30 @@ describe('route guards and session', () => {
     expect(screen.getByRole('link', { name: 'Conversations' })).toBeInTheDocument();
   });
 
-  it('shows the documents navigation to an admin', async () => {
+  it('shows the documents navigation to a knowledge manager', async () => {
     tokenStorage.set('test-token');
     renderApp('/app/conversations');
     await screen.findByText('Academic matters');
     expect(screen.getByRole('link', { name: 'Documents' })).toBeInTheDocument();
+  });
+
+  // Mudança intencional do contrato: o admin institucional deixou de gerir
+  // documentos; a área e a navegação passaram para o knowledge_manager.
+  it('hides the documents navigation and area from an institutional admin', async () => {
+    tokenStorage.set('test-token');
+    server.use(http.get(`${API}/auth/me`, () => HttpResponse.json(adminUser)));
+    renderApp('/app/conversations');
+    await screen.findByText('Academic matters');
+    expect(screen.queryByRole('link', { name: 'Documents' })).not.toBeInTheDocument();
+  });
+
+  it('denies the documents area to an institutional admin', async () => {
+    tokenStorage.set('test-token');
+    server.use(http.get(`${API}/auth/me`, () => HttpResponse.json(adminUser)));
+    renderApp('/admin/documents');
+    expect(
+      await screen.findByText('You do not have permission to access this area.'),
+    ).toBeInTheDocument();
   });
 
   it('renders a 404 page for an unknown route', async () => {

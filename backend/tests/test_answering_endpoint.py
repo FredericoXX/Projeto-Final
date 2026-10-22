@@ -24,6 +24,7 @@ from app.core.config import settings
 from app.main import app
 from app.models.institution import Institution
 from app.models.user import User
+from tests.role_support import create_account_and_login
 
 BOOTSTRAP_HEADERS = {"X-Bootstrap-Token": settings.bootstrap_token or ""}
 _ADMIN_PASSWORD = "supersecret123"
@@ -156,10 +157,17 @@ def _ask(client: TestClient, headers: dict[str, str], **overrides: object):
     return client.post("/api/v1/answering/ask", json=payload, headers=headers)
 
 
+def _create_manager(client: TestClient, institution_id: str) -> tuple[dict[str, str], str]:
+    """Gestor documental: o admin institucional deixou de gerir documentos."""
+    admin_headers, _ = _create_admin(client, institution_id)
+    return create_account_and_login(client, admin_headers, role="knowledge_manager")
+
+
 def _setup(client: TestClient) -> tuple[dict, dict[str, str], str]:
+    """Instituição e gestor documental, que carrega fontes e pergunta."""
     institution = _create_institution(client)
-    headers, admin_id = _create_admin(client, institution["id"])
-    return institution, headers, admin_id
+    headers, manager_id = _create_manager(client, institution["id"])
+    return institution, headers, manager_id
 
 
 # --- Autenticação e estados ------------------------------------------------------
@@ -173,12 +181,18 @@ def test_ask_requires_authentication(client: TestClient) -> None:
 def test_regular_user_and_admin_can_ask(
     client: TestClient, override_generator
 ) -> None:
-    _, admin_headers, _ = _setup(client)
+    institution = _create_institution(client)
+    admin_headers, _ = _create_admin(client, institution["id"])
+    manager_headers, _ = create_account_and_login(
+        client, admin_headers, role="knowledge_manager"
+    )
     user_headers = _create_regular_user(client, admin_headers)
-    _create_searchable_document(client, admin_headers)
+    _create_searchable_document(client, manager_headers)
     override_generator(FakeAnswerGenerator())
 
+    # Perguntar continua aberto a qualquer conta autenticada.
     assert _ask(client, admin_headers).status_code == 200
+    assert _ask(client, manager_headers).status_code == 200
     assert _ask(client, user_headers).status_code == 200
 
 
@@ -307,11 +321,13 @@ def test_matching_title_alone_produces_no_evidence(
 def test_answering_isolates_sources_between_institutions(
     client: TestClient, override_generator
 ) -> None:
-    institution_a, admin_a, _ = _setup(client)
+    institution_a = _create_institution(client)
+    admin_a, _ = _create_admin(client, institution_a["id"])
+    manager_a, _ = create_account_and_login(client, admin_a, role="knowledge_manager")
     user_a = _create_regular_user(client, admin_a)
     document_a = _create_searchable_document(
         client,
-        admin_a,
+        manager_a,
         "isolamento comum fonte exclusiva alfa",
         title="Fonte da instituição A",
         source_url="https://a.example.edu/isolamento",
@@ -319,10 +335,11 @@ def test_answering_isolates_sources_between_institutions(
 
     institution_b = _create_institution(client)
     admin_b, _ = _create_admin(client, institution_b["id"])
+    manager_b, _ = create_account_and_login(client, admin_b, role="knowledge_manager")
     user_b = _create_regular_user(client, admin_b)
     document_b = _create_searchable_document(
         client,
-        admin_b,
+        manager_b,
         "isolamento comum fonte exclusiva beta",
         title="Fonte da instituição B",
         source_url="https://b.example.edu/isolamento",

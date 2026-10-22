@@ -1243,7 +1243,10 @@ def test_chunk_embeddings_migration_upgrade_downgrade_upgrade(
     """
     monkeypatch.setattr(settings, "database_url", migrations_database_url)
     alembic_cfg = Config(str(BACKEND_DIR / "alembic.ini"))
-    command.upgrade(alembic_cfg, "head")
+    # Upgrade até à própria migration (não "head"), como nos restantes testes
+    # de reversibilidade: o downgrade "-1" abaixo tem de desfazer esta
+    # migration e não as que vieram depois dela.
+    command.upgrade(alembic_cfg, "c4f7ab19d3e5")
 
     engine = create_engine(migrations_database_url)
     try:
@@ -1349,3 +1352,180 @@ def test_chunk_embeddings_migration_upgrade_downgrade_upgrade(
         engine.dispose()
     script = ScriptDirectory.from_config(alembic_cfg)
     assert current_revision == script.get_current_head()
+
+
+def _insert_institution_and_user(engine: Engine, *, role: str) -> tuple[str, str]:
+    institution_id = str(uuid.uuid4())
+    user_id = str(uuid.uuid4())
+    with engine.begin() as conn:
+        conn.execute(
+            text(
+                """INSERT INTO institutions
+                (id, name, code, default_language, supported_languages, is_active)
+                VALUES (:id, 'Test', :code, 'pt', ARRAY['pt','en'], true)"""
+            ),
+            {"id": institution_id, "code": f"KMR-{uuid.uuid4().hex[:8]}"},
+        )
+        conn.execute(
+            text(
+                """INSERT INTO users
+                (id, institution_id, full_name, email, password_hash, role, is_active)
+                VALUES (:id, :institution_id, 'Conta', :email, 'hash', :role, true)"""
+            ),
+            {
+                "id": user_id,
+                "institution_id": institution_id,
+                "email": f"migration-{uuid.uuid4().hex[:8]}@example.com",
+                "role": role,
+            },
+        )
+    return institution_id, user_id
+
+
+def test_knowledge_manager_role_migration_preserves_accounts_and_guards_downgrade(
+    migrations_database_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """O papel novo é aditivo, e o downgrade nunca reatribui contas em silêncio.
+
+    Com uma conta ``knowledge_manager`` presente, o downgrade recusa-se a
+    continuar e nada muda; sem ela, repõe a constraint anterior. Contas
+    existentes — admins incluídos — atravessam o upgrade sem alteração.
+    """
+    monkeypatch.setattr(settings, "database_url", migrations_database_url)
+    alembic_cfg = Config(str(BACKEND_DIR / "alembic.ini"))
+    command.upgrade(alembic_cfg, "c4f7ab19d3e5")
+
+    engine = create_engine(migrations_database_url)
+    try:
+        _, admin_id = _insert_institution_and_user(engine, role="admin")
+        command.upgrade(alembic_cfg, "d1a7c3e9b4f2")
+        with engine.connect() as conn:
+            # Nenhum admin é convertido em gestor documental.
+            assert (
+                conn.execute(
+                    text("SELECT role FROM users WHERE id = :id"), {"id": admin_id}
+                ).scalar_one()
+                == "admin"
+            )
+
+        _, manager_id = _insert_institution_and_user(engine, role="knowledge_manager")
+        with pytest.raises(RuntimeError, match="knowledge_manager"):
+            command.downgrade(alembic_cfg, "c4f7ab19d3e5")
+        with engine.connect() as conn:
+            assert (
+                conn.execute(text("SELECT version_num FROM alembic_version")).scalar_one()
+                == "d1a7c3e9b4f2"
+            )
+            assert (
+                conn.execute(
+                    text("SELECT role FROM users WHERE id = :id"), {"id": manager_id}
+                ).scalar_one()
+                == "knowledge_manager"
+            )
+
+        # Reatribuição explícita, feita pelo operador — não pela migration.
+        with engine.begin() as conn:
+            conn.execute(
+                text("UPDATE users SET role = 'staff' WHERE id = :id"), {"id": manager_id}
+            )
+        command.downgrade(alembic_cfg, "c4f7ab19d3e5")
+        with engine.begin() as conn, pytest.raises(Exception, match="ck_users_role_allowed"):
+            conn.execute(
+                text("UPDATE users SET role = 'knowledge_manager' WHERE id = :id"),
+                {"id": manager_id},
+            )
+    finally:
+        engine.dispose()
+
+    command.upgrade(alembic_cfg, "head")
+    engine = create_engine(migrations_database_url)
+    try:
+        with engine.connect() as conn:
+            current_revision = conn.execute(
+                text("SELECT version_num FROM alembic_version")
+            ).scalar()
+    finally:
+        engine.dispose()
+    assert current_revision == ScriptDirectory.from_config(alembic_cfg).get_current_head()
+
+
+def test_user_external_identities_migration_upgrade_downgrade_upgrade(
+    migrations_database_url: str,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    """A associação externa é uma tabela nova e vazia; o downgrade só a remove."""
+    monkeypatch.setattr(settings, "database_url", migrations_database_url)
+    alembic_cfg = Config(str(BACKEND_DIR / "alembic.ini"))
+    command.upgrade(alembic_cfg, "e3b9f1c7a5d8")
+
+    engine = create_engine(migrations_database_url)
+    try:
+        inspector = inspect(engine)
+        assert "user_external_identities" in inspector.get_table_names()
+        foreign_keys = inspector.get_foreign_keys("user_external_identities")
+        assert any(
+            fk["referred_table"] == "users"
+            and set(fk["constrained_columns"]) == {"user_id", "institution_id"}
+            for fk in foreign_keys
+        )
+        uniques = {
+            tuple(sorted(uc["column_names"]))
+            for uc in inspector.get_unique_constraints("user_external_identities")
+        }
+        assert ("user_id",) in uniques
+        assert ("external_subject", "institution_id") in uniques
+        checks = {
+            cc["name"] for cc in inspector.get_check_constraints("user_external_identities")
+        }
+        assert "ck_user_external_identities_subject_not_blank" in checks
+        assert "ck_user_external_identities_link_method_allowed" in checks
+
+        institution_id, user_id = _insert_institution_and_user(engine, role="student")
+        other_institution_id, _ = _insert_institution_and_user(engine, role="student")
+        with engine.connect() as conn:
+            # Nenhuma associação é criada pela migration.
+            assert (
+                conn.execute(text("SELECT count(*) FROM user_external_identities")).scalar_one()
+                == 0
+            )
+        # Uma associação não pode ligar a conta a outra instituição.
+        with engine.begin() as conn, pytest.raises(Exception, match="fk_user_external"):
+            conn.execute(
+                text(
+                    """INSERT INTO user_external_identities
+                    (id, institution_id, user_id, external_subject, link_method,
+                     linked_by_user_id)
+                    VALUES (:id, :institution_id, :user_id, 'SYNTH-X', 'administrative',
+                            :user_id)"""
+                ),
+                {
+                    "id": str(uuid.uuid4()),
+                    "institution_id": other_institution_id,
+                    "user_id": user_id,
+                },
+            )
+        assert institution_id
+    finally:
+        engine.dispose()
+
+    command.downgrade(alembic_cfg, "d1a7c3e9b4f2")
+    engine = create_engine(migrations_database_url)
+    try:
+        inspector = inspect(engine)
+        assert "user_external_identities" not in inspector.get_table_names()
+        assert "users" in inspector.get_table_names()
+    finally:
+        engine.dispose()
+
+    command.upgrade(alembic_cfg, "head")
+    engine = create_engine(migrations_database_url)
+    try:
+        assert "user_external_identities" in inspect(engine).get_table_names()
+        with engine.connect() as conn:
+            current_revision = conn.execute(
+                text("SELECT version_num FROM alembic_version")
+            ).scalar()
+    finally:
+        engine.dispose()
+    assert current_revision == ScriptDirectory.from_config(alembic_cfg).get_current_head()

@@ -82,6 +82,14 @@ export function errorTranslationKey(error: unknown): TranslationKey {
       return 'error.generationUnavailable';
     case 'upstream_error':
       return 'error.generationFailed';
+    // A integração institucional tem códigos próprios: nunca se confunde com
+    // o serviço de geração, mesmo partilhando os estados 502/503.
+    case 'institutional_access_denied':
+      return 'error.institutionalAccessDenied';
+    case 'institutional_integration_not_configured':
+      return 'error.institutionalNotConfigured';
+    case 'institutional_integration_unavailable':
+      return 'error.institutionalUnavailable';
     default:
       break;
   }
