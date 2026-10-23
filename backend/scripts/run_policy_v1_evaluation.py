@@ -15,7 +15,11 @@ Dois modos:
 - **formal** (``--formal``): exige que o ficheiro de casos e a adjudicação
   correspondam a um manifesto de congelamento **completo** (corpus, manifesto,
   rótulos, catálogo, política, esquema, prompts e configuração) e que o
-  catálogo ativo na base de dados seja o congelado. Sem isso, recusa.
+  catálogo ativo e o inventário documental da instituição, lidos da base de
+  dados, sejam os congelados. Sem isso, recusa.
+
+O inventário documental é recolhido outra vez antes de escrever o relatório: se
+a base mudou durante a execução, o relatório não é escrito.
 
 Corre três execuções numeradas para cada condição com modelo (B0 incluído) e
 uma para P-oráculo (só com adjudicação verificada). Os packets de cada execução
@@ -63,10 +67,19 @@ from app.evaluation.policy_v1.conditions import (
     run_oracle,
 )
 from app.evaluation.policy_v1.config import EVALUATION_CONFIG
+from app.evaluation.policy_v1.corpus_inventory import (
+    collect_corpus_inventory,
+    corpus_inventory_bytes,
+)
 from app.evaluation.policy_v1.executor import EvaluationCaseSet, run_case
 from app.evaluation.policy_v1.freeze import FreezeError, verify_artifact
 from app.evaluation.policy_v1.labels import LabelSet, MessageRatingSet, verified_adjudication
-from app.evaluation.policy_v1.metrics import compute_metrics, estimation_errors, paired_comparison
+from app.evaluation.policy_v1.metrics import (
+    compute_metrics,
+    configured_paired_comparisons,
+    estimation_errors,
+)
+from app.evaluation.policy_v1.packets import EvidencePacket
 from app.evaluation.policy_v1.runs import RUN_NUMBERS, summarize
 from app.models.decision_catalog import InstitutionDecisionCatalog
 from app.models.institution import Institution
@@ -91,7 +104,6 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--adjudication", type=Path)
     parser.add_argument("--freeze-manifest", type=Path)
-    parser.add_argument("--corpus-manifest", type=Path)
     # Avaliações humanas da qualidade da mensagem (M7); nunca produzidas por modelo.
     parser.add_argument("--message-ratings", type=Path)
     parser.add_argument("--formal", action="store_true")
@@ -106,14 +118,12 @@ def main(argv: list[str] | None = None) -> int:
     adjudication = LabelSet.model_validate(_read(args.adjudication)) if args.adjudication else None
 
     if args.formal:
-        if manifest is None or adjudication is None or args.corpus_manifest is None:
-            sys.stderr.write(
-                "formal evaluation requires --freeze-manifest, --adjudication and "
-                "--corpus-manifest\n"
-            )
+        if manifest is None or adjudication is None:
+            sys.stderr.write("formal evaluation requires --freeze-manifest and --adjudication\n")
             return EXIT_NOT_FROZEN
-        # A verificação completa só é possível depois de ler o catálogo ativo
-        # da base de dados: corre logo a seguir, antes de qualquer caso.
+        # A verificação completa só é possível depois de ler da base o catálogo
+        # ativo e o inventário documental: corre logo a seguir, antes de
+        # qualquer caso.
     else:
         if settings.environment not in MOCK_PROVIDER_ENVIRONMENTS:
             sys.stderr.write("development trials only run in development/test environments\n")
@@ -132,6 +142,7 @@ def main(argv: list[str] | None = None) -> int:
     limits = Limits(settings.answering_max_context_chars, settings.answering_max_answer_chars)
     outcomes: list[CaseOutcome] = []
     packets: list[dict[str, Any]] = []
+    packets_by_digest: dict[str, EvidencePacket] = {}
     with SessionLocal() as db:
         institution = db.scalar(
             select(Institution).where(Institution.code == cases.institution_code)
@@ -149,16 +160,18 @@ def main(argv: list[str] | None = None) -> int:
             sys.stderr.write("institution has no active decision catalog\n")
             return EXIT_INVALID
         catalog_payload: dict[str, Any] = catalog_snapshot(catalog)
+        inventory = corpus_inventory_bytes(collect_corpus_inventory(db, institution.id))
         try:
             if args.formal:
                 assert manifest is not None and adjudication is not None
                 head, clean = git_state(REPOSITORY_ROOT)
-                # Todos os artefactos — os gerados a partir do código e o
-                # catálogo ativo —, o commit e a árvore de trabalho.
+                # Todos os artefactos — os gerados a partir do código, o
+                # catálogo ativo e o inventário documental da base —, o commit
+                # e a árvore de trabalho.
                 verify_formal_freeze(
                     manifest,
                     cases_payload=json.loads(raw_cases),
-                    corpus_manifest_payload=_read(args.corpus_manifest),
+                    corpus_inventory_payload=json.loads(inventory),
                     adjudication=adjudication,
                     catalog_payload=catalog_payload,
                     commit=args.commit,
@@ -167,10 +180,13 @@ def main(argv: list[str] | None = None) -> int:
                 )
             if adjudication is not None and manifest is not None:
                 oracle_labels = verified_adjudication(adjudication, manifest)
-                # O P-oráculo usa a política, os casos e o catálogo: todos têm
-                # de ser os congelados, também fora do modo formal.
+                # O P-oráculo usa a política, os casos e o catálogo, e as
+                # métricas comparam as condições com uma adjudicação feita
+                # sobre o corpus congelado: tudo tem de ser o congelado, também
+                # fora do modo formal.
                 verify_artifact(manifest, "corpus", corpus_bytes(json.loads(raw_cases)))
                 verify_artifact(manifest, "catalog", catalog_bytes(catalog_payload))
+                verify_artifact(manifest, "manifest", inventory)
                 verify_code_artifacts(manifest)
         except FreezeError as exc:
             sys.stderr.write(f"{exc}\n")
@@ -197,9 +213,14 @@ def main(argv: list[str] | None = None) -> int:
                 )
                 db.rollback()
                 outcomes.extend(run.outcomes)
-                packets.extend(
-                    {"digest": packet.digest, **packet.to_dict()} for packet in run.packets.values()
-                )
+                for packet in run.packets.values():
+                    packets_by_digest[packet.digest] = packet
+                    packets.append({"digest": packet.digest, **packet.to_dict()})
+        # A base não pode ter mudado durante a execução: os packets das três
+        # execuções têm de vir do mesmo corpus.
+        if corpus_inventory_bytes(collect_corpus_inventory(db, institution.id)) != inventory:
+            sys.stderr.write("the document inventory changed during the evaluation\n")
+            return EXIT_NOT_FROZEN
     if oracle_labels is not None:
         dates = {case.case_id: case.reference_date for case in cases.cases}
         for labels in oracle_labels.cases:
@@ -217,14 +238,10 @@ def main(argv: list[str] | None = None) -> int:
     metrics: dict[str, Any] = {"status": "not_computed_without_adjudication"}
     if oracle_labels is not None:
         gold = {case.case_id: case for case in oracle_labels.cases}
-        admissible: dict[str, frozenset[str]] = {}
-        for packet in packets:
-            if packet["family"] == "p_e2e" and packet["run_number"] == 1:
-                admissible[packet["case_id"]] = frozenset(
-                    p["evidence_id"] for p in packet["passages"]
-                )
+        # Cada resultado é lido no packet que a sua condição recebeu: os
+        # identificadores de evidência só têm sentido dentro desse packet.
         metrics = {
-            condition.value: compute_metrics(by_case, gold, admissible, ratings)
+            condition.value: compute_metrics(by_case, gold, packets_by_digest, ratings)
             for condition, by_case in summaries.items()
         }
         metrics["estimation_errors_p_e2e"] = estimation_errors(summaries[Condition.P_E2E], gold)
@@ -238,8 +255,8 @@ def main(argv: list[str] | None = None) -> int:
                 reference_dates={case.case_id: case.reference_date for case in cases.cases},
             )
         ]
-        metrics["paired_p_e2e_vs_b0"] = paired_comparison(
-            summaries[Condition.P_E2E], summaries[Condition.B0], gold
+        metrics["paired_comparisons"] = configured_paired_comparisons(
+            summaries, gold, packets=packets_by_digest, ratings=ratings
         )
 
     report = {

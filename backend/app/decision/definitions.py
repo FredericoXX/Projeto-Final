@@ -15,7 +15,10 @@ Qualquer alteração ao texto muda :data:`DEFINITIONS_VERSION` ou
 from typing import Final
 
 DEFINITIONS_VERSION: Final = "decision_definitions_v1.7-experimental.1"
-RULES_VERSION: Final = "decision_rules_v1.7-experimental.1"
+#: ``.2``: R09/R10 passaram a declarar a exclusão da ambiguidade material que
+#: R06 não resolveu, que o código de :func:`app.decision.policy.decide` já
+#: aplicava; sem ela, B1 recebia uma política diferente da executada.
+RULES_VERSION: Final = "decision_rules_v1.7-experimental.2"
 
 DIMENSION_DEFINITIONS: Final = """\
 Dimension definitions (decision policy v1.7, experimental):
@@ -65,10 +68,11 @@ R06 material ambiguity, distinguishable by the user, and every material reading 
 covered by admissible evidence -> CLARIFY (two or three readings).
 R07 unresolvable conflict and a competent service exists -> ESCALATE.
 R08 unresolvable conflict and no competent service -> ABSTAIN.
-R09 full support -> ANSWER.
-R10 partial support and the supported part is not misleading -> ANSWER with the \
-unsupported items stated explicitly.
-R11 no sufficiency, misleading partial answer, or unresolvable material ambiguity, \
-and a competent service exists -> ESCALATE.
+R09 full support and no material ambiguity left unresolved by R06 -> ANSWER.
+R10 partial support, the supported part is not misleading, and no material \
+ambiguity left unresolved by R06 -> ANSWER with the unsupported items stated \
+explicitly.
+R11 no sufficiency, misleading partial answer, or material ambiguity that R06 \
+could not clarify, and a competent service exists -> ESCALATE.
 R12 the same without a competent service -> ABSTAIN.
 """

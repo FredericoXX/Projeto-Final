@@ -202,13 +202,17 @@ def _case(case_id: str, **overrides: Any) -> dict[str, Any]:
         "acceptable_actions": ["answer"],
     }
     case.update(overrides)
+    # Esquema v2 (revisão de 2026-10-23): a ação preferida é obrigatória e
+    # pertence às aceitáveis. Sem indicação, é a primeira aceitável.
+    if "preferred_action" not in overrides:
+        case["preferred_action"] = (case["acceptable_actions"] or ["answer"])[0]
     return case
 
 
 def _label_set(annotator: str, cases: list[dict[str, Any]], *, role: str = "annotator") -> LabelSet:
     return LabelSet.model_validate(
         {
-            "schema_version": "policy_v1_labels_1",
+            "schema_version": "policy_v1_labels_2",
             "set_id": "policy-v1-dev",
             "annotator": {
                 "annotator_id": annotator,
@@ -252,6 +256,8 @@ def _label_set(annotator: str, cases: list[dict[str, Any]], *, role: str = "anno
         {"d6": {"has_competent_service": False, "service_id": "academic-office"}},
         {"acceptable_actions": []},
         {"d1": {"scope": "not_applicable"}},
+        {"acceptable_actions": ["answer"], "preferred_action": "abstain"},
+        {"acceptable_actions": ["answer", "answer"]},
     ],
     ids=[
         "misleading-without-partial",
@@ -262,6 +268,8 @@ def _label_set(annotator: str, cases: list[dict[str, Any]], *, role: str = "anno
         "service-without-flag",
         "no-acceptable-action",
         "na-as-category",
+        "preferred-not-acceptable",
+        "repeated-acceptable-action",
     ],
 )
 def test_label_schema_is_dependent_and_keeps_na_separate(overrides: dict[str, Any]) -> None:
@@ -275,7 +283,7 @@ def test_label_files_need_unique_ids_and_identified_adjudication() -> None:
     with pytest.raises(ValueError, match="adjudicators"):
         LabelSet.model_validate(
             {
-                "schema_version": "policy_v1_labels_1",
+                "schema_version": "policy_v1_labels_2",
                 "set_id": "s",
                 "annotator": {"annotator_id": "ADJ", "role": "adjudication"},
                 "cases": [],
@@ -304,8 +312,13 @@ def test_check_reports_agreement_asymmetry_and_is_swap_invariant() -> None:
     assert report["fields"]["d5.unresolvable_conflict"]["asymmetric_applicability"] == ["C3"]
     assert report["symmetric_applicability"] is False
     assert report == check_agreement(second, first)
-    # O modo check não calcula ações nem altera rótulos.
-    assert "action" not in json.dumps(report).replace("acceptable_actions", "")
+    # O modo check não calcula ações nem altera rótulos. A ação preferida
+    # (esquema v2, revisão de 2026-10-23) é, como as aceitáveis, um rótulo
+    # humano cuja concordância se reporta; não é uma ação calculada.
+    assert "action" not in json.dumps(report).replace("acceptable_actions", "").replace(
+        "preferred_action", ""
+    )
+    assert report["fields"]["preferred_action"]["disagreements"] == {"abstain | answer": 1}
     assert first.cases[2].d5.unresolvable_conflict is None
 
 
@@ -698,10 +711,12 @@ def test_m1_and_m2_follow_their_definitions() -> None:
     assert (m1["numerator"], m1["denominator"]) == (1, 2)  # C1 de {C1, C4}
     assert (m2["numerator"], m2["denominator"]) == (1, 2)  # C2 de {C2, C3}; C3 é aceitável
     assert metrics["definitions"]["answer_when_not_acceptable"]["v1_7_id"] == "M1"
-    # Expectativa alterada (auditoria de 2026-10-22, achado 1): M3–M8 passaram
-    # de "pendente" a identificadores provisórios pela ordem do prompt v1.7,
-    # versionados em config.METRIC_IDS; M9 continua por atribuir.
-    assert metrics["definitions"]["over_escalation"]["v1_7_id"] == "M3"
+    # Expectativa alterada duas vezes. Auditoria de 2026-10-22: M3–M8 passaram
+    # de "pendente" a provisórios pela ordem do prompt. Revisão de 2026-10-23
+    # sobre a main 8d3164b: M3 é a matriz de confusão, e o encaminhamento
+    # excessivo e insuficiente passou a M4 (config.METRIC_IDS, versão 2).
+    assert metrics["definitions"]["over_escalation"]["v1_7_id"] == "M4"
+    assert metrics["definitions"]["strict_agreement"]["v1_7_id"] == "M3"
     assert metrics["unassigned_ids"] == ["M9"]
     destination = metrics["rates"]["destination_correct_total"]
     assert (destination["numerator"], destination["denominator"]) == (1, 1)

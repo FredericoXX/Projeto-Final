@@ -3,7 +3,10 @@
 Oito artefactos, cada um com digest próprio no manifesto de congelamento:
 
 - ``corpus`` — o ficheiro de casos (P2), com os casos ordenados por ``case_id``;
-- ``manifest`` — o manifesto documental do corpus P2, fornecido como ficheiro;
+- ``manifest`` — o manifesto documental do corpus P2: o inventário de todos os
+  documentos, versões e segmentos da instituição, exportado da base de dados
+  (:mod:`app.evaluation.policy_v1.corpus_inventory`) e confrontado com ela pelo
+  executor;
 - ``labels`` — a adjudicação identificada;
 - ``catalog`` — o snapshot canónico do catálogo institucional (âmbito D1 e
   serviços D6) com que a avaliação corre, validado pelas mesmas regras da
@@ -45,6 +48,7 @@ from app.decision.policy import POLICY_VERSION
 from app.documents.retrievability import DOCUMENT_ACCESS_POLICY_VERSION
 from app.evaluation.policy_v1.conditions import B1_PROMPT_VERSION, b1_system_prompt
 from app.evaluation.policy_v1.config import EVALUATION_CONFIG
+from app.evaluation.policy_v1.corpus_inventory import corpus_inventory_bytes
 from app.evaluation.policy_v1.freeze import (
     REQUIRED_ARTIFACTS,
     FreezeError,
@@ -188,6 +192,8 @@ def file_artifact_bytes(name: str, payload: Any) -> bytes:
         return label_set_bytes(LabelSet.model_validate(payload))
     if name == "catalog":
         return catalog_bytes(payload)
+    if name == "manifest":
+        return corpus_inventory_bytes(payload)
     return canonical_bytes(payload)
 
 
@@ -200,14 +206,19 @@ def verify_formal_freeze(
     manifest: Mapping[str, Any],
     *,
     cases_payload: Mapping[str, Any],
-    corpus_manifest_payload: Any,
+    corpus_inventory_payload: Mapping[str, Any],
     adjudication: LabelSet,
     catalog_payload: Mapping[str, Any],
     commit: str,
     head_commit: str,
     working_tree_clean: bool,
 ) -> None:
-    """Todos os artefactos, o commit e a árvore de trabalho — ou recusa."""
+    """Todos os artefactos, o commit e a árvore de trabalho — ou recusa.
+
+    ``corpus_inventory_payload`` e ``catalog_payload`` vêm da base de dados no
+    momento da execução, nunca de ficheiros: é a base que tem de ser a
+    congelada.
+    """
     if not manifest.get("complete"):
         msg = "the freeze manifest is incomplete"
         raise FreezeError(msg)
@@ -222,7 +233,7 @@ def verify_formal_freeze(
         msg = "the working tree has uncommitted changes"
         raise FreezeError(msg)
     verify_artifact(manifest, "corpus", corpus_bytes(cases_payload))
-    verify_artifact(manifest, "manifest", canonical_bytes(corpus_manifest_payload))
+    verify_artifact(manifest, "manifest", corpus_inventory_bytes(corpus_inventory_payload))
     verify_artifact(manifest, "labels", label_set_bytes(adjudication))
     verify_artifact(manifest, "catalog", catalog_bytes(catalog_payload))
     verify_code_artifacts(manifest)

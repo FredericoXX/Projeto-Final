@@ -7,6 +7,7 @@ Fixtures técnicas e sintéticas, como no resto dos testes da política.
 import json
 from pathlib import Path
 from typing import Any
+from uuid import UUID
 
 import pytest
 from fastapi.testclient import TestClient
@@ -21,17 +22,21 @@ from app.evaluation.policy_v1.artifacts import (
     verify_formal_freeze,
 )
 from app.evaluation.policy_v1.conditions import run_p_e2e
+from app.evaluation.policy_v1.corpus_inventory import (
+    collect_corpus_inventory,
+    corpus_inventory_bytes,
+)
 from app.evaluation.policy_v1.freeze import (
     FreezeError,
     FrozenArtifact,
     build_freeze_manifest,
-    canonical_bytes,
 )
 from app.evaluation.policy_v1.labels import label_set_bytes
 from app.models.decision_record import DecisionRecord
 from app.models.message import Message
 from scripts.p2_labels_tool import main as labels_tool
 from tests.decision_support import (
+    ReachedCases,
     ScriptedEstimator,
     analysis,
     decide,
@@ -39,7 +44,7 @@ from tests.decision_support import (
     support_by_title,
 )
 from tests.test_policy_v1_evaluation import CATALOG, LIMITS, _case, _label_set, _packet
-from tests.test_policy_v1_evaluation_audit import CASES, COMMIT, CORPUS_MANIFEST
+from tests.test_policy_v1_evaluation_audit import CASES, COMMIT, CORPUS_INVENTORY
 
 ENROLMENT = "O prazo de matrícula termina a 30 de setembro."
 
@@ -163,7 +168,7 @@ def _manifest(catalog: dict[str, Any]) -> dict[str, Any]:
     adjudication = _label_set("ADJ", [_case("C1")], role="adjudication")
     files = {
         "corpus": corpus_bytes(CASES),
-        "manifest": canonical_bytes(CORPUS_MANIFEST),
+        "manifest": corpus_inventory_bytes(CORPUS_INVENTORY),
         "labels": label_set_bytes(adjudication),
         "catalog": catalog_bytes(catalog),
     }
@@ -186,7 +191,7 @@ def test_formal_verification_rejects_a_catalog_different_from_the_frozen_one() -
     adjudication = _label_set("ADJ", [_case("C1")], role="adjudication")
     common: dict[str, Any] = {
         "cases_payload": CASES,
-        "corpus_manifest_payload": CORPUS_MANIFEST,
+        "corpus_inventory_payload": CORPUS_INVENTORY,
         "adjudication": adjudication,
         "commit": COMMIT,
         "head_commit": COMMIT,
@@ -235,10 +240,6 @@ def test_oracle_tool_rejects_a_catalog_different_from_the_frozen_one(tmp_path: P
 # --- Executor: o catálogo ativo na base de dados tem de ser o congelado ----------------
 
 
-class _ReachedCases(Exception):
-    """O executor passou a verificação do congelamento e ia correr casos."""
-
-
 def _executor_inputs(
     client: TestClient,
     test_session_factory: sessionmaker[Session],
@@ -253,11 +254,16 @@ def _executor_inputs(
     world = make_world(client, catalog=DEFAULT_CATALOG)
     with test_session_factory() as db:
         code = db.get_one(Institution, world.institution_id).code
+        # O manifesto congelado é o inventário da base no momento do
+        # congelamento (revisão de 2026-10-23), já não um ficheiro declarado.
+        inventory = corpus_inventory_bytes(
+            collect_corpus_inventory(db, UUID(str(world.institution_id)))
+        )
     cases = {**CASES, "institution_code": code}
     adjudication = _label_set("ADJ", [_case("C1")], role="adjudication")
     files = {
         "corpus": corpus_bytes(cases),
-        "manifest": canonical_bytes(CORPUS_MANIFEST),
+        "manifest": inventory,
         "labels": label_set_bytes(adjudication),
         "catalog": catalog_bytes(frozen_catalog),
     }
@@ -269,7 +275,6 @@ def _executor_inputs(
         "cases": json.dumps(cases),
         "adjudication": adjudication.model_dump_json(),
         "freeze-manifest": json.dumps(manifest),
-        "corpus-manifest": json.dumps(CORPUS_MANIFEST),
     }
     argv = ["--commit", COMMIT, "--output", str(tmp_path / "report.json")]
     for option, content in paths.items():
@@ -279,41 +284,18 @@ def _executor_inputs(
     return argv
 
 
-@pytest.fixture
-def executor(monkeypatch: pytest.MonkeyPatch, test_session_factory: sessionmaker[Session]):
-    """O executor sobre a base de teste, com HEAD = COMMIT e árvore limpa.
-
-    ``run_case`` é substituído por uma sentinela: o teste só verifica se o
-    executor chega, ou não, a correr casos — nunca chama fornecedores.
-    """
-    from scripts import run_policy_v1_evaluation as module
-
-    calls: list[str] = []
-
-    def reached(db: Session, case: Any, **kwargs: Any) -> None:
-        calls.append(case.case_id)
-        raise _ReachedCases
-
-    monkeypatch.setattr(module, "SessionLocal", test_session_factory)
-    monkeypatch.setattr(module, "git_state", lambda repository: (COMMIT, True))
-    monkeypatch.setattr(module, "get_retriever", lambda: None)
-    monkeypatch.setattr(module, "get_answer_generator", lambda: None)
-    monkeypatch.setattr(module, "run_case", reached)
-    return module.main, calls
-
-
 @pytest.mark.parametrize("formal", [True, False], ids=["formal", "oracle-outside-formal"])
 def test_executor_refuses_an_active_catalog_different_from_the_frozen_one(
     client: TestClient,
     test_session_factory: sessionmaker[Session],
     tmp_path: Path,
-    executor,
+    policy_v1_executor,
     formal: bool,
 ) -> None:
     from scripts.run_policy_v1_evaluation import EXIT_NOT_FROZEN
     from tests.decision_support import DEFAULT_CATALOG
 
-    main, calls = executor
+    main, calls = policy_v1_executor
     # Congelado sem serviços; ativo na base de dados com o serviço académico.
     frozen = {"version": 1, **DEFAULT_CATALOG, "services": []}
     argv = _executor_inputs(client, test_session_factory, tmp_path, frozen_catalog=frozen)
@@ -328,16 +310,16 @@ def test_executor_accepts_the_frozen_active_catalog_and_reaches_the_cases(
     client: TestClient,
     test_session_factory: sessionmaker[Session],
     tmp_path: Path,
-    executor,
+    policy_v1_executor,
     formal: bool,
 ) -> None:
     """Controlo positivo do teste anterior: só o catálogo muda entre os dois."""
     from tests.decision_support import DEFAULT_CATALOG
 
-    main, calls = executor
+    main, calls = policy_v1_executor
     frozen = {"version": 1, **DEFAULT_CATALOG}
     argv = _executor_inputs(client, test_session_factory, tmp_path, frozen_catalog=frozen)
 
-    with pytest.raises(_ReachedCases):
+    with pytest.raises(ReachedCases):
         main([*argv, "--formal"] if formal else argv)
     assert calls == ["C1"]

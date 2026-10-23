@@ -67,6 +67,9 @@
         },
         "d6": {
           "$ref": "#/$defs/DestinationLabel"
+        },
+        "preferred_action": {
+          "$ref": "#/$defs/DecisionOutcome"
         }
       },
       "required": [
@@ -77,7 +80,8 @@
         "d4",
         "d5",
         "d6",
-        "acceptable_actions"
+        "acceptable_actions",
+        "preferred_action"
       ],
       "title": "CaseLabels",
       "type": "object"
@@ -333,7 +337,7 @@
       "type": "array"
     },
     "schema_version": {
-      "const": "policy_v1_labels_1",
+      "const": "policy_v1_labels_2",
       "title": "Schema Version",
       "type": "string"
     },

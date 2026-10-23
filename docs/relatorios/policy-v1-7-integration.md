@@ -100,11 +100,11 @@ Legenda:
 | V20 persistência com locks, revalidação e rechecagem | Implementado | `decision_service._persist_turn` | `test_revocation_during_estimation_persists_nothing` (401/409, sem locks durante a estimação) |
 | V21 interface | Implementado | `frontend/src/features/conversations/DecisionDetails.tsx`, `ConversationPage.tsx`, `decisionSnapshot.ts` | `decision.test.tsx` (7 testes), `documents.test.tsx` (papéis) |
 | V22 registo, replay, falhas ≠ ABSTAIN; utilização | Implementado; tentativas e tokens por estimador, gerador e modelo B1; custo monetário **não** calculado (sem tarifa) | `decision_records`, `scripts/replay_decision_record.py` | `test_estimator_failure_is_technical_and_never_an_abstention`, replay, `test_every_model_condition_records_attempts_and_tokens`, `test_openai_generator_reports_usage_without_exposing_it` |
-| V23 sete condições sobre packets | Implementado; **não executado** | `app/evaluation/policy_v1/conditions.py`, `packets.py`, `executor.py`, `baseline_openai.py` | `test_policy_v1_evaluation.py` (pareamento, ausência de ouro, ablações confinadas, executor sobre a base de dados) |
+| V23 sete condições sobre packets; comparação emparelhada | Implementado; **não executado**. Desde a revisão de 2026-10-23, as comparações emparelhadas cobrem todas as condições (`config.PAIRED_COMPARISONS`), e não só P-e2e contra B0 | `app/evaluation/policy_v1/conditions.py`, `packets.py`, `executor.py`, `baseline_openai.py`, `metrics.configured_paired_comparisons` | `test_policy_v1_evaluation.py` (pareamento, ausência de ouro, ablações confinadas, executor sobre a base de dados), `test_policy_v1_review_main.py` (comparações) |
 | V24 três execuções; primária; moda; empate | Implementado | `runs.py` | `test_primary_is_the_first_run_and_ties_go_to_it` |
-| V25 M1–M9 e intervalos | **Parcial**: M1 e M2 como definidos; M3–M8 provisórios pela ordem do prompt; **M9 por atribuir**; M7 a partir de juízos humanos; atribuição de erros por replay | `metrics.py`, `statistics.py`, `config.py` | `test_m1_and_m2_follow_their_definitions`, `test_policy_v1_evaluation_audit.py` (identificadores, M7, atribuição), testes de Wilson, Newcombe e κ |
-| V26 ferramenta de rotulagem | Implementado (equivalente documentado) | `labels.py`, `scripts/p2_labels_tool.py`, `docs/evaluation/policy-v1/labels.schema.json` | testes de esquema dependente, `check`, troca A1/A2, `oracle` |
-| V27 congelamento reproduzível e verificação formal (incluindo o catálogo D6) | Implementado | `freeze.py`, `artifacts.py`, `scripts/freeze_policy_v1_artifacts.py` | testes de bytes exatos, NaN, NFC e manifesto; `test_formal_freeze_verifies_every_artifact_commit_and_tree`, `test_changed_code_artifacts_no_longer_match_the_freeze`, `test_oracle_tool_requires_the_frozen_case_file` |
+| V25 M1–M9 e intervalos | **Parcial**: M1 e M2 como definidos; M3 (matriz de confusão, acordo estrito e aceitável) e M6 (citações no packet da própria condição) segundo a revisão de 2026-10-23; M4, M5, M7 e M8 provisórios; **M9 por atribuir**; M7 a partir de juízos humanos; atribuição de erros por replay | `metrics.py`, `statistics.py`, `config.py` | `test_m1_and_m2_follow_their_definitions`, `test_policy_v1_evaluation_audit.py` (identificadores, M7, atribuição), `test_policy_v1_review_main.py` (M3, M6), testes de Wilson, Newcombe e κ |
+| V26 ferramenta de rotulagem | Implementado (equivalente documentado); esquema `policy_v1_labels_2` com ação preferida | `labels.py`, `scripts/p2_labels_tool.py`, `docs/evaluation/policy-v1/labels.schema.json` | testes de esquema dependente, `check`, troca A1/A2, `oracle`, `test_labels_require_a_preferred_action_in_schema_v2` |
+| V27 congelamento reproduzível e verificação formal (incluindo o catálogo D6 e o inventário documental confrontado com a base) | Implementado | `freeze.py`, `artifacts.py`, `corpus_inventory.py`, `scripts/freeze_policy_v1_artifacts.py`, `scripts/export_policy_v1_corpus_inventory.py` | testes de bytes exatos, NaN, NFC e manifesto; `test_formal_freeze_verifies_every_artifact_commit_and_tree`, `test_changed_code_artifacts_no_longer_match_the_freeze`, `test_oracle_tool_requires_the_frozen_case_file` |
 | V28 P1 e D4.10/D4.10a intactos; P2 só para o novo conjunto | Implementado | `docs/evaluation/policy-v1/` | `git diff origin/main` vazio sobre os artefactos históricos |
 | V29 documentação | Implementado | `docs/decision-policy.md`, este relatório, `02-current-state.md`, notas de versão em `institutional-access.md` e `answering.md` | — |
 
@@ -253,3 +253,100 @@ Continuam formalmente pendentes, sem invenção:
 - DP1–DP6.
 
 Por isso, a conformidade integral não pode ser declarada.
+
+## Correções da revisão de 2026-10-23 sobre a `main` `8d3164b`
+
+A revisão incidiu sobre a `main` em `8d3164be`, que integrou o PR #67. Conclui
+que a camada de decisão existe e que as regras passam 12 verificações isoladas.
+Encontrou quatro problemas a corrigir antes de uma avaliação formal. As
+correções estão na branch `fix/policy-v1-7-evaluation-review`, criada a partir
+de `8d3164b`.
+
+Os dois achados empíricos foram reproduzidos antes de corrigidos:
+
+- **M6.** Com a API anterior, uma citação `E1` de A-sem-filtro apontava para
+  um documento caducado, enquanto o `E1` de P-e2e era vigente. A métrica dava
+  **0/1 citações inadmissíveis**, e devia dar 1/1. Pela mesma construção havia
+  o erro inverso: uma citação admissível do B0 a uma passagem que P-e2e não
+  recuperou contava como inadmissível.
+- **Corpus.** Com um documento acrescentado à instituição do caso depois do
+  congelamento, o modo formal chegava aos casos.
+
+| Achado | Correção | Testes |
+| --- | --- | --- |
+| M6 comparava identificadores de todas as condições com o packet de P-e2e | cada citação é resolvida no packet da **própria** condição (pelo `packet_digest` do resultado), até ao documento, à versão e ao segmento, e verificada na data de referência do packet com a semântica de C9/C10. O relatório lista as citações inadmissíveis com a sua identidade. Uma citação sem o seu packet é um erro do executor, nunca uma citação admissível | `test_m6_counts_an_expired_citation_that_shares_an_id_with_a_current_one`, `test_m6_accepts_an_admissible_b0_citation_that_p_e2e_did_not_retrieve`, `test_m6_reports_a_citation_missing_from_the_condition_packet`, `test_m6_validity_limits_follow_c9_c10`, `test_m6_refuses_citations_without_their_packet` |
+| O congelamento não verificava o corpus consultado | o artefacto `manifest` passou a ser o **inventário documental** de toda a instituição, exportado da base (`corpus_inventory.py`, `scripts/export_policy_v1_corpus_inventory.py`). Inclui documentos caducados, inativos e restritos por papel, versões e hashes recalculados dos segmentos, e nenhum conteúdo. O executor lê-o da base antes do primeiro caso e compara-o com o congelado, no modo formal e sempre que há adjudicação. Volta a lê-lo antes de escrever o relatório. Um manifesto livre é recusado, e um inventário fora de ordem também, porque a receita não reordena arrays. `--corpus-manifest` deixou de existir: a fonte é a base | `test_the_frozen_manifest_must_be_a_valid_ordered_inventory`, `test_the_inventory_covers_expired_and_restricted_documents_and_detects_changes`, `test_executor_refuses_a_database_changed_after_the_freeze` (formal e P-oráculo fora dele), `test_executor_refuses_a_database_changed_during_the_evaluation`, `test_the_export_script_writes_the_inventory_the_executor_verifies` |
+| M3 não era a matriz de confusão; faltava a ação preferida; só P-e2e contra B0 era comparado | esquema de rótulos `policy_v1_labels_2`: `preferred_action`, obrigatória e dentro das aceitáveis, com concordância em `check`. M3 é a matriz de confusão (ação preferida × ação da condição, falha técnica numa coluna própria), com acordo estrito e acordo aceitável. `config.METRIC_IDS` passou à versão 2 (origem de cada identificador abaixo). `config.PAIRED_COMPARISONS` define seis pares, cada um medido no efeito que isola | `test_m3_is_a_confusion_matrix_with_strict_and_acceptable_agreement`, `test_labels_require_a_preferred_action_in_schema_v2`, `test_every_configured_pair_and_measure_is_reported`, `test_the_filter_ablation_is_compared_on_inadmissible_citations`, `test_the_diagnostic_ablation_is_compared_on_human_message_ratings` |
+| Regras em linguagem natural de B1 desalinhadas | R09 e R10 declaram a exclusão da ambiguidade material que R06 não resolveu, que `decide()` já aplicava; R11 diz "ambiguidade material que R06 não pôde clarificar". `RULES_VERSION` passou a `.2` e `B1_PROMPT_VERSION` a `_2` | `test_b1_rules_state_the_ambiguity_exclusion_the_code_applies` |
+
+**Origem dos identificadores M1–M9**, sem o documento da v1.7:
+
+- M1 e M2 vêm do prompt.
+- M3 (matriz de confusão) e M6 (citações inadmissíveis) vêm desta revisão.
+- Entre M3 e M6 ficam dois identificadores para os dois temas que o prompt
+  enumera a seguir: M4 para o encaminhamento excessivo e insuficiente, com duas
+  componentes, e M5 para o destino correto.
+- Depois de M6, M7 é a qualidade da mensagem e M8 os erros de estimação.
+- M4, M5, M7 e M8 são deduções provisórias; M9 continua por atribuir.
+
+**Comparações emparelhadas** (proposta derivada da definição das condições):
+
+- P-e2e contra B0, B1-plena e B1-composição, e P-oráculo contra P-e2e: na ação,
+  com acordo aceitável e estrito;
+- B0 contra A-sem-filtro: nas citações inadmissíveis;
+- P-e2e contra A-sem-diagnóstico: na qualidade da mensagem, só com juízos
+  humanos.
+
+Para provar que os testes dependem das correções, foram aplicadas três mutações
+temporárias, depois repostas:
+
+| Mutação | Testes que falharam |
+| --- | --- |
+| M6 sem verificação de vigência | os dois testes de citação caducada |
+| executor sem a segunda leitura do inventário | o teste de alteração durante a avaliação |
+| executor sem verificação do inventário fora do modo formal | a variante P-oráculo fora do modo formal |
+
+Expectativas alteradas, com a justificação escrita nos testes:
+
+- os identificadores de métrica, em `test_metric_ids_are_provisional_and_m9_is_not_invented`
+  e `test_m1_and_m2_follow_their_definitions`;
+- o manifesto sintético `CORPUS_MANIFEST`, que passou a `CORPUS_INVENTORY` válido;
+- o helper `_case`, que deriva a ação preferida da primeira aceitável;
+- o modo `check`, que reporta a concordância da ação preferida;
+- o fixture do executor, que passou a `policy_v1_executor` em `conftest.py`.
+
+**Confirmação condicional (2026-10-23).** As três decisões foram aceites
+apenas como opções metodológicas provisórias, não como conteúdo normativo
+demonstrado da v1.7:
+
+| Condição | Como ficou cumprida | Teste |
+| --- | --- | --- |
+| M3 documentada como não proveniente do prompt disponível | `config.METRIC_IDS` regista a origem de cada identificador; M3 e o identificador M6 dizem "não provém do prompt v1.7 disponível". O mapa leva `"normative": false` e a declaração de que não serve para conformidade integral, repetida no README e em `decision-policy.md` | `test_metric_ids_record_their_origin_and_are_not_normative` |
+| M4, M5, M7 e M8 versionados e provisórios | mapa versionado (`policy_v1_metric_ids_provisional_2`), cada um com origem "dedução provisória" | o mesmo teste |
+| Comparações configuráveis, congeladas antes da avaliação, com efeito isolado, denominador e unidade explícitos | cada par declara `isolates`; cada medida declara `outcome` e `denominator`; `unit` e `interval` são comuns. Tudo isto entra no artefacto `config`, e cada resultado do relatório repete essas declarações | `test_every_comparison_declares_its_effect_outcome_denominator_and_unit`, `test_paired_comparisons_are_frozen_with_the_config` |
+
+As incompatibilidades (rótulos v1 e manifestos manuais recusados, sem
+`--corpus-manifest`) foram aceites nesta fase: não existem rótulos humanos nem
+protocolo formal congelado, e a recusa explícita é preferível a uma migração
+silenciosa.
+
+Verificações executadas (2026-10-23):
+
+| Verificação | Resultado |
+| --- | --- |
+| `pytest -q` (backend completo) | **2598 passed, 1 warning** (eram 2575 na `main`; mais 21 testes em `test_policy_v1_review_main.py`, três deles da confirmação condicional, e 2 casos novos do esquema de rótulos) |
+| `ruff check .`; `ruff format --check` nos ficheiros novos e reescritos | passa. `tests/conftest.py` já estava fora do formato na `main` e não foi reformatado |
+| `mypy app tests scripts` | **297** ficheiros sem erros |
+| `pip check`, `docker compose config`, import da aplicação | OK; o import não carrega o SDK nem `app.evaluation` |
+| `git diff --check` e espaços finais nos ficheiros novos | limpo |
+| Frontend e Alembic | não repetidos: esta branch não altera o frontend nem as migrações |
+
+Continuam pendentes:
+
+- M9, a confirmação de M4, M5, M7 e M8, e DP1–DP6, que dependem do documento
+  da v1.7;
+- os estimadores reais, nunca ensaiados com o fornecedor. A sua qualidade é
+  desconhecida e não se mistura com os testes técnicos;
+- catálogo real, autorizações reais, anotação humana e avaliação formal.
+
+A conformidade integral não pode ser declarada.

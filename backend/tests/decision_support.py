@@ -268,3 +268,8 @@ def decide(client: TestClient, conversation_id: str, headers: dict[str, str], **
     return client.post(
         f"/api/v1/conversations/{conversation_id}/decide", json=body, headers=headers
     )
+
+
+class ReachedCases(Exception):
+    """O executor da avaliação passou a verificação do congelamento e ia correr
+    casos. Lançada pela sentinela do fixture ``policy_v1_executor``."""
