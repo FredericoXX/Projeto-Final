@@ -16,7 +16,7 @@ from datetime import date
 from typing import Annotated, Any, Final, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, model_validator
 from sqlalchemy.orm import Session
 
 from app.answering.base import AnswerGenerator, ContextEvidence
@@ -35,6 +35,7 @@ from app.documents.retrievability import (
     RELAXABLE_CONDITIONS,
     RetrievalEligibility,
 )
+from app.evaluation.policy_v1.annotation_contracts import Family, SourceKind
 from app.evaluation.policy_v1.artifacts import catalog_snapshot
 from app.evaluation.policy_v1.conditions import (
     BaselineModel,
@@ -69,6 +70,10 @@ class EvaluationCase(BaseModel):
     #: Papel simulado, só no executor offline.
     requester_role: Literal["admin", "knowledge_manager", "staff", "student", "user"]
     official_only: bool = True
+    #: Missing only in legacy development fixtures; formal runs refuse it.
+    family: Family | None = None
+    source_kind: SourceKind | None = None
+    expected_snapshot_id: str | None = None
 
 
 class EvaluationCaseSet(BaseModel):
@@ -79,6 +84,13 @@ class EvaluationCaseSet(BaseModel):
     corpus: Literal["P2"]
     institution_code: str
     cases: list[EvaluationCase]
+
+    @model_validator(mode="after")
+    def unique_case_ids(self) -> "EvaluationCaseSet":
+        ids = [case.case_id for case in self.cases]
+        if len(ids) != len(set(ids)):
+            raise ValueError("evaluation case ids must be unique")
+        return self
 
 
 @dataclass(frozen=True)
@@ -244,6 +256,8 @@ def run_case(
         requester_role=case.requester_role,
     )
     identity = (snapshot.snapshot_id, snapshot.corpus_digest)
+    if case.expected_snapshot_id is not None and snapshot.snapshot_id != case.expected_snapshot_id:
+        raise ValueError(f"case {case.case_id}: the corpus snapshot differs from its annotation")
     run = CaseRun(case_id=case.case_id, run_number=run_number, packets={})
 
     b0 = _b0_packet(

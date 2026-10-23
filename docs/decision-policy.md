@@ -228,17 +228,18 @@ existem.
 
 ## 9. Limites conhecidos
 
-- O documento v1.7 não está no repositório. A numeração M3–M9 e os códigos
-  F02, F03, F14, F15 e DP1–DP6 não puderam ser verificados (ver o relatório).
-- Os estimadores reais nunca foram executados neste repositório: os testes usam
-  doubles determinísticos. A qualidade das estimativas é desconhecida.
-- M3 (matriz de confusão) e o identificador M6 (citações inadmissíveis)
-  seguem a revisão de 2026-10-23 e **não provêm do prompt v1.7 disponível**.
-  M4, M5, M7 e M8 são deduções **provisórias**, e M9 está por atribuir. São
-  opções metodológicas provisórias, não conteúdo normativo da v1.7, e não
-  servem para declarar conformidade integral. A qualidade da mensagem (M7)
-  usa um único juízo humano "aceitável/não aceitável", porque o prompt não
-  define critérios.
+- A correspondência com o documento de trabalho v1.7 está descrita em
+  [specification-v1-7.md](evaluation/policy-v1/specification-v1-7.md).
+  M4 usa a ação preferida ESCALATE; M5 exclui encaminhamentos produzidos
+  inaceitáveis do denominador condicional; M7 usa rubrica por critério e M9
+  identifica a atribuição por replay com inspeção humana.
+- A avaliação formal continua dependente de casos e evidências adjudicados,
+  catálogo, corpus e protocolo congelados. Metadados, rubricas e testes
+  técnicos não substituem essa preparação humana.
+- Os estimadores reais não foram avaliados neste incremento. Os testes usam
+  doubles determinísticos; a qualidade das estimativas permanece desconhecida.
+- A margem de não inferioridade e os restantes limiares são propostas sujeitas
+  a justificação e calibração. P-oráculo não isola causalmente os erros.
 - As regras em linguagem natural dadas a B1 (`RULES_VERSION` `.2`) declaram
   em R09/R10 a exclusão da ambiguidade material que R06 não resolveu, que o
   código já aplicava.

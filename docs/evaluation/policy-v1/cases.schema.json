@@ -10,19 +10,14 @@
           "title": "Case Id",
           "type": "string"
         },
-        "language": {
-          "title": "Language",
-          "type": "string"
-        },
-        "official_only": {
-          "default": true,
-          "title": "Official Only",
-          "type": "boolean"
-        },
         "query": {
           "maxLength": 1000,
           "minLength": 1,
           "title": "Query",
+          "type": "string"
+        },
+        "language": {
+          "title": "Language",
           "type": "string"
         },
         "reference_date": {
@@ -40,6 +35,68 @@
           ],
           "title": "Requester Role",
           "type": "string"
+        },
+        "official_only": {
+          "default": true,
+          "title": "Official Only",
+          "type": "boolean"
+        },
+        "family": {
+          "anyOf": [
+            {
+              "enum": [
+                "F01",
+                "F02",
+                "F03",
+                "F04",
+                "F05",
+                "F06",
+                "F07",
+                "F08",
+                "F09",
+                "F10",
+                "F11",
+                "F12",
+                "F13",
+                "F14",
+                "F15"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Family"
+        },
+        "source_kind": {
+          "anyOf": [
+            {
+              "enum": [
+                "real",
+                "synthetic"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Source Kind"
+        },
+        "expected_snapshot_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Expected Snapshot Id"
         }
       },
       "required": [
@@ -53,25 +110,8 @@
       "type": "object"
     }
   },
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
-    "cases": {
-      "items": {
-        "$ref": "#/$defs/EvaluationCase"
-      },
-      "title": "Cases",
-      "type": "array"
-    },
-    "corpus": {
-      "const": "P2",
-      "title": "Corpus",
-      "type": "string"
-    },
-    "institution_code": {
-      "title": "Institution Code",
-      "type": "string"
-    },
     "schema_version": {
       "const": "policy_v1_cases_1",
       "title": "Schema Version",
@@ -82,6 +122,22 @@
       "minLength": 1,
       "title": "Set Id",
       "type": "string"
+    },
+    "corpus": {
+      "const": "P2",
+      "title": "Corpus",
+      "type": "string"
+    },
+    "institution_code": {
+      "title": "Institution Code",
+      "type": "string"
+    },
+    "cases": {
+      "items": {
+        "$ref": "#/$defs/EvaluationCase"
+      },
+      "title": "Cases",
+      "type": "array"
     }
   },
   "required": [
@@ -92,5 +148,6 @@
     "cases"
   ],
   "title": "EvaluationCaseSet",
-  "type": "object"
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
 }

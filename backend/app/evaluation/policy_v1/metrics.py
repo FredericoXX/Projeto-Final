@@ -11,7 +11,7 @@ Definições explícitas no prompt da v1.7, implementadas com esses números:
 
 Os restantes identificadores vêm de
 :data:`app.evaluation.policy_v1.config.METRIC_IDS`, onde está a origem de cada
-um. M4, M5, M7 e M8 são provisórios, e M9 está por atribuir.
+um. A correspondência segue a secção 9.1 do documento de trabalho v1.7.
 
 =====  =============================================================
 ID     Métrica
@@ -19,13 +19,14 @@ ID     Métrica
 M3     matriz de confusão das quatro ações (linha: ação preferida
        adjudicada; coluna: ação da condição ou falha técnica), com
        acordo estrito e acordo aceitável (:func:`action_confusion`)
-M4     encaminhamento excessivo e insuficiente (duas componentes)
+M4     subencaminhamento entre casos com ESCALATE preferido
 M5     destino correto, com denominador condicional e total
 M6     citações inadmissíveis, resolvidas no packet da própria
        condição (:func:`citation_admissibility`)
 M7     qualidade da mensagem, só a partir de avaliações humanas
        identificadas (:class:`~app.evaluation.policy_v1.labels.MessageRatingSet`)
 M8     erros de estimação de P-e2e por dimensão (:func:`estimation_errors`)
+M9     atribuição de erros por replay e inspeção humana
 =====  =============================================================
 
 A atribuição de erros, com causas múltiplas ou indeterminadas, vive em
@@ -50,6 +51,8 @@ garantidas pela recuperação de todas as famílias de packet — nenhuma ablaç
 desliga —, e o inventário documental congelado prova que a base é a mesma.
 """
 
+import json
+from collections import Counter
 from collections.abc import Callable, Mapping
 from dataclasses import dataclass
 from datetime import date
@@ -61,7 +64,11 @@ from app.evaluation.policy_v1.config import METRIC_IDS, PAIRED_COMPARISONS
 from app.evaluation.policy_v1.labels import CaseLabels, MessageRatingSet
 from app.evaluation.policy_v1.packets import EvidencePacket, PacketPassage
 from app.evaluation.policy_v1.runs import CaseSummary
-from app.evaluation.policy_v1.statistics import paired_difference_interval, wilson_interval
+from app.evaluation.policy_v1.statistics import (
+    cohen_kappa,
+    paired_difference_interval,
+    wilson_interval,
+)
 
 ANSWER: Final = DecisionOutcome.ANSWER.value
 ESCALATE: Final = DecisionOutcome.ESCALATE.value
@@ -73,8 +80,6 @@ _ID_BY_METRIC: Final = {name: metric_id for metric_id, name in METRIC_IDS["ids"]
 
 #: Componentes que partilham o identificador de uma métrica.
 _COMPONENT_OF: Final = {
-    "over_escalation": "escalation_errors",
-    "under_escalation": "escalation_errors",
     "destination_correct_conditional": "destination_correct",
     "destination_correct_total": "destination_correct",
     "strict_agreement": "action_confusion_matrix",
@@ -116,16 +121,16 @@ METRIC_DEFINITIONS: Final = (
         "action=escalate, escalate∉acceptable",
         "no failure, escalate∉acceptable",
     ),
-    MetricDefinition("under_escalation", "action≠escalate", "no failure, acceptable={escalate}"),
+    MetricDefinition("under_escalation", "action≠escalate", "no failure, preferred=escalate"),
     MetricDefinition(
         "destination_correct_conditional",
         "destination = adjudicated service",
-        "no failure, action=escalate, adjudicated service exists",
+        "no failure, action=escalate and acceptable, adjudicated service exists",
     ),
     MetricDefinition(
         "destination_correct_total",
         "action=escalate and destination = adjudicated",
-        "no failure, escalate∈acceptable, adjudicated service exists",
+        "no failure, preferred=escalate, adjudicated service exists",
     ),
     MetricDefinition(
         "inadmissible_citations",
@@ -233,11 +238,22 @@ def action_confusion(
     for case_id, summary in sorted(summaries.items()):
         column = summary.primary.action if summary.primary.failure is None else None
         matrix[gold[case_id].preferred_action.value][column or TECHNICAL_FAILURE] += 1
+    per_action = {}
+    for action in ACTIONS:
+        correct = matrix[action][action]
+        predicted = sum(matrix[row][action] for row in ACTIONS)
+        actual = sum(matrix[action][column] for column in ACTIONS)
+        per_action[action] = {
+            "precision": wilson_interval(correct, predicted).as_dict(),
+            "recall_nonfailed": wilson_interval(correct, actual).as_dict(),
+            "technical_failures": matrix[action][TECHNICAL_FAILURE],
+        }
     return {
         "v1_7_id": metric_id("action_confusion_matrix"),
         "rows": "preferred_action",
         "columns": "condition_action",
         "matrix": matrix,
+        "per_action": per_action,
         "strict_agreement": _rate(
             summaries,
             gold,
@@ -294,19 +310,19 @@ def compute_metrics(
         "under_escalation": _rate(
             summaries,
             gold,
-            lambda s, g: _acceptable(g) == {ESCALATE},
+            lambda s, g: g.preferred_action.value == ESCALATE,
             lambda s, g: action(s) != ESCALATE,
         ),
         "destination_correct_conditional": _rate(
             summaries,
             gold,
-            lambda s, g: action(s) == ESCALATE and service(g),
+            lambda s, g: action(s) == ESCALATE and ESCALATE in _acceptable(g) and service(g),
             lambda s, g: s.primary.destination_service_id == g.d6.service_id,
         ),
         "destination_correct_total": _rate(
             summaries,
             gold,
-            lambda s, g: ESCALATE in _acceptable(g) and service(g),
+            lambda s, g: g.preferred_action.value == ESCALATE and service(g),
             lambda s, g: (
                 action(s) == ESCALATE and s.primary.destination_service_id == g.d6.service_id
             ),
@@ -383,12 +399,28 @@ def _message_quality(
     ]
     judged = [case_id for case_id in with_message if case_id in rated]
     acceptable = sum(1 for case_id in judged if rated[case_id].acceptable)
+    rubric = {}
+    for criterion in (
+        "supported_and_complete",
+        "gap_declared",
+        "clarification_material_and_covered",
+        "outdated_notice_present",
+        "escalation_without_transmission",
+    ):
+        values = [
+            getattr(rated[case_id].criteria, criterion)
+            for case_id in judged
+            if rated[case_id].criteria is not None
+            and getattr(rated[case_id].criteria, criterion) is not None
+        ]
+        rubric[criterion] = wilson_interval(sum(values), len(values)).as_dict()
     return {
         "status": "measured",
         "v1_7_id": "M7",
         **wilson_interval(acceptable, len(judged)).as_dict(),
         "unrated": len(with_message) - len(judged),
         "raters": sorted({rated[case_id].rater_id for case_id in judged}),
+        "criteria": rubric,
     }
 
 
@@ -427,7 +459,27 @@ _ESTIMATED_FIELDS: Final[
         lambda g: g.d3.materiality,
         lambda e: None if e["specificity"] is None else e["specificity"]["ambiguity_material"],
     ),
+    "d3.specificity": (
+        lambda g: None if g.d3.specificity is None else g.d3.specificity.value,
+        lambda e: None if e["specificity"] is None else e["specificity"]["specificity"],
+    ),
+    "d3.disambiguation": (
+        lambda g: g.d3.disambiguation,
+        lambda e: None if e["specificity"] is None else e["specificity"]["user_can_distinguish"],
+    ),
+    "d3.coverage": (
+        lambda g: g.d3.coverage,
+        lambda e: (
+            None
+            if e["specificity"] is None
+            else all(reading["supporting_evidence_ids"] for reading in e["specificity"]["readings"])
+        ),
+    ),
     "d4.sufficiency": (lambda g: g.d4.sufficiency, _sufficiency),
+    "d4.partial_misleading": (
+        lambda g: g.d4.partial_misleading,
+        lambda e: None if e["support"] is None else e["support"]["partial_misleading"],
+    ),
     "d5.unresolvable_conflict": (
         lambda g: g.d5.unresolvable_conflict,
         lambda e: (
@@ -450,6 +502,9 @@ def estimation_errors(
     result: dict[str, Any] = {"v1_7_id": metric_id("estimation_errors")}
     for name, (read_gold, read_estimate) in _ESTIMATED_FIELDS.items():
         errors = total = 0
+        expected_values = []
+        observed_values = []
+        missing = 0
         for case_id, summary in sorted(summaries.items()):
             estimates = summary.primary.estimates
             expected = read_gold(gold[case_id])
@@ -457,10 +512,24 @@ def estimation_errors(
                 continue
             observed = read_estimate(estimates)
             if observed is None:
+                missing += 1
                 continue
             total += 1
             errors += observed != expected
-        result[name] = wilson_interval(errors, total).as_dict()
+            expected_values.append(json.dumps(expected, sort_keys=True))
+            observed_values.append(json.dumps(observed, sort_keys=True))
+        result[name] = {
+            **wilson_interval(errors, total).as_dict(),
+            "accuracy": wilson_interval(total - errors, total).as_dict(),
+            "agreement": cohen_kappa(expected_values, observed_values).as_dict(),
+            "missing_estimates": missing,
+            "confusion_expected_to_observed": dict(
+                Counter(
+                    f"{expected} -> {observed}"
+                    for expected, observed in zip(expected_values, observed_values, strict=True)
+                )
+            ),
+        }
     return result
 
 
@@ -484,6 +553,19 @@ def _paired_measures(
     def strict(s: CaseSummary, g: CaseLabels) -> bool | None:
         return s.primary.action == g.preferred_action.value
 
+    def over_answer(s: CaseSummary, g: CaseLabels) -> bool | None:
+        return None if ANSWER in _acceptable(g) else s.primary.action == ANSWER
+
+    def undue_refusal(s: CaseSummary, g: CaseLabels) -> bool | None:
+        if ANSWER not in _acceptable(g):
+            return None
+        return s.primary.action != ANSWER and s.primary.action not in _acceptable(g)
+
+    def outdated_notice(s: CaseSummary, g: CaseLabels) -> bool | None:
+        if g.trace is None or g.trace.family != "F02":
+            return None
+        return s.primary.temporal_notice_shown
+
     def inadmissible(s: CaseSummary, g: CaseLabels) -> bool | None:
         return has_inadmissible_citation(s.primary, packets)
 
@@ -491,6 +573,9 @@ def _paired_measures(
         return lambda s, g: None if by_case is None else by_case.get(s.case_id)
 
     return {
+        "over_answer": (over_answer, over_answer),
+        "undue_refusal": (undue_refusal, undue_refusal),
+        "outdated_notice": (outdated_notice, outdated_notice),
         "acceptable_action": (acceptable, acceptable),
         "strict_action": (strict, strict),
         "inadmissible_citation": (inadmissible, inadmissible),

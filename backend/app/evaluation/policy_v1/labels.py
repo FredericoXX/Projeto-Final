@@ -46,6 +46,7 @@ from app.decision.dimensions import (
     SpecificityAssessment,
     SupportAssessment,
 )
+from app.evaluation.policy_v1.annotation_contracts import AnnotationTrace, MessageRubric
 from app.evaluation.policy_v1.freeze import FreezeError, canonical_bytes, verify_artifact
 from app.evaluation.policy_v1.statistics import cohen_kappa
 
@@ -157,6 +158,8 @@ class CaseLabels(_Strict):
     acceptable_actions: Annotated[list[DecisionOutcome], Field(min_length=1)]
     #: A ação que a adjudicação prefere, entre as aceitáveis.
     preferred_action: DecisionOutcome
+    #: Optional for old technical fixtures; mandatory for formal evaluation.
+    trace: AnnotationTrace | None = None
 
     @model_validator(mode="after")
     def preferred_is_acceptable(self) -> "CaseLabels":
@@ -166,6 +169,20 @@ class CaseLabels(_Strict):
         if self.preferred_action not in self.acceptable_actions:
             msg = "preferred_action must be one of the acceptable_actions"
             raise ValueError(msg)
+        if self.trace is not None:
+            items = self.trace.items
+            if items and self.d4.sufficiency is not None:
+                supported = sum(item.supported for item in items)
+                derived = "full" if supported == len(items) else "partial" if supported else "none"
+                if self.d4.sufficiency != derived:
+                    raise ValueError("D4 sufficiency disagrees with the annotated items")
+            if self.d3.materiality and self.trace.readings:
+                covered = all(reading.evidence_ids for reading in self.trace.readings)
+                if covered != self.d3.coverage:
+                    raise ValueError("D3 coverage disagrees with the annotated readings")
+            if self.d5.unresolvable_conflict is not None:
+                if bool(self.trace.conflicts) != self.d5.unresolvable_conflict:
+                    raise ValueError("D5 disagrees with the annotated conflicts")
         return self
 
 
@@ -201,16 +218,16 @@ class LabelSet(_Strict):
 class MessageRating(_Strict):
     """Juízo humano sobre a mensagem da execução principal de um caso.
 
-    A v1.7 pede a qualidade da mensagem mas o prompt não define critérios; o
-    juízo é, por isso, um único "aceitável / não aceitável" de um avaliador
-    humano identificado, com nota livre. Critérios mais finos dependem do
-    documento da v1.7. Nenhum modelo produz estas avaliações.
+    The criterion rubric follows section 9.1 of the working document v1.7.
+    Legacy development fixtures may omit it; formal ratings require it.
+    No model produces these judgments.
     """
 
     case_id: Annotated[str, Field(min_length=1, max_length=64)]
     condition: Annotated[str, Field(min_length=1, max_length=32)]
     rater_id: Annotated[str, Field(min_length=1, max_length=64)]
     acceptable: bool
+    criteria: MessageRubric | None = None
     notes: Annotated[str, Field(max_length=2000)] | None = None
 
 
@@ -338,9 +355,8 @@ def verified_adjudication(label_set: LabelSet, freeze_manifest: Mapping[str, Any
     return label_set
 
 
-#: Identificadores abstratos de evidência do P-oráculo. As dimensões humanas
-#: não se referem às passagens de uma execução; estes marcadores satisfazem a
-#: validação D0 da mesma implementação da política sem as inventar.
+#: Abstract evidence identifiers retained only for legacy technical fixtures.
+#: Formal human annotations use frozen corpus chunk IDs from ``trace``.
 ORACLE_EVIDENCE: Final = ("G1", "G2")
 
 
@@ -352,7 +368,9 @@ def oracle_policy_input(
     reference_date: date,
 ) -> PolicyInput:
     """Traduz dimensões adjudicadas em entradas da **mesma** política."""
-    if case.d1.scope is None or case.d2.constraints is None:
+    if case.d1.scope is None or (
+        case.d1.scope is ScopeClass.IN_SCOPE and case.d2.constraints is None
+    ):
         msg = f"case {case.case_id}: D1 and D2 are required by the oracle"
         raise ValueError(msg)
     service = None
@@ -406,13 +424,50 @@ def oracle_policy_input(
             else (),
             origin=origin,
         )
+        if case.trace is not None:
+            trace = case.trace
+            specificity = SpecificityAssessment(
+                specificity=case.d3.specificity,
+                readings=tuple(
+                    Reading(r.reading_id, r.label, frozenset(r.evidence_ids))
+                    for r in trace.readings
+                )
+                if material
+                else (),
+                ambiguity_material=material,
+                user_can_distinguish=bool(case.d3.disambiguation),
+                origin=origin,
+            )
+            support = SupportAssessment(
+                items=tuple(
+                    ItemSupport(i.item_id, i.label, i.supported, frozenset(i.evidence_ids))
+                    for i in trace.items
+                ),
+                partial_misleading=case.d4.partial_misleading,
+                origin=origin,
+            )
+            conflict = ConflictAssessment(
+                conflicts=tuple(
+                    EvidenceConflict(c.item_id, tuple(c.evidence_ids), resolvable=False)
+                    for c in trace.conflicts
+                ),
+                origin=origin,
+            )
+    oracle_evidence = frozenset(ORACLE_EVIDENCE)
+    if case.trace is not None:
+        oracle_evidence = frozenset(
+            evidence_id
+            for collection in (case.trace.items, case.trace.readings, case.trace.conflicts)
+            for item in collection
+            for evidence_id in item.evidence_ids
+        )
     return PolicyInput(
         scope=case.d1.scope,
         scope_origin=origin,
-        constraints=frozenset(case.d2.constraints),
+        constraints=frozenset(case.d2.constraints or []),
         constraints_origin=origin,
         admissibility=AdmissibilityAssessment(
-            evidence_ids=frozenset(ORACLE_EVIDENCE),
+            evidence_ids=oracle_evidence,
             eligibility_policy="oracle",
             conditions=(),
             requester_role="oracle",

@@ -1,7 +1,7 @@
 """Domínio da decisão: o que o assistente faz perante um pedido.
 
-Contém, para já, apenas os contratos provisórios da A2.1
-(:mod:`app.decision.contracts`) — vocabulário, sem política e sem consumidores.
+Contém os contratos, estimadores, mensagens e a política experimental v1.7.
+O fluxo operacional é explicitamente ativado; o B0 permanece disponível.
 
 O pacote existe para que esta decisão viva **fora** de ``app.answering`` e de
 ``app.retrieval``: a geração de respostas e a recuperação de evidências são

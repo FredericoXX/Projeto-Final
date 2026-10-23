@@ -1,16 +1,84 @@
 {
   "$defs": {
+    "AnnotationTrace": {
+      "additionalProperties": false,
+      "properties": {
+        "family": {
+          "enum": [
+            "F01",
+            "F02",
+            "F03",
+            "F04",
+            "F05",
+            "F06",
+            "F07",
+            "F08",
+            "F09",
+            "F10",
+            "F11",
+            "F12",
+            "F13",
+            "F14",
+            "F15"
+          ],
+          "title": "Family",
+          "type": "string"
+        },
+        "source_kind": {
+          "enum": [
+            "real",
+            "synthetic"
+          ],
+          "title": "Source Kind",
+          "type": "string"
+        },
+        "snapshot_id": {
+          "maxLength": 128,
+          "minLength": 1,
+          "title": "Snapshot Id",
+          "type": "string"
+        },
+        "rationale": {
+          "maxLength": 8000,
+          "minLength": 40,
+          "title": "Rationale",
+          "type": "string"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/$defs/ItemAnnotation"
+          },
+          "title": "Items",
+          "type": "array"
+        },
+        "readings": {
+          "items": {
+            "$ref": "#/$defs/ReadingAnnotation"
+          },
+          "title": "Readings",
+          "type": "array"
+        },
+        "conflicts": {
+          "items": {
+            "$ref": "#/$defs/ConflictAnnotation"
+          },
+          "title": "Conflicts",
+          "type": "array"
+        }
+      },
+      "required": [
+        "family",
+        "source_kind",
+        "snapshot_id",
+        "rationale",
+        "items"
+      ],
+      "title": "AnnotationTrace",
+      "type": "object"
+    },
     "AnnotatorIdentity": {
       "additionalProperties": false,
       "properties": {
-        "adjudicators": {
-          "default": [],
-          "items": {
-            "type": "string"
-          },
-          "title": "Adjudicators",
-          "type": "array"
-        },
         "annotator_id": {
           "maxLength": 64,
           "minLength": 1,
@@ -24,6 +92,14 @@
           ],
           "title": "Role",
           "type": "string"
+        },
+        "adjudicators": {
+          "default": [],
+          "items": {
+            "type": "string"
+          },
+          "title": "Adjudicators",
+          "type": "array"
         }
       },
       "required": [
@@ -36,14 +112,6 @@
     "CaseLabels": {
       "additionalProperties": false,
       "properties": {
-        "acceptable_actions": {
-          "items": {
-            "$ref": "#/$defs/DecisionOutcome"
-          },
-          "minItems": 1,
-          "title": "Acceptable Actions",
-          "type": "array"
-        },
         "case_id": {
           "maxLength": 64,
           "minLength": 1,
@@ -68,8 +136,27 @@
         "d6": {
           "$ref": "#/$defs/DestinationLabel"
         },
+        "acceptable_actions": {
+          "items": {
+            "$ref": "#/$defs/DecisionOutcome"
+          },
+          "minItems": 1,
+          "title": "Acceptable Actions",
+          "type": "array"
+        },
         "preferred_action": {
           "$ref": "#/$defs/DecisionOutcome"
+        },
+        "trace": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/AnnotationTrace"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null
         }
       },
       "required": [
@@ -84,6 +171,36 @@
         "preferred_action"
       ],
       "title": "CaseLabels",
+      "type": "object"
+    },
+    "ConflictAnnotation": {
+      "additionalProperties": false,
+      "properties": {
+        "item_id": {
+          "title": "Item Id",
+          "type": "string"
+        },
+        "evidence_ids": {
+          "items": {
+            "type": "string"
+          },
+          "minItems": 2,
+          "title": "Evidence Ids",
+          "type": "array"
+        },
+        "same_conditions": {
+          "maxLength": 2000,
+          "minLength": 20,
+          "title": "Same Conditions",
+          "type": "string"
+        }
+      },
+      "required": [
+        "item_id",
+        "evidence_ids",
+        "same_conditions"
+      ],
+      "title": "ConflictAnnotation",
       "type": "object"
     },
     "ConflictLabel": {
@@ -178,6 +295,73 @@
       "title": "DestinationLabel",
       "type": "object"
     },
+    "ItemAnnotation": {
+      "additionalProperties": false,
+      "properties": {
+        "item_id": {
+          "maxLength": 32,
+          "minLength": 1,
+          "title": "Item Id",
+          "type": "string"
+        },
+        "label": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "supported": {
+          "title": "Supported",
+          "type": "boolean"
+        },
+        "evidence_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "item_id",
+        "label",
+        "supported",
+        "evidence_ids"
+      ],
+      "title": "ItemAnnotation",
+      "type": "object"
+    },
+    "ReadingAnnotation": {
+      "additionalProperties": false,
+      "properties": {
+        "reading_id": {
+          "maxLength": 32,
+          "minLength": 1,
+          "title": "Reading Id",
+          "type": "string"
+        },
+        "label": {
+          "maxLength": 1000,
+          "minLength": 1,
+          "title": "Label",
+          "type": "string"
+        },
+        "evidence_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Evidence Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "reading_id",
+        "label",
+        "evidence_ids"
+      ],
+      "title": "ReadingAnnotation",
+      "type": "object"
+    },
     "RequestConstraint": {
       "description": "Propriedade do pedido que impede o fluxo documental normal.\n\n``PERSONAL_DATA_REQUIRED`` — o pedido só pode ser satisfeito\nsubstantivamente mediante acesso a informação específica de uma pessoa, que\nnão faz parte da documentação institucional geral disponível ao fluxo\ndocumental.\n\nO discriminante não é a presença de um possessivo. \"Qual é a minha nota?\"\ntem a restrição, porque o valor pedido vive num registo individual; \"Como\nposso consultar as minhas notas?\" pode não a ter, porque o procedimento\nestá documentado.\n\n**Não existe ``NONE``, e a omissão é deliberada.** Uma restrição é uma\npropriedade que pode ocorrer zero ou mais vezes; a ausência de restrições é\na coleção vazia — ``frozenset()`` — e não um membro artificial dentro do\npróprio conjunto de restrições.\n\n``ADMINISTRATIVE_ACTION_REQUIRED`` — o pedido só fica satisfeito com a\nexecução de um ato administrativo (inscrever, anular, emitir, alterar),\nque o assistente não pratica. \"Inscreva-me\" tem a restrição; \"Como faço a\ninscrição?\" não a tem, porque pede informação sobre o procedimento.\nAcrescentado pela política v1.7 (D2); a A2.0 tinha-o adiado.\n\nOutros valores candidatos foram considerados pela A2.0 e ficaram de fora\npor não mudarem nenhuma decisão, ou por nomearem o desfecho em vez da\npropriedade do pedido.",
       "enum": [
@@ -230,27 +414,15 @@
       "additionalProperties": false,
       "description": "D3, com materialidade, desambiguação e cobertura separadas.\n\n``disambiguation`` (o utilizador consegue distinguir as leituras) e\n``coverage`` (todas as leituras materiais têm evidência admissível) só se\naplicam quando a ambiguidade é material.",
       "properties": {
-        "coverage": {
+        "specificity": {
           "anyOf": [
             {
-              "type": "boolean"
+              "$ref": "#/$defs/Specificity"
             },
             {
               "type": "null"
             }
-          ],
-          "title": "Coverage"
-        },
-        "disambiguation": {
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "title": "Disambiguation"
+          ]
         },
         "materiality": {
           "anyOf": [
@@ -263,15 +435,27 @@
           ],
           "title": "Materiality"
         },
-        "specificity": {
+        "disambiguation": {
           "anyOf": [
             {
-              "$ref": "#/$defs/Specificity"
+              "type": "boolean"
             },
             {
               "type": "null"
             }
-          ]
+          ],
+          "title": "Disambiguation"
+        },
+        "coverage": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Coverage"
         }
       },
       "required": [
@@ -287,17 +471,6 @@
       "additionalProperties": false,
       "description": "D4. ``partial_misleading`` só se aplica a suficiência parcial.",
       "properties": {
-        "partial_misleading": {
-          "anyOf": [
-            {
-              "type": "boolean"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "title": "Partial Misleading"
-        },
         "sufficiency": {
           "anyOf": [
             {
@@ -313,6 +486,17 @@
             }
           ],
           "title": "Sufficiency"
+        },
+        "partial_misleading": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Partial Misleading"
         }
       },
       "required": [
@@ -323,19 +507,8 @@
       "type": "object"
     }
   },
-  "$schema": "https://json-schema.org/draft/2020-12/schema",
   "additionalProperties": false,
   "properties": {
-    "annotator": {
-      "$ref": "#/$defs/AnnotatorIdentity"
-    },
-    "cases": {
-      "items": {
-        "$ref": "#/$defs/CaseLabels"
-      },
-      "title": "Cases",
-      "type": "array"
-    },
     "schema_version": {
       "const": "policy_v1_labels_2",
       "title": "Schema Version",
@@ -346,6 +519,16 @@
       "minLength": 1,
       "title": "Set Id",
       "type": "string"
+    },
+    "annotator": {
+      "$ref": "#/$defs/AnnotatorIdentity"
+    },
+    "cases": {
+      "items": {
+        "$ref": "#/$defs/CaseLabels"
+      },
+      "title": "Cases",
+      "type": "array"
     }
   },
   "required": [
@@ -355,5 +538,6 @@
     "cases"
   ],
   "title": "LabelSet",
-  "type": "object"
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
 }

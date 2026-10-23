@@ -43,7 +43,7 @@ from tests.decision_support import (
     make_world,
     support_by_title,
 )
-from tests.test_policy_v1_evaluation import CATALOG, LIMITS, _case, _label_set, _packet
+from tests.test_policy_v1_evaluation import CATALOG, LIMITS, REFERENCE, _case, _label_set, _packet
 from tests.test_policy_v1_evaluation_audit import CASES, COMMIT, CORPUS_INVENTORY
 
 ENROLMENT = "O prazo de matrícula termina a 30 de setembro."
@@ -248,10 +248,13 @@ def _executor_inputs(
     frozen_catalog: dict[str, Any],
 ) -> list[str]:
     """Publica DEFAULT_CATALOG (versão 1) pela API e congela ``frozen_catalog``."""
+    from app.evaluation.snapshot_builder import build_evaluation_snapshot
+    from app.models.document_chunk import DocumentChunk
     from app.models.institution import Institution
     from tests.decision_support import DEFAULT_CATALOG
 
     world = make_world(client, catalog=DEFAULT_CATALOG)
+    world.document(client, "Synthetic regulation", "O prazo de matrícula termina em setembro.")
     with test_session_factory() as db:
         code = db.get_one(Institution, world.institution_id).code
         # O manifesto congelado é o inventário da base no momento do
@@ -259,8 +262,49 @@ def _executor_inputs(
         inventory = corpus_inventory_bytes(
             collect_corpus_inventory(db, UUID(str(world.institution_id)))
         )
-    cases = {**CASES, "institution_code": code}
-    adjudication = _label_set("ADJ", [_case("C1")], role="adjudication")
+        chunk_id = str(db.scalar(select(DocumentChunk.id)))
+        snapshot = build_evaluation_snapshot(
+            db,
+            institution_id=UUID(str(world.institution_id)),
+            language="pt",
+            reference_date=REFERENCE,
+            requester_role="student",
+            top_k=5,
+            official_only=True,
+        )
+    metadata = {
+        "family": "F01",
+        "source_kind": "synthetic",
+        "expected_snapshot_id": snapshot.snapshot_id,
+    }
+    cases = {
+        **CASES,
+        "institution_code": code,
+        "cases": [{**case, **metadata} for case in CASES["cases"]],
+    }
+    adjudication = _label_set(
+        "ADJ",
+        [
+            _case(
+                "C1",
+                trace={
+                    "family": "F01",
+                    "source_kind": "synthetic",
+                    "snapshot_id": snapshot.snapshot_id,
+                    "rationale": "Synthetic technical fixture; not a human scientific annotation.",
+                    "items": [
+                        {
+                            "item_id": "I1",
+                            "label": "deadline",
+                            "supported": True,
+                            "evidence_ids": [chunk_id],
+                        }
+                    ],
+                },
+            )
+        ],
+        role="adjudication",
+    )
     files = {
         "corpus": corpus_bytes(cases),
         "manifest": inventory,
