@@ -8,7 +8,9 @@ Uso (a partir de backend/):
 
 Só ``corpus``, ``manifest``, ``labels`` e ``catalog`` (o snapshot do catálogo
 institucional, com ``version``, ``scope_description``, ``topics`` e
-``services``) são ficheiros. ``policy``,
+``services``) são ficheiros. O ``manifest`` é o inventário documental exportado
+da base por ``scripts.export_policy_v1_corpus_inventory``; um inventário que não
+valide é recusado. ``policy``,
 ``schema``, ``prompts`` e ``config`` são **gerados a partir do código** em
 execução (:mod:`app.evaluation.policy_v1.artifacts`) e não podem ser
 fornecidos: é isso que permite verificar, mais tarde, que o código que corre é

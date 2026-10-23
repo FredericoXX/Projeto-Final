@@ -13,6 +13,11 @@ Princípios
   dentro da lista de categorias. Ex.: ``partial_misleading`` só se aplica a
   suficiência parcial.
 - **Materialidade, desambiguação e cobertura de D3 são campos distintos.**
+- **Ação preferida e ações aceitáveis são juízos distintos.** A ação
+  preferida (uma) pertence sempre ao conjunto aceitável; é a linha da matriz
+  de confusão (M3) e separa acordo estrito (ação = preferida) de acordo
+  aceitável (ação no conjunto aceitável). Introduzida na versão 2 do
+  esquema; ainda não existem rótulos humanos na versão 1 a migrar.
 - **Nenhum modelo cria rótulos.** Este módulo valida, compara e transporta
   rótulos escritos por pessoas; não sugere nem preenche valores.
 - O modo ``check`` calcula acordo; **não** calcula ações nem preenche rótulos.
@@ -44,7 +49,7 @@ from app.decision.dimensions import (
 from app.evaluation.policy_v1.freeze import FreezeError, canonical_bytes, verify_artifact
 from app.evaluation.policy_v1.statistics import cohen_kappa
 
-LABELS_SCHEMA_VERSION: Final = "policy_v1_labels_1"
+LABELS_SCHEMA_VERSION: Final = "policy_v1_labels_2"
 
 Sufficiency = Literal["full", "partial", "none"]
 
@@ -150,6 +155,18 @@ class CaseLabels(_Strict):
     d5: ConflictLabel
     d6: DestinationLabel
     acceptable_actions: Annotated[list[DecisionOutcome], Field(min_length=1)]
+    #: A ação que a adjudicação prefere, entre as aceitáveis.
+    preferred_action: DecisionOutcome
+
+    @model_validator(mode="after")
+    def preferred_is_acceptable(self) -> "CaseLabels":
+        if len(set(self.acceptable_actions)) != len(self.acceptable_actions):
+            msg = "acceptable_actions must be unique"
+            raise ValueError(msg)
+        if self.preferred_action not in self.acceptable_actions:
+            msg = "preferred_action must be one of the acceptable_actions"
+            raise ValueError(msg)
+        return self
 
 
 class AnnotatorIdentity(_Strict):
@@ -167,7 +184,7 @@ class AnnotatorIdentity(_Strict):
 
 
 class LabelSet(_Strict):
-    schema_version: Literal["policy_v1_labels_1"]
+    schema_version: Literal["policy_v1_labels_2"]
     set_id: Annotated[str, Field(min_length=1, max_length=64)]
     annotator: AnnotatorIdentity
     cases: list[CaseLabels]
@@ -238,6 +255,7 @@ LABEL_FIELDS: Final[Mapping[str, Callable[[CaseLabels], Any]]] = {
     "d6.has_competent_service": lambda c: c.d6.has_competent_service,
     "d6.service_id": lambda c: c.d6.service_id,
     "acceptable_actions": lambda c: tuple(sorted(a.value for a in c.acceptable_actions)),
+    "preferred_action": lambda c: c.preferred_action,
 }
 
 

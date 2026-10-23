@@ -232,9 +232,16 @@ existem.
   F02, F03, F14, F15 e DP1–DP6 não puderam ser verificados (ver o relatório).
 - Os estimadores reais nunca foram executados neste repositório: os testes usam
   doubles determinísticos. A qualidade das estimativas é desconhecida.
-- Os identificadores M3–M8 são **provisórios** (ordem da enumeração no
-  prompt) e M9 está por atribuir. A qualidade da mensagem (M7) usa um único
-  juízo humano "aceitável/não aceitável", porque o prompt não define critérios.
+- M3 (matriz de confusão) e o identificador M6 (citações inadmissíveis)
+  seguem a revisão de 2026-10-23 e **não provêm do prompt v1.7 disponível**.
+  M4, M5, M7 e M8 são deduções **provisórias**, e M9 está por atribuir. São
+  opções metodológicas provisórias, não conteúdo normativo da v1.7, e não
+  servem para declarar conformidade integral. A qualidade da mensagem (M7)
+  usa um único juízo humano "aceitável/não aceitável", porque o prompt não
+  define critérios.
+- As regras em linguagem natural dadas a B1 (`RULES_VERSION` `.2`) declaram
+  em R09/R10 a exclusão da ambiguidade material que R06 não resolveu, que o
+  código já aplicava.
 - O diagnóstico de pipeline documental avalia C13 sem papel. Um documento
   restrito aparece como não recuperável "sem papel".
 - F14, autorização por papel na avaliação, só pode ser declarado testado com um

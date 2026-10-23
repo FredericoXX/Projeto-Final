@@ -14,6 +14,7 @@ don't need to track and delete the rows they create.
 
 from collections.abc import Callable, Iterator
 from pathlib import Path
+from typing import Any
 
 import pytest
 from fastapi.testclient import TestClient
@@ -151,3 +152,31 @@ def install() -> Iterator[Callable[..., None]]:
     yield _install
     app.dependency_overrides.pop(get_dimension_estimator, None)
     app.dependency_overrides.pop(get_answer_generator, None)
+
+
+@pytest.fixture
+def policy_v1_executor(
+    monkeypatch: pytest.MonkeyPatch, test_session_factory: sessionmaker[Session]
+) -> tuple[Callable[[list[str]], int], list[str]]:
+    """O executor da avaliação sobre a base de teste, com HEAD fixo e árvore limpa.
+
+    ``run_case`` é substituído por uma sentinela que lança ``ReachedCases``: o
+    teste só verifica se o executor chega, ou não, a correr casos — nunca
+    chama fornecedores.
+    """
+    from scripts import run_policy_v1_evaluation as module
+    from tests.decision_support import ReachedCases
+    from tests.test_policy_v1_evaluation_audit import COMMIT
+
+    calls: list[str] = []
+
+    def reached(db: Session, case: Any, **kwargs: Any) -> None:
+        calls.append(case.case_id)
+        raise ReachedCases
+
+    monkeypatch.setattr(module, "SessionLocal", test_session_factory)
+    monkeypatch.setattr(module, "git_state", lambda repository: (COMMIT, True))
+    monkeypatch.setattr(module, "get_retriever", lambda: None)
+    monkeypatch.setattr(module, "get_answer_generator", lambda: None)
+    monkeypatch.setattr(module, "run_case", reached)
+    return module.main, calls

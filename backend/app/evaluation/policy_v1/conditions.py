@@ -66,7 +66,9 @@ from app.decision.policy import decide
 from app.evaluation.policy_v1.labels import CaseLabels, oracle_policy_input
 from app.evaluation.policy_v1.packets import EvidencePacket
 
-B1_PROMPT_VERSION: Final = "policy_v1_b1_prompt_1"
+#: ``_2``: as regras em linguagem natural (``RULES_VERSION`` ``.2``) passaram a
+#: declarar em R09/R10 a exclusão da ambiguidade material que o código aplica.
+B1_PROMPT_VERSION: Final = "policy_v1_b1_prompt_2"
 
 
 class Condition(StrEnum):

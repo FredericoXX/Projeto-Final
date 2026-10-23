@@ -35,11 +35,11 @@ from app.evaluation.policy_v1.conditions import (
     run_b1_full,
     run_p_e2e,
 )
+from app.evaluation.policy_v1.corpus_inventory import corpus_inventory_bytes
 from app.evaluation.policy_v1.freeze import (
     FreezeError,
     FrozenArtifact,
     build_freeze_manifest,
-    canonical_bytes,
 )
 from app.evaluation.policy_v1.labels import (
     CaseLabels,
@@ -79,7 +79,46 @@ CASES: dict[str, Any] = {
         }
     ],
 }
-CORPUS_MANIFEST: dict[str, Any] = {"corpus": "P2", "documents": [{"id": "SYN-DOC-1"}]}
+#: Inventário documental sintético e válido: o artefacto ``manifest``. Até à
+#: revisão de 2026-10-23 o manifesto era um JSON livre; agora é o inventário
+#: exportado da base, e um JSON livre é recusado.
+CORPUS_INVENTORY: dict[str, Any] = {
+    "inventory_version": "policy_v1_corpus_inventory_1",
+    "institution_id": "00000000-0000-4000-8000-000000000001",
+    "institution_code": "SYN",
+    "documents": [
+        {
+            "document_id": "00000000-0000-4000-8000-0000000000a1",
+            "title": "Regulamento de matrículas",
+            "language": "pt",
+            "official_source": True,
+            "is_active": True,
+            "access_roles": [],
+            "valid_from": None,
+            "valid_until": None,
+            "source_url": None,
+            "versions": [
+                {
+                    "document_version_id": "00000000-0000-4000-8000-0000000000b1",
+                    "version_number": 1,
+                    "checksum_sha256": "0" * 64,
+                    "processing_status": "processed",
+                    "chunks": [
+                        {
+                            "chunk_id": "00000000-0000-4000-8000-0000000000c1",
+                            "chunk_index": 0,
+                            "language": "pt",
+                            "content_sha256": "1" * 64,
+                            "normalized_content_sha256": "2" * 64,
+                            "section_title": None,
+                            "structure_type": None,
+                        }
+                    ],
+                }
+            ],
+        }
+    ],
+}
 
 
 # --- Achado 1: identificadores, qualidade da mensagem e atribuição ----------------------
@@ -87,10 +126,15 @@ CORPUS_MANIFEST: dict[str, Any] = {"corpus": "P2", "documents": [{"id": "SYN-DOC
 
 def test_metric_ids_are_provisional_and_m9_is_not_invented() -> None:
     ids = {definition.name: definition.v1_7_id for definition in METRIC_DEFINITIONS}
+    # Expectativa alterada (revisão de 2026-10-23 sobre a main 8d3164b): M3 é a
+    # matriz de confusão das quatro ações, com acordo estrito e aceitável; o
+    # encaminhamento excessivo e insuficiente passou a componentes de M4.
     assert ids == {
         "answer_when_not_acceptable": "M1",
         "non_answer_outside_acceptable": "M2",
-        "over_escalation": "M3",
+        "strict_agreement": "M3",
+        "acceptable_agreement": "M3",
+        "over_escalation": "M4",
         "under_escalation": "M4",
         "destination_correct_conditional": "M5",
         "destination_correct_total": "M5",
@@ -296,7 +340,7 @@ def _adjudication() -> LabelSet:
 def _full_manifest(**overrides: bytes) -> dict[str, Any]:
     files = {
         "corpus": corpus_bytes(CASES),
-        "manifest": canonical_bytes(CORPUS_MANIFEST),
+        "manifest": corpus_inventory_bytes(CORPUS_INVENTORY),
         "labels": label_set_bytes(_adjudication()),
         # Artefacto obrigatório desde a segunda auditoria (2026-10-23).
         "catalog": catalog_bytes(CATALOG),
@@ -309,7 +353,7 @@ def _full_manifest(**overrides: bytes) -> dict[str, Any]:
 def _verify(manifest: dict[str, Any], **overrides: Any) -> None:
     values: dict[str, Any] = {
         "cases_payload": CASES,
-        "corpus_manifest_payload": CORPUS_MANIFEST,
+        "corpus_inventory_payload": CORPUS_INVENTORY,
         "adjudication": _adjudication(),
         "catalog_payload": CATALOG,
         "commit": COMMIT,
@@ -332,7 +376,7 @@ def test_formal_freeze_verifies_every_artifact_commit_and_tree() -> None:
     with pytest.raises(FreezeError, match="corpus"):
         _verify(manifest, cases_payload=other_cases)
     with pytest.raises(FreezeError, match="manifest"):
-        _verify(manifest, corpus_manifest_payload={"corpus": "P2", "documents": []})
+        _verify(manifest, corpus_inventory_payload={**CORPUS_INVENTORY, "documents": []})
     incomplete = build_freeze_manifest(code_artifacts(), code_commit=COMMIT)
     with pytest.raises(FreezeError, match="incomplete"):
         _verify(incomplete)

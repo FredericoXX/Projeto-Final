@@ -132,17 +132,31 @@ D0–D6/R01–R12 não estavam executáveis — ver
 [`institutional-access.md`, secção 10](../institutional-access.md#10-estado-da-especificação-d0d6--r01r12)
 e a secção seguinte, que regista a extensão experimental entretanto feita.
 
-## Política de decisão v1.7 — modo experimental (branch, não integrado)
+## Política de decisão v1.7 — modo experimental
 
-**Trabalho de branch, não estado da `main`.** Observado em 2026-10-22 na branch
-`feat/decision-policy-v1-7-experimental`, criada a partir de `origin/main` em
-`d87ed34641141093f9aabf6ca7045f73411fe323`, **antes de qualquer commit**. Fonte
-canónica: [`docs/decision-policy.md`](../decision-policy.md); matriz de
-conformidade em
+**Integrada na `main`** pelo PR #67 (merge `8d3164be826c1fd87c3ad89852625727cf938513`,
+commit `42ffbca`), a partir da branch `feat/decision-policy-v1-7-experimental`
+criada sobre `d87ed34`. Fonte canónica:
+[`docs/decision-policy.md`](../decision-policy.md); matriz de conformidade em
 [`relatorios/policy-v1-7-integration.md`](../relatorios/policy-v1-7-integration.md).
 
-Implementado na branch, como extensão **experimental, desativada por omissão e
-não avaliada**:
+**Correções da revisão de 2026-10-23, em branch, ainda não integradas.** Na
+branch `fix/policy-v1-7-evaluation-review`, criada sobre `8d3164b` e **sem
+commit**:
+
+- M6 resolve as citações no packet da própria condição;
+- o manifesto congelado passou a ser o inventário documental da base,
+  confrontado no início e no fim da execução;
+- M3 é a matriz de confusão, com ação preferida (rótulos
+  `policy_v1_labels_2`), acordo estrito e aceitável, e as comparações
+  emparelhadas cobrem todas as condições;
+- as regras dadas a B1 declaram a exclusão de ambiguidade que o código aplica
+  (`RULES_VERSION` `.2`).
+
+Ver a última secção do relatório de integração.
+
+Implementado, como extensão **experimental, desativada por omissão e não
+avaliada**:
 
 - contratos D0–D6 (`app/decision/dimensions.py`) e `DecisionPolicy` pura com
   R01–R12 (`app/decision/policy.py`, `decision_policy_v1.7-experimental.1`);
@@ -160,7 +174,8 @@ não avaliada**:
 - diagnóstico temporal, data de referência única por pedido (também no B0),
   registo interno `decision_records` e replay;
 - infraestrutura de avaliação preparada (`app/evaluation/policy_v1/`, scripts
-  `p2_labels_tool`, `freeze_policy_v1_artifacts`, `run_policy_v1_evaluation`);
+  `p2_labels_tool`, `freeze_policy_v1_artifacts`, `run_policy_v1_evaluation`,
+  e, na branch de correções, `export_policy_v1_corpus_inventory`);
   **nenhuma avaliação foi executada e nenhum rótulo foi criado**;
 - migração `a8c4e2f6b1d9`; head única `a8c4e2f6b1d9`.
 
@@ -1338,8 +1353,15 @@ Detalhe em
 Os testes do backend usam PostgreSQL real numa base dedicada; os do frontend
 usam MSW, sem rede nem backend.
 
-**Branch `feat/decision-policy-v1-7-experimental`** (base `d87ed34`, sem
-commit), medida em **2026-10-23**, depois das correções da segunda auditoria: **2575 passed,
+**Branch `fix/policy-v1-7-evaluation-review`** (base `8d3164b`, sem commit),
+medida em **2026-10-23**, depois das correções da revisão sobre a `main`:
+**2598 passed, 1 warning** (`python -m pytest -q`, o mesmo
+`StarletteDeprecationWarning`); `mypy app tests scripts` sem erros em **297
+source files**; `ruff check .` passa. Sem alterações ao frontend nem às
+migrações; head única `a8c4e2f6b1d9`.
+
+**Branch `feat/decision-policy-v1-7-experimental`** (base `d87ed34`, integrada
+pelo PR #67), medida em **2026-10-23**, depois das correções da segunda auditoria: **2575 passed,
 1 warning** (`python -m pytest -q`, o mesmo `StarletteDeprecationWarning`); `mypy app
 tests scripts` sem erros em **294 source files**; `ruff check .` passa; numa base PostgreSQL descartável, a
 única head `a8c4e2f6b1d9` sobe, desce até `c4f7ab19d3e5` e volta a subir, e
