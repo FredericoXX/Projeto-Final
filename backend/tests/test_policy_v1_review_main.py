@@ -349,13 +349,11 @@ def test_metric_ids_record_their_origin_and_are_not_normative() -> None:
     from app.evaluation.policy_v1.config import METRIC_IDS
 
     assert METRIC_IDS["normative"] is False
-    assert "conformidade integral" in METRIC_IDS["conformance"]
+    assert "calibration" in METRIC_IDS["conformance"]
     assert set(METRIC_IDS["origins"]) == set(METRIC_IDS["ids"])
-    assert "não provém do prompt v1.7 disponível" in METRIC_IDS["origins"]["M3"]
-    assert "não do prompt v1.7 disponível" in METRIC_IDS["origins"]["M6"]
-    for provisional in ("M4", "M5", "M7", "M8"):
-        assert METRIC_IDS["origins"][provisional].startswith("dedução provisória")
-    assert METRIC_IDS["ids"]["M9"] is None
+    # The full working document is now the explicit source, not guessed numbering.
+    assert all("section 9.1" in source for source in METRIC_IDS["origins"].values())
+    assert METRIC_IDS["ids"]["M9"] == "error_attribution"
 
 
 # --- Regras em linguagem natural dadas a B1 ------------------------------------------------

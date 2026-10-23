@@ -715,9 +715,10 @@ def test_m1_and_m2_follow_their_definitions() -> None:
     # de "pendente" a provisórios pela ordem do prompt. Revisão de 2026-10-23
     # sobre a main 8d3164b: M3 é a matriz de confusão, e o encaminhamento
     # excessivo e insuficiente passou a M4 (config.METRIC_IDS, versão 2).
-    assert metrics["definitions"]["over_escalation"]["v1_7_id"] == "M4"
+    # Section 9.1 of the supplied v1.7 defines M4 as under-escalation only.
+    assert metrics["definitions"]["over_escalation"]["v1_7_id"] is None
     assert metrics["definitions"]["strict_agreement"]["v1_7_id"] == "M3"
-    assert metrics["unassigned_ids"] == ["M9"]
+    assert metrics["unassigned_ids"] == []
     destination = metrics["rates"]["destination_correct_total"]
     assert (destination["numerator"], destination["denominator"]) == (1, 1)
     assert metrics["message_quality"]["status"] == "not_measured"

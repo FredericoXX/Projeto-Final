@@ -7,63 +7,29 @@ artefactos congelados (``config``) e o seu digest entra no manifesto.
 
 from typing import Any, Final
 
-EVALUATION_CONFIG_VERSION: Final = "policy_v1_evaluation_config_2"
+EVALUATION_CONFIG_VERSION: Final = "policy_v1_evaluation_config_3"
 
-#: Correspondência entre os identificadores M1–M9 da v1.7 e as métricas.
-#:
-#: - M1 e M2 estão definidas expressamente no prompt.
-#: - M3 (matriz de confusão das quatro ações, com ação preferida, acordo estrito
-#:   e acordo aceitável) e o identificador M6 (citações inadmissíveis) vêm da
-#:   revisão de 2026-10-23 sobre a ``main`` ``8d3164b``. **Não provêm do prompt
-#:   v1.7 disponível**: são opções metodológicas provisórias, aceites como tal.
-#: - Entre M3 e M6 ficam dois identificadores para os dois temas que o prompt
-#:   enumera a seguir: o encaminhamento excessivo e insuficiente (M4, uma
-#:   métrica com duas componentes) e o destino correto (M5, condicional e
-#:   total). Depois de M6, a qualidade da mensagem (M7) e os erros de estimação
-#:   (M8). M4, M5, M7 e M8 são **deduções provisórias** até confirmação contra
-#:   o documento da v1.7.
-#: - M9 continua **sem atribuição**: não é dedutível e não se inventa.
-#:
-#: Nenhuma destas atribuições é conteúdo normativo demonstrado da v1.7, e o
-#: mapa não serve para declarar conformidade integral. A versão 1 deste mapa
-#: (M3 = encaminhamento excessivo, M4 = insuficiente) seguia só a ordem do
-#: prompt e foi substituída. Alterar o mapa muda a versão e o digest do
-#: artefacto ``config``.
+#: Correspondence checked against the supplied working document v1.7,
+#: section 9.1, page 14. It does not claim scientific approval or evaluation.
 METRIC_IDS: Final[dict[str, Any]] = {
-    "version": "policy_v1_metric_ids_provisional_2",
-    "status": (
-        "M1–M2 do prompt; M3 e M6 da revisão de 2026-10-23; M4, M5, M7 e M8 "
-        "provisórias; M9 por atribuir"
-    ),
+    "version": "policy_v1_metric_ids_3",
+    "status": "aligned with working specification v1.7, section 9.1, page 14",
     "normative": False,
-    "conformance": "não serve para declarar conformidade integral com a v1.7",
-    "origins": {
-        "M1": "prompt v1.7 disponível",
-        "M2": "prompt v1.7 disponível",
-        "M3": (
-            "revisão de 2026-10-23; não provém do prompt v1.7 disponível; "
-            "opção metodológica provisória"
-        ),
-        "M4": "dedução provisória: tema do prompt, entre M3 e M6",
-        "M5": "dedução provisória: tema do prompt, entre M3 e M6",
-        "M6": (
-            "identificador da revisão de 2026-10-23, não do prompt v1.7 disponível; "
-            "o tema (citações inadmissíveis) está no prompt"
-        ),
-        "M7": "dedução provisória: tema do prompt, a seguir a M6",
-        "M8": "dedução provisória: tema do prompt, a seguir a M7",
-        "M9": "por atribuir",
-    },
+    "conformance": "working specification; calibration and scientific approval are separate",
+    "origins": dict.fromkeys(
+        (f"M{i}" for i in range(1, 10)),
+        "Politica_decisao_v1.7_e_protocolo_de_rotulagem.docx, section 9.1, page 14",
+    ),
     "ids": {
         "M1": "answer_when_not_acceptable",
         "M2": "non_answer_outside_acceptable",
         "M3": "action_confusion_matrix",
-        "M4": "escalation_errors",
+        "M4": "under_escalation",
         "M5": "destination_correct",
         "M6": "inadmissible_citations",
         "M7": "message_quality",
         "M8": "estimation_errors",
-        "M9": None,
+        "M9": "error_attribution",
     },
 }
 
@@ -76,7 +42,7 @@ METRIC_IDS: Final[dict[str, Any]] = {
 #: Faz parte do artefacto congelado ``config``: tem de estar congelada antes da
 #: avaliação, e qualquer alteração muda o seu digest.
 PAIRED_COMPARISONS: Final[dict[str, Any]] = {
-    "version": "policy_v1_paired_comparisons_1",
+    "version": "policy_v1_paired_comparisons_2",
     "status": "derivadas da definição das condições; proposta configurável",
     "unit": (
         "caso, na execução principal (a primeira numerada); as três execuções não "
@@ -84,6 +50,18 @@ PAIRED_COMPARISONS: Final[dict[str, Any]] = {
     ),
     "interval": "diferença p(first) − p(second), IC de Newcombe (método 10) a 95 %",
     "measures": {
+        "over_answer": {
+            "outcome": "ANSWER when ANSWER is not acceptable (M1)",
+            "denominator": "paired nonfailed cases where ANSWER is not acceptable",
+        },
+        "undue_refusal": {
+            "outcome": "non-ANSWER outside the acceptable set when ANSWER is acceptable (M2)",
+            "denominator": "paired nonfailed cases where ANSWER is acceptable",
+        },
+        "outdated_notice": {
+            "outcome": "the deterministic composer included the temporal notice (H5b)",
+            "denominator": "paired nonfailed F02 cases with a recorded notice flag",
+        },
         "acceptable_action": {
             "outcome": "a ação pertence às ações aceitáveis adjudicadas",
             "denominator": "casos sem falha técnica nas duas condições",
@@ -115,7 +93,7 @@ PAIRED_COMPARISONS: Final[dict[str, Any]] = {
                 "mensagens) contra o fluxo B0 (answered→ANSWER, "
                 "insufficient_evidence→ABSTAIN)"
             ),
-            "measures": ["acceptable_action", "strict_action"],
+            "measures": ["over_answer", "undue_refusal", "acceptable_action", "strict_action"],
         },
         {
             "first": "P-e2e",
@@ -124,7 +102,7 @@ PAIRED_COMPARISONS: Final[dict[str, Any]] = {
                 "regras determinísticas contra um modelo que estima as dimensões e "
                 "escolhe a ação, com o mesmo packet e as mesmas definições e regras"
             ),
-            "measures": ["acceptable_action", "strict_action"],
+            "measures": ["over_answer", "undue_refusal", "acceptable_action", "strict_action"],
         },
         {
             "first": "P-e2e",
@@ -133,14 +111,14 @@ PAIRED_COMPARISONS: Final[dict[str, Any]] = {
                 "composição da ação pelas regras contra composição pelo modelo, com as "
                 "mesmas estimativas D1–D5 e o mesmo D6"
             ),
-            "measures": ["acceptable_action", "strict_action"],
+            "measures": ["over_answer", "undue_refusal", "acceptable_action", "strict_action"],
         },
         {
             "first": "P-oráculo",
             "second": "P-e2e",
             "isolates": (
-                "os erros de estimação: a mesma política com dimensões adjudicadas "
-                "contra dimensões estimadas"
+                "diagnostic contrast with adjudicated dimensions; it does not causally "
+                "isolate retrieval, estimation and rule errors"
             ),
             "measures": ["acceptable_action", "strict_action"],
         },
@@ -157,7 +135,7 @@ PAIRED_COMPARISONS: Final[dict[str, Any]] = {
                 "o diagnóstico temporal e o seu efeito na mensagem, com o mesmo filtro "
                 "e as mesmas passagens"
             ),
-            "measures": ["message_acceptable"],
+            "measures": ["outdated_notice", "message_acceptable"],
         },
     ],
 }
@@ -168,6 +146,11 @@ EVALUATION_CONFIG: Final[dict[str, Any]] = {
     "attempts": {"estimator_max_attempts": 1, "generator_max_attempts": 1},
     "timeouts_seconds": {"estimator": 30, "generator": 30},
     "confidence_level": 0.95,
+    "analysis": {
+        "h1_test": "exact McNemar, two-sided; Holm across the three M1 contrasts",
+        "alpha": 0.05,
+        "non_inferiority_margin_justified": False,
+    },
     "metric_ids": METRIC_IDS,
     "paired_comparisons": PAIRED_COMPARISONS,
     "thresholds": {

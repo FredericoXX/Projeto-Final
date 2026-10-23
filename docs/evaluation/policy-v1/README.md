@@ -77,58 +77,62 @@ conjuntos que não sejam `policy-v1-dev*`.
 
 ## Métricas e comparações
 
-Os identificadores estão em `config.METRIC_IDS`, com a origem de cada um. São
-opções metodológicas provisórias, **não conteúdo normativo demonstrado da
-v1.7** (`"normative": false`), e não servem para declarar conformidade
-integral:
+A correspondência com o documento de trabalho v1.7 está em
+[specification-v1-7.md](specification-v1-7.md). A configuração
+`config.METRIC_IDS` identifica a origem das definições; isso não equivale a
+aprovação científica nem a avaliação concluída.
 
-| ID | Métrica | Origem |
-| --- | --- | --- |
-| M1, M2 | ANSWER não aceitável; não-ANSWER fora do aceitável | prompt v1.7 disponível |
-| M3 | matriz de confusão das quatro ações (ação preferida × ação da condição, falha técnica à parte), acordo estrito e aceitável | revisão de 2026-10-23; **não provém do prompt v1.7 disponível** |
-| M4 | encaminhamento excessivo e insuficiente | dedução provisória |
-| M5 | destino correto, condicional e total | dedução provisória |
-| M6 | citações inadmissíveis | tema do prompt; identificador da revisão de 2026-10-23 |
-| M7 | qualidade da mensagem, só com juízos humanos | dedução provisória |
-| M8 | erros de estimação de P-e2e por dimensão | dedução provisória |
-| M9 | — | por atribuir |
+| ID | Métrica |
+| --- | --- |
+| M1 | ANSWER quando ANSWER não é aceitável. |
+| M2 | Não-ANSWER fora do conjunto aceitável quando ANSWER é aceitável. |
+| M3 | Ação preferida × produzida; acordo estrito/aceitável e precisão/recall por ação. |
+| M4 | Não encaminhar quando ESCALATE é a ação preferida, mesmo que ABSTAIN também seja aceitável. |
+| M5 | Destino correto entre encaminhamentos produzidos aceitáveis e, em total, entre casos com ESCALATE preferido. |
+| M6 | Citações inadmissíveis, resolvidas no packet da própria condição. |
+| M7 | Juízos humanos por critério da rubrica, distinguindo não aplicável de falha. |
+| M8 | Erros por dimensão, confusões direcionais, acordo e incerteza. |
+| M9 | Atribuição de erro por replay e inspeção humana; causas múltiplas/indeterminadas admitidas. |
 
-M6 resolve cada citação **no packet da própria condição**, até ao documento, à
-versão e ao segmento, e verifica-a na data de referência com a semântica de
-C9/C10. O mesmo `E1` pode ser vigente em P-e2e e caducado em A-sem-filtro.
+O encaminhamento excessivo é um indicador suplementar, não M4. P-oráculo
+contra P-e2e é um contraste diagnóstico, não prova causal isolada dos erros
+de recuperação, estimação ou regra.
 
-As comparações emparelhadas estão em `config.PAIRED_COMPARISONS`. São uma
-proposta configurável, derivada da definição das condições. Fazem parte do
-artefacto congelado `config`, por isso ficam congeladas antes da avaliação, e
-uma alteração muda o digest.
+M6 resolve cada citação no packet da própria condição, até ao documento, à
+versão e ao segmento, e verifica C9/C10 na data de referência.
 
-Todas as comparações têm o mesmo enquadramento estatístico:
+H1/H1b usam M1 em P-e2e contra B0, B1-plena e B1-composição: McNemar exato
+bilateral e correção de Holm sobre os três contrastes. H2 usa a diferença
+emparelhada de M2; a margem proposta de 5 pp continua sem justificação e não
+habilita uma conclusão confirmatória. H5b compara a presença do aviso temporal
+em F02; a utilidade da mensagem exige juízo humano separado.
 
-- a **unidade estatística** é o caso, na execução principal; as três execuções
-  não multiplicam a amostra;
-- o **intervalo** é a diferença p(first) − p(second), com IC de Newcombe
-  (método 10) a 95 %;
-- cada resultado do relatório repete o efeito isolado, o desfecho, o
-  denominador e a unidade.
+As comparações e os limiares configuráveis integram o artefacto `config`
+congelado. A unidade é o caso na primeira execução numerada. As três execuções
+não multiplicam N. Os IC das diferenças são Newcombe (método 10), a 95 %;
+um IC que inclua zero não demonstra equivalência. Falhas técnicas e juízos
+humanos ausentes são contados separadamente.
 
-| Par (first − second) | Efeito isolado | Medidas |
-| --- | --- | --- |
-| P-e2e − B0 | a política v1.7 completa contra o fluxo B0 | ação aceitável, ação estrita |
-| P-e2e − B1-plena | regras determinísticas contra um modelo que estima e escolhe, com o mesmo packet, definições e regras | ação aceitável, ação estrita |
-| P-e2e − B1-composição | composição da ação pelas regras contra pelo modelo, com as mesmas estimativas D1–D5 e o mesmo D6 | ação aceitável, ação estrita |
-| P-oráculo − P-e2e | os erros de estimação: dimensões adjudicadas contra estimadas, com a mesma política | ação aceitável, ação estrita |
-| B0 − A-sem-filtro | o filtro de validade C9/C10, e nada mais | citação inadmissível |
-| P-e2e − A-sem-diagnóstico | o diagnóstico temporal e o seu efeito na mensagem | mensagem aceitável (juízo humano) |
+## Preparação dos casos e rótulos
 
-| Medida | Desfecho por caso | Denominador |
-| --- | --- | --- |
-| ação aceitável | a ação pertence às aceitáveis adjudicadas | casos sem falha técnica nas duas condições |
-| ação estrita | a ação é a preferida adjudicada | casos sem falha técnica nas duas condições |
-| citação inadmissível | pelo menos uma citação inadmissível no packet da própria condição; sem citações conta como não | casos sem falha técnica nas duas condições |
-| mensagem aceitável | juízo humano identificado de "aceitável" | casos sem falha técnica e com juízo humano nas duas condições |
+Acrescentar `family` (F01–F15) e `source_kind` (`real` ou `synthetic`) a cada
+caso antes de exportar os snapshots:
 
-Os casos excluídos são contados por motivo: falha técnica, ou falta de juízo
-humano. Um IC que inclui zero não demonstra equivalência.
+```bash
+python -m scripts.export_policy_v1_case_snapshots --cases cases.json --output cases-bound.json
+```
 
-Limiares como κ = 0,60, δ = 5 pp e divergência de 20 % continuam propostas
-configuráveis, com justificação pendente.
+O exportador fixa `expected_snapshot_id` sem chamar modelos ou produzir
+rótulos. A adjudicação humana deve preencher `trace` segundo o esquema:
+família, origem, snapshot, justificação, itens, leituras e evidências por
+**chunk ID do corpus**, não pelos identificadores locais E1/E2. A avaliação
+formal recusa rótulos ausentes, incoerentes ou ligados a evidências
+inadmissíveis. Metadados opcionais apenas preservam fixtures técnicas antigas;
+não dispensam os requisitos de uma execução formal.
+
+Casos sintéticos nunca entram no agregado principal de fontes reais. F14 é
+sempre separado, também por origem. As famílias são reportadas dentro do seu
+estrato. M7 exige a rubrica humana por critério quando forem fornecidos juízos
+numa execução formal. Alterar os esquemas muda os digests: congelar novamente
+todos os artefactos antes da avaliação. Não migrar automaticamente rótulos
+humanos antigos.

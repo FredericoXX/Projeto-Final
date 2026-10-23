@@ -1,5 +1,10 @@
 # Política de decisão v1.7 — integração experimental
 
+> Relatório histórico do incremento inicial. As limitações abaixo relativas à
+> indisponibilidade do documento e à numeração das métricas descrevem aquela
+> tarefa. A correspondência e as correções posteriores estão em
+> [specification-v1-7.md](../evaluation/policy-v1/specification-v1-7.md).
+
 > **Estado: incremento experimental implementado em desenvolvimento, não
 > avaliado.** Branch `feat/decision-policy-v1-7-experimental`, criada a partir de
 > `origin/main` em `d87ed34641141093f9aabf6ca7045f73411fe323` (merge do PR #66),

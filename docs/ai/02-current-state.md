@@ -1,5 +1,16 @@
 # Estado atual
 
+## Incremento local de preparação da política v1.7
+
+Patch preparado sobre `7e10c3b7eac5e03b691f8bdfe46945b764627c6c` (PR #68):
+correções de M4/M5, rastreabilidade humana e separação por família/origem,
+rubrica M7, correspondência M1–M9/DP1–DP6 e análise emparelhada H1/H2/H5b.
+Ver [correspondência v1.7](../evaluation/policy-v1/specification-v1-7.md).
+Esta nota descreve o incremento local, não um novo commit publicado nem uma
+avaliação científica concluída. O estado histórico abaixo conserva o seu
+snapshot e data.
+
+
 **Observação:** 2026-08-20 · `main` em
 `bc703e1981d34af5e000dae2370d815d5deeca9f` (merge do Pull Request #60) ·
 repositório `FredericoXX/Projeto-Final`

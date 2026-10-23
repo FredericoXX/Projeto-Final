@@ -73,6 +73,7 @@ from app.evaluation.policy_v1.corpus_inventory import (
 )
 from app.evaluation.policy_v1.executor import EvaluationCaseSet, run_case
 from app.evaluation.policy_v1.freeze import FreezeError, verify_artifact
+from app.evaluation.policy_v1.hypotheses import hypotheses_report
 from app.evaluation.policy_v1.labels import LabelSet, MessageRatingSet, verified_adjudication
 from app.evaluation.policy_v1.metrics import (
     compute_metrics,
@@ -80,6 +81,11 @@ from app.evaluation.policy_v1.metrics import (
     estimation_errors,
 )
 from app.evaluation.policy_v1.packets import EvidencePacket
+from app.evaluation.policy_v1.protocol import (
+    stratum,
+    validate_formal_annotations,
+    validate_message_ratings,
+)
 from app.evaluation.policy_v1.runs import RUN_NUMBERS, summarize
 from app.models.decision_catalog import InstitutionDecisionCatalog
 from app.models.institution import Institution
@@ -178,6 +184,7 @@ def main(argv: list[str] | None = None) -> int:
                     head_commit=head or "",
                     working_tree_clean=clean,
                 )
+                validate_formal_annotations(cases.cases, adjudication, json.loads(inventory))
             if adjudication is not None and manifest is not None:
                 oracle_labels = verified_adjudication(adjudication, manifest)
                 # O P-oráculo usa a política, os casos e o catálogo, e as
@@ -238,25 +245,94 @@ def main(argv: list[str] | None = None) -> int:
     metrics: dict[str, Any] = {"status": "not_computed_without_adjudication"}
     if oracle_labels is not None:
         gold = {case.case_id: case for case in oracle_labels.cases}
+        case_by_id = {case.case_id: case for case in cases.cases}
+        for by_case in summaries.values():
+            if ratings is not None:
+                validate_message_ratings(by_case, ratings, formal=args.formal, gold=gold)
         # Cada resultado é lido no packet que a sua condição recebeu: os
         # identificadores de evidência só têm sentido dentro desse packet.
-        metrics = {
-            condition.value: compute_metrics(by_case, gold, packets_by_digest, ratings)
+        primary_ids = {
+            case.case_id
+            for case in cases.cases
+            if stratum(case) == "real" or (not args.formal and stratum(case) == "unclassified_dev")
+        }
+        primary = {
+            condition: {key: value for key, value in by_case.items() if key in primary_ids}
             for condition, by_case in summaries.items()
         }
-        metrics["estimation_errors_p_e2e"] = estimation_errors(summaries[Condition.P_E2E], gold)
+        metrics = {
+            condition.value: compute_metrics(by_case, gold, packets_by_digest, ratings)
+            for condition, by_case in primary.items()
+        }
+        metrics["primary_scope"] = "real sources, F14 excluded; unclassified fixtures only in dev"
+        metrics["by_stratum"] = {}
+        metrics["by_family"] = {}
+        for field, groups in (
+            ("by_stratum", {stratum(case) for case in cases.cases}),
+            (
+                "by_family",
+                {f"{case.family or 'unclassified_dev'}:{stratum(case)}" for case in cases.cases},
+            ),
+        ):
+            for group in sorted(groups):
+                ids = {
+                    case_id
+                    for case_id, case in case_by_id.items()
+                    if (
+                        stratum(case)
+                        if field == "by_stratum"
+                        else f"{case.family or 'unclassified_dev'}:{stratum(case)}"
+                    )
+                    == group
+                }
+                metrics[field][group] = {
+                    condition.value: compute_metrics(
+                        {key: value for key, value in by_case.items() if key in ids},
+                        gold,
+                        packets_by_digest,
+                        ratings,
+                    )
+                    for condition, by_case in summaries.items()
+                }
+                if field == "by_stratum":
+                    group_summaries = {
+                        condition: {key: value for key, value in by_case.items() if key in ids}
+                        for condition, by_case in summaries.items()
+                    }
+                    metrics[field][group]["hypotheses"] = hypotheses_report(
+                        group_summaries,
+                        gold,
+                        margin=EVALUATION_CONFIG["thresholds"][
+                            "difference_margin_percentage_points"
+                        ]
+                        / 100,
+                        margin_justified=EVALUATION_CONFIG["analysis"][
+                            "non_inferiority_margin_justified"
+                        ],
+                    )
+                    metrics[field][group]["paired_comparisons"] = configured_paired_comparisons(
+                        group_summaries, gold, packets=packets_by_digest, ratings=ratings
+                    )
+        metrics["estimation_errors_p_e2e"] = estimation_errors(primary[Condition.P_E2E], gold)
         metrics["error_attribution_p_e2e"] = [
             attribution.as_dict()
             for attribution in attribute_errors(
-                summaries[Condition.P_E2E],
+                primary[Condition.P_E2E],
                 gold,
                 services=catalog_payload["services"],
                 catalog_version=catalog_payload["version"],
                 reference_dates={case.case_id: case.reference_date for case in cases.cases},
             )
         ]
+        metrics["error_attribution_metric_id"] = "M9"
+        metrics["hypotheses"] = hypotheses_report(
+            primary,
+            gold,
+            margin=EVALUATION_CONFIG["thresholds"]["difference_margin_percentage_points"] / 100,
+            margin_justified=EVALUATION_CONFIG["analysis"]["non_inferiority_margin_justified"],
+        )
         metrics["paired_comparisons"] = configured_paired_comparisons(
-            summaries, gold, packets=packets_by_digest, ratings=ratings
+            primary, gold, packets=packets_by_digest, ratings=ratings
         )
 
     report = {
@@ -274,6 +350,16 @@ def main(argv: list[str] | None = None) -> int:
             "b1_prompt": B1_PROMPT_VERSION,
         },
         "config": EVALUATION_CONFIG,
+        "case_metadata": [
+            {
+                "case_id": case.case_id,
+                "family": case.family,
+                "source_kind": case.source_kind,
+                "stratum": stratum(case),
+                "expected_snapshot_id": case.expected_snapshot_id,
+            }
+            for case in cases.cases
+        ],
         "code_artifact_digests": artifact_digests(),
         "packets": packets,
         "outcomes": [outcome.as_dict() for outcome in outcomes],

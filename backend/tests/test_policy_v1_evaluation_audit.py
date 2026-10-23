@@ -124,7 +124,7 @@ CORPUS_INVENTORY: dict[str, Any] = {
 # --- Achado 1: identificadores, qualidade da mensagem e atribuição ----------------------
 
 
-def test_metric_ids_are_provisional_and_m9_is_not_invented() -> None:
+def test_metric_ids_follow_the_supplied_working_specification() -> None:
     ids = {definition.name: definition.v1_7_id for definition in METRIC_DEFINITIONS}
     # Expectativa alterada (revisão de 2026-10-23 sobre a main 8d3164b): M3 é a
     # matriz de confusão das quatro ações, com acordo estrito e aceitável; o
@@ -134,7 +134,7 @@ def test_metric_ids_are_provisional_and_m9_is_not_invented() -> None:
         "non_answer_outside_acceptable": "M2",
         "strict_agreement": "M3",
         "acceptable_agreement": "M3",
-        "over_escalation": "M4",
+        "over_escalation": None,
         "under_escalation": "M4",
         "destination_correct_conditional": "M5",
         "destination_correct_total": "M5",
@@ -143,8 +143,8 @@ def test_metric_ids_are_provisional_and_m9_is_not_invented() -> None:
     gold = {"C1": CaseLabels.model_validate(_case("C1"))}
     summary = summarize([_outcome("C1", "answer", message="Resposta.")])
     metrics = compute_metrics({"C1": summary}, gold, {})
-    assert metrics["unassigned_ids"] == ["M9"]
-    assert "provisórias" in metrics["metric_ids_status"]
+    assert metrics["unassigned_ids"] == []
+    assert "section 9.1" in metrics["metric_ids_status"]
     assert metrics["message_quality"]["status"] == "not_measured"
 
 

@@ -106,6 +106,8 @@ class CaseOutcome:
     duration_ms: int
     estimates: Mapping[str, Any] | None = None
     usage: Mapping[str, Any] = field(default_factory=dict)
+    #: The deterministic message composer recorded this; no text guessing.
+    temporal_notice_shown: bool | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -122,6 +124,7 @@ class CaseOutcome:
             "duration_ms": self.duration_ms,
             "estimates": None if self.estimates is None else dict(self.estimates),
             "usage": dict(self.usage),
+            "temporal_notice_shown": self.temporal_notice_shown,
         }
 
 
@@ -413,6 +416,7 @@ def run_p_e2e(
         packet_digest=packet.digest,
         duration_ms=_elapsed(started),
         estimates=policy_input_to_dict(policy_input),
+        temporal_notice_shown=composed.temporal_notice_shown,
         usage={
             "estimator": estimator.usage.as_dict(),
             "generator": composed.generator_usage,
@@ -455,6 +459,7 @@ def run_without_diagnostic(
         condition=Condition.A_NO_DIAGNOSTIC,
         message=composed.content,
         cited_evidence_ids=composed.cited_evidence_ids,
+        temporal_notice_shown=composed.temporal_notice_shown,
     )
 
 
