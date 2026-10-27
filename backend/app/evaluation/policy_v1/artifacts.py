@@ -23,12 +23,11 @@ esteja limpa: código não versionado não pertence a nenhum commit.
 import hashlib
 import inspect
 import subprocess
-from collections.abc import Mapping
+from collections.abc import Callable, Mapping, Sequence
 from pathlib import Path
 from typing import Any, Final
 
 from app.answering.prompts import SYSTEM_PROMPT as ANSWER_SYSTEM_PROMPT
-from app.core.config import settings
 from app.decision import messages as messages_module
 from app.decision import policy as policy_module
 from app.decision.definitions import (
@@ -57,8 +56,9 @@ from app.evaluation.policy_v1.freeze import (
     freeze_cases,
     sha256,
     verify_artifact,
+    verify_freeze_recipe,
 )
-from app.evaluation.policy_v1.labels import LabelSet, MessageRatingSet, label_set_bytes
+from app.evaluation.policy_v1.labels import LabelSet, label_set_bytes
 from app.models.decision_catalog import InstitutionDecisionCatalog
 from app.schemas.decision_catalog import DecisionCatalogWrite
 
@@ -86,12 +86,15 @@ def policy_payload() -> dict[str, Any]:
 
 
 def schema_payload() -> dict[str, Any]:
-    from app.evaluation.policy_v1.executor import EvaluationCaseSet
+    from app.evaluation.policy_v1.cases import EvaluationCaseSet
+    from app.evaluation.policy_v1.message_ratings import BoundMessageRatingSet
 
+    # As avaliações M7 aceites são as vinculadas às mensagens (v2); o formato v1
+    # só identificava caso e condição e deixou de ser uma entrada da avaliação.
     return {
         "labels": LabelSet.model_json_schema(),
         "cases": EvaluationCaseSet.model_json_schema(),
-        "message_ratings": MessageRatingSet.model_json_schema(),
+        "message_ratings": BoundMessageRatingSet.model_json_schema(),
     }
 
 
@@ -113,6 +116,11 @@ def prompts_payload() -> dict[str, Any]:
 
 
 def config_payload() -> dict[str, Any]:
+    # A configuração de execução é a única parte que lê ``settings``; importá-la
+    # aqui deixa os restantes artefactos — e a reanálise offline — sem depender
+    # de ``DATABASE_URL`` ou de chaves.
+    from app.core.config import settings
+
     return {
         "evaluation": EVALUATION_CONFIG,
         "runtime": {
@@ -131,17 +139,19 @@ def config_payload() -> dict[str, Any]:
     }
 
 
-def code_artifacts() -> list[FrozenArtifact]:
-    payloads = {
-        "policy": (POLICY_VERSION, policy_payload()),
-        "schema": ("policy_v1_schemas_1", schema_payload()),
-        "prompts": (B1_PROMPT_VERSION, prompts_payload()),
-        "config": (str(EVALUATION_CONFIG["version"]), config_payload()),
+def code_artifacts(names: Sequence[str] = CODE_ARTIFACTS) -> list[FrozenArtifact]:
+    """Os artefactos gerados a partir do código em execução (por omissão, todos)."""
+    builders: dict[str, tuple[str, Callable[[], dict[str, Any]]]] = {
+        "policy": (POLICY_VERSION, policy_payload),
+        "schema": ("policy_v1_schemas_1", schema_payload),
+        "prompts": (B1_PROMPT_VERSION, prompts_payload),
+        "config": (str(EVALUATION_CONFIG["version"]), config_payload),
     }
-    return [
-        FrozenArtifact(name=name, version=version, data=canonical_bytes(payload))
-        for name, (version, payload) in payloads.items()
-    ]
+    artifacts = []
+    for name in names:
+        version, build = builders[name]
+        artifacts.append(FrozenArtifact(name=name, version=version, data=canonical_bytes(build())))
+    return artifacts
 
 
 def catalog_snapshot(catalog: InstitutionDecisionCatalog) -> dict[str, Any]:
@@ -219,6 +229,7 @@ def verify_formal_freeze(
     momento da execução, nunca de ficheiros: é a base que tem de ser a
     congelada.
     """
+    verify_freeze_recipe(manifest)
     if not manifest.get("complete"):
         msg = "the freeze manifest is incomplete"
         raise FreezeError(msg)
@@ -261,6 +272,10 @@ def git_state(repository: Path) -> tuple[str | None, bool]:
     return head, not status.strip()
 
 
-def artifact_digests() -> dict[str, str]:
-    """Digests atuais dos artefactos gerados pelo código (para relatórios)."""
-    return {artifact.name: sha256(artifact.data) for artifact in code_artifacts()}
+def artifact_digests(names: Sequence[str] = CODE_ARTIFACTS) -> dict[str, str]:
+    """Digests atuais dos artefactos gerados pelo código (para relatórios).
+
+    ``policy``, ``schema`` e ``prompts`` não dependem do ambiente; ``config``
+    inclui a configuração de execução e lê ``settings``.
+    """
+    return {artifact.name: sha256(artifact.data) for artifact in code_artifacts(names)}

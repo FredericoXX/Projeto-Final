@@ -47,7 +47,12 @@ from app.decision.dimensions import (
     SupportAssessment,
 )
 from app.evaluation.policy_v1.annotation_contracts import AnnotationTrace, MessageRubric
-from app.evaluation.policy_v1.freeze import FreezeError, canonical_bytes, verify_artifact
+from app.evaluation.policy_v1.freeze import (
+    FreezeError,
+    canonical_bytes,
+    verify_artifact,
+    verify_freeze_recipe,
+)
 from app.evaluation.policy_v1.statistics import cohen_kappa
 
 LABELS_SCHEMA_VERSION: Final = "policy_v1_labels_2"
@@ -348,6 +353,7 @@ def verified_adjudication(label_set: LabelSet, freeze_manifest: Mapping[str, Any
     if label_set.annotator.role != "adjudication":
         msg = "the oracle only accepts an identified adjudication"
         raise FreezeError(msg)
+    verify_freeze_recipe(freeze_manifest)
     if not freeze_manifest.get("complete"):
         msg = "the freeze manifest is incomplete"
         raise FreezeError(msg)

@@ -13,7 +13,7 @@ supervisor approval, originality, or completed evaluation.
 | M4 | Non-ESCALATE among cases whose **preferred** action is ESCALATE. Other acceptable actions do not remove a case from this strict denominator. |
 | M5 | Correct destination among acceptable produced escalations, and among all preferred-escalation cases with a destination. |
 | M6 | Inadmissible citations resolved within each condition's own packet; retain documentary identity. |
-| M7 | Human rubric: support/completeness, declared gap, material/covered clarification, temporal notice, and escalation without claiming transmission. N/A is distinct from failure. |
+| M7 | Human rubric: support/completeness, declared gap, material/covered clarification, temporal notice, and escalation without claiming transmission. N/A is distinct from failure. Each judgment is bound to the exact archived message (collection, case, condition, primary run, text hash, packet and outcome); one consolidated human judgment per message. |
 | M8 | Dimension estimation errors, uncertainty and disagreements against adjudication. |
 | M9 | Frozen-input replay plus human inspection; multiple/indeterminate causes are allowed. Replay alone is not causal proof. |
 

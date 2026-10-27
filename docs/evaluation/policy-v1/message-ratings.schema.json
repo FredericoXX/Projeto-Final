@@ -1,8 +1,8 @@
 {
   "$defs": {
-    "MessageRating": {
+    "BoundMessageRating": {
       "additionalProperties": false,
-      "description": "Juízo humano sobre a mensagem da execução principal de um caso.\n\nThe criterion rubric follows section 9.1 of the working document v1.7.\nLegacy development fixtures may omit it; formal ratings require it.\nNo model produces these judgments.",
+      "description": "Juízo humano sobre uma mensagem identificada da execução principal.",
       "properties": {
         "case_id": {
           "maxLength": 64,
@@ -27,15 +27,7 @@
           "type": "boolean"
         },
         "criteria": {
-          "anyOf": [
-            {
-              "$ref": "#/$defs/MessageRubric"
-            },
-            {
-              "type": "null"
-            }
-          ],
-          "default": null
+          "$ref": "#/$defs/BoundMessageRubric"
         },
         "notes": {
           "anyOf": [
@@ -49,20 +41,66 @@
           ],
           "default": null,
           "title": "Notes"
+        },
+        "run_number": {
+          "minimum": 1,
+          "title": "Run Number",
+          "type": "integer"
+        },
+        "message_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Message Sha256",
+          "type": "string"
+        },
+        "packet_digest": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Packet Digest"
+        },
+        "outcome_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Outcome Id",
+          "type": "string"
+        },
+        "review_item_id": {
+          "anyOf": [
+            {
+              "maxLength": 32,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Review Item Id"
         }
       },
       "required": [
         "case_id",
         "condition",
         "rater_id",
-        "acceptable"
+        "acceptable",
+        "criteria",
+        "run_number",
+        "message_sha256",
+        "packet_digest",
+        "outcome_id"
       ],
-      "title": "MessageRating",
+      "title": "BoundMessageRating",
       "type": "object"
     },
-    "MessageRubric": {
+    "BoundMessageRubric": {
       "additionalProperties": false,
-      "description": "Human binary judgments. None means not applicable, not failure.",
+      "description": "A rubrica M7 com booleanos estritos. ``None`` é não aplicável.",
       "properties": {
         "supported_and_complete": {
           "anyOf": [
@@ -127,15 +165,90 @@
         "outdated_notice_present",
         "escalation_without_transmission"
       ],
-      "title": "MessageRubric",
+      "title": "BoundMessageRubric",
+      "type": "object"
+    },
+    "RatingProvenance": {
+      "additionalProperties": false,
+      "description": "Quem julgou.\n\n- ``one_rater_per_message`` — cada mensagem tem o juízo de um só avaliador\n  (``raters``), e ``rater_id`` identifica-o;\n- ``human_consolidation`` — vários avaliadores (``raters``) julgaram em\n  separado e pessoas identificadas (``consolidated_by``) escreveram o juízo\n  consolidado; ``rater_id`` identifica quem o consolidou.",
+      "properties": {
+        "kind": {
+          "enum": [
+            "one_rater_per_message",
+            "human_consolidation"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "raters": {
+          "items": {
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Raters",
+          "type": "array"
+        },
+        "consolidated_by": {
+          "default": [],
+          "items": {
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Consolidated By",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "raters"
+      ],
+      "title": "RatingProvenance",
+      "type": "object"
+    },
+    "SourceReport": {
+      "additionalProperties": false,
+      "description": "A recolha a que os juízos pertencem.",
+      "properties": {
+        "collection_id": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Collection Id"
+        },
+        "report_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Report Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "collection_id",
+        "report_sha256"
+      ],
+      "title": "SourceReport",
       "type": "object"
     }
   },
   "additionalProperties": false,
   "properties": {
     "schema_version": {
-      "const": "policy_v1_message_ratings_1",
+      "const": "policy_v1_message_ratings_2",
       "title": "Schema Version",
+      "type": "string"
+    },
+    "identity_version": {
+      "const": "policy_v1_message_identity_1",
+      "title": "Identity Version",
       "type": "string"
     },
     "set_id": {
@@ -144,9 +257,15 @@
       "title": "Set Id",
       "type": "string"
     },
+    "source_report": {
+      "$ref": "#/$defs/SourceReport"
+    },
+    "provenance": {
+      "$ref": "#/$defs/RatingProvenance"
+    },
     "ratings": {
       "items": {
-        "$ref": "#/$defs/MessageRating"
+        "$ref": "#/$defs/BoundMessageRating"
       },
       "title": "Ratings",
       "type": "array"
@@ -154,10 +273,13 @@
   },
   "required": [
     "schema_version",
+    "identity_version",
     "set_id",
+    "source_report",
+    "provenance",
     "ratings"
   ],
-  "title": "MessageRatingSet",
+  "title": "BoundMessageRatingSet",
   "type": "object",
   "$schema": "https://json-schema.org/draft/2020-12/schema"
 }

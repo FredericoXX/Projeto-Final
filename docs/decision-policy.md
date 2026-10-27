@@ -221,10 +221,17 @@ Pacote [`app/evaluation/policy_v1/`](../backend/app/evaluation/policy_v1/) e
 - a atribuição de erros por replay contrafactual, com inspeção humana pendente;
 - snapshots por papel do caso;
 - a ferramenta de rótulos;
-- a receita de congelamento.
+- a receita de congelamento;
+- a recolha única das respostas num relatório arquivado (`policy_v1_report_2`),
+  a exportação das mensagens para revisão humana e a reanálise offline
+  (`scripts.score_policy_v1_report`), que recalcula as métricas sobre essas
+  mesmas respostas sem base de dados nem modelos, com os juízos M7 ligados ao
+  texto exato de cada mensagem.
 
 A avaliação formal exige corpus P2, adjudicação e protocolo congelados, que não
-existem.
+existem. O piloto de desenvolvimento está descrito em
+[`evaluation/policy-v1/pilot-runbook.md`](evaluation/policy-v1/pilot-runbook.md)
+e não foi executado.
 
 ## 9. Limites conhecidos
 

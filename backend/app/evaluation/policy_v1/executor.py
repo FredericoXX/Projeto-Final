@@ -8,15 +8,16 @@ Papéis simulados existem **só aqui**: o papel de cada caso vem do ficheiro de
 casos e entra na recuperação offline, nunca na API. O isolamento institucional
 e a autorização por papel (C13) aplicam-se exatamente como em operação; a
 ablação A-sem-filtro relaxa apenas C9/C10, e só em ``development``/``test``.
+
+O contrato dos casos vive em :mod:`app.evaluation.policy_v1.cases`, sem
+configuração nem base de dados; os seus nomes continuam importáveis daqui.
 """
 
 from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import date
-from typing import Annotated, Any, Final, Literal
+from typing import Any
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field, model_validator
 from sqlalchemy.orm import Session
 
 from app.answering.base import AnswerGenerator, ContextEvidence
@@ -35,8 +36,14 @@ from app.documents.retrievability import (
     RELAXABLE_CONDITIONS,
     RetrievalEligibility,
 )
-from app.evaluation.policy_v1.annotation_contracts import Family, SourceKind
 from app.evaluation.policy_v1.artifacts import catalog_snapshot
+from app.evaluation.policy_v1.cases import (
+    CASES_SCHEMA_VERSION as CASES_SCHEMA_VERSION,
+)
+from app.evaluation.policy_v1.cases import EvaluationCase
+from app.evaluation.policy_v1.cases import (
+    EvaluationCaseSet as EvaluationCaseSet,
+)
 from app.evaluation.policy_v1.conditions import (
     BaselineModel,
     CaseOutcome,
@@ -54,43 +61,6 @@ from app.evaluation.snapshot_builder import build_evaluation_snapshot
 from app.models.decision_catalog import InstitutionDecisionCatalog
 from app.retrieval.base import RetrievalContext, RetrievalQuery, Retriever
 from app.services.decision_service import gather_evidence
-
-CASES_SCHEMA_VERSION: Final = "policy_v1_cases_1"
-
-
-class EvaluationCase(BaseModel):
-    """Um caso do conjunto de avaliação da política v1 (P2). Sem rótulos."""
-
-    model_config = ConfigDict(extra="forbid")
-
-    case_id: Annotated[str, Field(min_length=1, max_length=64)]
-    query: Annotated[str, Field(min_length=1, max_length=1000)]
-    language: str
-    reference_date: date
-    #: Papel simulado, só no executor offline.
-    requester_role: Literal["admin", "knowledge_manager", "staff", "student", "user"]
-    official_only: bool = True
-    #: Missing only in legacy development fixtures; formal runs refuse it.
-    family: Family | None = None
-    source_kind: SourceKind | None = None
-    expected_snapshot_id: str | None = None
-
-
-class EvaluationCaseSet(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-    schema_version: Literal["policy_v1_cases_1"]
-    set_id: Annotated[str, Field(min_length=1, max_length=64)]
-    corpus: Literal["P2"]
-    institution_code: str
-    cases: list[EvaluationCase]
-
-    @model_validator(mode="after")
-    def unique_case_ids(self) -> "EvaluationCaseSet":
-        ids = [case.case_id for case in self.cases]
-        if len(ids) != len(set(ids)):
-            raise ValueError("evaluation case ids must be unique")
-        return self
 
 
 @dataclass(frozen=True)

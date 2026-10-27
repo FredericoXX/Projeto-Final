@@ -1,0 +1,319 @@
+{
+  "$defs": {
+    "DraftProvenance": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "anyOf": [
+            {
+              "enum": [
+                "one_rater_per_message",
+                "human_consolidation"
+              ],
+              "type": "string"
+            },
+            {
+              "const": "pending",
+              "type": "string"
+            }
+          ],
+          "title": "Kind"
+        },
+        "raters": {
+          "items": {
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Raters",
+          "type": "array"
+        },
+        "consolidated_by": {
+          "default": [],
+          "items": {
+            "maxLength": 64,
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": "Consolidated By",
+          "type": "array"
+        }
+      },
+      "required": [
+        "kind",
+        "raters"
+      ],
+      "title": "DraftProvenance",
+      "type": "object"
+    },
+    "DraftRating": {
+      "additionalProperties": false,
+      "description": "Item do rascunho: a identidade completa da mensagem e juízos por fazer.",
+      "properties": {
+        "review_item_id": {
+          "maxLength": 32,
+          "minLength": 1,
+          "title": "Review Item Id",
+          "type": "string"
+        },
+        "case_id": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "condition": {
+          "maxLength": 32,
+          "minLength": 1,
+          "title": "Condition",
+          "type": "string"
+        },
+        "run_number": {
+          "minimum": 1,
+          "title": "Run Number",
+          "type": "integer"
+        },
+        "message_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Message Sha256",
+          "type": "string"
+        },
+        "packet_digest": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Packet Digest"
+        },
+        "outcome_id": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Outcome Id",
+          "type": "string"
+        },
+        "rater_id": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Rater Id"
+        },
+        "acceptable": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "pending",
+              "type": "string"
+            }
+          ],
+          "title": "Acceptable"
+        },
+        "criteria": {
+          "$ref": "#/$defs/DraftRubric"
+        },
+        "notes": {
+          "anyOf": [
+            {
+              "maxLength": 2000,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "default": null,
+          "title": "Notes"
+        }
+      },
+      "required": [
+        "review_item_id",
+        "case_id",
+        "condition",
+        "run_number",
+        "message_sha256",
+        "packet_digest",
+        "outcome_id",
+        "rater_id",
+        "acceptable",
+        "criteria"
+      ],
+      "title": "DraftRating",
+      "type": "object"
+    },
+    "DraftRubric": {
+      "additionalProperties": false,
+      "properties": {
+        "supported_and_complete": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "pending",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Supported And Complete"
+        },
+        "gap_declared": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "pending",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Gap Declared"
+        },
+        "clarification_material_and_covered": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "pending",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Clarification Material And Covered"
+        },
+        "outdated_notice_present": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "pending",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Outdated Notice Present"
+        },
+        "escalation_without_transmission": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "const": "pending",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Escalation Without Transmission"
+        }
+      },
+      "required": [
+        "supported_and_complete",
+        "gap_declared",
+        "clarification_material_and_covered",
+        "outdated_notice_present",
+        "escalation_without_transmission"
+      ],
+      "title": "DraftRubric",
+      "type": "object"
+    },
+    "SourceReport": {
+      "additionalProperties": false,
+      "description": "A recolha a que os juízos pertencem.",
+      "properties": {
+        "collection_id": {
+          "anyOf": [
+            {
+              "maxLength": 64,
+              "minLength": 1,
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Collection Id"
+        },
+        "report_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Report Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "collection_id",
+        "report_sha256"
+      ],
+      "title": "SourceReport",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "Rascunho exportado para revisão. Nunca é uma avaliação concluída.",
+  "properties": {
+    "schema_version": {
+      "const": "policy_v1_message_ratings_draft_1",
+      "title": "Schema Version",
+      "type": "string"
+    },
+    "identity_version": {
+      "const": "policy_v1_message_identity_1",
+      "title": "Identity Version",
+      "type": "string"
+    },
+    "set_id": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Set Id",
+      "type": "string"
+    },
+    "source_report": {
+      "$ref": "#/$defs/SourceReport"
+    },
+    "provenance": {
+      "$ref": "#/$defs/DraftProvenance"
+    },
+    "ratings": {
+      "items": {
+        "$ref": "#/$defs/DraftRating"
+      },
+      "title": "Ratings",
+      "type": "array"
+    }
+  },
+  "required": [
+    "schema_version",
+    "identity_version",
+    "set_id",
+    "source_report",
+    "provenance",
+    "ratings"
+  ],
+  "title": "MessageRatingDraft",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

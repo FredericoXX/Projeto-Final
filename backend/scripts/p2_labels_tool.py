@@ -8,10 +8,18 @@ ficheiros.
 Uso (a partir de backend/):
 
     python -m scripts.p2_labels_tool schema --output ../docs/evaluation/policy-v1/labels.schema.json
+    python -m scripts.p2_labels_tool schema --kind message-ratings \
+        --output ../docs/evaluation/policy-v1/message-ratings.schema.json
     python -m scripts.p2_labels_tool check A1.json A2.json [--output relatorio.json]
     python -m scripts.p2_labels_tool oracle --adjudication ADJ.json --cases CASES.json \\
         --freeze-manifest MANIFEST.json --catalog CATALOG.json --output oraculo.json
 
+- ``schema`` escreve o esquema JSON de um contrato (``--kind``; por omissão os
+  rótulos): ``labels``, ``cases``, ``message-ratings`` (juízos M7 vinculados às
+  mensagens), ``message-ratings-draft`` (rascunho exportado para revisão) ou
+  ``collection-report`` (relatório da recolha). Os ficheiros versionados em
+  ``docs/evaluation/policy-v1/`` são gerados assim, e um teste falha se
+  divergirem dos modelos.
 - ``check`` valida os dois ficheiros, exige IDs únicos e conjuntos iguais,
   reporta aplicabilidade assimétrica, N, acordo bruto, κ quando aplicável,
   matriz de desacordos e IC. **Não** calcula ações nem preenche rótulos. Trocar
@@ -35,15 +43,15 @@ import json
 import sys
 from pathlib import Path
 
-from pydantic import ValidationError
+from pydantic import BaseModel, ValidationError
 
 from app.evaluation.policy_v1.artifacts import (
     catalog_bytes,
     corpus_bytes,
     verify_code_artifacts,
 )
+from app.evaluation.policy_v1.cases import EvaluationCaseSet
 from app.evaluation.policy_v1.conditions import run_oracle
-from app.evaluation.policy_v1.executor import EvaluationCaseSet
 from app.evaluation.policy_v1.freeze import FreezeError, verify_artifact
 from app.evaluation.policy_v1.labels import (
     LabelCheckError,
@@ -51,6 +59,7 @@ from app.evaluation.policy_v1.labels import (
     check_agreement,
     verified_adjudication,
 )
+from app.evaluation.policy_v1.protocol import verify_same_case_set
 
 EXIT_OK = 0
 EXIT_USAGE = 2
@@ -71,16 +80,38 @@ def _write(payload: object, output: Path | None) -> None:
         output.write_text(text, encoding="utf-8", newline="\n")
 
 
-def labels_schema() -> dict:
-    schema = LabelSet.model_json_schema()
+def contract_schema(kind: str) -> dict:
+    from app.evaluation.policy_v1.message_ratings import (
+        BoundMessageRatingSet,
+        MessageRatingDraft,
+    )
+    from app.evaluation.policy_v1.report import CollectionReport
+
+    models: dict[str, type[BaseModel]] = {
+        "labels": LabelSet,
+        "cases": EvaluationCaseSet,
+        "message-ratings": BoundMessageRatingSet,
+        "message-ratings-draft": MessageRatingDraft,
+        "collection-report": CollectionReport,
+    }
+    schema = models[kind].model_json_schema()
     schema["$schema"] = "https://json-schema.org/draft/2020-12/schema"
     return schema
+
+
+#: Os contratos com esquema JSON versionado em ``docs/evaluation/policy-v1/``.
+SCHEMA_KINDS = ("labels", "cases", "message-ratings", "message-ratings-draft", "collection-report")
+
+
+def labels_schema() -> dict:
+    return contract_schema("labels")
 
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="p2_labels_tool")
     sub = parser.add_subparsers(dest="command", required=True)
     schema = sub.add_parser("schema")
+    schema.add_argument("--kind", choices=SCHEMA_KINDS, default="labels")
     schema.add_argument("--output", type=Path)
     check = sub.add_parser("check")
     check.add_argument("first", type=Path)
@@ -98,7 +129,12 @@ def main(argv: list[str] | None = None) -> int:
         return EXIT_USAGE
 
     if args.command == "schema":
-        _write(labels_schema(), args.output)
+        # A ordem dos campos dos modelos é preservada: é a dos ficheiros versionados.
+        text = json.dumps(contract_schema(args.kind), ensure_ascii=False, indent=2) + "\n"
+        if args.output is None:
+            sys.stdout.write(text)
+        else:
+            args.output.write_text(text, encoding="utf-8", newline="\n")
         return EXIT_OK
 
     try:
@@ -122,6 +158,11 @@ def main(argv: list[str] | None = None) -> int:
             return EXIT_NOT_COMPARABLE
         return EXIT_OK
 
+    try:
+        verify_same_case_set(cases, adjudication)
+    except FreezeError as exc:
+        sys.stderr.write(f"{exc}\n")
+        return EXIT_NOT_COMPARABLE
     try:
         verified = verified_adjudication(adjudication, manifest)  # type: ignore[arg-type]
         # Os casos e a política usados pelo P-oráculo têm de ser os congelados.

@@ -1,9 +1,9 @@
-"""Executor preparado da avaliação da política de decisão v1.7.
+"""Executor preparado da avaliação da política de decisão v1.7 — a recolha.
 
 Uso (a partir de backend/):
 
     python -m scripts.run_policy_v1_evaluation --cases CASES.json \\
-        --commit SHA --output RESULTADOS.json \\
+        --commit SHA --output RELATORIO.json \\
         [--adjudication ADJ.json --freeze-manifest MANIFEST.json] [--formal]
 
 Dois modos:
@@ -26,6 +26,15 @@ uma para P-oráculo (só com adjudicação verificada). Os packets de cada execu
 são arquivados no relatório, com o respetivo digest. Falhas técnicas e
 denominadores ficam explícitos.
 
+A recolha chama os modelos **uma vez**. O relatório (``policy_v1_report_2``,
+:mod:`app.evaluation.policy_v1.report`) regista a identidade da recolha, o
+estado do Git, a configuração de execução e os digests de todas as entradas. Os
+juízos humanos das mensagens (M7) não entram aqui: julgam mensagens que só
+existem depois da recolha. Exportam-se com
+``scripts.export_policy_v1_message_review`` e aplicam-se, sem novas chamadas aos
+modelos, com ``scripts.score_policy_v1_report``. Por isso ``--message-ratings``
+é recusado, e um relatório existente nunca é sobrescrito.
+
 Este script **não** cria rótulos e não foi executado como avaliação formal
 neste repositório: o corpus P2, a adjudicação e o protocolo não estão
 congelados.
@@ -33,10 +42,10 @@ congelados.
 
 import argparse
 import json
-import platform
 import re
 import sys
-from collections import defaultdict
+import uuid
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -45,48 +54,41 @@ from sqlalchemy import select
 from app.answering.dependencies import get_answer_generator
 from app.core.config import MOCK_PROVIDER_ENVIRONMENTS, settings
 from app.database.session import SessionLocal
-from app.decision.definitions import DEFINITIONS_VERSION, RULES_VERSION
 from app.decision.estimators.dependencies import get_dimension_estimator
-from app.decision.messages import MESSAGE_VERSION
-from app.decision.policy import POLICY_VERSION
 from app.evaluation.policy_v1.artifacts import (
-    artifact_digests,
     catalog_bytes,
     catalog_snapshot,
+    config_payload,
     corpus_bytes,
     git_state,
     verify_code_artifacts,
     verify_formal_freeze,
 )
-from app.evaluation.policy_v1.attribution import attribute_errors
-from app.evaluation.policy_v1.conditions import (
-    B1_PROMPT_VERSION,
-    CaseOutcome,
-    Condition,
-    Limits,
-    run_oracle,
-)
-from app.evaluation.policy_v1.config import EVALUATION_CONFIG
+from app.evaluation.policy_v1.conditions import CaseOutcome, Limits, run_oracle
 from app.evaluation.policy_v1.corpus_inventory import (
     collect_corpus_inventory,
     corpus_inventory_bytes,
 )
 from app.evaluation.policy_v1.executor import EvaluationCaseSet, run_case
-from app.evaluation.policy_v1.freeze import FreezeError, verify_artifact
-from app.evaluation.policy_v1.hypotheses import hypotheses_report
-from app.evaluation.policy_v1.labels import LabelSet, MessageRatingSet, verified_adjudication
-from app.evaluation.policy_v1.metrics import (
-    compute_metrics,
-    configured_paired_comparisons,
-    estimation_errors,
+from app.evaluation.policy_v1.freeze import (
+    FreezeError,
+    canonical_bytes,
+    sha256,
+    verify_artifact,
 )
+from app.evaluation.policy_v1.labels import LabelSet, label_set_bytes, verified_adjudication
 from app.evaluation.policy_v1.packets import EvidencePacket
 from app.evaluation.policy_v1.protocol import (
-    stratum,
     validate_formal_annotations,
-    validate_message_ratings,
+    verify_same_case_set,
 )
-from app.evaluation.policy_v1.runs import RUN_NUMBERS, summarize
+from app.evaluation.policy_v1.report import (
+    build_collection_report,
+    compute_report_metrics,
+    report_bytes,
+    summarize_outcomes,
+)
+from app.evaluation.policy_v1.runs import RUN_NUMBERS
 from app.models.decision_catalog import InstitutionDecisionCatalog
 from app.models.institution import Institution
 from app.retrieval.dependencies import get_retriever
@@ -99,10 +101,6 @@ EXIT_NOT_FROZEN = 5
 EXIT_REFUSED = 6
 
 
-def _read(path: Path) -> Any:
-    return json.loads(path.read_text(encoding="utf-8"))
-
-
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(prog="run_policy_v1_evaluation")
     parser.add_argument("--cases", type=Path, required=True)
@@ -110,18 +108,42 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--output", type=Path, required=True)
     parser.add_argument("--adjudication", type=Path)
     parser.add_argument("--freeze-manifest", type=Path)
-    # Avaliações humanas da qualidade da mensagem (M7); nunca produzidas por modelo.
+    # Mantido só para recusar: os juízos M7 aplicam-se offline ao relatório
+    # arquivado (scripts.score_policy_v1_report), nunca a uma nova recolha.
     parser.add_argument("--message-ratings", type=Path)
     parser.add_argument("--formal", action="store_true")
     args = parser.parse_args(argv)
     if not COMMIT_PATTERN.match(args.commit):
         sys.stderr.write("--commit must be a full 40-character SHA\n")
         return EXIT_USAGE
+    if args.message_ratings is not None:
+        sys.stderr.write(
+            "message ratings judge archived messages: apply them offline with "
+            "scripts.score_policy_v1_report\n"
+        )
+        return EXIT_REFUSED
+    if args.output.exists():
+        # Um relatório arquivado é a única cópia das respostas recolhidas.
+        sys.stderr.write("refusing to overwrite an existing report\n")
+        return EXIT_USAGE
 
     raw_cases = args.cases.read_bytes()
     cases = EvaluationCaseSet.model_validate(json.loads(raw_cases))
-    manifest = _read(args.freeze_manifest) if args.freeze_manifest else None
-    adjudication = LabelSet.model_validate(_read(args.adjudication)) if args.adjudication else None
+    raw_manifest = args.freeze_manifest.read_bytes() if args.freeze_manifest else None
+    manifest = json.loads(raw_manifest) if raw_manifest is not None else None
+    raw_adjudication = args.adjudication.read_bytes() if args.adjudication else None
+    adjudication = (
+        LabelSet.model_validate(json.loads(raw_adjudication))
+        if raw_adjudication is not None
+        else None
+    )
+    if adjudication is not None:
+        try:
+            # Antes de abrir a base e de qualquer chamada aos modelos.
+            verify_same_case_set(cases, adjudication)
+        except FreezeError as exc:
+            sys.stderr.write(f"{exc}\n")
+            return EXIT_INVALID
 
     if args.formal:
         if manifest is None or adjudication is None:
@@ -139,15 +161,10 @@ def main(argv: list[str] | None = None) -> int:
             sys.stderr.write("development trials only accept policy-v1-dev case sets\n")
             return EXIT_REFUSED
 
-    ratings = (
-        MessageRatingSet.model_validate(_read(args.message_ratings))
-        if args.message_ratings
-        else None
-    )
     oracle_labels = None
     limits = Limits(settings.answering_max_context_chars, settings.answering_max_answer_chars)
     outcomes: list[CaseOutcome] = []
-    packets: list[dict[str, Any]] = []
+    packets: list[EvidencePacket] = []
     packets_by_digest: dict[str, EvidencePacket] = {}
     with SessionLocal() as db:
         institution = db.scalar(
@@ -167,10 +184,35 @@ def main(argv: list[str] | None = None) -> int:
             return EXIT_INVALID
         catalog_payload: dict[str, Any] = catalog_snapshot(catalog)
         inventory = corpus_inventory_bytes(collect_corpus_inventory(db, institution.id))
+        head, clean = git_state(REPOSITORY_ROOT)
         try:
+            # Identidade de cada entrada da recolha, para a reanálise offline.
+            inputs = {
+                "cases": {
+                    "file_sha256": sha256(raw_cases),
+                    "frozen_sha256": sha256(corpus_bytes(json.loads(raw_cases))),
+                },
+                "adjudication": None
+                if adjudication is None or raw_adjudication is None
+                else {
+                    "file_sha256": sha256(raw_adjudication),
+                    "frozen_sha256": sha256(label_set_bytes(adjudication)),
+                },
+                "freeze_manifest": None
+                if manifest is None or raw_manifest is None
+                else {
+                    "file_sha256": sha256(raw_manifest),
+                    "frozen_sha256": sha256(canonical_bytes(manifest)),
+                    "code_commit": manifest.get("code_commit"),
+                },
+                "corpus_inventory": {"frozen_sha256": sha256(inventory)},
+                "catalog": {
+                    "frozen_sha256": sha256(catalog_bytes(catalog_payload)),
+                    "snapshot": catalog_payload,
+                },
+            }
             if args.formal:
                 assert manifest is not None and adjudication is not None
-                head, clean = git_state(REPOSITORY_ROOT)
                 # Todos os artefactos — os gerados a partir do código, o
                 # catálogo ativo e o inventário documental da base —, o commit
                 # e a árvore de trabalho.
@@ -222,7 +264,7 @@ def main(argv: list[str] | None = None) -> int:
                 outcomes.extend(run.outcomes)
                 for packet in run.packets.values():
                     packets_by_digest[packet.digest] = packet
-                    packets.append({"digest": packet.digest, **packet.to_dict()})
+                    packets.append(packet)
         # A base não pode ter mudado durante a execução: os packets das três
         # execuções têm de vir do mesmo corpus.
         if corpus_inventory_bytes(collect_corpus_inventory(db, institution.id)) != inventory:
@@ -235,141 +277,35 @@ def main(argv: list[str] | None = None) -> int:
                 run_oracle(labels, catalog=catalog_payload, reference_date=dates[labels.case_id])
             )
 
-    grouped: dict[tuple[str, Condition], list[CaseOutcome]] = defaultdict(list)
-    for outcome in outcomes:
-        grouped[(outcome.case_id, outcome.condition)].append(outcome)
-    summaries: dict[Condition, dict[str, Any]] = defaultdict(dict)
-    for (case_id, condition), items in grouped.items():
-        summaries[condition][case_id] = summarize(items)
-
+    summaries = summarize_outcomes(outcomes)
     metrics: dict[str, Any] = {"status": "not_computed_without_adjudication"}
     if oracle_labels is not None:
-        gold = {case.case_id: case for case in oracle_labels.cases}
-        case_by_id = {case.case_id: case for case in cases.cases}
-        for by_case in summaries.values():
-            if ratings is not None:
-                validate_message_ratings(by_case, ratings, formal=args.formal, gold=gold)
-        # Cada resultado é lido no packet que a sua condição recebeu: os
-        # identificadores de evidência só têm sentido dentro desse packet.
-        primary_ids = {
-            case.case_id
-            for case in cases.cases
-            if stratum(case) == "real" or (not args.formal and stratum(case) == "unclassified_dev")
-        }
-        primary = {
-            condition: {key: value for key, value in by_case.items() if key in primary_ids}
-            for condition, by_case in summaries.items()
-        }
-        metrics = {
-            condition.value: compute_metrics(by_case, gold, packets_by_digest, ratings)
-            for condition, by_case in primary.items()
-        }
-        metrics["primary_scope"] = "real sources, F14 excluded; unclassified fixtures only in dev"
-        metrics["by_stratum"] = {}
-        metrics["by_family"] = {}
-        for field, groups in (
-            ("by_stratum", {stratum(case) for case in cases.cases}),
-            (
-                "by_family",
-                {f"{case.family or 'unclassified_dev'}:{stratum(case)}" for case in cases.cases},
-            ),
-        ):
-            for group in sorted(groups):
-                ids = {
-                    case_id
-                    for case_id, case in case_by_id.items()
-                    if (
-                        stratum(case)
-                        if field == "by_stratum"
-                        else f"{case.family or 'unclassified_dev'}:{stratum(case)}"
-                    )
-                    == group
-                }
-                metrics[field][group] = {
-                    condition.value: compute_metrics(
-                        {key: value for key, value in by_case.items() if key in ids},
-                        gold,
-                        packets_by_digest,
-                        ratings,
-                    )
-                    for condition, by_case in summaries.items()
-                }
-                if field == "by_stratum":
-                    group_summaries = {
-                        condition: {key: value for key, value in by_case.items() if key in ids}
-                        for condition, by_case in summaries.items()
-                    }
-                    metrics[field][group]["hypotheses"] = hypotheses_report(
-                        group_summaries,
-                        gold,
-                        margin=EVALUATION_CONFIG["thresholds"][
-                            "difference_margin_percentage_points"
-                        ]
-                        / 100,
-                        margin_justified=EVALUATION_CONFIG["analysis"][
-                            "non_inferiority_margin_justified"
-                        ],
-                    )
-                    metrics[field][group]["paired_comparisons"] = configured_paired_comparisons(
-                        group_summaries, gold, packets=packets_by_digest, ratings=ratings
-                    )
-        metrics["estimation_errors_p_e2e"] = estimation_errors(primary[Condition.P_E2E], gold)
-        metrics["error_attribution_p_e2e"] = [
-            attribution.as_dict()
-            for attribution in attribute_errors(
-                primary[Condition.P_E2E],
-                gold,
-                services=catalog_payload["services"],
-                catalog_version=catalog_payload["version"],
-                reference_dates={case.case_id: case.reference_date for case in cases.cases},
-            )
-        ]
-        metrics["error_attribution_metric_id"] = "M9"
-        metrics["hypotheses"] = hypotheses_report(
-            primary,
-            gold,
-            margin=EVALUATION_CONFIG["thresholds"]["difference_margin_percentage_points"] / 100,
-            margin_justified=EVALUATION_CONFIG["analysis"]["non_inferiority_margin_justified"],
-        )
-        metrics["paired_comparisons"] = configured_paired_comparisons(
-            primary, gold, packets=packets_by_digest, ratings=ratings
+        metrics = compute_report_metrics(
+            cases.cases,
+            summaries,
+            {case.case_id: case for case in oracle_labels.cases},
+            packets_by_digest,
+            catalog_payload,
+            ratings=None,
+            formal=args.formal,
         )
 
-    report = {
-        "mode": "formal" if args.formal else "development_trial",
-        "status": "avaliação formal" if args.formal else "ensaio de desenvolvimento, não avaliação",
-        "set_id": cases.set_id,
-        "corpus": cases.corpus,
-        "code_commit": args.commit,
-        "python_version": platform.python_version(),
-        "versions": {
-            "policy": POLICY_VERSION,
-            "definitions": DEFINITIONS_VERSION,
-            "rules": RULES_VERSION,
-            "messages": MESSAGE_VERSION,
-            "b1_prompt": B1_PROMPT_VERSION,
-        },
-        "config": EVALUATION_CONFIG,
-        "case_metadata": [
-            {
-                "case_id": case.case_id,
-                "family": case.family,
-                "source_kind": case.source_kind,
-                "stratum": stratum(case),
-                "expected_snapshot_id": case.expected_snapshot_id,
-            }
-            for case in cases.cases
-        ],
-        "code_artifact_digests": artifact_digests(),
-        "packets": packets,
-        "outcomes": [outcome.as_dict() for outcome in outcomes],
-        "metrics": metrics,
-    }
-    args.output.write_text(
-        json.dumps(report, ensure_ascii=False, sort_keys=True, indent=2, default=str) + "\n",
-        encoding="utf-8",
-        newline="\n",
+    report = build_collection_report(
+        formal=args.formal,
+        cases=cases,
+        collection_id=str(uuid.uuid4()),
+        collected_at=datetime.now(UTC),
+        code_commit=args.commit,
+        git=(head, clean),
+        runtime=config_payload()["runtime"],
+        inputs=inputs,
+        packets=packets,
+        outcomes=outcomes,
+        metrics=metrics,
     )
+    # Criação exclusiva: um relatório que entretanto apareça não é sobrescrito.
+    with args.output.open("xb") as handle:
+        handle.write(report_bytes(report))
     return 0
 
 
