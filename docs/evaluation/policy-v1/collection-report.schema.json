@@ -1,0 +1,843 @@
+{
+  "$defs": {
+    "ArchivedDiagnosticItem": {
+      "additionalProperties": false,
+      "properties": {
+        "document_id": {
+          "title": "Document Id",
+          "type": "string"
+        },
+        "document_title": {
+          "title": "Document Title",
+          "type": "string"
+        },
+        "valid_from": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Valid From"
+        },
+        "valid_until": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Valid Until"
+        }
+      },
+      "required": [
+        "document_id",
+        "document_title",
+        "valid_from",
+        "valid_until"
+      ],
+      "title": "ArchivedDiagnosticItem",
+      "type": "object"
+    },
+    "ArchivedOutcome": {
+      "additionalProperties": false,
+      "description": "Um resultado arquivado (``CaseOutcome.as_dict``).",
+      "properties": {
+        "case_id": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "condition": {
+          "$ref": "#/$defs/Condition"
+        },
+        "run_number": {
+          "minimum": 1,
+          "title": "Run Number",
+          "type": "integer"
+        },
+        "action": {
+          "anyOf": [
+            {
+              "enum": [
+                "answer",
+                "clarify",
+                "abstain",
+                "escalate"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Action"
+        },
+        "rule": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Rule"
+        },
+        "message": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Message"
+        },
+        "cited_evidence_ids": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Cited Evidence Ids",
+          "type": "array"
+        },
+        "destination_service_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Destination Service Id"
+        },
+        "failure": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Failure"
+        },
+        "packet_digest": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{64}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Packet Digest"
+        },
+        "duration_ms": {
+          "minimum": 0,
+          "title": "Duration Ms",
+          "type": "integer"
+        },
+        "estimates": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Estimates"
+        },
+        "usage": {
+          "additionalProperties": true,
+          "title": "Usage",
+          "type": "object"
+        },
+        "temporal_notice_shown": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Temporal Notice Shown"
+        }
+      },
+      "required": [
+        "case_id",
+        "condition",
+        "run_number",
+        "action",
+        "rule",
+        "message",
+        "cited_evidence_ids",
+        "destination_service_id",
+        "failure",
+        "packet_digest",
+        "duration_ms",
+        "estimates",
+        "usage",
+        "temporal_notice_shown"
+      ],
+      "title": "ArchivedOutcome",
+      "type": "object"
+    },
+    "ArchivedPacket": {
+      "additionalProperties": false,
+      "description": "Um packet arquivado: o digest e os campos de ``EvidencePacket.to_dict``.",
+      "properties": {
+        "digest": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Digest",
+          "type": "string"
+        },
+        "packet_version": {
+          "const": "policy_v1_packet_1",
+          "title": "Packet Version",
+          "type": "string"
+        },
+        "case_id": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "family": {
+          "enum": [
+            "p_e2e",
+            "b0",
+            "b0_without_validity_filter"
+          ],
+          "title": "Family",
+          "type": "string"
+        },
+        "run_number": {
+          "minimum": 1,
+          "title": "Run Number",
+          "type": "integer"
+        },
+        "query": {
+          "title": "Query",
+          "type": "string"
+        },
+        "language": {
+          "title": "Language",
+          "type": "string"
+        },
+        "reference_date": {
+          "format": "date",
+          "title": "Reference Date",
+          "type": "string"
+        },
+        "requester_role": {
+          "title": "Requester Role",
+          "type": "string"
+        },
+        "catalog": {
+          "additionalProperties": true,
+          "title": "Catalog",
+          "type": "object"
+        },
+        "passages": {
+          "items": {
+            "$ref": "#/$defs/ArchivedPassage"
+          },
+          "title": "Passages",
+          "type": "array"
+        },
+        "diagnostic": {
+          "items": {
+            "$ref": "#/$defs/ArchivedDiagnosticItem"
+          },
+          "title": "Diagnostic",
+          "type": "array"
+        },
+        "retrieval": {
+          "additionalProperties": true,
+          "title": "Retrieval",
+          "type": "object"
+        },
+        "snapshot_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Snapshot Id"
+        },
+        "corpus_digest": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Corpus Digest"
+        }
+      },
+      "required": [
+        "digest",
+        "packet_version",
+        "case_id",
+        "family",
+        "run_number",
+        "query",
+        "language",
+        "reference_date",
+        "requester_role",
+        "catalog",
+        "passages",
+        "diagnostic",
+        "retrieval",
+        "snapshot_id",
+        "corpus_digest"
+      ],
+      "title": "ArchivedPacket",
+      "type": "object"
+    },
+    "ArchivedPassage": {
+      "additionalProperties": false,
+      "properties": {
+        "evidence_id": {
+          "minLength": 1,
+          "title": "Evidence Id",
+          "type": "string"
+        },
+        "chunk_id": {
+          "title": "Chunk Id",
+          "type": "string"
+        },
+        "document_id": {
+          "title": "Document Id",
+          "type": "string"
+        },
+        "document_version_id": {
+          "title": "Document Version Id",
+          "type": "string"
+        },
+        "document_title": {
+          "title": "Document Title",
+          "type": "string"
+        },
+        "chunk_index": {
+          "title": "Chunk Index",
+          "type": "integer"
+        },
+        "content": {
+          "title": "Content",
+          "type": "string"
+        },
+        "content_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Content Sha256",
+          "type": "string"
+        },
+        "official_source": {
+          "title": "Official Source",
+          "type": "boolean"
+        },
+        "source_url": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Url"
+        },
+        "language": {
+          "title": "Language",
+          "type": "string"
+        },
+        "valid_from": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Valid From"
+        },
+        "valid_until": {
+          "anyOf": [
+            {
+              "format": "date",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Valid Until"
+        }
+      },
+      "required": [
+        "evidence_id",
+        "chunk_id",
+        "document_id",
+        "document_version_id",
+        "document_title",
+        "chunk_index",
+        "content",
+        "content_sha256",
+        "official_source",
+        "source_url",
+        "language",
+        "valid_from",
+        "valid_until"
+      ],
+      "title": "ArchivedPassage",
+      "type": "object"
+    },
+    "CaseMetadataEntry": {
+      "additionalProperties": false,
+      "properties": {
+        "case_id": {
+          "maxLength": 64,
+          "minLength": 1,
+          "title": "Case Id",
+          "type": "string"
+        },
+        "family": {
+          "anyOf": [
+            {
+              "enum": [
+                "F01",
+                "F02",
+                "F03",
+                "F04",
+                "F05",
+                "F06",
+                "F07",
+                "F08",
+                "F09",
+                "F10",
+                "F11",
+                "F12",
+                "F13",
+                "F14",
+                "F15"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Family"
+        },
+        "source_kind": {
+          "anyOf": [
+            {
+              "enum": [
+                "real",
+                "synthetic"
+              ],
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Source Kind"
+        },
+        "stratum": {
+          "title": "Stratum",
+          "type": "string"
+        },
+        "expected_snapshot_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Expected Snapshot Id"
+        }
+      },
+      "required": [
+        "case_id",
+        "family",
+        "source_kind",
+        "stratum",
+        "expected_snapshot_id"
+      ],
+      "title": "CaseMetadataEntry",
+      "type": "object"
+    },
+    "CatalogRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "frozen_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Frozen Sha256",
+          "type": "string"
+        },
+        "snapshot": {
+          "additionalProperties": true,
+          "title": "Snapshot",
+          "type": "object"
+        }
+      },
+      "required": [
+        "frozen_sha256",
+        "snapshot"
+      ],
+      "title": "CatalogRecord",
+      "type": "object"
+    },
+    "CollectionInputs": {
+      "additionalProperties": false,
+      "properties": {
+        "cases": {
+          "$ref": "#/$defs/FileDigest"
+        },
+        "adjudication": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/FileDigest"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "freeze_manifest": {
+          "anyOf": [
+            {
+              "$ref": "#/$defs/ManifestDigest"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "corpus_inventory": {
+          "$ref": "#/$defs/InventoryDigest"
+        },
+        "catalog": {
+          "$ref": "#/$defs/CatalogRecord"
+        }
+      },
+      "required": [
+        "cases",
+        "adjudication",
+        "freeze_manifest",
+        "corpus_inventory",
+        "catalog"
+      ],
+      "title": "CollectionInputs",
+      "type": "object"
+    },
+    "Condition": {
+      "enum": [
+        "B0",
+        "B1-plena",
+        "B1-composição",
+        "P-oráculo",
+        "P-e2e",
+        "A-sem-filtro",
+        "A-sem-diagnóstico"
+      ],
+      "title": "Condition",
+      "type": "string"
+    },
+    "FileDigest": {
+      "additionalProperties": false,
+      "properties": {
+        "file_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "File Sha256",
+          "type": "string"
+        },
+        "frozen_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Frozen Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "file_sha256",
+        "frozen_sha256"
+      ],
+      "title": "FileDigest",
+      "type": "object"
+    },
+    "GitState": {
+      "additionalProperties": false,
+      "description": "O estado observado do repositório na recolha (``git_state``).",
+      "properties": {
+        "head": {
+          "anyOf": [
+            {
+              "pattern": "^[0-9a-f]{40}$",
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Head"
+        },
+        "working_tree_clean": {
+          "title": "Working Tree Clean",
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "head",
+        "working_tree_clean"
+      ],
+      "title": "GitState",
+      "type": "object"
+    },
+    "InventoryDigest": {
+      "additionalProperties": false,
+      "properties": {
+        "frozen_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Frozen Sha256",
+          "type": "string"
+        }
+      },
+      "required": [
+        "frozen_sha256"
+      ],
+      "title": "InventoryDigest",
+      "type": "object"
+    },
+    "ManifestDigest": {
+      "additionalProperties": false,
+      "properties": {
+        "file_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "File Sha256",
+          "type": "string"
+        },
+        "frozen_sha256": {
+          "pattern": "^[0-9a-f]{64}$",
+          "title": "Frozen Sha256",
+          "type": "string"
+        },
+        "code_commit": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Code Commit"
+        }
+      },
+      "required": [
+        "file_sha256",
+        "frozen_sha256",
+        "code_commit"
+      ],
+      "title": "ManifestDigest",
+      "type": "object"
+    }
+  },
+  "additionalProperties": false,
+  "description": "O relatório escrito pelo executor, numa das versões suportadas.",
+  "properties": {
+    "report_schema_version": {
+      "anyOf": [
+        {
+          "const": "policy_v1_report_2",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Report Schema Version"
+    },
+    "collection_id": {
+      "anyOf": [
+        {
+          "pattern": "^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Collection Id"
+    },
+    "collected_at": {
+      "anyOf": [
+        {
+          "format": "date-time",
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Collected At"
+    },
+    "mode": {
+      "enum": [
+        "formal",
+        "development_trial"
+      ],
+      "title": "Mode",
+      "type": "string"
+    },
+    "status": {
+      "title": "Status",
+      "type": "string"
+    },
+    "set_id": {
+      "maxLength": 64,
+      "minLength": 1,
+      "title": "Set Id",
+      "type": "string"
+    },
+    "corpus": {
+      "const": "P2",
+      "title": "Corpus",
+      "type": "string"
+    },
+    "code_commit": {
+      "pattern": "^[0-9a-f]{40}$",
+      "title": "Code Commit",
+      "type": "string"
+    },
+    "git": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/GitState"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "python_version": {
+      "title": "Python Version",
+      "type": "string"
+    },
+    "versions": {
+      "additionalProperties": {
+        "type": "string"
+      },
+      "title": "Versions",
+      "type": "object"
+    },
+    "config": {
+      "additionalProperties": true,
+      "title": "Config",
+      "type": "object"
+    },
+    "runtime": {
+      "anyOf": [
+        {
+          "additionalProperties": true,
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "title": "Runtime"
+    },
+    "inputs": {
+      "anyOf": [
+        {
+          "$ref": "#/$defs/CollectionInputs"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null
+    },
+    "case_metadata": {
+      "items": {
+        "$ref": "#/$defs/CaseMetadataEntry"
+      },
+      "title": "Case Metadata",
+      "type": "array"
+    },
+    "code_artifact_digests": {
+      "additionalProperties": {
+        "pattern": "^[0-9a-f]{64}$",
+        "type": "string"
+      },
+      "title": "Code Artifact Digests",
+      "type": "object"
+    },
+    "packets": {
+      "items": {
+        "$ref": "#/$defs/ArchivedPacket"
+      },
+      "title": "Packets",
+      "type": "array"
+    },
+    "outcomes": {
+      "items": {
+        "$ref": "#/$defs/ArchivedOutcome"
+      },
+      "title": "Outcomes",
+      "type": "array"
+    },
+    "metrics": {
+      "additionalProperties": true,
+      "title": "Metrics",
+      "type": "object"
+    }
+  },
+  "required": [
+    "mode",
+    "status",
+    "set_id",
+    "corpus",
+    "code_commit",
+    "python_version",
+    "versions",
+    "config",
+    "case_metadata",
+    "code_artifact_digests",
+    "packets",
+    "outcomes",
+    "metrics"
+  ],
+  "title": "CollectionReport",
+  "type": "object",
+  "$schema": "https://json-schema.org/draft/2020-12/schema"
+}

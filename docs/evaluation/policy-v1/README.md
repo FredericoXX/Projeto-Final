@@ -12,10 +12,17 @@
 | --- | --- | --- |
 | [`cases.schema.json`](cases.schema.json) | `EvaluationCaseSet` em `app/evaluation/policy_v1/executor.py` | casos: pedido, idioma, data de referência fixa, papel simulado |
 | [`labels.schema.json`](labels.schema.json) | `LabelSet` em `app/evaluation/policy_v1/labels.py` | rótulos humanos dependentes por dimensão |
-| [`message-ratings.schema.json`](message-ratings.schema.json) | `MessageRatingSet` em `app/evaluation/policy_v1/labels.py` | juízos humanos da qualidade da mensagem (M7), um por caso e condição |
+| [`message-ratings.schema.json`](message-ratings.schema.json) | `BoundMessageRatingSet` em `app/evaluation/policy_v1/message_ratings.py` | juízos humanos M7, um por mensagem, ligados à recolha, ao caso, à condição, à execução, ao texto exato, ao packet e ao resultado |
+| [`message-ratings-draft.schema.json`](message-ratings-draft.schema.json) | `MessageRatingDraft` no mesmo módulo | rascunho exportado para revisão, com os juízos a `"pending"` |
+| [`collection-report.schema.json`](collection-report.schema.json) | `CollectionReport` em `app/evaluation/policy_v1/report.py` | relatório arquivado pela recolha (formato `policy_v1_report_2` e o anterior, sem versão) |
 
-Um teste falha se `labels.schema.json` divergir dos modelos. A regeneração faz-se
-com `python -m scripts.p2_labels_tool schema --output ...`.
+Um teste falha se algum destes esquemas divergir dos modelos. A regeneração
+faz-se com `python -m scripts.p2_labels_tool schema --kind KIND --output ...`
+(`labels`, `cases`, `message-ratings`, `message-ratings-draft`,
+`collection-report`).
+
+O procedimento operacional do piloto de desenvolvimento está em
+[`pilot-runbook.md`](pilot-runbook.md).
 
 Rótulos:
 
@@ -61,7 +68,10 @@ conjuntos que não sejam `policy-v1-dev*`.
    o esquema, os prompts e a configuração. Regista SHA-256, versão da receita e
    do Python e o commit, e recusa uma árvore de trabalho por limpar ou um
    inventário que não valide.
-7. Só então `run_policy_v1_evaluation --formal` aceita correr. Verifica:
+7. Só então `run_policy_v1_evaluation --formal` aceita correr (num ensaio de
+   desenvolvimento com adjudicação e manifesto verificam-se os artefactos, o
+   catálogo e o inventário, mas não o commit, a árvore de trabalho nem os traços
+   formais). Verifica:
    - todos os artefactos, recalculando os gerados a partir do código;
    - o commit igual ao `HEAD` e a árvore limpa;
    - o catálogo ativo e o inventário documental, **lidos da base de dados**,
@@ -72,8 +82,82 @@ conjuntos que não sejam `policy-v1-dev*`.
    adjudicação, o ficheiro de casos, o catálogo e a política, o esquema, os
    prompts e a configuração. O P-oráculo não usa evidência, por isso não lê o
    inventário.
-8. Os juízos de qualidade da mensagem (`--message-ratings`) e a inspeção das
-   atribuições de erro são humanos.
+8. A recolha chama os modelos **uma vez** e arquiva as respostas; não aceita
+   juízos de mensagens. `export_policy_v1_message_review` exporta as mensagens
+   para revisão humana, e `score_policy_v1_report` recalcula as métricas sobre
+   essas mesmas respostas, sem novas chamadas (secção seguinte).
+9. Os juízos de qualidade da mensagem e a inspeção das atribuições de erro são
+   humanos.
+
+## Recolha, revisão humana e reanálise offline
+
+```text
+run_policy_v1_evaluation        → recolha.json            (modelos chamados uma vez)
+export_policy_v1_message_review → review-material.md      (para o avaliador; conteúdo documental)
+                                  ratings-draft.json       (rascunho a preencher)
+                                  review-manifest.json     (proveniência)
+pessoas                         → avaliacoes.json          (policy_v1_message_ratings_2)
+score_policy_v1_report          → analise.json             (sem base de dados, rede ou modelos)
+```
+
+**Relatório da recolha** (`policy_v1_report_2`): além dos packets, resultados e
+métricas, regista `collection_id`, `collected_at`, o estado do Git observado
+(`git`), a configuração de execução (`runtime`) e os digests dos casos, da
+adjudicação, do manifesto de congelamento, do inventário documental e do
+catálogo (`inputs`). O executor nunca sobrescreve um relatório existente.
+
+**Identidade das mensagens.** Cada juízo M7 identifica a recolha
+(`source_report`: `collection_id` e SHA-256 dos bytes do relatório), o caso, a
+condição, a execução (só a principal), `message_sha256` — SHA-256 dos bytes
+UTF-8 do texto exato, sem normalização —, `packet_digest` e `outcome_id` — o
+SHA-256 canónico do resultado arquivado. A exportação e a validação usam as
+mesmas funções (`message_ratings.py`). São recusados juízos sobre mensagens
+inexistentes ou alteradas, de outra recolha, condição ou execução, duplicados,
+sobre falhas técnicas ou P-oráculo, com `"pending"`, com booleanos em texto, ou
+sem juízo num critério obrigatório para a mensagem (ANSWER, R10, CLARIFY,
+ESCALATE, F02). `null` é não aplicável; `false` é avaliação negativa.
+
+**Um juízo por mensagem.** M7 usa uma avaliação consolidada por mensagem. Com
+vários avaliadores, pessoas identificadas consolidam as divergências
+(`provenance.kind = "human_consolidation"`, `consolidated_by`); não há média
+nem adjudicação automática. Sem juízos — ou sem nenhum que se aplique às
+mensagens de uma condição ou de um estrato —, M7 fica **não medida**, nunca
+0/0.
+
+**Reanálise.** `score_policy_v1_report` recebe `--report`, `--cases`,
+`--adjudication`, `--freeze-manifest`, opcionalmente `--message-ratings` e
+`--corpus-inventory`, e `--output` (caminho novo, diferente das entradas). Não
+importa a configuração da aplicação: corre sem `.env`, `DATABASE_URL`,
+`JWT_SECRET_KEY` ou chaves. Antes de calcular, verifica: o contrato do relatório,
+o digest de cada packet e, por condição, as estimativas arquivadas (P-e2e e
+A-sem-diagnóstico têm de trazer entradas da política com tipos JSON estritos —
+`"false"`, `0` ou `1` não passam por booleanos —, válidas e canónicas; B0,
+A-sem-filtro, P-oráculo e as falhas técnicas, nenhumas); a coerência entre
+packets, resultados e execuções; o contrato e a receita do manifesto de
+congelamento, e que é o mesmo que a recolha leu (bytes canónicos do conteúdo);
+os casos e a adjudicação contra a recolha e o congelamento, com o mesmo `set_id`
+no relatório, nos casos e na adjudicação (a recolha e `p2_labels_tool oracle`
+recusam essa incompatibilidade antes de correr); que a recolha correu
+o código congelado; o catálogo, o inventário e a configuração registados contra
+os congelados; e que o código da análise tem a mesma política e a mesma
+configuração da avaliação.
+Recalcula as métricas pela mesma função da recolha, com a primeira execução como
+principal e o modo da recolha, compara-as com as arquivadas
+(`collection_metrics_reproduction`) e só depois aplica os juízos M7. Regista o
+relatório de origem, os hashes das entradas, as versões, o commit da recolha e
+o da análise, e `case_traces` por caso. Com `--formal`, exige ainda uma recolha
+formal `policy_v1_report_2` que registou o seu manifesto, recolha e análise em
+árvores limpas, os mesmos esquemas e prompts, o inventário congelado e métricas
+reproduzidas; sem `--formal`, só aceita conjuntos `policy-v1-dev*`.
+
+**Relatórios anteriores** (sem `report_schema_version`) são aceites só em
+reanálise de desenvolvimento, com `verification.level = "legacy_partial"` e a
+lista do que não registaram em `verification.unverifiable` (adjudicação e
+manifesto usados na recolha, inventário documental, configuração de execução e
+estado do Git).
+Nunca recebem conformidade formal. Os juízos do formato v1
+(`policy_v1_message_ratings_1`, só caso e condição) não são aceites pela
+reanálise: não dizem que texto foi julgado.
 
 ## Métricas e comparações
 

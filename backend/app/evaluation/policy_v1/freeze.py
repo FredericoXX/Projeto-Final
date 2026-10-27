@@ -138,6 +138,17 @@ def build_freeze_manifest(
     }
 
 
+def verify_freeze_recipe(manifest: Mapping[str, Any]) -> None:
+    """O manifesto foi produzido pela receita que esta implementação aplica.
+
+    Os digests só são comparáveis com bytes calculados pela mesma receita: um
+    manifesto de outra receita é recusado, mesmo que os digests coincidam.
+    """
+    if manifest.get("recipe_version") != FREEZE_RECIPE_VERSION:
+        msg = f"the freeze manifest does not use the recipe {FREEZE_RECIPE_VERSION}"
+        raise FreezeError(msg)
+
+
 def verify_artifact(manifest: Mapping[str, Any], name: str, data: bytes) -> None:
     """Confirma que ``data`` é exatamente o artefacto congelado ``name``."""
     entry = manifest.get("artifacts", {}).get(name)

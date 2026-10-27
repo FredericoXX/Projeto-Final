@@ -24,7 +24,8 @@ M5     destino correto, com denominador condicional e total
 M6     citações inadmissíveis, resolvidas no packet da própria
        condição (:func:`citation_admissibility`)
 M7     qualidade da mensagem, só a partir de avaliações humanas
-       identificadas (:class:`~app.evaluation.policy_v1.labels.MessageRatingSet`)
+       identificadas, vinculadas às mensagens da recolha
+       (:class:`~app.evaluation.policy_v1.message_ratings.BoundMessageRatingSet`)
 M8     erros de estimação de P-e2e por dimensão (:func:`estimation_errors`)
 M9     atribuição de erros por replay e inspeção humana
 =====  =============================================================
@@ -61,7 +62,8 @@ from typing import Any, Final
 from app.decision.contracts import DecisionOutcome
 from app.evaluation.policy_v1.conditions import CaseOutcome, Condition
 from app.evaluation.policy_v1.config import METRIC_IDS, PAIRED_COMPARISONS
-from app.evaluation.policy_v1.labels import CaseLabels, MessageRatingSet
+from app.evaluation.policy_v1.labels import CaseLabels
+from app.evaluation.policy_v1.message_ratings import RatingSet
 from app.evaluation.policy_v1.packets import EvidencePacket, PacketPassage
 from app.evaluation.policy_v1.runs import CaseSummary
 from app.evaluation.policy_v1.statistics import (
@@ -140,11 +142,14 @@ METRIC_DEFINITIONS: Final = (
 )
 
 
+_Predicate = Callable[[CaseSummary, CaseLabels], bool]
+
+
 def _rate(
     summaries: Mapping[str, CaseSummary],
     gold: Mapping[str, CaseLabels],
-    in_denominator: Callable[[CaseSummary, CaseLabels], bool],
-    in_numerator: Callable[[CaseSummary, CaseLabels], bool],
+    in_denominator: _Predicate,
+    in_numerator: _Predicate,
 ) -> dict[str, Any]:
     eligible = [
         case_id
@@ -157,6 +162,68 @@ def _rate(
 
 def _acceptable(labels: CaseLabels) -> set[str]:
     return {action.value for action in labels.acceptable_actions}
+
+
+def _service(labels: CaseLabels) -> bool:
+    return bool(labels.d6.has_competent_service)
+
+
+def _rate_predicates(
+    packets: Mapping[str, EvidencePacket],
+) -> dict[str, tuple[_Predicate, _Predicate]]:
+    """Denominador e numerador de cada taxa, definidos uma única vez.
+
+    :func:`compute_metrics` e :func:`action_confusion` agregam-nos com
+    :func:`_rate`; :func:`rate_membership` aplica o mesmo :func:`_rate` a um só
+    caso, para que a pertença de cada caso às métricas venha das mesmas fórmulas.
+    """
+    return {
+        "answer_when_not_acceptable": (
+            lambda s, g: ANSWER not in _acceptable(g),
+            lambda s, g: s.primary.action == ANSWER,
+        ),
+        "non_answer_outside_acceptable": (
+            lambda s, g: ANSWER in _acceptable(g),
+            lambda s, g: s.primary.action != ANSWER and s.primary.action not in _acceptable(g),
+        ),
+        "over_escalation": (
+            lambda s, g: ESCALATE not in _acceptable(g),
+            lambda s, g: s.primary.action == ESCALATE,
+        ),
+        "under_escalation": (
+            lambda s, g: g.preferred_action.value == ESCALATE,
+            lambda s, g: s.primary.action != ESCALATE,
+        ),
+        "destination_correct_conditional": (
+            lambda s, g: (
+                s.primary.action == ESCALATE and ESCALATE in _acceptable(g) and _service(g)
+            ),
+            lambda s, g: s.primary.destination_service_id == g.d6.service_id,
+        ),
+        "destination_correct_total": (
+            lambda s, g: g.preferred_action.value == ESCALATE and _service(g),
+            lambda s, g: (
+                s.primary.action == ESCALATE and s.primary.destination_service_id == g.d6.service_id
+            ),
+        ),
+        "inadmissible_citations": (
+            lambda s, g: bool(s.primary.cited_evidence_ids),
+            lambda s, g: has_inadmissible_citation(s.primary, packets),
+        ),
+    }
+
+
+#: Acordos de M3: todos os casos sem falha técnica entram no denominador.
+_AGREEMENT_PREDICATES: Final[Mapping[str, tuple[_Predicate, _Predicate]]] = {
+    "strict_agreement": (
+        lambda s, g: True,
+        lambda s, g: s.primary.action == g.preferred_action.value,
+    ),
+    "acceptable_agreement": (
+        lambda s, g: True,
+        lambda s, g: s.primary.action in _acceptable(g),
+    ),
+}
 
 
 # ---------------------------------------------------------------------------
@@ -254,15 +321,10 @@ def action_confusion(
         "columns": "condition_action",
         "matrix": matrix,
         "per_action": per_action,
-        "strict_agreement": _rate(
-            summaries,
-            gold,
-            lambda s, g: True,
-            lambda s, g: s.primary.action == g.preferred_action.value,
-        ),
-        "acceptable_agreement": _rate(
-            summaries, gold, lambda s, g: True, lambda s, g: s.primary.action in _acceptable(g)
-        ),
+        **{
+            name: _rate(summaries, gold, in_denominator, in_numerator)
+            for name, (in_denominator, in_numerator) in _AGREEMENT_PREDICATES.items()
+        },
     }
 
 
@@ -270,7 +332,7 @@ def compute_metrics(
     summaries: Mapping[str, CaseSummary],
     gold: Mapping[str, CaseLabels],
     packets: Mapping[str, EvidencePacket],
-    ratings: MessageRatingSet | None = None,
+    ratings: RatingSet | None = None,
 ) -> dict[str, Any]:
     """Métricas de uma condição sobre a execução principal de cada caso.
 
@@ -282,57 +344,9 @@ def compute_metrics(
         msg = f"{len(missing)} case(s) have no adjudicated labels"
         raise ValueError(msg)
 
-    def action(summary: CaseSummary) -> str | None:
-        return summary.primary.action
-
-    def service(labels: CaseLabels) -> bool:
-        return bool(labels.d6.has_competent_service)
-
     rates = {
-        "answer_when_not_acceptable": _rate(
-            summaries,
-            gold,
-            lambda s, g: ANSWER not in _acceptable(g),
-            lambda s, g: action(s) == ANSWER,
-        ),
-        "non_answer_outside_acceptable": _rate(
-            summaries,
-            gold,
-            lambda s, g: ANSWER in _acceptable(g),
-            lambda s, g: action(s) != ANSWER and action(s) not in _acceptable(g),
-        ),
-        "over_escalation": _rate(
-            summaries,
-            gold,
-            lambda s, g: ESCALATE not in _acceptable(g),
-            lambda s, g: action(s) == ESCALATE,
-        ),
-        "under_escalation": _rate(
-            summaries,
-            gold,
-            lambda s, g: g.preferred_action.value == ESCALATE,
-            lambda s, g: action(s) != ESCALATE,
-        ),
-        "destination_correct_conditional": _rate(
-            summaries,
-            gold,
-            lambda s, g: action(s) == ESCALATE and ESCALATE in _acceptable(g) and service(g),
-            lambda s, g: s.primary.destination_service_id == g.d6.service_id,
-        ),
-        "destination_correct_total": _rate(
-            summaries,
-            gold,
-            lambda s, g: g.preferred_action.value == ESCALATE and service(g),
-            lambda s, g: (
-                action(s) == ESCALATE and s.primary.destination_service_id == g.d6.service_id
-            ),
-        ),
-        "inadmissible_citations": _rate(
-            summaries,
-            gold,
-            lambda s, g: bool(s.primary.cited_evidence_ids),
-            lambda s, g: has_inadmissible_citation(s.primary, packets),
-        ),
+        name: _rate(summaries, gold, in_denominator, in_numerator)
+        for name, (in_denominator, in_numerator) in _rate_predicates(packets).items()
     }
     total = len(summaries)
     failures = sum(1 for summary in summaries.values() if summary.primary.failure is not None)
@@ -365,8 +379,31 @@ def compute_metrics(
     }
 
 
+def rate_membership(
+    summary: CaseSummary, labels: CaseLabels, packets: Mapping[str, EvidencePacket]
+) -> dict[str, dict[str, Any]]:
+    """Se um caso entra no denominador e no numerador de cada taxa.
+
+    Aplica :func:`_rate`, com os mesmos predicados das métricas agregadas, a um
+    único caso: não há uma segunda implementação das fórmulas. Uma falha técnica
+    na execução principal fica fora de todos os denominadores.
+    """
+    single = {summary.case_id: summary}
+    gold = {summary.case_id: labels}
+    predicates = {**_rate_predicates(packets), **_AGREEMENT_PREDICATES}
+    membership: dict[str, dict[str, Any]] = {}
+    for name, (in_denominator, in_numerator) in predicates.items():
+        rate = _rate(single, gold, in_denominator, in_numerator)
+        membership[name] = {
+            "v1_7_id": metric_id(name),
+            "denominator": rate["denominator"] == 1,
+            "numerator": rate["numerator"] == 1,
+        }
+    return membership
+
+
 def _message_ratings_by_case(
-    summaries: Mapping[str, CaseSummary], ratings: MessageRatingSet
+    summaries: Mapping[str, CaseSummary], ratings: RatingSet
 ) -> dict[str, bool]:
     conditions = {summary.condition.value for summary in summaries.values()}
     return {
@@ -377,13 +414,14 @@ def _message_ratings_by_case(
 
 
 def _message_quality(
-    summaries: Mapping[str, CaseSummary], ratings: MessageRatingSet | None
+    summaries: Mapping[str, CaseSummary], ratings: RatingSet | None
 ) -> dict[str, Any]:
     """M7: proporção de mensagens da execução principal julgadas aceitáveis.
 
     Só conta mensagens com avaliação humana; casos com mensagem e sem avaliação
-    são reportados como ``unrated``, nunca presumidos. Sem avaliações, a
-    métrica é ``not_measured``.
+    são reportados como ``unrated``, nunca presumidos. Sem avaliações — ou sem
+    nenhuma que se aplique às mensagens desta condição e deste âmbito —, a
+    métrica é ``not_measured``, nunca uma proporção de denominador zero.
     """
     if ratings is None:
         return {"status": "not_measured", "reason": "requires human rating", "v1_7_id": "M7"}
@@ -398,6 +436,13 @@ def _message_quality(
         if summary.primary.failure is None and summary.primary.message
     ]
     judged = [case_id for case_id in with_message if case_id in rated]
+    if not judged:
+        return {
+            "status": "not_measured",
+            "reason": "no human rating applies to these messages",
+            "v1_7_id": "M7",
+            "unrated": len(with_message),
+        }
     acceptable = sum(1 for case_id in judged if rated[case_id].acceptable)
     rubric = {}
     for criterion in (
@@ -495,6 +540,18 @@ _ESTIMATED_FIELDS: Final[
 }
 
 
+def dimension_pairs(labels: CaseLabels, estimates: Mapping[str, Any]) -> dict[str, dict[str, Any]]:
+    """Valor adjudicado e valor estimado de cada dimensão de M8, para um caso.
+
+    Usa os mesmos leitores de :func:`estimation_errors`; ``None`` é não
+    aplicável (adjudicação) ou não estimado (estimativa). Não decide erros.
+    """
+    return {
+        name: {"adjudicated": read_gold(labels), "estimated": read_estimate(estimates)}
+        for name, (read_gold, read_estimate) in _ESTIMATED_FIELDS.items()
+    }
+
+
 def estimation_errors(
     summaries: Mapping[str, CaseSummary], gold: Mapping[str, CaseLabels]
 ) -> dict[str, Any]:
@@ -590,7 +647,7 @@ def paired_comparison(
     *,
     measure: str = "acceptable_action",
     packets: Mapping[str, EvidencePacket] | None = None,
-    ratings: MessageRatingSet | None = None,
+    ratings: RatingSet | None = None,
 ) -> dict[str, Any]:
     """Diferença emparelhada de uma medida por caso (caso = unidade).
 
@@ -624,6 +681,14 @@ def paired_comparison(
         for case_id in without_failure
     }
     shared = [case_id for case_id, (a, b) in values.items() if a is not None and b is not None]
+    if measure == "message_acceptable" and not shared:
+        return {
+            "measure": measure,
+            "status": "not_measured",
+            "reason": "no case has a human rating in both conditions",
+            "excluded_for_failures": len(set(first) | set(second)) - len(without_failure),
+            "excluded_unmeasured": len(without_failure),
+        }
     interval = paired_difference_interval(
         [bool(values[case_id][0]) for case_id in shared],
         [bool(values[case_id][1]) for case_id in shared],
@@ -641,7 +706,7 @@ def configured_paired_comparisons(
     gold: Mapping[str, CaseLabels],
     *,
     packets: Mapping[str, EvidencePacket],
-    ratings: MessageRatingSet | None = None,
+    ratings: RatingSet | None = None,
 ) -> list[dict[str, Any]]:
     """Todas as comparações de :data:`~app.evaluation.policy_v1.config.PAIRED_COMPARISONS`.
 

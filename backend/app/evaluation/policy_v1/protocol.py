@@ -1,15 +1,19 @@
-"""Checks required before formal evaluation, with no annotation generation."""
+"""Checks required before formal evaluation, with no annotation generation.
+
+The M7 rubric checks that used to live here (``validate_message_ratings``) now
+bind every rating to its archived message:
+:func:`app.evaluation.policy_v1.message_ratings.bind_ratings`.
+"""
 
 from collections.abc import Mapping, Sequence
 from typing import TYPE_CHECKING, Any
 
 from app.decision.contracts import ScopeClass
 from app.evaluation.policy_v1.freeze import FreezeError
-from app.evaluation.policy_v1.labels import CaseLabels, LabelSet, MessageRatingSet
-from app.evaluation.policy_v1.runs import CaseSummary
+from app.evaluation.policy_v1.labels import LabelSet
 
 if TYPE_CHECKING:
-    from app.evaluation.policy_v1.executor import EvaluationCase
+    from app.evaluation.policy_v1.cases import EvaluationCase, EvaluationCaseSet
 
 
 def _allowed_chunks(case: "EvaluationCase", inventory: Mapping[str, Any]) -> set[str]:
@@ -34,6 +38,16 @@ def _allowed_chunks(case: "EvaluationCase", inventory: Mapping[str, Any]) -> set
             chunk["chunk_id"] for chunk in version["chunks"] if chunk["language"] == case.language
         )
     return allowed
+
+
+def verify_same_case_set(cases: "EvaluationCaseSet", labels: LabelSet) -> None:
+    """Os rótulos pertencem ao conjunto de casos: o mesmo ``set_id``.
+
+    Os mesmos ``case_id`` não chegam: identificadores como ``C1`` repetem-se
+    entre conjuntos, e uma adjudicação de outro conjunto não julgou estes casos.
+    """
+    if labels.set_id != cases.set_id:
+        raise FreezeError("the adjudication belongs to another case set")
 
 
 def validate_formal_annotations(
@@ -96,36 +110,3 @@ def stratum(case: "EvaluationCase") -> str:
     if case.source_kind == "real":
         return "real"
     return "unclassified_dev"
-
-
-def validate_message_ratings(
-    summaries: Mapping[str, CaseSummary],
-    ratings: MessageRatingSet,
-    *,
-    formal: bool,
-    gold: Mapping[str, CaseLabels] | None = None,
-) -> None:
-    if not formal:
-        return
-    for rating in ratings.ratings:
-        summary = summaries.get(rating.case_id)
-        if summary is None or summary.condition.value != rating.condition:
-            continue
-        outcome = summary.primary
-        if outcome.failure is not None or not outcome.message:
-            raise FreezeError("a message rating must refer to a successful primary message")
-        criteria = rating.criteria
-        if criteria is None:
-            raise FreezeError("formal M7 ratings require the v1.7 criterion rubric")
-        if outcome.action == "answer" and criteria.supported_and_complete is None:
-            raise FreezeError("ANSWER requires a support/completeness judgment")
-        if outcome.rule == "R10" and criteria.gap_declared is None:
-            raise FreezeError("R10 requires a gap judgment")
-        if outcome.action == "clarify" and criteria.clarification_material_and_covered is None:
-            raise FreezeError("CLARIFY requires a materiality/coverage judgment")
-        if outcome.action == "escalate" and criteria.escalation_without_transmission is None:
-            raise FreezeError("ESCALATE requires a non-transmission judgment")
-        label = None if gold is None else gold.get(rating.case_id)
-        if label is not None and label.trace is not None and label.trace.family == "F02":
-            if criteria.outdated_notice_present is None:
-                raise FreezeError("F02 requires an explicit temporal-notice judgment")
